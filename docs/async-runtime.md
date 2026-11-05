@@ -8,7 +8,9 @@ provides FIFO checkpoints; `@tint/js-runtime/promises`
 owns settlement, resolving functions, thenable assimilation and reactions.
 
 The Script host exposes Promise construction, `then`, `catch`, `finally`, `resolve`,
-`reject`, `race`, `all`, `allSettled`, `any`, `withResolvers`, `Symbol.species` and AggregateError.
+`reject`, `try`, `race`, `all`, `allSettled`, `any`, `withResolvers`, `Symbol.species` and AggregateError.
+`Promise.try` follows the current specification: the callback runs before the
+constructor is consulted, and a normal result goes through PromiseResolve.
 Combinators share iterator acquisition/closing and generic constructor capabilities.
 Native errors and result arrays use intrinsic identities rather than mutable globals.
 

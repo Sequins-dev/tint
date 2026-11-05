@@ -286,6 +286,35 @@ export function installPromiseIntrinsics(
   );
   builtinProperty(
     constructor,
+    "try",
+    builtinFunction(
+      realm.functionPrototype,
+      "try",
+      1,
+      (receiver, args): unknown => {
+        if (viewObjectValue(receiver, realm.objectPrototype) === undefined)
+          return typeError();
+        // The callback runs before the constructor is consulted; a normal
+        // result goes through PromiseResolve, so same-constructor promises
+        // are returned unwrapped.
+        let value: unknown;
+        try {
+          value = invoke(args[0], undefined, args.slice(1));
+        } catch (reason) {
+          const capability = newPromiseCapability(receiver, realm, hooks);
+          capability.reject(reason);
+          return capability.promise;
+        }
+        return promiseResolve(receiver, value, realm, hooks);
+      },
+      hooks,
+    ),
+    true,
+    true,
+    hooks,
+  );
+  builtinProperty(
+    constructor,
     "race",
     builtinFunction(
       realm.functionPrototype,
