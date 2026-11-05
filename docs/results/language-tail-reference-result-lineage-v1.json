@@ -1,0 +1,54 @@
+{
+  "kind": "native-checkpoint-result-lineage",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "olderCheckpoint": "docs/results/language-tail-reference-checkpoints-v1.json",
+  "olderSource": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "laterAssignmentReport": "docs/results/test262-language-assignment-name-fixed-v1.json",
+  "laterSource": {
+    "sha256": "620076ef36c07bc72b97fec283efeb398d6e254c1b4513826364e9cf6d41d83a",
+    "files": 566
+  },
+  "laterTotals": {
+    "total": 850,
+    "passed": 850,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "mappedFailures": [
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "sloppy",
+      "oldOutcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "laterOutcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "strict",
+      "oldOutcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "laterOutcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "finding": "The background completion notification belongs to the older 171/171 call, 184/184 super and 848/850 assignment checkpoint. Both assignment failures already pass in the later complete 850/850 rerun. Preserve both reports; no retry or implementation regression is inferred."
+}
