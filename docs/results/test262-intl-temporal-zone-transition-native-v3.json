@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "lldb-local",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "2ce89a6e7a4d0621238868dacedb2c0d1f10dc0936369525621c456bd279026a",
+    "files": 434
+  },
+  "sourceSnapshotFile": ".tint-bootstrap/timezone-prehistory-v1-sources.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 18,
+        "kind": "execution",
+        "compileMs": 9961.49,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition",
+  "totals": {
+    "total": 18,
+    "passed": 18,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/nanoseconds-subtracted-or-added-at-dst-transition.js",
+      "sha256": "849575a94a3fccabca8a36ede2c5d38150f3b7c219af4834006b5959c109cfbc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11119.940625000001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/nanoseconds-subtracted-or-added-at-dst-transition.js",
+      "sha256": "849575a94a3fccabca8a36ede2c5d38150f3b7c219af4834006b5959c109cfbc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11464.39625,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/no-future-transitions.js",
+      "sha256": "d4f5f27d912490ee53b4558a15c39b351c68d86b329fcb103e01ad4abe36fc71",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11807.062375,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/no-future-transitions.js",
+      "sha256": "d4f5f27d912490ee53b4558a15c39b351c68d86b329fcb103e01ad4abe36fc71",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12153.342,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/no-transitions-named-timezone.js",
+      "sha256": "6c8b2df5eb27b476115c01a224eea551ffb3feb8c427206583fef3eb403a5174",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12500.699083000001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/no-transitions-named-timezone.js",
+      "sha256": "6c8b2df5eb27b476115c01a224eea551ffb3feb8c427206583fef3eb403a5174",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12846.818583,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/result-type.js",
+      "sha256": "591e3fd6ab1b95d2694517361472f87ad5c9a9874217bceffefbd6103f824419",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13202.729458,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/result-type.js",
+      "sha256": "591e3fd6ab1b95d2694517361472f87ad5c9a9874217bceffefbd6103f824419",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13569.488374999999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/rule-change-without-offset-transition.js",
+      "sha256": "3f91e9475724d06d98c98c7b3f7bf2074f1080b5a8558e0140183a05e4f259b5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13919.186042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/rule-change-without-offset-transition.js",
+      "sha256": "3f91e9475724d06d98c98c7b3f7bf2074f1080b5a8558e0140183a05e4f259b5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 14272.916625,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/specific-tzdb-values.js",
+      "sha256": "248704bfb751fc1235d66b3fea13352376424ac0b6723b3f906c430a98ff3772",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 14624.097959,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/specific-tzdb-values.js",
+      "sha256": "248704bfb751fc1235d66b3fea13352376424ac0b6723b3f906c430a98ff3772",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 14972.823041,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/subtract-second-and-nanosecond-from-last-transition.js",
+      "sha256": "5de1194bf0b51dbc61c563070479bf292822a56a38fdb59910235fc2b30bd8e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15324.820834,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/subtract-second-and-nanosecond-from-last-transition.js",
+      "sha256": "5de1194bf0b51dbc61c563070479bf292822a56a38fdb59910235fc2b30bd8e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15675.817916,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transition-at-instant-boundaries.js",
+      "sha256": "8bead94cb6dbbe10ca26299521af235b564a3dd6500ea44fbe9975c949ae6a09",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal",
+          "Intl-enumeration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 16827.084042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transition-at-instant-boundaries.js",
+      "sha256": "8bead94cb6dbbe10ca26299521af235b564a3dd6500ea44fbe9975c949ae6a09",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal",
+          "Intl-enumeration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17973.88775,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transitions-close-together.js",
+      "sha256": "9a127990ff758b59ac84f019bd8a55506bf54775ba95c99e3dee6eff49e53a91",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18351.348041,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transitions-close-together.js",
+      "sha256": "9a127990ff758b59ac84f019bd8a55506bf54775ba95c99e3dee6eff49e53a91",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18723.834875,
+      "batch": 0
+    }
+  ]
+}

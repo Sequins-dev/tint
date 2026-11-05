@@ -1,0 +1,31 @@
+{
+  "kind": "native-tail-call-preparation-validation",
+  "conformance": false,
+  "genericDispatch": "docs/results/native-tail-dispatch-v1.json",
+  "additional": [
+    {
+      "label": "source-tail-steps",
+      "sourceSnapshot": {
+        "sha256": "4523f62309cc22fb3ea0ba4eb8a2c4205dc38d077dd11879eeb46c1a9c2f258e",
+        "files": 566
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-source-tail-steps-v1.json"
+    },
+    {
+      "label": "tail-position",
+      "sourceSnapshot": {
+        "sha256": "db7d1f4e54cde3b99d7cdf57d5e7ff4174f583ed34b8595b26191072a90d4561",
+        "files": 566
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-tail-position-v1.json"
+    }
+  ],
+  "sourceTailPositionsEnabled": false,
+  "remaining": "Wire source factories and forwarding paths, enable only eligible lowering paths, validate managed entries and GC, complete a frozen self-build, then rerun unchanged Test262 sources"
+}

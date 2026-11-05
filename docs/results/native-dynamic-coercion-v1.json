@@ -1,0 +1,386 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "71c78c9de41b184a382aa14ee9aeb563c00b0a15c772837a3ed904adb3794cf0",
+    "files": 444
+  },
+  "imageSha256": "773c1736790c801f16acdb1d2c348b10c5ce1f8e55761ce16d9a9c60c87b0750",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "const C=Function;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "4d107d61ea89c1d8859bafdd5494a4ed90321cc2ea229d1be2ab72259406744d"
+    },
+    {
+      "index": 1,
+      "source": "const C=Function;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "315f37235b185b8029d45db94af889094deee31c0824c9a6139cbad85e852a8c"
+    },
+    {
+      "index": 2,
+      "source": "const C=Function;let caught=0;try{C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "a4706722d082fdd1afd55d8d6013edb476cab59ddc0f7afb6aa62790cddd9338"
+    },
+    {
+      "index": 3,
+      "source": "const C=Function;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "7bced19b4e52cd7609c47e0510ed69a04a07b50c482d09d05cb8ac905ae6326c"
+    },
+    {
+      "index": 4,
+      "source": "const C=Function;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{new C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "4315f172753a623be66556bf91dec424ab7a13a945759e2e92df5c95554e6d12"
+    },
+    {
+      "index": 5,
+      "source": "const C=Function;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{new C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "2e60c1c79e6e215290c42309850cc4ced38602d51d23a2defba52da2e48a8503"
+    },
+    {
+      "index": 6,
+      "source": "const C=Function;let caught=0;try{new C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{new C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "70f5421c101d51f8f54b61101afc66adc3bc7500d3a25fbb30006a76cb89bdde"
+    },
+    {
+      "index": 7,
+      "source": "const C=Function;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{new C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "67e1c34e82a35523e89c548e10ad8fbbc72052cd8d7a5ec5b0d22364f2c74e36"
+    },
+    {
+      "index": 8,
+      "source": "const C=(function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "be0560a4badb45e7613bad1a071fd346e84293a5d7cfd2144e579fd40e892a65"
+    },
+    {
+      "index": 9,
+      "source": "const C=(function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "8f03e0093b358e58d8637c377985ea3a1e676ead38ffe9f1e3b6b941e24c98cb"
+    },
+    {
+      "index": 10,
+      "source": "const C=(function*(){}).constructor;let caught=0;try{C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "c0a593c79e4362316af29dbc43fdd8b9b53aebdae978b80e69dde507216e9058"
+    },
+    {
+      "index": 11,
+      "source": "const C=(function*(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "8554d2b008da41b5c45da7dc0beb9420382e05e65795460d54c71ae07f5c167c"
+    },
+    {
+      "index": 12,
+      "source": "const C=(function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{new C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "bed3f628ebbfae651b6cafdf8acbaafcfccdca48535d2b8650d96f9feb2da432"
+    },
+    {
+      "index": 13,
+      "source": "const C=(function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{new C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "3e9929883fa78db1dd5f50c8d99dd0c44211b4a442f51a2d8bf9f85e01d66b00"
+    },
+    {
+      "index": 14,
+      "source": "const C=(function*(){}).constructor;let caught=0;try{new C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{new C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "eb84f4d2b2c9198880d6631709e7a9865b08df1cc6edceb164d1c1cc0a7bea93"
+    },
+    {
+      "index": 15,
+      "source": "const C=(function*(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{new C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "20d12177fb0c2fe27e3a3635a2ed502fb39f95534d6b1e3f37e30489ba1adff1"
+    },
+    {
+      "index": 16,
+      "source": "const C=(async function(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "a4a0e3243f7945c4e7fc5ef2dfcff416dea06082c247aa7373c7de75b78c925c"
+    },
+    {
+      "index": 17,
+      "source": "const C=(async function(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "ff42552e354ec880d9e835bc3e84e0aeb6607ab8783690b3ead83f3f14911f52"
+    },
+    {
+      "index": 18,
+      "source": "const C=(async function(){}).constructor;let caught=0;try{C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "e43a1277a830ea9a7f935ea672d2447b719429892e14666d2302f4c8e026bd82"
+    },
+    {
+      "index": 19,
+      "source": "const C=(async function(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "8323f7213dd57bcb9f012617a10d3df203a4d92066b010d88a6904c586138e0c"
+    },
+    {
+      "index": 20,
+      "source": "const C=(async function(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{new C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "45350edcafc70dc516885f67c9606fdb598b20aca803b0582af1dff461517349"
+    },
+    {
+      "index": 21,
+      "source": "const C=(async function(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{new C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "24f0cfa4e399d927ee2825bb0ddee0a2c426a8568a63f7bd4edf3864b2587f5f"
+    },
+    {
+      "index": 22,
+      "source": "const C=(async function(){}).constructor;let caught=0;try{new C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{new C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "228d7a0bad9b6dd8c59d49f166bab12bebbe94b375b9ac5c5c6f13e578d7c046"
+    },
+    {
+      "index": 23,
+      "source": "const C=(async function(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{new C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "e5bbc4118716262f3962d8deba9f042cd1c53b29c090bbe92a947e19f8ed229b"
+    },
+    {
+      "index": 24,
+      "source": "const C=(async function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "852f24d7cc9db9dca6a14231969ad2124aa00d1526b8a55598a27ebbf1addc35"
+    },
+    {
+      "index": 25,
+      "source": "const C=(async function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "4f682255909151ffdaafa1aa782423ab1c3c0a8ef07b66be8c8390a7f74a3cca"
+    },
+    {
+      "index": 26,
+      "source": "const C=(async function*(){}).constructor;let caught=0;try{C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "530970a1fa66c60c2c686dee131f459482a340372daccea29d9b01f200b951a5"
+    },
+    {
+      "index": 27,
+      "source": "const C=(async function*(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "201791fe4605ecf23a7ec2ef3520efabc55afb6350bf12c6bb0daf0f98e33a4e"
+    },
+    {
+      "index": 28,
+      "source": "const C=(async function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},b={toString(){log+=\"b\";throw 42;}},c={toString(){log+=\"c\";return \"return 1;\";}};try{new C(a,b,c);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "4ee8eb3e43c63381a031255a570767f2b8d9cb438bf6bedbb0554193905f010b"
+    },
+    {
+      "index": 29,
+      "source": "const C=(async function*(){}).constructor;let log=\"\",caught=false;const a={toString(){log+=\"a\";return \"x\";}},body={toString(){log+=\"b\";throw 42;}};try{new C(a,body);}catch(e){caught=e===42;}if(!caught||log!==\"ab\")throw 1;",
+      "sha256": "3c9d1a0562555f46f17bf8d2808c5127ccb0609caad24d8de1bbab25b07fd9f8"
+    },
+    {
+      "index": 30,
+      "source": "const C=(async function*(){}).constructor;let caught=0;try{new C(Symbol());}catch(e){if(e instanceof TypeError)caught++;}try{new C(Symbol(),\"return 1;\");}catch(e){if(e instanceof TypeError)caught++;}if(caught!==2)throw 1;",
+      "sha256": "fba475f8c4ecb25047d88f6d0e83dfb8ed4ca062df9cb3acb9e707e55c8b77b0"
+    },
+    {
+      "index": 31,
+      "source": "const C=(async function*(){}).constructor;let hint=\"\",caught=false;const body={[Symbol.toPrimitive](value){hint=value;throw 42;}};try{new C(body);}catch(e){caught=e===42;}if(!caught||hint!==\"string\")throw 1;",
+      "sha256": "1ca96fa063b399d4a3c00a748f93a3d2b8b742b07b8f81056a87847b15b9d1b5"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 12,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 13,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 14,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 15,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 16,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 17,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 18,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 19,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 20,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 21,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 22,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 23,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 24,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 25,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 26,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 27,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 28,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 29,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 30,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 31,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

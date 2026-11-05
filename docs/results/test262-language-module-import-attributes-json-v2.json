@@ -1,0 +1,736 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v17-import-resolution",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. JSON is parsed natively at load and exposes one default export; type attributes are checked before cached records are used. Unresolved bare specifiers reject their import promises with TypeError. Source modules support top-level await and direct eval. Text/bytes, source/defer phases, undiscovered relative specifiers and runtime compilation of loaded modules remain unsupported. Native fixture syntax and early-error checks remain lazy at load.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-import-resolution-v1/source-snapshot.json",
+  "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 8379.820624999993
+    }
+  ],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 129744.7665,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 3,
+        "kind": "syntax",
+        "compileMs": 3040.3179579999996,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 9,
+        "kind": "execution",
+        "compileMs": 115519.03825000001,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/module-code/import-attributes",
+  "totals": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/module-code/import-attributes/allow-nlt-before-with.js",
+      "sha256": "d93a3c927c706495e838684bbfef92946a35b0c49dab064e067d1183e390999f",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "raw"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        }
+      ],
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 133340.156875,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-export.js",
+      "sha256": "29731444f8cc7c53c77b55a395b03a09eb39035b87255fb65679f903d3c83add",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 145425.05191699998,
+      "batch": 1
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-import-nobinding.js",
+      "sha256": "ddf9372de3f62b975fcbcc4e2eb26ffc26d072e139e63cd94d0b2dc8f8892557",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12312.579333000001,
+      "batch": 1
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-import-withbinding.js",
+      "sha256": "87976b71d4910ad4b1dccce51d2c651269b1774f91b6f1179542aeca547e51da",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12535.809458000003,
+      "batch": 1
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-empty.js",
+      "sha256": "484e91ad3743fab50b0971dd2df2be7d8a52d53ed23a8f1e84103c057926f535",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 133344.39375000002,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-identifiername.js",
+      "sha256": "45ebaefce1df1947103eeb3973535608de04eb567f69cca42f3c5441bb706ed7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 123938.550834,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-double.js",
+      "sha256": "4a72b75a02f3a1a256bbb8f1bf991b0fe113d8fd6eb7b20f9a62b9609e946778",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 124180.06216599999,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-single.js",
+      "sha256": "79e183839ccec263658803aba1f8516b7fdfd25570fe00b47436f643c6bbe8b1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 124416.25149999998,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-many.js",
+      "sha256": "8b17e8044dea2c32c7173d92d32526c406dd26800c49480ee14ee219a1de29cc",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 124641.400459,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-newlines.js",
+      "sha256": "966b85f0a3eac44ad1be254759025e5562bb652f63ea49186ec58faea959c64b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 124881.63712500001,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-trlng-comma.js",
+      "sha256": "89c397f29b2c2739472af3c497fed6827b9f427b1616299e9955ebaf4de1369e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 125110.96579199997,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-double.js",
+      "sha256": "cd1efd59957e4279c4813c003a0b36b4816888b7c1fd4ef69fbaffa158a9cbe5",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 125352.25179099996,
+      "batch": 2
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-single.js",
+      "sha256": "32b7ce431ebd24b9a6a86d98de769857348e838608907f8e0db5a539e6e4c083",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "globalThis"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "ensure-linking-error_FIXTURE.js",
+          "sha256": "9d29e52f5c2dd55535179ef1769d353927fd830116f1633687d5cbf546f07e7c"
+        },
+        {
+          "name": "import-attribute-1_FIXTURE.js",
+          "sha256": "5cae413239001386d1dcff1fd5b53331cfdb13a76728d93f6996b3273aeeaaa1"
+        },
+        {
+          "name": "import-attribute-2_FIXTURE.js",
+          "sha256": "7c62003a8dd4913b9f5c70e1fae9870dab0132ca97b3637cbfda2e3e28b68237"
+        },
+        {
+          "name": "import-attribute-3_FIXTURE.js",
+          "sha256": "675638a702c3d3d4884189dcd2777edcace9b9d4b122d3126849b274138bceec"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 125591.93470799999,
+      "batch": 2
+    }
+  ]
+}

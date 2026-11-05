@@ -1,0 +1,1743 @@
+{
+  "kind": "native-selection-blocker-classification",
+  "conformance": false,
+  "nativeEvidence": "docs/results/test262-script-dynamic-import-directory-v1.json",
+  "totals": {
+    "total": 1900,
+    "passed": 1559,
+    "failed": 0,
+    "unsupported": 341,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.8205263157894737
+  },
+  "counts": {
+    "unsupported operation": 26,
+    "duplicate value binding": 16,
+    "P-DEFER": 117,
+    "P-SOURCE": 176,
+    "JSON modules": 4,
+    "top-level await": 2
+  },
+  "limits": "Classification of saved outcomes only. Runtime unsupported paths need individual triage; newly implemented paths require unchanged reruns.",
+  "groups": {
+    "unsupported operation": [
+      {
+        "path": "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-evaluation-sequence.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-evaluation-sequence.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-nested-imports.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-nested-imports.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/usage-from-eval.js",
+        "variant": "sloppy",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      {
+        "path": "language/expressions/dynamic-import/usage-from-eval.js",
+        "variant": "strict",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    ],
+    "duplicate value binding": [
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-eval-script-code-target.js",
+        "variant": "module",
+        "reason": "script-code_FIXTURE.js: {\"start\":330,\"end\":350,\"code\":\"EARLY_ERROR\",\"message\":\"duplicate value binding: smoosh\"}"
+      }
+    ],
+    "P-DEFER": [
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1915,\"end\":1932,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1929,\"end\":1946,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1971,\"end\":1988,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1985,\"end\":2002,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1975,\"end\":1992,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1989,\"end\":2006,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1962,\"end\":1979,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1976,\"end\":1993,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1941,\"end\":1958,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1955,\"end\":1972,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1984,\"end\":2001,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1998,\"end\":2015,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1983,\"end\":2000,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1997,\"end\":2014,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2005,\"end\":2022,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2019,\"end\":2036,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1901,\"end\":1918,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1915,\"end\":1932,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1923,\"end\":1940,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1937,\"end\":1954,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1917,\"end\":1934,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1931,\"end\":1948,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1920,\"end\":1937,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1934,\"end\":1951,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1920,\"end\":1937,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1934,\"end\":1951,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1905,\"end\":1922,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1919,\"end\":1936,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1930,\"end\":1947,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1944,\"end\":1961,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1891,\"end\":1908,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1905,\"end\":1922,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-defer/import-defer-async-module/main.js",
+        "variant": "module",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/expressions/dynamic-import/import-defer/import-defer-async-module/main.js: {\"start\":3518,\"end\":3550,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/main.js",
+        "variant": "module",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/main.js: {\"start\":3532,\"end\":3572,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/promise-prototype-then-not-called.js",
+        "variant": "module",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/promise-prototype-then-not-called.js: {\"start\":1768,\"end\":1808,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-defer/sync/main.js",
+        "variant": "module",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/expressions/dynamic-import/import-defer/sync/main.js: {\"start\":1871,\"end\":1904,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-defer/sync-dependency-of-deferred-async-module/main.js",
+        "variant": "module",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/expressions/dynamic-import/import-defer/sync-dependency-of-deferred-async-module/main.js: {\"start\":3534,\"end\":3583,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1102,\"end\":1136,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1116,\"end\":1150,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1106,\"end\":1140,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1120,\"end\":1154,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1084,\"end\":1118,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1098,\"end\":1132,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1088,\"end\":1122,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1102,\"end\":1136,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1115,\"end\":1149,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1129,\"end\":1163,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1119,\"end\":1153,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1133,\"end\":1167,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1128,\"end\":1162,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1142,\"end\":1176,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1132,\"end\":1166,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1146,\"end\":1180,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1110,\"end\":1144,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1124,\"end\":1158,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1114,\"end\":1148,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1128,\"end\":1162,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1098,\"end\":1132,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1112,\"end\":1146,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1102,\"end\":1136,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1116,\"end\":1150,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1124,\"end\":1158,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1138,\"end\":1172,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1128,\"end\":1162,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1142,\"end\":1176,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1145,\"end\":1179,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1159,\"end\":1193,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1149,\"end\":1183,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1163,\"end\":1197,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1070,\"end\":1104,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1084,\"end\":1118,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1074,\"end\":1108,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1088,\"end\":1122,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1085,\"end\":1119,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1099,\"end\":1133,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1089,\"end\":1123,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1103,\"end\":1137,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1079,\"end\":1113,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1093,\"end\":1127,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1083,\"end\":1117,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1097,\"end\":1131,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1095,\"end\":1129,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1109,\"end\":1143,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1099,\"end\":1133,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1113,\"end\":1147,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1089,\"end\":1123,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1103,\"end\":1137,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1093,\"end\":1127,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1107,\"end\":1141,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1090,\"end\":1124,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1104,\"end\":1138,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1094,\"end\":1128,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1108,\"end\":1142,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1104,\"end\":1138,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1118,\"end\":1152,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1108,\"end\":1142,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1122,\"end\":1156,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1080,\"end\":1114,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1094,\"end\":1128,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1084,\"end\":1118,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1098,\"end\":1132,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1074,\"end\":1108,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1088,\"end\":1122,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1078,\"end\":1112,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1092,\"end\":1126,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1099,\"end\":1133,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1113,\"end\":1147,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1103,\"end\":1137,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1117,\"end\":1151,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1118,\"end\":1152,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1122,\"end\":1156,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1088,\"end\":1122,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1092,\"end\":1126,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":443,\"end\":477,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":457,\"end\":491,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":447,\"end\":481,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":461,\"end\":495,\"code\":\"UNSUPPORTED\",\"message\":\"import.defer requires P-DEFER\"}"
+      }
+    ],
+    "P-SOURCE": [
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2286,\"end\":2321,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2300,\"end\":2335,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2108,\"end\":2126,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2122,\"end\":2140,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2411,\"end\":2429,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2425,\"end\":2443,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2342,\"end\":2377,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2356,\"end\":2391,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2164,\"end\":2182,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2178,\"end\":2196,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2467,\"end\":2485,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2481,\"end\":2499,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2346,\"end\":2381,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2360,\"end\":2395,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2168,\"end\":2186,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2182,\"end\":2200,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2471,\"end\":2489,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2485,\"end\":2503,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2333,\"end\":2368,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2347,\"end\":2382,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2155,\"end\":2173,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2169,\"end\":2187,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2458,\"end\":2476,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2472,\"end\":2490,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2312,\"end\":2347,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2326,\"end\":2361,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2134,\"end\":2152,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2148,\"end\":2166,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2437,\"end\":2455,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2451,\"end\":2469,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2355,\"end\":2390,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2369,\"end\":2404,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2177,\"end\":2195,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2191,\"end\":2209,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2480,\"end\":2498,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2494,\"end\":2512,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2354,\"end\":2389,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2368,\"end\":2403,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2176,\"end\":2194,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2190,\"end\":2208,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2479,\"end\":2497,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2493,\"end\":2511,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2376,\"end\":2411,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2390,\"end\":2425,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2198,\"end\":2216,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2212,\"end\":2230,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2501,\"end\":2519,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2515,\"end\":2533,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2272,\"end\":2307,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2286,\"end\":2321,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2094,\"end\":2112,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2108,\"end\":2126,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2397,\"end\":2415,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2411,\"end\":2429,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2294,\"end\":2329,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2308,\"end\":2343,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2116,\"end\":2134,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2130,\"end\":2148,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2419,\"end\":2437,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2433,\"end\":2451,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2288,\"end\":2323,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2302,\"end\":2337,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2110,\"end\":2128,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2124,\"end\":2142,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2413,\"end\":2431,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2427,\"end\":2445,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2291,\"end\":2326,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2305,\"end\":2340,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2113,\"end\":2131,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2127,\"end\":2145,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2416,\"end\":2434,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2430,\"end\":2448,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2291,\"end\":2326,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2305,\"end\":2340,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2113,\"end\":2131,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2127,\"end\":2145,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2416,\"end\":2434,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2430,\"end\":2448,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2276,\"end\":2311,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2290,\"end\":2325,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2098,\"end\":2116,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2112,\"end\":2130,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2401,\"end\":2419,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2415,\"end\":2433,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2301,\"end\":2336,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2315,\"end\":2350,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2123,\"end\":2141,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2137,\"end\":2155,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2426,\"end\":2444,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2440,\"end\":2458,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-source-text-module.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2262,\"end\":2297,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-source-text-module.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2276,\"end\":2311,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2084,\"end\":2102,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2098,\"end\":2116,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":2387,\"end\":2405,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":2401,\"end\":2419,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1148,\"end\":1180,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1162,\"end\":1194,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1352,\"end\":1384,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1366,\"end\":1398,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1130,\"end\":1162,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1144,\"end\":1176,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1334,\"end\":1366,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1348,\"end\":1380,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1161,\"end\":1193,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1175,\"end\":1207,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1365,\"end\":1397,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1379,\"end\":1411,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1174,\"end\":1206,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1188,\"end\":1220,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1378,\"end\":1410,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1392,\"end\":1424,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1156,\"end\":1188,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1170,\"end\":1202,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1360,\"end\":1392,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1374,\"end\":1406,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1144,\"end\":1176,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1158,\"end\":1190,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1348,\"end\":1380,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1362,\"end\":1394,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1170,\"end\":1202,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1184,\"end\":1216,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1374,\"end\":1406,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1388,\"end\":1420,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1191,\"end\":1223,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1205,\"end\":1237,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1395,\"end\":1427,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1409,\"end\":1441,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1116,\"end\":1148,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1130,\"end\":1162,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1320,\"end\":1352,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1334,\"end\":1366,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1131,\"end\":1163,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1145,\"end\":1177,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1335,\"end\":1367,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1349,\"end\":1381,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1125,\"end\":1157,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1139,\"end\":1171,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1329,\"end\":1361,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1343,\"end\":1375,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1141,\"end\":1173,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1155,\"end\":1187,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1345,\"end\":1377,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1359,\"end\":1391,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1135,\"end\":1167,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1149,\"end\":1181,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1339,\"end\":1371,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1353,\"end\":1385,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1136,\"end\":1168,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1150,\"end\":1182,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1340,\"end\":1372,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1354,\"end\":1386,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1150,\"end\":1182,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1164,\"end\":1196,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1354,\"end\":1386,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1368,\"end\":1400,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1126,\"end\":1158,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1140,\"end\":1172,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1330,\"end\":1362,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1344,\"end\":1376,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1120,\"end\":1152,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1134,\"end\":1166,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1324,\"end\":1356,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1338,\"end\":1370,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1145,\"end\":1177,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1159,\"end\":1191,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1349,\"end\":1381,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":1363,\"end\":1395,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1164,\"end\":1196,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1368,\"end\":1400,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1134,\"end\":1166,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":1338,\"end\":1370,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":489,\"end\":521,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-empty-str-is-valid-assign-expr.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":503,\"end\":535,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-script-code-valid.js",
+        "variant": "sloppy",
+        "reason": "test: {\"start\":693,\"end\":725,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-script-code-valid.js",
+        "variant": "strict",
+        "reason": "test: {\"start\":707,\"end\":739,\"code\":\"UNSUPPORTED\",\"message\":\"import.source requires P-SOURCE\"}"
+      }
+    ],
+    "JSON modules": [
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+        "variant": "sloppy",
+        "reason": "JSON modules require HOST-ESM M5"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+        "variant": "strict",
+        "reason": "JSON modules require HOST-ESM M5"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+        "variant": "sloppy",
+        "reason": "JSON modules require HOST-ESM M5"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+        "variant": "strict",
+        "reason": "JSON modules require HOST-ESM M5"
+      }
+    ],
+    "top-level await": [
+      {
+        "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+        "variant": "sloppy",
+        "reason": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js: {\"start\":193,\"end\":217,\"code\":\"UNSUPPORTED\",\"message\":\"top-level await requires HOST-ESM M4\"}"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+        "variant": "strict",
+        "reason": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js: {\"start\":193,\"end\":217,\"code\":\"UNSUPPORTED\",\"message\":\"top-level await requires HOST-ESM M4\"}"
+      }
+    ]
+  }
+}

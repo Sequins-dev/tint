@@ -1,0 +1,23 @@
+{
+  "kind": "reference-runtime-comparison",
+  "engine": "v24.12.0",
+  "fixture": "tools/verify-test262-native-array-iterator-state.ts",
+  "spec": "https://262.ecma-international.org/16.0/#sec-createarrayiterator",
+  "observations": [
+    {
+      "index": 0,
+      "outcome": "threw",
+      "value": "3"
+    },
+    {
+      "index": 1,
+      "outcome": "threw",
+      "value": "2"
+    },
+    {
+      "index": 2,
+      "outcome": "threw",
+      "value": "19"
+    }
+  ]
+}

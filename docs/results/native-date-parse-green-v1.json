@@ -1,0 +1,60 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cef50788bd7c534df2436584c79aad4fd2f0f1dc7e6a0d7f95f013af64f18c15",
+      "files": 417
+    },
+    "imageSha256": "388fc0367a7cdef56bf56994a69cd9fbdfb297a4ae4be00948dee6b530a4b6bb",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const t of [-8640000000000000,-62198755200000,-1,0,1,951782400000,8640000000000000]){const d=new Date(t);if(Date.parse(d.toISOString())!==t||new Date(d.toISOString()).getTime()!==t)throw 1;if(t%1000===0&&Date.parse(d.toUTCString())!==t)throw 2;}",
+        "sha256": "a4f794d4019eb693b4cf8e0d1f0092db7dff2fe7a04612930aa9f12c8bc6f5f0"
+      },
+      {
+        "index": 1,
+        "source": "if(Date.parse(\"1970\")!==0||Date.parse(\"1970-01\")!==0||Date.parse(\"1970-01-01\")!==0||Date.parse(\"1970-01-01T01:00+01:00\")!==0||Date.parse(\"1969-12-31T24:00:00.000Z\")!==0)throw 1;for(const s of [\"-000000-01-01T00:00Z\",\"2000-00-01\",\"2000-01-00\",\"2000-13-01\",\"2000-01-32\",\"2000-01-01T24:01Z\",\"2000-01-01T00:00+24:00\"]){if(!Number.isNaN(Date.parse(s)))throw 2;}",
+        "sha256": "5666011e972b3bd6ee43dcc0fb6cfe3c99e47cc6f3d30e63b955a87b15a0ca0f"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const x={toString(){log+=\"s\";return \"1970-01-01T00:00Z\";},valueOf(){throw 1;}};if(Date.parse(x)!==0||log!==\"s\")throw 2;let caught=false;try{Date.parse(Symbol());}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;",
+        "sha256": "9b6c0437d4eb4975f25d1e0639984ba3c9b84a5b9105ab22415cc18b26bb1b9d"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

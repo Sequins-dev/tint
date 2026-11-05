@@ -1,0 +1,20 @@
+{
+  "kind": "source-graph-agreement",
+  "conformance": false,
+  "compilerEntry": "packages/compiler/src/cli.ts",
+  "checkedModules": 187,
+  "checkedFunctions": 2299,
+  "previousSource": {
+    "sha256": "42be685a1a923d1db3aa083c29ae83472d3feae563819f9720248bf2945c1e60",
+    "files": 552
+  },
+  "differences": [
+    "packages/js-engine/src/dynamic-function.ts",
+    "packages/js-engine/src/lowering/generators.ts",
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-runtime/src/objects/async-functions.ts",
+    "packages/js-runtime/src/objects/index.ts"
+  ],
+  "compilerModulesUnchanged": true,
+  "acceptance": "Keep the private-binder frozen native self-build as compiler gate; validate engine-only changes through native engine fixtures. No standalone compiler source changes require another fixed-point run."
+}

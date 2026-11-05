@@ -1,0 +1,50 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "eaa2a6e7b8fd7b3de31fb557ea7e03cf3973bc33abbc9a0612292c8e90eb89b4",
+      "files": 431
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/named-zone-provider-v1-sources.json",
+    "imageSha256": "c43acdffb77e2d820304613baa96e56b1845f2014f1ac8e2bc2ac5a59dde920a",
+    "fixtureTool": "tools/verify-hosted-named-time-zones.ts",
+    "fixtureToolSha256": "6829cbb82087cff4fd9985683fa8634590035c5e3a31e8879586ba706cb08b1d",
+    "data": {
+      "data": [
+        {
+          "path": "/usr/share/zoneinfo/tzdata.zi",
+          "sha256": "5914dfd1cecfaefd5e692426cbda59429105c59f16e87fa2754c8eff3ccdefa2"
+        },
+        {
+          "path": "/usr/share/zoneinfo/America/New_York",
+          "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95"
+        },
+        {
+          "path": "/usr/share/zoneinfo/Africa/Abidjan",
+          "sha256": "d2efac4e5f23d88c95d72c1db42807170f52f43dd98a205af5a92a91b9f2d997"
+        }
+      ]
+    },
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "Shared cached named-zone models, country identities, real DST offsets and cached missing/corrupt data"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

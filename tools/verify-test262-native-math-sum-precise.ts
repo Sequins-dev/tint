@@ -1,0 +1,12 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    String.raw`if(Math.sumPrecise([1e20,1,-1e20])!==1||Math.sumPrecise([1,1e100,1,-1e100])!==2||Math.sumPrecise([Number.MAX_VALUE,Number.MAX_VALUE,-Number.MAX_VALUE])!==Number.MAX_VALUE||Math.sumPrecise([Number.MAX_VALUE,Number.MAX_VALUE])!==Infinity)throw 1;`,
+    String.raw`if(Math.sumPrecise([1,2**-53])!==1||Math.sumPrecise([1,2**-53,Number.MIN_VALUE])!==1+Number.EPSILON||Math.sumPrecise([1+Number.EPSILON,2**-53])!==1+2*Number.EPSILON||Math.sumPrecise([Number.MIN_VALUE,Number.MIN_VALUE,-Number.MIN_VALUE])!==Number.MIN_VALUE)throw 1;`,
+    String.raw`if(!Object.is(Math.sumPrecise([]),-0)||!Object.is(Math.sumPrecise([-0,-0]),-0)||!Object.is(Math.sumPrecise([-0,0]),0)||!Object.is(Math.sumPrecise([1,-1]),0)||!Number.isNaN(Math.sumPrecise([Infinity,-Infinity]))||!Number.isNaN(Math.sumPrecise([NaN,Infinity]))||Math.sumPrecise([-Infinity,1])!==-Infinity)throw 1;`,
+    String.raw`let closed=0,coerced=0;const bad={valueOf(){coerced++;return 1;}};function* values(){try{yield NaN;yield bad;throw 1;}finally{closed++;}}let caught=false;try{Math.sumPrecise(values());}catch(e){caught=e instanceof TypeError;}if(!caught||closed!==1||coerced!==0)throw 2;for(const value of [1n,"1",null,undefined,new Number(1)]){let error=false;try{Math.sumPrecise([value]);}catch(e){error=e instanceof TypeError;}if(!error)throw 3;}`,
+    String.raw`const marker={};let closed=0;const iterable={[Symbol.iterator](){return {next(){throw marker;},return(){closed++;return {};}};}};let caught;try{Math.sumPrecise(iterable);}catch(e){caught=e;}if(caught!==marker||closed!==0)throw 1;let steps=0;const bad={[Symbol.iterator](){return {next(){steps++;return {value:{},done:false};},return(){closed++;throw marker;}};}};let type=false;try{Math.sumPrecise(bad);}catch(e){type=e instanceof TypeError;}if(!type||closed!==1||steps!==1)throw 2;`,
+    String.raw`const a=[100];a[Symbol.iterator]=function*(){yield 1;yield 2;};if(Math.sumPrecise(a)!==3||Math.sumPrecise(new Set([1,2]))!==3)throw 1;for(const value of [undefined,null,1,{}]){let caught=false;try{Math.sumPrecise(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}const d=Object.getOwnPropertyDescriptor(Math,"sumPrecise");if(d.enumerable||!d.writable||!d.configurable||Math.sumPrecise.length!==1||Math.sumPrecise.name!=="sumPrecise")throw 3;let error=false;try{new Math.sumPrecise([]);}catch(e){error=e instanceof TypeError;}if(!error)throw 4;`,
+  ],
+  { nodeReference: false },
+);

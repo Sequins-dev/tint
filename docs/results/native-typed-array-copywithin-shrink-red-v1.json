@@ -1,0 +1,21 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-typed-array-copywithin-shrink.ts",
+  "fixtureSha256": "d48435b43fefc4d46474a41008bcfb0b45d4c490cba9aefa503245c337697d38",
+  "imageSha256": "dda294d92c239aee6e373dbaa99dc864c4e2fd41caefa902e9b69b31cdc609da",
+  "cases": 1,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "lldb-local",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "2ec87e78fc42b39598a8712247d15b819939d29e68ddbf703e154020fddded2e",
+    "files": 434
+  },
+  "sourceSnapshotFile": ".tint-bootstrap/timezone-footer-round-v1-sources.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 6,
+        "kind": "execution",
+        "compileMs": 31305.790542,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "intl402/Temporal/ZonedDateTime/prototype/round",
+  "totals": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/dst-skipped-cross-midnight.js",
+      "sha256": "650abaab9d9d55eb1b1b7bcb844410b2491e5364f90bfee70d497cb9a42cd735",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36137.971875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/dst-skipped-cross-midnight.js",
+      "sha256": "650abaab9d9d55eb1b1b7bcb844410b2491e5364f90bfee70d497cb9a42cd735",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 39115.223334,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/round-dst-boundaries.js",
+      "sha256": "563a21b5608a9266506bae2cb1bd26a06416975add22699d73ca822d416dc5d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 39452.06325000001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/round-dst-boundaries.js",
+      "sha256": "563a21b5608a9266506bae2cb1bd26a06416975add22699d73ca822d416dc5d1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 39806.531959,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/same-date-starts-twice.js",
+      "sha256": "bc5342541b7e651390e405e0a98093089af98566e70894d4db49d810d4aa047d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40181.806125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Temporal/ZonedDateTime/prototype/round/same-date-starts-twice.js",
+      "sha256": "bc5342541b7e651390e405e0a98093089af98566e70894d4db49d810d4aa047d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40548.271167,
+      "batch": 0
+    }
+  ]
+}

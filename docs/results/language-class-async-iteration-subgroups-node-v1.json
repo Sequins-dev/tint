@@ -1,0 +1,530 @@
+{
+  "kind": "language-priority-subgroup-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "totalVariants": 19324,
+  "scope": "Disjoint class declaration/expression and async-iteration path groups. Counts are selection planning, not runtime evidence.",
+  "groups": [
+    {
+      "group": "language/statements/class/dstr",
+      "files": 1920,
+      "variants": 3840,
+      "features": {
+        "Symbol.iterator": 312,
+        "async-iteration": 1280,
+        "generators": 1680,
+        "object-rest": 144,
+        "class": 1608,
+        "class-methods-private": 804,
+        "class-static-methods-private": 804,
+        "destructuring-binding": 2560,
+        "default-parameters": 1280
+      }
+    },
+    {
+      "group": "language/expressions/class/dstr",
+      "files": 1920,
+      "variants": 3840,
+      "features": {
+        "Symbol.iterator": 312,
+        "async-iteration": 1280,
+        "generators": 1680,
+        "object-rest": 144,
+        "class": 1608,
+        "class-methods-private": 804,
+        "class-static-methods-private": 804,
+        "destructuring-binding": 2560,
+        "default-parameters": 1280
+      }
+    },
+    {
+      "group": "language/statements/class/elements",
+      "files": 1585,
+      "variants": 3156,
+      "features": {
+        "class-fields-public": 2046,
+        "class-static-fields-public": 176,
+        "class": 2748,
+        "computed-property-names": 116,
+        "generators": 428,
+        "Symbol": 36,
+        "class-fields-private": 1013,
+        "class-methods-private": 872,
+        "class-static-methods-private": 656,
+        "class-static-fields-private": 340,
+        "async-iteration": 526,
+        "async-functions": 264,
+        "arrow-function": 22,
+        "new.target": 24,
+        "object-spread": 12,
+        "Symbol.iterator": 212,
+        "Symbol.asyncIterator": 176,
+        "Proxy": 8,
+        "Symbol.toPrimitive": 10,
+        "decorators": 4,
+        "optional-chaining": 4,
+        "nonextensible-applies-to-private": 1,
+        "BigInt": 4,
+        "destructuring-binding": 2
+      }
+    },
+    {
+      "group": "language/expressions/class/elements",
+      "files": 1478,
+      "variants": 2943,
+      "features": {
+        "class-fields-public": 1992,
+        "computed-property-names": 108,
+        "generators": 426,
+        "class": 2534,
+        "Symbol": 36,
+        "class-fields-private": 914,
+        "class-methods-private": 794,
+        "class-static-methods-private": 648,
+        "class-static-fields-private": 338,
+        "async-iteration": 526,
+        "async-functions": 264,
+        "new.target": 24,
+        "arrow-function": 20,
+        "object-spread": 12,
+        "Symbol.iterator": 212,
+        "Symbol.asyncIterator": 176,
+        "class-static-fields-public": 159,
+        "Symbol.toPrimitive": 10,
+        "decorators": 4,
+        "optional-chaining": 4,
+        "destructuring-binding": 2
+      }
+    },
+    {
+      "group": "language/statements/for-await-of [direct files]",
+      "files": 1234,
+      "variants": 2431,
+      "features": {
+        "async-iteration": 2431,
+        "destructuring-binding": 2384,
+        "class": 16,
+        "generators": 340,
+        "Symbol.iterator": 166,
+        "const": 4,
+        "Symbol": 8,
+        "object-rest": 116,
+        "explicit-resource-management": 4,
+        "Symbol.asyncIterator": 2
+      }
+    },
+    {
+      "group": "language/statements/class [direct files]",
+      "files": 255,
+      "variants": 504,
+      "features": {
+        "generators": 32,
+        "async-iteration": 2,
+        "async-functions": 2,
+        "class": 94,
+        "class-fields-public": 124,
+        "computed-property-names": 244,
+        "logical-assignment-operators": 24,
+        "top-level-await": 4,
+        "exponentiation": 16,
+        "class-static-fields-public": 128,
+        "default-parameters": 34,
+        "class-static-methods-private": 8,
+        "class-methods-private": 8,
+        "class-static-block": 56,
+        "class-fields-private": 2
+      }
+    },
+    {
+      "group": "language/expressions/class [direct files]",
+      "files": 261,
+      "variants": 495,
+      "features": {
+        "generators": 30,
+        "class-fields-public": 124,
+        "computed-property-names": 244,
+        "logical-assignment-operators": 24,
+        "top-level-await": 4,
+        "exponentiation": 16,
+        "class-static-fields-public": 122,
+        "default-parameters": 34,
+        "class": 151,
+        "class-methods-private": 27,
+        "cross-realm": 13,
+        "class-static-fields-private": 7,
+        "class-static-methods-private": 21,
+        "class-static-block": 4
+      }
+    },
+    {
+      "group": "language/statements/class/subclass",
+      "files": 109,
+      "variants": 217,
+      "features": {
+        "Symbol": 6,
+        "TypedArray": 4,
+        "WeakMap": 4,
+        "WeakSet": 4,
+        "Symbol.iterator": 2,
+        "class": 11,
+        "class-fields-private": 1,
+        "class-fields-public": 1,
+        "nonextensible-applies-to-private": 1,
+        "arrow-function": 2,
+        "Proxy": 8,
+        "async-functions": 2,
+        "async-iteration": 2,
+        "generators": 2
+      }
+    },
+    {
+      "group": "language/statements/class/async-gen-method",
+      "files": 99,
+      "variants": 191,
+      "features": {
+        "rest-parameters": 6,
+        "async-iteration": 191,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "async-functions": 5,
+        "class": 5,
+        "generators": 2,
+        "object-spread": 3,
+        "Symbol.iterator": 106,
+        "Symbol.asyncIterator": 88
+      }
+    },
+    {
+      "group": "language/statements/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191,
+      "features": {
+        "rest-parameters": 6,
+        "async-iteration": 191,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "async-functions": 5,
+        "class": 5,
+        "object-spread": 3,
+        "Symbol.iterator": 106,
+        "Symbol.asyncIterator": 88
+      }
+    },
+    {
+      "group": "language/expressions/class/async-gen-method",
+      "files": 99,
+      "variants": 191,
+      "features": {
+        "rest-parameters": 6,
+        "async-iteration": 191,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "async-functions": 5,
+        "class": 5,
+        "object-spread": 3,
+        "Symbol.iterator": 106,
+        "Symbol.asyncIterator": 88
+      }
+    },
+    {
+      "group": "language/expressions/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191,
+      "features": {
+        "rest-parameters": 6,
+        "async-iteration": 191,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "async-functions": 5,
+        "class": 5,
+        "object-spread": 3,
+        "Symbol.iterator": 106,
+        "Symbol.asyncIterator": 88
+      }
+    },
+    {
+      "group": "language/statements/class/definition",
+      "files": 65,
+      "variants": 130,
+      "features": {
+        "async-functions": 6,
+        "generators": 48,
+        "Symbol": 8
+      }
+    },
+    {
+      "group": "language/statements/class/subclass-builtins",
+      "files": 36,
+      "variants": 72,
+      "features": {
+        "AggregateError": 2,
+        "TypedArray": 26,
+        "ArrayBuffer": 2,
+        "BigInt": 4,
+        "DataView": 2,
+        "Float32Array": 2,
+        "Float64Array": 2,
+        "Int16Array": 2,
+        "Int32Array": 2,
+        "Int8Array": 2,
+        "Map": 2,
+        "Promise": 2,
+        "Set": 2,
+        "SharedArrayBuffer": 2,
+        "Uint16Array": 2,
+        "Uint32Array": 2,
+        "Uint8Array": 2,
+        "Uint8ClampedArray": 2,
+        "WeakMap": 2,
+        "WeakRef": 2,
+        "WeakSet": 2
+      }
+    },
+    {
+      "group": "language/expressions/class/subclass-builtins",
+      "files": 36,
+      "variants": 72,
+      "features": {
+        "AggregateError": 2,
+        "TypedArray": 26,
+        "ArrayBuffer": 2,
+        "BigInt": 4,
+        "DataView": 2,
+        "Float32Array": 2,
+        "Float64Array": 2,
+        "Int16Array": 2,
+        "Int32Array": 2,
+        "Int8Array": 2,
+        "Map": 2,
+        "Promise": 2,
+        "Set": 2,
+        "SharedArrayBuffer": 2,
+        "Uint16Array": 2,
+        "Uint32Array": 2,
+        "Uint8Array": 2,
+        "Uint8ClampedArray": 2,
+        "WeakMap": 2,
+        "WeakRef": 2,
+        "WeakSet": 2
+      }
+    },
+    {
+      "group": "language/statements/class/async-method",
+      "files": 32,
+      "variants": 59,
+      "features": {
+        "rest-parameters": 6,
+        "async-functions": 47,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/statements/class/async-method-static",
+      "files": 32,
+      "variants": 59,
+      "features": {
+        "rest-parameters": 6,
+        "async-functions": 47,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "async-iteration": 2,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/expressions/class/async-method",
+      "files": 32,
+      "variants": 59,
+      "features": {
+        "rest-parameters": 6,
+        "async-functions": 47,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/expressions/class/async-method-static",
+      "files": 32,
+      "variants": 59,
+      "features": {
+        "rest-parameters": 6,
+        "async-functions": 47,
+        "default-parameters": 16,
+        "arrow-function": 5,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/statements/class/gen-method",
+      "files": 31,
+      "variants": 55,
+      "features": {
+        "rest-parameters": 6,
+        "generators": 55,
+        "default-parameters": 16,
+        "class": 5,
+        "object-spread": 3
+      }
+    },
+    {
+      "group": "language/statements/class/gen-method-static",
+      "files": 31,
+      "variants": 55,
+      "features": {
+        "rest-parameters": 6,
+        "generators": 55,
+        "default-parameters": 16,
+        "class": 5,
+        "object-spread": 3
+      }
+    },
+    {
+      "group": "language/expressions/class/gen-method",
+      "files": 31,
+      "variants": 55,
+      "features": {
+        "rest-parameters": 6,
+        "generators": 55,
+        "default-parameters": 16,
+        "class": 5,
+        "object-spread": 3
+      }
+    },
+    {
+      "group": "language/expressions/class/gen-method-static",
+      "files": 31,
+      "variants": 55,
+      "features": {
+        "rest-parameters": 6,
+        "generators": 55,
+        "default-parameters": 16,
+        "class": 5,
+        "object-spread": 3
+      }
+    },
+    {
+      "group": "language/statements/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42,
+      "features": {
+        "class": 42
+      }
+    },
+    {
+      "group": "language/statements/class/accessor-name-static",
+      "files": 21,
+      "variants": 42,
+      "features": {
+        "class": 42
+      }
+    },
+    {
+      "group": "language/expressions/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42,
+      "features": {
+        "class": 42
+      }
+    },
+    {
+      "group": "language/expressions/class/accessor-name-static",
+      "files": 21,
+      "variants": 42,
+      "features": {
+        "class": 42
+      }
+    },
+    {
+      "group": "language/statements/class/method",
+      "files": 20,
+      "variants": 35,
+      "features": {
+        "rest-parameters": 6,
+        "default-parameters": 16,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/statements/class/method-static",
+      "files": 20,
+      "variants": 35,
+      "features": {
+        "rest-parameters": 6,
+        "default-parameters": 16,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/expressions/class/method",
+      "files": 20,
+      "variants": 35,
+      "features": {
+        "rest-parameters": 6,
+        "default-parameters": 16,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/expressions/class/method-static",
+      "files": 20,
+      "variants": 35,
+      "features": {
+        "rest-parameters": 6,
+        "default-parameters": 16,
+        "class": 5
+      }
+    },
+    {
+      "group": "language/statements/class/syntax",
+      "files": 13,
+      "variants": 26,
+      "features": {}
+    },
+    {
+      "group": "language/statements/class/decorator",
+      "files": 12,
+      "variants": 21,
+      "features": {
+        "class": 21,
+        "decorators": 21
+      }
+    },
+    {
+      "group": "language/statements/class/super",
+      "files": 8,
+      "variants": 16,
+      "features": {}
+    },
+    {
+      "group": "language/expressions/class/decorator",
+      "files": 8,
+      "variants": 13,
+      "features": {
+        "class": 13,
+        "decorators": 13
+      }
+    },
+    {
+      "group": "language/statements/class/name-binding",
+      "files": 6,
+      "variants": 12,
+      "features": {}
+    },
+    {
+      "group": "language/statements/class/arguments",
+      "files": 2,
+      "variants": 4,
+      "features": {}
+    },
+    {
+      "group": "language/statements/class/strict-mode",
+      "files": 2,
+      "variants": 4,
+      "features": {}
+    }
+  ]
+}

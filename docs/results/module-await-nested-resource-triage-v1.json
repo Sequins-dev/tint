@@ -1,0 +1,16 @@
+{
+  "kind": "native-fixture-resource-triage",
+  "conformance": false,
+  "original": "docs/results/native-module-await-nested-rewrite-v1.json",
+  "invalidComparison": "docs/results/native-module-await-nested-rewrite-large-heap-v1.json",
+  "uncaughtDiagnostic": "docs/results/native-module-await-nested-limit-diagnostic-v1.json",
+  "originalFault": "Allocation result validation in native syntax rewriting; post-entry brk #3 retained.",
+  "comparisonFailure": "Generational runtime workspace initialization fails before the fixture starts. A 16 MiB heap requires 540672 forwarding/start-bitmap words, but 65536 allocation slots provide 196704 metadata words.",
+  "source": "packages/native-runtime/src/generational.ts",
+  "correctedFixture": {
+    "managedBytes": 16777216,
+    "allocationCapacity": 262144,
+    "availableMetadataWords": 786528
+  },
+  "acceptance": "Pending corrected native observation; no Test262 resource changes."
+}

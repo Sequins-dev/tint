@@ -1,0 +1,34 @@
+{
+  "@tint/native-runtime": ["@tint/abi", "@tint/js-runtime"],
+  "@tint/js-engine": [
+    "@tint/typescript",
+    "@tint/abi",
+    "@tint/compiler",
+    "@tint/js-runtime",
+    "@tint/source",
+    "@tint/foundation"
+  ],
+  "@tint/foundation": [],
+  "@tint/source": [],
+  "@tint/typescript": ["@tint/foundation", "@tint/source"],
+  "@tint/ir": ["@tint/foundation"],
+  "@tint/abi": [],
+  "@tint/codegen": ["@tint/ir", "@tint/foundation", "@tint/abi"],
+  "@tint/image": ["@tint/foundation", "@tint/abi"],
+  "@tint/compiler": [
+    "@tint/ts-native",
+    "@tint/codegen",
+    "@tint/typescript",
+    "@tint/ir",
+    "@tint/abi",
+    "@tint/image",
+    "@tint/platform",
+    "@tint/native-runtime",
+    "@tint/source",
+    "@tint/foundation"
+  ],
+  "@tint/ts-native": ["@tint/typescript", "@tint/foundation", "@tint/ir"],
+  "@tint/js-runtime": ["@tint/foundation"],
+  "@tint/platform": ["@tint/native-runtime", "@tint/abi"],
+  "@tint/bench": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "native-self-build-failure-analysis",
+  "conformance": false,
+  "observation": "docs/results/bootstrap-managed-aot-directory-v1.json",
+  "debuggerLog": ".tint-bootstrap/ad-self-v1/debugger.log",
+  "offlineDisassembly": ".tint-bootstrap/managed-aot-directory-imm-disassembly-v1.log",
+  "facts": [
+    "Inferior reached native code and stopped on EXC_BREAKPOINT while emitting the compiler image. No stage2 image was written.",
+    "The imm function stopped at offset +884, the numeric success-tag guard after a 64-byte allocation fallback call. This is not a failed callable-signature guard.",
+    "The frozen build uses a 3 GiB managed heap. The last observed process RSS was 4231248 KiB; RSS is not a live-heap measurement.",
+    "Empty managed-surface requests unnecessarily traversed and cloned application syntax. A regression test observed two syntax-list accesses before the fix and zero afterward."
+  ],
+  "diagnosis": "The allocation fallback returned a non-number result, consistent with allocation/capacity failure. The failed process did not retain a register dump, so the precise allocator return tag and exhaustion cause are not confirmed.",
+  "correction": "prepareManagedSurfaceExports now returns immediately for an empty request, preserving the existing AST and avoiding the unused whole-application type traversal.",
+  "next": "Validate the corrected current source in fresh native fixtures and a new frozen self-build. Preserve this failed observation; do not reuse its report or claim a fixed point.",
+  "latestPassingCheckpoint": "docs/results/managed-surface-materialization-checkpoint-v1.json"
+}

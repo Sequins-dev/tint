@@ -1,0 +1,17 @@
+{
+  "kind": "debugger-argument-diagnostic",
+  "conformance": false,
+  "initial": {
+    "state": 5,
+    "pid": 13803
+  },
+  "outcome": {
+    "state": 10,
+    "exitStatus": 1
+  },
+  "expectedExitStatus": 42,
+  "status": 0,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-v0dx3X/native-arguments\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-v0dx3X/native-arguments' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(10)\\nport_socket.bind(\\\"/tmp/tint-debugger-flags-bWfiMC/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-debugger-flags-bWfiMC/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-debugger-flags-bWfiMC/port\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-v0dx3X/native-arguments\\\",\\\"--debug-symbols\\\",\\\"-c\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-debugger-flags-bWfiMC/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(10)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nlldb.debugger.HandleCommand('gdb-remote 127.0.0.1:' + str(port))\")\nProcess 13803 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000102ff09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x102ff09c0 <+0>:  mov    x0, sp\n    0x102ff09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x102ff09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x102ff09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (native-arguments) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-debugger-flags-bWfiMC/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); open(\"/tmp/tint-debugger-flags-bWfiMC/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n26\n5\n(lldb) continue\nProcess 13803 resuming\nProcess 13803 exited with status = 1 (0x00000001)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-debugger-flags-bWfiMC/outcome.json\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus()}))\n30\n",
+  "stderr": "",
+  "debugserver": "debugserver: unrecognized option `--debug-symbols'\ndebugserver: unrecognized option `-c'\n"
+}

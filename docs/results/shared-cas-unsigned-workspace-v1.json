@@ -1,0 +1,114 @@
+{
+  "schema": "tint-shared-cas-unsigned-validation-v1",
+  "status": "implemented-all-node-gates-green-native-execution-pending-parent",
+  "sourceSnapshot": {
+    "sha256": "769cbfd0346122261cd8bb694d9ff400cb9b92e71cf0ab2a7d4cbf147026a2d4",
+    "files": 505
+  },
+  "scope": {
+    "facade": "@tint/native-memory/shared-primitives compareExchangeSharedUnsigned(address,byteLength,offset,width,expected,replacement): number",
+    "hostOperation": "shared-compare-exchange-unsigned",
+    "result": "observed uint8/uint16/uint32 or disjoint -1",
+    "order": "always sequentially consistent; no order parameter",
+    "authority": "explicit trusted host binding only; no Script/service wiring or project default grants",
+    "abi": "six exact nonnegative safe numeric inputs; width 1/2/4; naturally aligned actual address; full authorized extent and end address within safe exact domain; operands must fit selected unsigned width",
+    "emission": "width-specific LDAXR/STLXR with retry, CLREX on mismatch, equal-value real RMW, DMB ISH before/after operation",
+    "allocation": "nonallocating leaf, no callback/context-slot/OS/C/linker additions",
+    "registers": "x0..x15/flags clobbered, x16..x29 and FP/SIMD preserved"
+  },
+  "tests": [
+    {
+      "kind": "TDD red",
+      "result": "4 expected missing-feature failures; 15 old tests green",
+      "log": ".tint-bootstrap/shared-cas-unsigned-red-v1.log"
+    },
+    {
+      "kind": "focused schema/effects/retention/encoding/guards/retry/neighbor/facade/capability contracts plus Word64 regressions",
+      "result": "23 passed, 0 failed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-focused-v4.log"
+    },
+    {
+      "kind": "full Node suite",
+      "result": "3588 passed, 0 failed",
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "log": ".tint-bootstrap/shared-cas-unsigned-full-node-v1.log"
+    },
+    {
+      "kind": "complete self-host source checking and linked emission",
+      "result": "16 passed, 0 failed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-selfhost-checks-v3.json"
+    },
+    {
+      "kind": "production TypeScript build",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-build-v2.log"
+    },
+    {
+      "kind": "test types",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-test-types-v2.log"
+    },
+    {
+      "kind": "host types",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-host-types-v1.log"
+    },
+    {
+      "kind": "boundaries",
+      "result": "passed; 57 portable packages",
+      "log": ".tint-bootstrap/shared-cas-unsigned-boundaries-v1.log"
+    },
+    {
+      "kind": "workspace formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-cas-unsigned-workspace-format-v1.log"
+    },
+    {
+      "kind": "existing leaves instruction parity",
+      "result": "all five leaves exactly identical to frozen Q1, including bit-exact Word64 CAS; instruction counts and hashes saved",
+      "log": ".tint-bootstrap/shared-cas-unsigned-existing-leaf-parity-v1.json"
+    },
+    {
+      "kind": "debug native matrix build only",
+      "result": "passed; exact source identity unchanged before/after build",
+      "log": ".tint-bootstrap/shared-cas-unsigned-fixture-build-v2.log"
+    }
+  ],
+  "preservedObservations": [
+    {
+      "log": ".tint-bootstrap/shared-cas-unsigned-focused-v1.log",
+      "result": "18 pass /1 fail",
+      "diagnosis": "Codegen test imports built @tint/ir; initial focused rerun before tsc rebuild saw old exported host ABI. Production build and subsequent runs pass."
+    },
+    {
+      "log": ".tint-bootstrap/shared-cas-unsigned-selfhost-checks-v2.log",
+      "diagnosis": "Redirected attempt unexpectedly produced empty output; direct observed run repeated all sixteen cases, recorded separately in v3 JSON."
+    },
+    {
+      "log": ".tint-bootstrap/shared-cas-unsigned-fixture-build-v1.log",
+      "diagnosis": "Successful preliminary matrix build retained; final exact-source artifact is v2 build."
+    }
+  ],
+  "nativeArtifact": {
+    "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-cas-unsigned-v1-a7gVZk/shared-cas-unsigned-v1",
+    "sourceSnapshot": {
+      "sha256": "769cbfd0346122261cd8bb694d9ff400cb9b92e71cf0ab2a7d4cbf147026a2d4",
+      "files": 505
+    },
+    "expectedExitStatus": 42,
+    "imageSha256": "77d7ab475f0fb6b1bf019ec3f22de8916bd96e9870464e756dbbea582df4b26a",
+    "fixture": "tools/build-shared-cas-unsigned-fixture.ts",
+    "fixtureSha256": "1fc51f15018c3e383767a5bd534f3d0d53186a4d86d889a71916beead6bd6af4",
+    "buildOnly": true,
+    "debugSymbols": true,
+    "explicitTrustedBindingsOnly": true,
+    "semanticChecks": "original Word64/unsigned access regression matrix plus exact 1/2/4-byte CAS success/mismatch/equality, nonzero offsets, adjacent bytes, maximum payloads, invalid numeric/range/width/alignment/operand guards",
+    "sourceBeforeAfterEqual": true
+  },
+  "limits": [
+    "No native process executed by this agent. Parent owns serial LLDB validation and immutable execution report.",
+    "Instruction-level retry injection and single-agent native matrix do not prove hardware contention, cross-agent ordering, fairness or concurrency correctness.",
+    "No portable shared service, Script Atomics API or default host permission expansion in this slice.",
+    "Catalog remains 505 sources/347 grants; no portable source or public-subpath additions required."
+  ]
+}

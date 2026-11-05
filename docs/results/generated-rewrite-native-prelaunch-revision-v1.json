@@ -1,0 +1,13 @@
+{
+  "kind": "native-fixture-prelaunch-revision",
+  "conformance": false,
+  "retired": [
+    {
+      "pid": 37226,
+      "command": "node .tint-bootstrap/run-module-await-nested-rewrite-native-v1.mjs",
+      "children": 0
+    }
+  ],
+  "nativeLaunches": 0,
+  "reason": "Shared downstream rewriters also require the expanded generated-syntax budget; rebuild the fixture against the corrected common bound before first native launch."
+}

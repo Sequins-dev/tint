@@ -1,0 +1,40 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T12:15:45.169449+00:00",
+  "slice": "M6 compiler orchestration",
+  "beforeSource": {
+    "sha256": "b1be2d8b819ea40dff97c3bb47d1d0f5738c1970270e9d7fc390e116d44ff5d5",
+    "files": 494
+  },
+  "afterSource": {
+    "sha256": "4db3d0740f70e252c747759a084ea1078772343ce364d08f17a384af8762cc9a",
+    "files": 494
+  },
+  "packages": 66,
+  "workspaceGates": {
+    "tests": 3482,
+    "passed": 3482,
+    "types": "passed build/tests/host",
+    "boundaries": "66 packages",
+    "formatting": "passed",
+    "evidence": "framework-compiler-workspace-validation-v1.json"
+  },
+  "publicEntries": [
+    "@tint/compiler/native",
+    "@tint/compiler/build",
+    "@tint/compiler/project",
+    "@tint/compiler/catalog",
+    "@tint/compiler/cli"
+  ],
+  "preserved": "Host bindings, finite fs permissions, all helper namespaces, compilation order and six implementation bodies. Generated catalog reflects new ownership.",
+  "capturedFormats": "Old/new compiled and source-only compiler roles validated without live compatibility packages.",
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-compiler-after-v1/manifest.json"
+  },
+  "selfbuild": "bootstrap-framework-compiler-v1.json",
+  "selfbuildBytes": 60728402,
+  "selfbuildByteIdentical": true
+}

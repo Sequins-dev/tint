@@ -1,0 +1,8 @@
+{
+  "kind": "debugger-control-correction",
+  "conformance": false,
+  "report": "docs/results/module-launch-control-v1.json",
+  "observation": "macOS denied the task port for /usr/bin/true; launch log identifies the system-process/get-task-allow restriction",
+  "conclusion": "This system binary is not a valid launcher control for ad-hoc signed Tint executables. No Tint runtime or general launcher failure inferred.",
+  "replacement": "Use the unchanged previously validated module-linking fixture as control; retain the failed system observation."
+}

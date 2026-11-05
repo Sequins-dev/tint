@@ -1,0 +1,175 @@
+{
+  "kind": "bespoke-native-batch-regression",
+  "conformance": false,
+  "mode": "debugserver-connected",
+  "build": {
+    "kind": "native-batch-regression-fixture",
+    "conformance": false,
+    "sourceSnapshot": {
+      "sha256": "d5b7d44cef4dbef8597df16c422701df1de2f82dc44f9d05a24235cde63be3e8",
+      "files": 446
+    },
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      "if(this.propertyIsEnumerable('parseInt')!==false)throw 1;var leaked=42; Object.prototype.leaked=42;",
+      "if(typeof leaked!=='undefined'||({}).leaked!==undefined)throw 1;",
+      "throw new TypeError('expected');",
+      "throw new ReferenceError('expected');",
+      "var jobLeaked=42;Promise.resolve().then(()=>print(\"Test262:AsyncTestComplete\"));",
+      "print(\"Test262:AsyncTestComplete\");print(\"Test262:AsyncTestComplete\");"
+    ],
+    "expected": [
+      [
+        0,
+        "completed",
+        null
+      ],
+      [
+        1,
+        "completed",
+        null
+      ],
+      [
+        2,
+        "error",
+        "TypeError"
+      ],
+      [
+        3,
+        "error",
+        "ReferenceError"
+      ],
+      [
+        1,
+        "completed",
+        null
+      ],
+      [
+        4,
+        "completed",
+        null
+      ],
+      [
+        5,
+        "error",
+        "Test262Error"
+      ],
+      [
+        4,
+        "completed",
+        null
+      ]
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": {
+        "kind": "completed",
+        "type": null
+      },
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "expected": {
+        "kind": "completed",
+        "type": null
+      },
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "expected": {
+        "kind": "error",
+        "type": "TypeError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 3,
+      "expected": {
+        "kind": "error",
+        "type": "ReferenceError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "expected": {
+        "kind": "completed",
+        "type": null
+      },
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "expected": {
+        "kind": "completed",
+        "type": null
+      },
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "expected": {
+        "kind": "error",
+        "type": "Test262Error"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "$DONE called more than once"
+      }
+    },
+    {
+      "index": 4,
+      "expected": {
+        "kind": "completed",
+        "type": null
+      },
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

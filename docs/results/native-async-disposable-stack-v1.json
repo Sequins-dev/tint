@@ -1,0 +1,104 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "ba8efa5dce917ef2fecdce547ae4525362619bee384862262fa11810815d632e",
+    "files": 443
+  },
+  "imageSha256": "44269162c933f6ac90190668a6e89fea5a079226fa0752ffc688f582fddebdb7",
+  "asynchronous": true,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "async function run(){const stack=new AsyncDisposableStack;let log=\"\";stack.defer(async()=>{log+=\"a\";await 0;log+=\"A\";});stack.defer(async()=>{log+=\"b\";await 0;log+=\"B\";});const p=stack.disposeAsync();if(!stack.disposed||log!==\"b\")throw 1;await p;if(log!==\"bBaA\")throw 2;await stack.disposeAsync();if(log!==\"bBaA\")throw 3;}run().then(()=>$DONE(),$DONE);",
+      "sha256": "cbf74fe96f150a2ebd05b70f01900d7ae5f282e5a5ac3f3cdc05d95d323a0a12"
+    },
+    {
+      "index": 1,
+      "source": "async function run(){const stack=new AsyncDisposableStack;let log=\"\";stack.defer(()=>{log+=\"a\";throw 19;});stack.defer(async()=>{log+=\"b\";throw 42;});stack.defer(async()=>{log+=\"c\";throw undefined;});let caught=false;try{await stack.disposeAsync();}catch(e){caught=e instanceof SuppressedError&&e.error===19&&e.suppressed instanceof SuppressedError&&e.suppressed.error===42&&e.suppressed.suppressed===undefined;}if(!caught||log!==\"cba\"||!stack.disposed)throw 1;}run().then(()=>$DONE(),$DONE);",
+      "sha256": "555a911712f755ec829b872d868868ed3f231a90a52465da1c6eea728b69c939"
+    },
+    {
+      "index": 2,
+      "source": "async function run(){const stack=new AsyncDisposableStack;let log=\"\";const resource={get [Symbol.asyncDispose](){log+=\"a\";return null;},get [Symbol.dispose](){log+=\"s\";return function(){if(this!==resource||arguments.length!==0)throw 1;log+=\"d\";return {get then(){throw 2;}};};}};if(stack.use(resource)!==resource||log!==\"as\")throw 3;await stack.disposeAsync();if(log!==\"asd\")throw 4;}run().then(()=>$DONE(),$DONE);",
+      "sha256": "e288484b87ad40b81380322b2f66989ab31ab5769f61407c627b8e563d75866c"
+    },
+    {
+      "index": 3,
+      "source": "async function run(){const stack=new AsyncDisposableStack;let log=\"\";stack.use(undefined);stack.use(null);stack.adopt(19,function(value){\"use strict\";if(this!==undefined||value!==19)throw 1;return {then(resolve){log+=\"t\";resolve();}};});stack.defer(()=>{log+=\"d\";});await stack.disposeAsync();if(log!==\"dt\")throw 2;const empty=new AsyncDisposableStack;empty.use(null);await empty.disposeAsync();if(!empty.disposed)throw 3;}run().then(()=>$DONE(),$DONE);",
+      "sha256": "416e258b4cdb7ff382dca54de6cb83bb13ece1bbc563ef33b58554ae007ad102"
+    },
+    {
+      "index": 4,
+      "source": "async function run(){let promise;try{promise=AsyncDisposableStack.prototype.disposeAsync.call({});}catch(e){throw 1;}if(!(promise instanceof Promise))throw 2;let caught=false;try{await promise;}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;class Derived extends AsyncDisposableStack{}const stack=new Derived;let disposed=false;stack.defer(async()=>{disposed=true;});const moved=stack.move();if(!stack.disposed||moved.disposed||Object.getPrototypeOf(moved)!==AsyncDisposableStack.prototype)throw 4;await stack.disposeAsync();if(disposed)throw 5;await moved.disposeAsync();if(!disposed)throw 6;}run().then(()=>$DONE(),$DONE);",
+      "sha256": "fb596edd86727c51fc7f20826c8903b6290b447587c33315d7062d68527a6df7"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

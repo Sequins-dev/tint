@@ -1,0 +1,63 @@
+{
+  "kind": "native-managed-script-allocation-diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-4b5Pyk/managed-script",
+  "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-4b5Pyk/managed-script.manifest.json",
+  "sourceSnapshot": {
+    "sha256": "588736f87f2ef4ebab5a4edc81833cc6c76aaddfe305e767e91003cb2d4a7244",
+    "files": 546
+  },
+  "elapsedMs": 10690.147540999998,
+  "debuggerStatus": 0,
+  "error": null,
+  "initial": {
+    "stopped": true,
+    "pid": 87173
+  },
+  "final": null,
+  "diagnostic": {
+    "sp": 4740490608,
+    "pc": 4471129316,
+    "instruction": [
+      96,
+      0,
+      32,
+      212
+    ],
+    "context": 4740644448,
+    "allocationState": 4656666096,
+    "words": [
+      33554352,
+      33554432,
+      0,
+      0,
+      335217280,
+      1,
+      0,
+      0
+    ],
+    "regionBase": 4621746176,
+    "rootHeader": [
+      5,
+      1,
+      16384,
+      4656530448
+    ],
+    "roots": [
+      1,
+      33554352,
+      112,
+      532480,
+      320509,
+      22242528,
+      532480
+    ],
+    "error": "success",
+    "stopped": true,
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x10a8004e4)"
+  },
+  "log": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/e4-alloc-v1/debugger.log",
+  "relatedReports": [
+    "docs/results/native-managed-script-v1.json"
+  ]
+}

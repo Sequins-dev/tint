@@ -1,0 +1,5958 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v9-direct-eval",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-script-dynamic-import-v1/source-snapshot.json",
+  "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 112435.061458,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 40,
+        "kind": "execution",
+        "compileMs": 108569.851292,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 12,
+        "kind": "syntax",
+        "compileMs": 3072.7886249999865,
+        "outcome": "compiled"
+      },
+      {
+        "id": 3,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 112716.90858300001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 4,
+        "variants": 6,
+        "kind": "execution",
+        "compileMs": 116143.515167,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/statements/const/dstr",
+  "totals": {
+    "total": 186,
+    "passed": 186,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-close.js",
+      "sha256": "70f2ffe913d7e1ea661b826b202abf63cd058101d60bf057993040c9aac6c5ea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114109.143459,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-close.js",
+      "sha256": "70f2ffe913d7e1ea661b826b202abf63cd058101d60bf057993040c9aac6c5ea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114337.60654099999,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-get-err-array-prototype.js",
+      "sha256": "c4d0d9d331a927699cd663317cb8d42b88c2e0360cd931665cad3ed05ed2df10",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114566.675625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-get-err-array-prototype.js",
+      "sha256": "c4d0d9d331a927699cd663317cb8d42b88c2e0360cd931665cad3ed05ed2df10",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114795.470875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-get-err.js",
+      "sha256": "634cd29a2c1bb493220cba2ca9eefaf5632fae02dfbb8b499136b14128d54bc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115025.368708,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-get-err.js",
+      "sha256": "634cd29a2c1bb493220cba2ca9eefaf5632fae02dfbb8b499136b14128d54bc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115257.94120900001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-no-close.js",
+      "sha256": "a73e2fdd270332a389a004a2e93c79276f07f169db0831cad5410ba072afa125",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115488.31512500001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-init-iter-no-close.js",
+      "sha256": "a73e2fdd270332a389a004a2e93c79276f07f169db0831cad5410ba072afa125",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115721.725041,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-name-iter-val.js",
+      "sha256": "c0fed200b4c6d256a1fa5c24869b1a1cb8bffd0f61c1ab856233c181a7b83d58",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115951.32162500001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-name-iter-val.js",
+      "sha256": "c0fed200b4c6d256a1fa5c24869b1a1cb8bffd0f61c1ab856233c181a7b83d58",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116185.261541,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elem-init.js",
+      "sha256": "00f23ce81293acc6bd718a5a0de431928ed18db45c7ce849a0f76c365bc1ec9a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116415.69750000001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elem-init.js",
+      "sha256": "00f23ce81293acc6bd718a5a0de431928ed18db45c7ce849a0f76c365bc1ec9a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116647.876625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elem-iter.js",
+      "sha256": "a44351515200654b13c8ad596549a979bbba6fa49217c8a88607c9c13c6104bc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116879.12254099999,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elem-iter.js",
+      "sha256": "a44351515200654b13c8ad596549a979bbba6fa49217c8a88607c9c13c6104bc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117110.297416,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elision-init.js",
+      "sha256": "abaae55bcd49a928caf1ba0350e3acc58c36432e4cea3931980e8cb6e19e5174",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117342.236375,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elision-init.js",
+      "sha256": "abaae55bcd49a928caf1ba0350e3acc58c36432e4cea3931980e8cb6e19e5174",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117573.817667,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elision-iter.js",
+      "sha256": "0c168f4b7ee31992e1369116427ceb8b3b19b72c3d2a6bbfcf5cdfa6776faccb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117805.956792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-elision-iter.js",
+      "sha256": "0c168f4b7ee31992e1369116427ceb8b3b19b72c3d2a6bbfcf5cdfa6776faccb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118037.57129200001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-empty-init.js",
+      "sha256": "ec92842f738e40bbb15edfd468ff6c66fb32486e7e596f6b12e92b09e0e5afea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118267.413625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-empty-init.js",
+      "sha256": "ec92842f738e40bbb15edfd468ff6c66fb32486e7e596f6b12e92b09e0e5afea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118500.317042,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-empty-iter.js",
+      "sha256": "26917d3d214fe25f23bb1ec5f8116178c443990ac8c01ed0e6c41c6b07c0064d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118730.358917,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-empty-iter.js",
+      "sha256": "26917d3d214fe25f23bb1ec5f8116178c443990ac8c01ed0e6c41c6b07c0064d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118965.976458,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-rest-init.js",
+      "sha256": "63a6ad29147880f0cd9fb2db5244bb2812b2e065110dbc548cd41770467f302f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119201.587,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-rest-init.js",
+      "sha256": "63a6ad29147880f0cd9fb2db5244bb2812b2e065110dbc548cd41770467f302f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119434.352292,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-rest-iter.js",
+      "sha256": "f0f0e5e6ab3339c1790e64197a189e6c021d3d01553dd45d95ff5b0d800b5644",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119665.77408399999,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-rest-iter.js",
+      "sha256": "f0f0e5e6ab3339c1790e64197a189e6c021d3d01553dd45d95ff5b0d800b5644",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119901.11325000001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-val-null.js",
+      "sha256": "1a1688456783a787561d591dc33652b6ed2772f28137e1cc0360a0371456a872",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120134.89462499999,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-ary-val-null.js",
+      "sha256": "1a1688456783a787561d591dc33652b6ed2772f28137e1cc0360a0371456a872",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120365.796625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-exhausted.js",
+      "sha256": "73e765928b855ea0f89bd159a317ec212179260523d444e38b3518c8ac6c1681",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120598.291917,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-exhausted.js",
+      "sha256": "73e765928b855ea0f89bd159a317ec212179260523d444e38b3518c8ac6c1681",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120823.940917,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "sha256": "086210fc19498dad9b760b90398a3b46b366f3c4d4ee184200136641752ba832",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121054.64,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "sha256": "086210fc19498dad9b760b90398a3b46b366f3c4d4ee184200136641752ba832",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121285.240292,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-class.js",
+      "sha256": "dbf8c884847541974827203716d493b189720fcbdc43ed7b95650017b01d6b93",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121517.366167,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-class.js",
+      "sha256": "dbf8c884847541974827203716d493b189720fcbdc43ed7b95650017b01d6b93",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121749.653208,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-cover.js",
+      "sha256": "5f5572cfc647341cea1a75b86bcafcc732199d34953677901de49b3d2e0ad9d9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121980.76679200001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-cover.js",
+      "sha256": "5f5572cfc647341cea1a75b86bcafcc732199d34953677901de49b3d2e0ad9d9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122212.539625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-fn.js",
+      "sha256": "bda807973903437eb7f714f9b1e3365d5a6e344417a6baaafedfece26dc9cb17",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122444.621792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-fn.js",
+      "sha256": "bda807973903437eb7f714f9b1e3365d5a6e344417a6baaafedfece26dc9cb17",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122676.2545,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-gen.js",
+      "sha256": "9a5b2825234c910ff6725eb7bce1dc11f5d9af19ac5d5cd1eeb781ecfc911df1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122907.333875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-fn-name-gen.js",
+      "sha256": "9a5b2825234c910ff6725eb7bce1dc11f5d9af19ac5d5cd1eeb781ecfc911df1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123138.746083,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-hole.js",
+      "sha256": "7fe13ac7411df274e48dbdbb206372bac5e15b557d43c47b70910022688a5768",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123369.776041,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-hole.js",
+      "sha256": "7fe13ac7411df274e48dbdbb206372bac5e15b557d43c47b70910022688a5768",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123600.833541,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-skipped.js",
+      "sha256": "d8168a9320b5f8639cd12ea70132ecc45f4104bc4cb0223dfab0a87762afc6c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123828.250459,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-skipped.js",
+      "sha256": "d8168a9320b5f8639cd12ea70132ecc45f4104bc4cb0223dfab0a87762afc6c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124066.86075,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-throws.js",
+      "sha256": "091a0da0f60f5e647a0a97215ffa10875edd121f881afecae3fd20c8b265274d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124297.0085,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-throws.js",
+      "sha256": "091a0da0f60f5e647a0a97215ffa10875edd121f881afecae3fd20c8b265274d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124526.34400000001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-undef.js",
+      "sha256": "ca4c152d8c861f5521f78bea1952d0c14872aa8d44b28bf9835a6bfdb7cece8f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124756.380584,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-undef.js",
+      "sha256": "ca4c152d8c861f5521f78bea1952d0c14872aa8d44b28bf9835a6bfdb7cece8f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124987.968333,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-unresolvable.js",
+      "sha256": "641d697e0e0a473042592f904a405aea014ddeb5d2551a3cfbb05897762d79f2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125221.275583,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-init-unresolvable.js",
+      "sha256": "641d697e0e0a473042592f904a405aea014ddeb5d2551a3cfbb05897762d79f2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125453.9,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-complete.js",
+      "sha256": "3c3da89f3044010b8c7145766cc14d737dd26c51b6f5e070a9ce98f021835980",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125684.87291600001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-complete.js",
+      "sha256": "3c3da89f3044010b8c7145766cc14d737dd26c51b6f5e070a9ce98f021835980",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125917.833125,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-done.js",
+      "sha256": "9af9e21855e5fa52dae9f840af5115d0a3d4429a6834ccb74ed1fa39856a327a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126148.438709,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-done.js",
+      "sha256": "9af9e21855e5fa52dae9f840af5115d0a3d4429a6834ccb74ed1fa39856a327a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126382.097708,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-step-err.js",
+      "sha256": "7402733b761d971f5fe0e6a764d90ff29874672c0a18bec79b19fef7c28379c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126612.77779200001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-step-err.js",
+      "sha256": "7402733b761d971f5fe0e6a764d90ff29874672c0a18bec79b19fef7c28379c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126838.1165,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "sha256": "631fd487088bf6f53d6fd8fa4104313217198613d831736c8697f8d5bb404a37",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127068.37125,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "sha256": "631fd487088bf6f53d6fd8fa4104313217198613d831736c8697f8d5bb404a37",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127300.20041700001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val-err.js",
+      "sha256": "0abc60d278ff703dfc5229ab80c57b993d7322232ef309b58f18c23b58802b98",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127530.5615,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val-err.js",
+      "sha256": "0abc60d278ff703dfc5229ab80c57b993d7322232ef309b58f18c23b58802b98",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127762.48541600001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val.js",
+      "sha256": "1133ba96f6622506465a5fc1085cce8d9c25b244283cc7e7f3089a55aea8453e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127995.43300000002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-id-iter-val.js",
+      "sha256": "1133ba96f6622506465a5fc1085cce8d9c25b244283cc7e7f3089a55aea8453e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128227.29654199998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-id-init.js",
+      "sha256": "caf5d2dd8f46c3baa7d794cfdb26657437ea82bdda7a554137e52216df3afedb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128460.75883400001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-id-init.js",
+      "sha256": "caf5d2dd8f46c3baa7d794cfdb26657437ea82bdda7a554137e52216df3afedb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128694.39933300001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-id.js",
+      "sha256": "a76ac597966ad07a7eab8200c9c03faeef8c7ae78b5db9a84464595e916cd3af",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110106.78945799998,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-id.js",
+      "sha256": "a76ac597966ad07a7eab8200c9c03faeef8c7ae78b5db9a84464595e916cd3af",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110344.553667,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-prop-id-init.js",
+      "sha256": "e20a069596b65eccdb38b89e30914fce77312d3bf01bd642f8cca16115b8b7c0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110581.98883400002,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-prop-id-init.js",
+      "sha256": "e20a069596b65eccdb38b89e30914fce77312d3bf01bd642f8cca16115b8b7c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110821.873375,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-prop-id.js",
+      "sha256": "2bc13240ed1d1e1aeb18b3bab2cb22d582f4c044c68d52322e6f3f3b53359b83",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111104.82366599998,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-prop-id.js",
+      "sha256": "2bc13240ed1d1e1aeb18b3bab2cb22d582f4c044c68d52322e6f3f3b53359b83",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111344.280333,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-val-null.js",
+      "sha256": "0d76b075bd961be798e67dd7232259cd8e6fa01e2495022998234b7f036fc4c3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111586.154625,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-val-null.js",
+      "sha256": "0d76b075bd961be798e67dd7232259cd8e6fa01e2495022998234b7f036fc4c3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111826.02350000001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-val-undef.js",
+      "sha256": "cde3f835bc6691ebce9cc001aa2bfb239bec0bbebc3f7b816f7cfdc65d679144",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112064.06620899998,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elem-obj-val-undef.js",
+      "sha256": "cde3f835bc6691ebce9cc001aa2bfb239bec0bbebc3f7b816f7cfdc65d679144",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112301.2615,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision-exhausted.js",
+      "sha256": "83832aa77cd896de94c072bdb81a18a96fb4d0cce21e6b99780b481263b34caf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112539.883125,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision-exhausted.js",
+      "sha256": "83832aa77cd896de94c072bdb81a18a96fb4d0cce21e6b99780b481263b34caf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112778.343042,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision-step-err.js",
+      "sha256": "30dc87eb7545b834b2324fc2167a1d226ad0e90317321f4d5b879627269c8eb3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113015.87308300001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision-step-err.js",
+      "sha256": "30dc87eb7545b834b2324fc2167a1d226ad0e90317321f4d5b879627269c8eb3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113254.268625,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision.js",
+      "sha256": "36b62dcb8470fd54e95684bff19347446021324c2bd9a6b3a9e9e39efd069415",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113489.68308300001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-elision.js",
+      "sha256": "36b62dcb8470fd54e95684bff19347446021324c2bd9a6b3a9e9e39efd069415",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113728.87020799998,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-empty.js",
+      "sha256": "2dd57240f2e4cec39dd8caa115d78065a3e0912c148feededc42b4f0c20dc1b6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113968.694708,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-empty.js",
+      "sha256": "2dd57240f2e4cec39dd8caa115d78065a3e0912c148feededc42b4f0c20dc1b6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114207.863292,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-elem.js",
+      "sha256": "a5e1e9e20916ef7299ca8bdcf3be2c8a6a2abc589026b4f0f621e1247baf1eb9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114446.01124999998,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-elem.js",
+      "sha256": "a5e1e9e20916ef7299ca8bdcf3be2c8a6a2abc589026b4f0f621e1247baf1eb9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114686.29208300001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-elision.js",
+      "sha256": "e41c545a0809a80b90cc0ebe598d7ba69c738d363cb31b6536bce8604de8f414",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114926.39749999999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-elision.js",
+      "sha256": "e41c545a0809a80b90cc0ebe598d7ba69c738d363cb31b6536bce8604de8f414",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115165.652375,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-empty.js",
+      "sha256": "bd0b93e4dc1c4bd0b9306f962e2647b6840308e4954c20b99346a5bf4af8da0f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115404.616667,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-empty.js",
+      "sha256": "bd0b93e4dc1c4bd0b9306f962e2647b6840308e4954c20b99346a5bf4af8da0f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115644.52220800001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-rest.js",
+      "sha256": "fe6e8739ca47f3c56464940f73add30ba6d612bb37c4aaad05827e7609ec2807",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115877.64091700001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-ary-rest.js",
+      "sha256": "fe6e8739ca47f3c56464940f73add30ba6d612bb37c4aaad05827e7609ec2807",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116117.59054200002,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-direct.js",
+      "sha256": "d66748ccc81f260001bf9c14b9f66e87924ed9075403d9449a564fadbf20534a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116356.252084,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-direct.js",
+      "sha256": "d66748ccc81f260001bf9c14b9f66e87924ed9075403d9449a564fadbf20534a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116607.346625,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-elision-next-err.js",
+      "sha256": "2806d589171c4a50a058563d678ef0f922ac5253dd2c0e1d29c3135a0538292a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116845.68,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-elision-next-err.js",
+      "sha256": "2806d589171c4a50a058563d678ef0f922ac5253dd2c0e1d29c3135a0538292a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117085.523916,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-elision.js",
+      "sha256": "261ebb3a84ffef59acb155111092e2b147126ba99aa7c99fd96951cfc855b28c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117324.66991699999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-elision.js",
+      "sha256": "261ebb3a84ffef59acb155111092e2b147126ba99aa7c99fd96951cfc855b28c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117562.024833,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-exhausted.js",
+      "sha256": "6e63066ee494bf2d750340d2086439896dfb4b726f9f62771ea9537f62f10863",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117798.14300000001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-exhausted.js",
+      "sha256": "6e63066ee494bf2d750340d2086439896dfb4b726f9f62771ea9537f62f10863",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118035.66920899999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-iter-step-err.js",
+      "sha256": "6d94444249c4d1f70a76dca975fef9098269a0860cd637a5a4e5683da38ccad2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118272.016291,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-iter-step-err.js",
+      "sha256": "6d94444249c4d1f70a76dca975fef9098269a0860cd637a5a4e5683da38ccad2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118506.761917,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-iter-val-err.js",
+      "sha256": "c9c536cb19fb7cf92eda8d7d4320257eff5c37e36bd3a55f0a312074576056e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118743.37941699999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id-iter-val-err.js",
+      "sha256": "c9c536cb19fb7cf92eda8d7d4320257eff5c37e36bd3a55f0a312074576056e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118972.00895799999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id.js",
+      "sha256": "3ff197ccaeeedd9b669266de1871d02d5a3f0ca789b9da1788f81b63610d5436",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119207.673542,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-id.js",
+      "sha256": "3ff197ccaeeedd9b669266de1871d02d5a3f0ca789b9da1788f81b63610d5436",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119440.31191700001,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-ary.js",
+      "sha256": "2c4d5549f0e1d99a9d36ec9747b05466b6dc24964ecfbbc6a238b7354655b10f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 123212.66545900001,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-ary.js",
+      "sha256": "2c4d5549f0e1d99a9d36ec9747b05466b6dc24964ecfbbc6a238b7354655b10f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3991.0811669999966,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-id.js",
+      "sha256": "2cfdad7516722a1aa93247e3cfff949ac16980a242e7062ce9268998e6cad9e0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4204.848334000009,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-id.js",
+      "sha256": "2cfdad7516722a1aa93247e3cfff949ac16980a242e7062ce9268998e6cad9e0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4420.508124999993,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-obj.js",
+      "sha256": "732ae64551196be27445073b93abdc344145027eabe8c9d9e3a1e0b6b6475f1b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4640.200750000018,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-init-obj.js",
+      "sha256": "732ae64551196be27445073b93abdc344145027eabe8c9d9e3a1e0b6b6475f1b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4855.702416999993,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-ary.js",
+      "sha256": "2c4154ab50b2939647db621bd0f3377e9a4cf0a5017316501516c966548a6663",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5068.421249999985,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-ary.js",
+      "sha256": "2c4154ab50b2939647db621bd0f3377e9a4cf0a5017316501516c966548a6663",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5285.178332999989,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-id.js",
+      "sha256": "01d1b295e38738dde6d3d40cb245e4c1c9b61410d95734b167d1f3a016281a1d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5499.329540999985,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-id.js",
+      "sha256": "01d1b295e38738dde6d3d40cb245e4c1c9b61410d95734b167d1f3a016281a1d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5714.012041999988,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-obj.js",
+      "sha256": "c7247a6bf291a50f71c4f5b00f687f4890dc02539ecd60da1e8af8ae47e1c6ad",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5927.229915999982,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-not-final-obj.js",
+      "sha256": "c7247a6bf291a50f71c4f5b00f687f4890dc02539ecd60da1e8af8ae47e1c6ad",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6141.3524580000085,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-obj-id.js",
+      "sha256": "047cfbd77417c59614b0697ce14df572c70323ac26d4d45986b132af93788d7f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122467.51329099998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-obj-id.js",
+      "sha256": "047cfbd77417c59614b0697ce14df572c70323ac26d4d45986b132af93788d7f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116567.56150000001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-obj-prop-id.js",
+      "sha256": "daac045bf38b386213bde34c9ca516191c61f23baac336f333d8b30bd004caf4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116804.019084,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/ary-ptrn-rest-obj-prop-id.js",
+      "sha256": "daac045bf38b386213bde34c9ca516191c61f23baac336f333d8b30bd004caf4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117043.57070799998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-init-null.js",
+      "sha256": "a28604c9f41b8774f898e1a0fa1a9d506443ef23ecc2b68de1ec8a8e0dea79b0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117282.16829199999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-init-null.js",
+      "sha256": "a28604c9f41b8774f898e1a0fa1a9d506443ef23ecc2b68de1ec8a8e0dea79b0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117528.64070799999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-init-undefined.js",
+      "sha256": "2803798441692e79b2f4f38383a6a19444119402c4a5bb62838da2fda3ca0224",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117766.58050000001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-init-undefined.js",
+      "sha256": "2803798441692e79b2f4f38383a6a19444119402c4a5bb62838da2fda3ca0224",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118006.18325000003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-empty.js",
+      "sha256": "d87d58eeea03104b8be446a159f4d16a7f7c54c103abf4fb3580734e1fb1e816",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118244.71324999997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-empty.js",
+      "sha256": "d87d58eeea03104b8be446a159f4d16a7f7c54c103abf4fb3580734e1fb1e816",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118483.40379100002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-get-value-err.js",
+      "sha256": "80bd1dbb72a9e8317a0651c3c75cbb5e3854c32526c9f5e4711eb1acdbacf742",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118721.636291,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-get-value-err.js",
+      "sha256": "80bd1dbb72a9e8317a0651c3c75cbb5e3854c32526c9f5e4711eb1acdbacf742",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118960.47966700004,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-arrow.js",
+      "sha256": "b895481ce2981df75f6c99b0c049aa6061949d319043adfb89a72f42ff35024f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119198.67666699999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-arrow.js",
+      "sha256": "b895481ce2981df75f6c99b0c049aa6061949d319043adfb89a72f42ff35024f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119434.28275000001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-class.js",
+      "sha256": "660ae887fed9bfd6fdd863384427ab0334a1eaf9c0b95b09f4f4fa9342bec99d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119673.59858300001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-class.js",
+      "sha256": "660ae887fed9bfd6fdd863384427ab0334a1eaf9c0b95b09f4f4fa9342bec99d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119910.53562499996,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-cover.js",
+      "sha256": "d88a9f31242fd8aaef54b5343c955f4d3444100d7068cc6fa4d97d07f476f087",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120143.30262499998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-cover.js",
+      "sha256": "d88a9f31242fd8aaef54b5343c955f4d3444100d7068cc6fa4d97d07f476f087",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120383.16154099998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-fn.js",
+      "sha256": "2c4528b21e6f3ed01c2f8e4fcd30e1c8695af42f4faa43d9aa12d41e407863e3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120620.37070900001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-fn.js",
+      "sha256": "2c4528b21e6f3ed01c2f8e4fcd30e1c8695af42f4faa43d9aa12d41e407863e3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120841.116875,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-gen.js",
+      "sha256": "74e2387a74c65b5d12e9ce19c6705895e67b6eb6475534dc10c62917bce0be95",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121082.06595800002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-fn-name-gen.js",
+      "sha256": "74e2387a74c65b5d12e9ce19c6705895e67b6eb6475534dc10c62917bce0be95",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121321.92062500003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-skipped.js",
+      "sha256": "0f27b03f3d42ea1952167aa5c463fa8b2c22f546226bf2cc6b4bf43292b66bfa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121561.879667,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-skipped.js",
+      "sha256": "0f27b03f3d42ea1952167aa5c463fa8b2c22f546226bf2cc6b4bf43292b66bfa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121802.44174999997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-throws.js",
+      "sha256": "53977fbc874b454746419d1d325507699a5154f5641f3d782305f9e6d9d25532",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122041.80804199996,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-throws.js",
+      "sha256": "53977fbc874b454746419d1d325507699a5154f5641f3d782305f9e6d9d25532",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122281.39195800002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-unresolvable.js",
+      "sha256": "70383b7dce03a97097998a1009bcf304e4117b79f2b85a2f4801ddef15c99095",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122519.34983299999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-init-unresolvable.js",
+      "sha256": "70383b7dce03a97097998a1009bcf304e4117b79f2b85a2f4801ddef15c99095",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122758.14675000001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-trailing-comma.js",
+      "sha256": "65337552f40c3ed86c35ca3ee3995d8d802890553aa001bee4285c4c9b36ce58",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122996.53216600002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-id-trailing-comma.js",
+      "sha256": "65337552f40c3ed86c35ca3ee3995d8d802890553aa001bee4285c4c9b36ce58",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123236.34620799997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-list-err.js",
+      "sha256": "c622220b0b64fe75ae3b5b92bc92a22b284689bc2258bf11e02aeed718053bd7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123474.69895900003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-list-err.js",
+      "sha256": "c622220b0b64fe75ae3b5b92bc92a22b284689bc2258bf11e02aeed718053bd7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123712.34233300004,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-init.js",
+      "sha256": "0078e461ad17c023091d3af3d4b32587affa6b380899c9bccdad501d86626ebb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123950.36016699998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-init.js",
+      "sha256": "0078e461ad17c023091d3af3d4b32587affa6b380899c9bccdad501d86626ebb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124191.26379199998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-trailing-comma.js",
+      "sha256": "60eb48aa56755b785ab5f87f712c649fe764e690232debb3f62f1b041bf91587",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124428.51525000003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-trailing-comma.js",
+      "sha256": "60eb48aa56755b785ab5f87f712c649fe764e690232debb3f62f1b041bf91587",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124671.61837500002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-value-null.js",
+      "sha256": "d043fd254cc99cdc9dca395faf152fb6e7413b2cc96eb79df699e1a54245b5b1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124910.442208,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary-value-null.js",
+      "sha256": "d043fd254cc99cdc9dca395faf152fb6e7413b2cc96eb79df699e1a54245b5b1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125146.068791,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary.js",
+      "sha256": "c865539feed20a4fd747c0c4ae0291432aa4de269ab7b2b334a62b79a3755e0a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125387.17299999998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-ary.js",
+      "sha256": "c865539feed20a4fd747c0c4ae0291432aa4de269ab7b2b334a62b79a3755e0a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125627.08374999999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-eval-err.js",
+      "sha256": "7d2fc0738a8a4f87a8a13b66a4ed3732ff7c404fcc7e21d777b33500d7497c66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125866.86454100002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-eval-err.js",
+      "sha256": "7d2fc0738a8a4f87a8a13b66a4ed3732ff7c404fcc7e21d777b33500d7497c66",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126106.24300000002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-get-value-err.js",
+      "sha256": "be1d3bdc47abfa8a537fe1617655de362365df8bb199b6e69b777edd658ec685",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126345.29533300002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-get-value-err.js",
+      "sha256": "be1d3bdc47abfa8a537fe1617655de362365df8bb199b6e69b777edd658ec685",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126585.233625,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-skipped.js",
+      "sha256": "c63063b9a3e2c5350ed8bbf7686fb4680df3d5c8ec9c2624e85056895d46890e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126821.75374999997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-skipped.js",
+      "sha256": "c63063b9a3e2c5350ed8bbf7686fb4680df3d5c8ec9c2624e85056895d46890e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127057.83070900003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-throws.js",
+      "sha256": "c7969b11b1a17c584895e199c643842945c246c07721d11678b66cc94a5b73b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127296.63895900003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-throws.js",
+      "sha256": "c7969b11b1a17c584895e199c643842945c246c07721d11678b66cc94a5b73b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127530.31012500002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-unresolvable.js",
+      "sha256": "f621dc10addf7722d8ec6ce924e95cc48df1c7231cc76f2e2b5676a3d1f81ae1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127769.487042,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init-unresolvable.js",
+      "sha256": "f621dc10addf7722d8ec6ce924e95cc48df1c7231cc76f2e2b5676a3d1f81ae1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128009.79599999997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init.js",
+      "sha256": "dacd303140e058fd1adcad3b7d59a7cd3f1758619cc69ba3a1fbd4a1ac5222db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128248.44012499996,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-init.js",
+      "sha256": "dacd303140e058fd1adcad3b7d59a7cd3f1758619cc69ba3a1fbd4a1ac5222db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128488.66333300003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-trailing-comma.js",
+      "sha256": "c655d6fd8c005d1443ebadbb7999662fd609780777e78118b8c66598ec096b32",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128727.40741599997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id-trailing-comma.js",
+      "sha256": "c655d6fd8c005d1443ebadbb7999662fd609780777e78118b8c66598ec096b32",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128967.72383299997,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id.js",
+      "sha256": "8cedc4afec75de17327bf65d683937dd1c4a4ecfa005b1100a5d5780d257fbb4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129209.28925,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-id.js",
+      "sha256": "8cedc4afec75de17327bf65d683937dd1c4a4ecfa005b1100a5d5780d257fbb4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129448.34704200001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-init.js",
+      "sha256": "f1fa32094b128081d11613a70cb8b9bdacde9105e68a167c8cbc20dc6c414f8e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129687.47649999999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-init.js",
+      "sha256": "f1fa32094b128081d11613a70cb8b9bdacde9105e68a167c8cbc20dc6c414f8e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129969.101708,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-value-null.js",
+      "sha256": "bedf7f35c124f63ad190e0c20ee6045bb75b5eb9eaa62bb6655cac45417a4d9d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130210.37458399998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-value-null.js",
+      "sha256": "bedf7f35c124f63ad190e0c20ee6045bb75b5eb9eaa62bb6655cac45417a4d9d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130451.85733299999,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-value-undef.js",
+      "sha256": "3f49f8bc7e627e95afb560b3c1b330b4cba62756cbff54573656b6661cc17b4a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130691.926583,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj-value-undef.js",
+      "sha256": "3f49f8bc7e627e95afb560b3c1b330b4cba62756cbff54573656b6661cc17b4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130926.54845800003,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj.js",
+      "sha256": "dc7646455d0188ef916e5590a526bffa59cee70c84d2a425e79d5ba7becf00ab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131164.51504199998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-prop-obj.js",
+      "sha256": "dc7646455d0188ef916e5590a526bffa59cee70c84d2a425e79d5ba7becf00ab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131404.338167,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-getter.js",
+      "sha256": "5e97821f59d9c73dd5f7ac1cf7f4aee2c54a2cbf5b5e990e382c51c3b6f825b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120736.89974999998,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-getter.js",
+      "sha256": "5e97821f59d9c73dd5f7ac1cf7f4aee2c54a2cbf5b5e990e382c51c3b6f825b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121320.03720799997,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-skip-non-enumerable.js",
+      "sha256": "829c314d84158ff912347dc9220dca8e04eaae8e71de14e7c3a015296b0d9c32",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121561.8885,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-skip-non-enumerable.js",
+      "sha256": "829c314d84158ff912347dc9220dca8e04eaae8e71de14e7c3a015296b0d9c32",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121799.035042,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-val-obj.js",
+      "sha256": "d0d4ef858a83ba12cafea9f65525c73913757d67dd76ac421c64e9a7b45eb734",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122035.695542,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/const/dstr/obj-ptrn-rest-val-obj.js",
+      "sha256": "d0d4ef858a83ba12cafea9f65525c73913757d67dd76ac421c64e9a7b45eb734",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-rest",
+          "destructuring-binding"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122268.40824999998,
+      "batch": 4
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "lib": ["ES2023", "ES2025.RegExp"]
+  },
+  "include": [
+    "packages/*/test/**/*.ts",
+    "tools/**/*.ts",
+    "benchmarks/**/*.ts",
+    "types/node-bench.d.ts"
+  ]
+}

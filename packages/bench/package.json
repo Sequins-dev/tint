@@ -1,0 +1,20 @@
+{
+  "name": "@tint/bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "import": "./dist/native.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {}
+}

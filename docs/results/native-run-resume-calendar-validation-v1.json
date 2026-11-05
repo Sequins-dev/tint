@@ -1,0 +1,20 @@
+{
+  "kind": "native-run-resume-validation",
+  "journal": "native-run-resume-calendar-probe-v1.jsonl",
+  "report": "native-run-resume-calendar-probe-completed-v1.json",
+  "restoredVariants": 2,
+  "uniqueVariants": 16,
+  "totals": {
+    "total": 16,
+    "passed": 9,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 7,
+    "passFraction": 0.5625
+  },
+  "priorFailuresPreserved": true,
+  "batchIds": [0, 1],
+  "controllerAssertion": "Original controller expected journal kind absent in restored observations; actual loader retained it. Observations compare identically after removing this journal-only field. Loader normalization now has a regression test; native outcomes remain unchanged."
+}

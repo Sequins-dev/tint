@@ -1,0 +1,52 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T12:00:39.277350+00:00",
+  "slice": "M5 IR/function-ABI/codegen/image composition",
+  "beforeSource": {
+    "sha256": "59626d24be3157c89b07bc8cefee983144d95b510f3ba94f7a8bf82d8653c2e2",
+    "files": 493
+  },
+  "afterSource": {
+    "sha256": "b1be2d8b819ea40dff97c3bb47d1d0f5738c1970270e9d7fc390e116d44ff5d5",
+    "files": 494
+  },
+  "packages": 68,
+  "workspaceGates": {
+    "tests": 3475,
+    "passed": 3475,
+    "types": "passed build/tests/host",
+    "boundaries": "68 packages",
+    "formatting": "passed",
+    "evidence": [
+      "framework-ir-workspace-validation-v1.json",
+      "abi-function-workspace-validation-v1.json",
+      "framework-codegen-workspace-validation-v1.json",
+      "framework-image-workspace-validation-v1.json"
+    ]
+  },
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-image-after-v1/manifest.json"
+  },
+  "nativeRegressions": [
+    "framework-ir-native-imports-v1.json",
+    "framework-ir-native-invocation-v1.json",
+    "abi-function-native-imports-v2.json",
+    "abi-function-native-invocation-v2.json",
+    "framework-codegen-native-invocation-v1.json",
+    "framework-image-native-signature-v1.json",
+    "framework-image-native-dwarf-v1.json"
+  ],
+  "independentIsaOracle": {
+    "implementation": "LLVM22.1.8",
+    "assembledAndDisassembled": 1046,
+    "committedGoldens": 91,
+    "log": "/tmp/tint-framework-codegen-isa-oracle-v1.log"
+  },
+  "selfbuild": "bootstrap-framework-image-v1.json",
+  "selfbuildBytes": 60778066,
+  "selfbuildByteIdentical": true,
+  "limitations": "Ownership and shared format contracts. Host policy, image-to-ISA patch coupling and deeper IR/machine-IR refactors retain separate later slices. No additional Test262 behavior coverage claimed."
+}

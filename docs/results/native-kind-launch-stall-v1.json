@@ -1,0 +1,39 @@
+{
+  "debugger": {
+    "pid": 96380,
+    "ppid": 96078,
+    "state": "S",
+    "elapsed": "00:44",
+    "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb"
+  },
+  "server": {
+    "pid": 96381,
+    "ppid": 96380,
+    "state": "S",
+    "elapsed": "00:44",
+    "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver"
+  },
+  "inferior": {
+    "pid": 96382,
+    "ppid": 96381,
+    "state": "TX",
+    "elapsed": "00:44",
+    "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test"
+  },
+  "samples": [
+    {
+      "name": "inferior",
+      "path": "/tmp/tint-kind-launch-stall-v1-inferior.txt",
+      "status": 0,
+      "stdout": "",
+      "stderr": "Sampling process 96382 for 1 second with 1 millisecond of run time between samples\nCouldn't find _sigtramp symbol in expected dylibs\nSampling completed, processing symbols...\nSample analysis of process 96382 written to file /tmp/tint-kind-launch-stall-v1-inferior.txt\n"
+    },
+    {
+      "name": "server",
+      "path": "/tmp/tint-kind-launch-stall-v1-server.txt",
+      "status": 0,
+      "stdout": "",
+      "stderr": "Sampling process 96381 for 1 second with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 96381 written to file /tmp/tint-kind-launch-stall-v1-server.txt\n"
+    }
+  ]
+}

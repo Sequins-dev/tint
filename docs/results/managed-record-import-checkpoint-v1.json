@@ -1,0 +1,31 @@
+{
+  "kind": "managed-record-import-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "4f556890f03a46f03061934b595f2dca29a7c9aa3f47b4947105e81647a52978",
+    "files": 506
+  },
+  "packages": 14,
+  "workspace": {
+    "tests": 3661,
+    "failed": 0,
+    "types": true,
+    "testTypes": true,
+    "hostTypes": true,
+    "boundaries": true,
+    "format": true
+  },
+  "nativeSelfBuild": "bootstrap-managed-record-imports-v1.json",
+  "sourceSnapshotBytesVerified": true,
+  "signatureVerified": true,
+  "dwarfVerified": true,
+  "nativeRegressions": [
+    "native-managed-record-invocation-v2.json",
+    "native-managed-record-invocation-v3.json"
+  ],
+  "failedObservations": [
+    "native-managed-record-invocation-v1.json"
+  ],
+  "failureDiagnosis": "native-managed-record-invocation-v1-diagnosis.json",
+  "scope": "Explicit versioned record imports snapshot complete verified field layouts; private linking validates semantic contracts and permanent tracing metadata. Independent native images share one descriptor across allocation, recognition and moving GC. Managed callback returns, throws, allocation and root restoration are retained. G0 still needs typed AOT frame reflection, context-domain authorization and two-helper integration; no general Script/Function fallback or Test262 credit."
+}

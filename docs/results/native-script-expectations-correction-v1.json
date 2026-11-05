@@ -1,0 +1,33 @@
+{
+  "kind": "bespoke-fixture-expectation-correction",
+  "conformance": false,
+  "previousObservation": "docs/results/native-script-codecs-v2.json",
+  "staleExpectations": [
+    "try{new Error(function(){});}catch{}42;",
+    "Math.pow(2,0.5);",
+    "2 ** 0.5;"
+  ],
+  "evidence": [
+    {
+      "report": "docs/results/native-script-supported-case-0-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-script-supported-case-1-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-script-supported-case-2-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "fixture": "tools/verify-hosted-script.ts",
+  "fixtureSha256": "c84fc8a7c9505922ba4033c7bce85bb91effae7f7e1afdd79ba58783cec8acc5",
+  "correction": "Remove obsolete unsupported overrides; preserve Node/spec expected completion and value. Full native fixture rerun still required."
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "1cfe2b3490e232b635925958724ac2f7413125da86729242590bc213c0947365",
+      "files": 430
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/time-zone-primary-identifiers-v1-sources.json",
+    "imageSha256": "070fe70a211fdc0340d9faafc7e34807512cae1dd9ce5c10cd14b65df51b8e93",
+    "fixtureTool": "tools/verify-hosted-time-zone-primary-identifiers.ts",
+    "fixtureToolSha256": "d3216da32a2c975bad2c660f4236b82b26c1ecdd0a3050e3f374589f091586a9",
+    "data": {
+      "dataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataSha256": "5914dfd1cecfaefd5e692426cbda59429105c59f16e87fa2754c8eff3ccdefa2",
+      "entries": 598,
+      "unavailable": 1,
+      "checksum": 1325774216
+    },
+    "primaryData": {
+      "version": "CLDR 48",
+      "sha256": "54ce7d9f1d385101e24356df7d48ae62cf2acc4421378da60a4007d2488c1aad"
+    },
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "598 host identifiers, country-primary exceptions, UTC aliases, unavailable policy and complete-record checksum"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

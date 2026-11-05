@@ -1,0 +1,66 @@
+{
+  "kind": "framework-migration-workspace-validation",
+  "schemaVersion": 1,
+  "scope": "IR framework ownership migration; no algorithm changes",
+  "sourceIdentity": {
+    "sha256": "50c866ddf196b3ccf7e234e7ea452b3a67a39ab60ee3f56c38f7e6b3d7455596",
+    "files": 493,
+    "importGrants": 455,
+    "packages": 73
+  },
+  "publicEntries": [
+    "@tint/ir/scalar",
+    "@tint/ir/semantic",
+    "@tint/ir/optimization",
+    "@tint/ir/optimization/slots",
+    "@tint/ir/optimization/reference-lists"
+  ],
+  "movedTestFiles": 33,
+  "newEntryGraphTests": 3,
+  "checks": [
+    {
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-build-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-testtypes-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test tools/ir-framework.test.ts packages/ir/test/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-focused-v1.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-alltests-v1.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types *.json pnpm-workspace.yaml",
+      "exitCode": 0,
+      "log": "/tmp/tint-ir-formatcheck-v1.log"
+    }
+  ],
+  "implementationParity": {
+    "referenceSnapshot": ".tint-bootstrap/source-framework-modules-selfbuild-v1",
+    "files": 38,
+    "comparison": "Pinned Prettier normalization after exact package-import to relative-import substitution; all38files identical",
+    "details": "/tmp/tint-ir-implementation-parity-v1.json"
+  },
+  "testSummary": "\u2139 tests 3467\n\u2139 suites 0\n\u2139 pass 3467\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 17382.392458",
+  "nativeExecution": "not performed; parent owns frozen native validation",
+  "knownAdapterDebt": "SparseList managed ABI-specific reference-list pass remains under optimization with existing proof gates."
+}

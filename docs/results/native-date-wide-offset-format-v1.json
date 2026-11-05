@@ -1,0 +1,34 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "37f0c7f70b03bad6f11e46f9a3744aaddefe1e86fcf9dd3e9a463963befd58cc",
+      "files": 427
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/gregorian-local-coordinate-v1-sources.json",
+    "imageSha256": "8544b4780456b9e379b4cc773c7da5eccb1fe0a648299db6059a0b321f2f45c7",
+    "fixtureTool": "tools/verify-hosted-date-local-format.ts",
+    "fixtureToolSha256": "46c18ff896374e5e6fdca8d1e10cfcfa55ee5dc6230cae6b3661e514ad445171",
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "60 local serialization round trips including historical seconds, wide offsets and both Date limits"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

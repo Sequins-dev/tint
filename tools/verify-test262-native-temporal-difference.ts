@@ -1,0 +1,10 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    String.raw`const a=new Temporal.Instant(0n),b=new Temporal.Instant(3661002003004n);const d=a.until(b);if(d.hours!==0||d.minutes!==0||d.seconds!==3661||d.milliseconds!==2||d.microseconds!==3||d.nanoseconds!==4)throw 1;const h=a.until(b,{largestUnit:"hours"});if(h.hours!==1||h.minutes!==1||h.seconds!==1||h.milliseconds!==2||h.microseconds!==3||h.nanoseconds!==4)throw 2;const n=a.until(b,{largestUnit:"nanoseconds"});if(n.nanoseconds!==3661002003004)throw 3;`,
+    String.raw`const a=new Temporal.Instant(0n),b=new Temporal.Instant(1500000000n);for(const method of ["since","until"]){const positive=method==="until"?a:b,negative=method==="until"?b:a;const p=positive[method](negative,{smallestUnit:"second",roundingMode:"ceil"});const n=negative[method](positive,{smallestUnit:"second",roundingMode:"ceil"});if(p.seconds!==2||n.seconds!==-1)throw 1;}const t=new Temporal.PlainTime(3,30);if(t.until("05:00").hours!==1||t.until("05:00").minutes!==30||t.since("05:00",{largestUnit:"minutes"}).minutes!==-90)throw 2;`,
+    String.raw`let log="",ok=false;try{new Temporal.Instant(0n).until(new Temporal.Instant(1n),{get largestUnit(){log+="l;";return "days";},get roundingIncrement(){log+="i;";return 1;},get roundingMode(){log+="m;";return "trunc";},get smallestUnit(){log+="s;";return "nanosecond";}});}catch(e){ok=e instanceof RangeError;}if(!ok||log!=="l;i;m;s;")throw 1;ok=false;try{new Temporal.Instant(0n).until(new Temporal.Instant(1n),{smallestUnit:"minutes",roundingIncrement:60});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;let touched=false;ok=false;try{new Temporal.Instant(0n).until("invalid",{get largestUnit(){touched=true;return "hour";}});}catch(e){ok=e instanceof RangeError;}if(!ok||touched)throw 3;`,
+    String.raw`const a=new Temporal.Instant(-8640000000000000000000n),b=new Temporal.Instant(8640000000000000000000n);const d=a.until(b);if(d.seconds!==17280000000000||d.nanoseconds!==0)throw 1;const n=a.until(b,{largestUnit:"nanosecond"});if(n.nanoseconds!==17280000000000000000000)throw 2;`,
+  ],
+  { nodeReference: false },
+);

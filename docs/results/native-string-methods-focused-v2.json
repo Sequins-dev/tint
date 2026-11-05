@@ -1,0 +1,12 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-strings.ts",
+  "fixtureSha256": "54669ce2815ddd3ca0dca3f11407a85826416178731742966f5e7c172c1fa989",
+  "cases": 4,
+  "passed": 4,
+  "nodeReference": "All fixture sources completed in isolated Node vm contexts.",
+  "nativeValidation": "Each case selected from a shared native image, launched in a fresh LLDB-controlled process, stopped at entry and verified to exit with status 42.",
+  "scope": "String trim aliases, UTF-16 searches, RegExp rejection and coercion order, repeat bounds and concat. Earlier incomplete run retained separately."
+}

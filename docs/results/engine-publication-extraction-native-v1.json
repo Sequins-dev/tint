@@ -1,0 +1,24 @@
+{
+  "kind": "engine-publication-extraction-native-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1e18133b5233571dd4f0eebf5394dac44679f1ece67429797f4b8a4df4f6ee7d",
+    "files": 508
+  },
+  "passed": 8,
+  "total": 8,
+  "reports": [
+    "engine-storage-managed-access-native-v1-0.json",
+    "engine-storage-managed-access-native-v1-1.json",
+    "engine-storage-managed-access-native-v1-2.json",
+    "engine-storage-managed-access-native-v1-3.json",
+    "engine-storage-managed-access-native-v1-4.json",
+    "engine-storage-managed-access-native-v1-5.json",
+    "engine-storage-managed-access-native-v1-6.json",
+    "engine-storage-managed-access-native-v1-7.json"
+  ],
+  "publisherStateFixture": "engine-publication-native-v1.json",
+  "baseline": "native-managed-global-access-validation-v1.json",
+  "signaturePreflight": "Both new images passed codesign --verify --strict before their first observations. No inference about launch-failure causality is made.",
+  "scope": "Typed production publisher module replaces the generated publication implementation. All eight existing native managed-access cases pass unchanged, including allocating getters/GC. Native OS calls remain explicitly granted by tooling. No broader dynamic source profile is claimed."
+}

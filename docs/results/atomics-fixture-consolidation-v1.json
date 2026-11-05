@@ -1,0 +1,27 @@
+{
+  "kind": "test-tool-cleanup",
+  "conformance": false,
+  "scope": "Four overlapping build-only fixtures consolidated into tools/build-atomics-fixture.ts. Original exact source bodies retained for historical artifacts; new fixture adds notify checks and retains prior arithmetic/CAS/width cases. Earlier pre-entry fixture failure remains unchanged.",
+  "retainedSources": [
+    {
+      "original": "tools/build-atomics-access-fixture.ts",
+      "retainedSource": ".tint-bootstrap/fixtures/atomics-before-consolidation-v1/build-atomics-access-fixture.ts",
+      "sha256": "4850d8a5c9301631caba923fa2571e667fcf1de57e678f90aceed06f9c0d3fb5"
+    },
+    {
+      "original": "tools/build-atomics-compare-exchange-fixture.ts",
+      "retainedSource": ".tint-bootstrap/fixtures/atomics-before-consolidation-v1/build-atomics-compare-exchange-fixture.ts",
+      "sha256": "8b1bb14f89b46f0412ef6cf8918b1521fbb67cee77eef74d8069c80e0cb9c969"
+    },
+    {
+      "original": "tools/build-atomics-rmw-fixture.ts",
+      "retainedSource": ".tint-bootstrap/fixtures/atomics-before-consolidation-v1/build-atomics-rmw-fixture.ts",
+      "sha256": "5149f8000da8de466d750a964de2e59c0c55276a57704d32b19ffa7e4aa46e82"
+    },
+    {
+      "original": "tools/build-atomics-rmw-widths-fixture.ts",
+      "retainedSource": ".tint-bootstrap/fixtures/atomics-before-consolidation-v1/build-atomics-rmw-widths-fixture.ts",
+      "sha256": "182dc3c469d4d3d8b6f5366fe9e47f92ba66b81759d717773a32201877d78931"
+    }
+  ]
+}

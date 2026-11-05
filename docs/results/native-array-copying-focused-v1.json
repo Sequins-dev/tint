@@ -1,0 +1,13 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-copying.ts",
+  "fixtureSha256": "3a1e2e733a100cadc9f102997851bb4c634acca72352fca69e875bd08515c2f1",
+  "runner": "tools/native-script-fixture.ts",
+  "runnerSha256": "6b3b36c30fa028d45b59d11ae44f74e03dcba486d3c46ac6a096645ad133bd52",
+  "cases": 5,
+  "passed": 5,
+  "nativeValidation": "Isolated LLDB-controlled native processes, expected exit 42; Node reference sources also completed.",
+  "scope": "toReversed/with/toSpliced dense copies, skipped replaced or deleted getters, bounds, species bypass and source preservation."
+}

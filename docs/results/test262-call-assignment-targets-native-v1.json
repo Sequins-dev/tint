@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v2",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "dirty": false,
+  "selection": "annexB/language/expressions/assignmenttargettype",
+  "totals": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression-as-for-in-lhs.js",
+      "sha256": "3d0cef1781caaad11de14bf4e6b89eec6d2eda7661c94987e0597b20e19c996b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 9018.479667000001
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression-as-for-of-lhs.js",
+      "sha256": "02e812e0db5a61f582e64e237f6e41e64f95bb0365322055b6bc0f398f29763f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6824.909958
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression-in-compound-assignment.js",
+      "sha256": "659947683f9ae9af80e4be938c1b4ee9be6e14078ab5df8e4a64eba0b6a592cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6106.2458750000005
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression-in-postfix-update.js",
+      "sha256": "400f421376861d41f5e7999c94776fa25b9a9ffadb1187e2dd0d1e6103e83ac2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6756.207374999998
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression-in-prefix-update.js",
+      "sha256": "c0dc7733eaa4afdad6ac5f78d1a479e94e8cda9235e329ac6f44d66c8e78fd03",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5992.767583000001
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/callexpression.js",
+      "sha256": "0224a2f184ad0a3625ad7f853cb32b60b9c35365898e242a65096934752ee966",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5845.937625000006
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype/cover-callexpression-and-asyncarrowhead.js",
+      "sha256": "578275d7d48dfb962a9150930ae16fc1d1ee3fd4ceb5134194e60c80717162d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6508.928082999999
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "direct-eval-guard-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "10864e90ccd5c7afefc23a2173989ceb1e1659a1ff0f3c3e5b92975f2c16712e",
+    "files": 550
+  },
+  "nativeReport": "native-test262-eval-guard-validation-v1.json",
+  "workspace": {
+    "tests": 3978,
+    "log": ".tint-bootstrap/eval-guard-workspace-check-v2.log"
+  },
+  "surface": {
+    "digest": "f99e495110e79c9bffe79305b3dde3d683058d6bcc1bacc8e3390e46d4788749",
+    "signatures": 160,
+    "records": 180,
+    "runtimes": 41,
+    "entries": 120,
+    "helpers": 101,
+    "collectionAliases": 79,
+    "collectionKeys": 39,
+    "runtimeTargets": 323,
+    "runtimeSlots": 355,
+    "addressStubs": 366
+  },
+  "scope": "Intrinsic identity guard at both Script call-lowering sites, including optional-chain inner calls, runtime-compiled Scripts and non-string identity. Direct string eval remains sticky unsupported; shadowed and foreign eval remain ordinary calls. Node spies establish that intrinsic interception bypasses its function body; native cases alone cannot distinguish that before indirect eval is enabled. Indirect-only lowered AST hash and eight earlier corpus hashes remain unchanged."
+}

@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 8,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 7615.733916,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 4799.892416000002,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/String/prototype/isWellFormed",
+  "totals": {
+    "total": 16,
+    "passed": 11,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 5,
+    "passFraction": 0.6875
+  },
+  "observations": [
+    {
+      "path": "built-ins/String/prototype/isWellFormed/length.js",
+      "sha256": "1a36627752cf4a8621737c538c54054e34ed94e41dbb02b60df2f2f3600c465b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+      },
+      "status": "crash",
+      "elapsedMs": 37944.85125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/length.js",
+      "sha256": "1a36627752cf4a8621737c538c54054e34ed94e41dbb02b60df2f2f3600c465b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 1\n"
+      },
+      "status": "crash",
+      "elapsedMs": 68233.367167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/name.js",
+      "sha256": "46167cda72a4c78820aea0223c89a555c0c2fe63d4b693917be96afe607ee3e4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-npPwsA/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 2\n"
+      },
+      "status": "crash",
+      "elapsedMs": 98519.09816699999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/name.js",
+      "sha256": "46167cda72a4c78820aea0223c89a555c0c2fe63d4b693917be96afe607ee3e4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117030.676292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/not-a-constructor.js",
+      "sha256": "4a18fa8aa50401b93fe21e828b79280f55df78723b65dc94e92ae5ac4e43cbae",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119372.831209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/not-a-constructor.js",
+      "sha256": "4a18fa8aa50401b93fe21e828b79280f55df78723b65dc94e92ae5ac4e43cbae",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121636.050791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/prop-desc.js",
+      "sha256": "915b72282d5d51dcf96a38b9e034340f34d73290fe0f8ebb15930a9c7a9a839e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123875.54529200001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/prop-desc.js",
+      "sha256": "915b72282d5d51dcf96a38b9e034340f34d73290fe0f8ebb15930a9c7a9a839e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126120.074917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/return-abrupt-from-this.js",
+      "sha256": "47fb99f57da341b71781f7d1b55fed299f5f5fcd51e84e24484637c07c40bac9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-TTeMgv/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-TTeMgv/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+      },
+      "status": "crash",
+      "elapsedMs": 34991.360916000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/return-abrupt-from-this.js",
+      "sha256": "47fb99f57da341b71781f7d1b55fed299f5f5fcd51e84e24484637c07c40bac9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-TTeMgv/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-TTeMgv/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 1\n"
+      },
+      "status": "crash",
+      "elapsedMs": 65246.81058300001,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/returns-boolean.js",
+      "sha256": "06e30c1ec09b168d53939427573bd130f74d554b499fb263809e34e35ccb7d36",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97396.780917,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/returns-boolean.js",
+      "sha256": "06e30c1ec09b168d53939427573bd130f74d554b499fb263809e34e35ccb7d36",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 100678.718792,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/to-string-primitive.js",
+      "sha256": "5e3d773b0e93b05cc0c11484337f5a1473a74a28c68c2ce34d652f28c5a55eb2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102938.481916,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/to-string-primitive.js",
+      "sha256": "5e3d773b0e93b05cc0c11484337f5a1473a74a28c68c2ce34d652f28c5a55eb2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 105182.823292,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/to-string.js",
+      "sha256": "5a2342435f2ff8b0d6129089453916d8d23e564b4183b3f5eaae50cd3f3dc217",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107432.74745800001,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/String/prototype/isWellFormed/to-string.js",
+      "sha256": "5a2342435f2ff8b0d6129089453916d8d23e564b4183b3f5eaae50cd3f3dc217",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "String.prototype.isWellFormed"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 109714.077083,
+      "batch": 1
+    }
+  ]
+}

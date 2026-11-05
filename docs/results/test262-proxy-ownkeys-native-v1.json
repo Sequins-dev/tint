@@ -1,0 +1,1636 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 16,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 5348.6084169999995,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 3895.3854999999967,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 3584.559208000006,
+        "outcome": "compiled"
+      },
+      {
+        "id": 3,
+        "variants": 6,
+        "kind": "execution",
+        "compileMs": 3351.6483339999977,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/Proxy/ownKeys",
+  "totals": {
+    "total": 54,
+    "passed": 54,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-getownpropertynames.js",
+      "sha256": "e14825d9b6d07b5b3d67975542fc0a4984d372fd6517da39e386ee306302e8e7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8112.316999999999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-getownpropertynames.js",
+      "sha256": "e14825d9b6d07b5b3d67975542fc0a4984d372fd6517da39e386ee306302e8e7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 10345.061708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-getownpropertysymbols.js",
+      "sha256": "2dc40218f4f8bb1fc641d0b316ba18695f938800167dc98e27c3e684a6d73e1a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12630.588667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-getownpropertysymbols.js",
+      "sha256": "2dc40218f4f8bb1fc641d0b316ba18695f938800167dc98e27c3e684a6d73e1a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 14848.503292000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-keys.js",
+      "sha256": "5c8fa59a884e58217cbcced4411c1f232046e0e5dce29e2be7b73f919335a44e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17151.648417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/call-parameters-object-keys.js",
+      "sha256": "5c8fa59a884e58217cbcced4411c1f232046e0e5dce29e2be7b73f919335a44e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19394.340375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/extensible-return-trap-result-absent-not-configurable-keys.js",
+      "sha256": "e9beb5888bc8726245fc303cdbeb12fbe087af5b9a38bec5c4afbd15e61bd54a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21684.938292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/extensible-return-trap-result-absent-not-configurable-keys.js",
+      "sha256": "e9beb5888bc8726245fc303cdbeb12fbe087af5b9a38bec5c4afbd15e61bd54a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23912.280291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/extensible-return-trap-result.js",
+      "sha256": "1329bddf3d4942b8ae77249dbdb09834158933a90d5bb33d3d4b8cf624411b31",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26196.913416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/extensible-return-trap-result.js",
+      "sha256": "1329bddf3d4942b8ae77249dbdb09834158933a90d5bb33d3d4b8cf624411b31",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28527.574542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-missing-keys-throws.js",
+      "sha256": "5ec7a91084e6941b013a277dd3057223d6f831810d3afae93a705372241a5784",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30773.617916,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-missing-keys-throws.js",
+      "sha256": "5ec7a91084e6941b013a277dd3057223d6f831810d3afae93a705372241a5784",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33015.216791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-new-keys-throws.js",
+      "sha256": "15d0e30822520d40115db7dce5a9a560d433874ece8a880b837e3d40cdc8a2ca",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35322.071917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-new-keys-throws.js",
+      "sha256": "15d0e30822520d40115db7dce5a9a560d433874ece8a880b837e3d40cdc8a2ca",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37687.955125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-return-keys.js",
+      "sha256": "48450859cdcd681b7702f47f29afdd2dc25035a023a26daec3d209325958e315",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40064.486916,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/not-extensible-return-keys.js",
+      "sha256": "48450859cdcd681b7702f47f29afdd2dc25035a023a26daec3d209325958e315",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42332.916625000005,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/null-handler.js",
+      "sha256": "f9106d3d31bdb0de9ce5c876c5652ca45b754bedafa5d827a1f6d3435b88d8ad",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6749.740208000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/null-handler.js",
+      "sha256": "f9106d3d31bdb0de9ce5c876c5652ca45b754bedafa5d827a1f6d3435b88d8ad",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 9000.729459000002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-all-non-configurable-keys.js",
+      "sha256": "609d7baa4d21ef46d440ff573a38edab5e1666e56ae55ddee7e5f5bc8906b504",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11310.434708,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-all-non-configurable-keys.js",
+      "sha256": "609d7baa4d21ef46d440ff573a38edab5e1666e56ae55ddee7e5f5bc8906b504",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13553.498749999999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-duplicate-entries-throws.js",
+      "sha256": "dfc0a51beb4c83bfd1eee9d2564fe8d28f357c74f21e7c5e69f9df66a48e0a65",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15787.798750000002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-duplicate-entries-throws.js",
+      "sha256": "dfc0a51beb4c83bfd1eee9d2564fe8d28f357c74f21e7c5e69f9df66a48e0a65",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18000.926250000004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-duplicate-symbol-entries-throws.js",
+      "sha256": "f9386f3dc5b96298c8efade76abef14b61bd19f64b554988a30dc42b667fb9bf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20335.708499999993,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-duplicate-symbol-entries-throws.js",
+      "sha256": "f9386f3dc5b96298c8efade76abef14b61bd19f64b554988a30dc42b667fb9bf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22592.673000000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-is-abrupt.js",
+      "sha256": "f82c2a5a9525af4af5afef9609c49abfd8c5496faf93f1cf8201a6a0ee77f014",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24859.971791999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-is-abrupt.js",
+      "sha256": "f82c2a5a9525af4af5afef9609c49abfd8c5496faf93f1cf8201a6a0ee77f014",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27129.862917,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-not-list-object-throws-realm.js",
+      "sha256": "749d5db7631a9b8e557f4c274531934dcfa15b2cfdb0a7d623fabc83341c894b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29366.113625000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-not-list-object-throws-realm.js",
+      "sha256": "749d5db7631a9b8e557f4c274531934dcfa15b2cfdb0a7d623fabc83341c894b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31641.490874999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-not-list-object-throws.js",
+      "sha256": "31b98d149c8055bc87f90ae49d583a5250ae4405e1568d919c7b07e73aa027fe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33865.94558299999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-not-list-object-throws.js",
+      "sha256": "31b98d149c8055bc87f90ae49d583a5250ae4405e1568d919c7b07e73aa027fe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36220.385084,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-array.js",
+      "sha256": "b8d2b6231e9db91b0d546796ed311c77d9207b504a8700328c611db5e0d29541",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 38489.729833,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-array.js",
+      "sha256": "b8d2b6231e9db91b0d546796ed311c77d9207b504a8700328c611db5e0d29541",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40764.762458,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-boolean.js",
+      "sha256": "b76475ac2aef9232f326644b128e81cff8de043f030da666f7f7f55ccbba41b6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6428.391541999998,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-boolean.js",
+      "sha256": "b76475ac2aef9232f326644b128e81cff8de043f030da666f7f7f55ccbba41b6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8672.549708000006,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-null.js",
+      "sha256": "945deb9f79dd55fb93fa7394b2a442c3b0dd186a57c9474b6ba8356354309f2b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11020.330291000006,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-null.js",
+      "sha256": "945deb9f79dd55fb93fa7394b2a442c3b0dd186a57c9474b6ba8356354309f2b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13359.719624999998,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-number.js",
+      "sha256": "fd708de4057ef7d4599e0bb3c1c5706359e674d1eff6cf79108754dd4bd06ece",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15641.33825,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-number.js",
+      "sha256": "fd708de4057ef7d4599e0bb3c1c5706359e674d1eff6cf79108754dd4bd06ece",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17896.964458000002,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-object.js",
+      "sha256": "b10861faf03ef1556b8e93dd7dddf3b895f0bf3b98161729b8174ea1d9d4b376",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20131.773791,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-object.js",
+      "sha256": "b10861faf03ef1556b8e93dd7dddf3b895f0bf3b98161729b8174ea1d9d4b376",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22402.394,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-undefined.js",
+      "sha256": "b3380e51188239eebbf13f914b8de90b10008c2beec7f462b6ca6d3a50421f26",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24669.631917000006,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/return-type-throws-undefined.js",
+      "sha256": "b3380e51188239eebbf13f914b8de90b10008c2beec7f462b6ca6d3a50421f26",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27017.670291999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-missing-target-is-proxy.js",
+      "sha256": "96f6a83af4670ed3214cfab22d49354392ffec6b7f388dd9e8b0e451e20f3c3e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Proxy",
+          "Reflect"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29306.955709,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-missing-target-is-proxy.js",
+      "sha256": "96f6a83af4670ed3214cfab22d49354392ffec6b7f388dd9e8b0e451e20f3c3e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Proxy",
+          "Reflect"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31613.26554200001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-not-callable-realm.js",
+      "sha256": "792b503b76f8b6f86159f75e141dba00a0efbba4f3d99a2b0888cb23709a8e7a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33864.297833000004,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-not-callable-realm.js",
+      "sha256": "792b503b76f8b6f86159f75e141dba00a0efbba4f3d99a2b0888cb23709a8e7a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36240.382291999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-not-callable.js",
+      "sha256": "6eed86f2ceac08eca3c80245c425a6ce965c187a0569427bbc19c25c158352e3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 38572.120083,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-not-callable.js",
+      "sha256": "6eed86f2ceac08eca3c80245c425a6ce965c187a0569427bbc19c25c158352e3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40816.339125,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-null-target-is-proxy.js",
+      "sha256": "6c9fc906e69c55dc49b617d2d48e2ce10a90a1b3dc665e0bd4ceace73624d43e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6060.944959,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-null-target-is-proxy.js",
+      "sha256": "6c9fc906e69c55dc49b617d2d48e2ce10a90a1b3dc665e0bd4ceace73624d43e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8413.370082999987,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-undefined-target-is-proxy.js",
+      "sha256": "c0fa60d201af2594f45598eb60c04059ef16bb1c76d80bc52aa567e8350a4499",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Proxy",
+          "Reflect"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 10656.712499999994,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-undefined-target-is-proxy.js",
+      "sha256": "c0fa60d201af2594f45598eb60c04059ef16bb1c76d80bc52aa567e8350a4499",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Proxy",
+          "Reflect"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12899.333167000004,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-undefined.js",
+      "sha256": "96ceee4a368993a06bd65a388107d4c5cdd7aac9601f1142ceebaccfce182ca2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15214.687875000003,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/Proxy/ownKeys/trap-is-undefined.js",
+      "sha256": "96ceee4a368993a06bd65a388107d4c5cdd7aac9601f1142ceebaccfce182ca2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17461.065124999994,
+      "batch": 3
+    }
+  ]
+}

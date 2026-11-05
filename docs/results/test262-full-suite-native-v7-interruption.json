@@ -1,0 +1,26 @@
+{
+  "kind": "native-full-suite-interruption",
+  "createdAt": "2026-11-03T20:53:38.763Z",
+  "pid": 10830,
+  "quietCheckpoint": {
+    "pid": 10830,
+    "state": "between-variants"
+  },
+  "journal": "docs/results/test262-full-suite-native-v7.jsonl",
+  "journalSha256": "ca76a5581eccb40e00fe1152437f066fcb5e0c5994e1177acea522bbc7b42601",
+  "sourceSnapshot": {
+    "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+    "files": 505
+  },
+  "observedVariants": 4201,
+  "partialCounts": {
+    "pass": 3595,
+    "unsupported": 558,
+    "fail": 1,
+    "crash": 47
+  },
+  "reason": "Replace the pre-consolidation 49-package survey with the verified 14-framework compiler and explicit debugger-managed stdio launch policy. Original observations, including launch failures, remain unchanged. No results are reclassified or excluded.",
+  "replacementReport": "docs/results/test262-full-suite-native-v8.json",
+  "replacementToolchain": "docs/results/frozen-node-toolchain-managed-record-imports-v1.json",
+  "wholeSuiteNativePassFraction": null
+}

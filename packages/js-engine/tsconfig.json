@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../typescript"
+    },
+    {
+      "path": "../abi"
+    },
+    {
+      "path": "../compiler"
+    },
+    {
+      "path": "../js-runtime"
+    },
+    {
+      "path": "../source"
+    },
+    {
+      "path": "../foundation"
+    }
+  ]
+}

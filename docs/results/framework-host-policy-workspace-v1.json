@@ -1,0 +1,28 @@
+{
+  "kind": "framework-host-policy-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "552c23e1cb99bfd37c89badf07e4046754351e4e94d8893c399430f705bf4c54",
+    "files": 504
+  },
+  "packages": 14,
+  "nodeTests": {
+    "passed": 3653,
+    "failed": 0,
+    "log": ".tint-bootstrap/host-policy-full-node-v2.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "unchangedAcrossConsolidation": true
+  },
+  "scope": "Framework ownership or explicit host-policy checkpoint; no native conformance percentage claim.",
+  "nativeSelfBuild": "Latest verified fixed point remains bootstrap-managed-global-access-v1.json. New-source attempts and pre-entry observations are separate."
+}

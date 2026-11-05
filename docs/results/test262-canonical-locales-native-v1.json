@@ -1,0 +1,2443 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 180000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "c170c68ba73deb17304f88a44e3ffbd266a7ec3c9133da07b5a60b7ac18bdc1d",
+    "files": 459
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-locales-v2/source-snapshot.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 1048576,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 180000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 78791.30704100001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 12,
+        "kind": "execution",
+        "compileMs": 60536.366167,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "intl402/Intl/getCanonicalLocales",
+  "totals": {
+    "total": 76,
+    "passed": 74,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9736842105263158
+  },
+  "observations": [
+    {
+      "path": "intl402/Intl/getCanonicalLocales/Locale-object.js",
+      "sha256": "fedb482002edd0f7f8fa5edad8057a45ab5aed337cfb20bb9125d7cd8d20b42f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.Locale"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 80923.739042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/Locale-object.js",
+      "sha256": "fedb482002edd0f7f8fa5edad8057a45ab5aed337cfb20bb9125d7cd8d20b42f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.Locale"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 81345.510291,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/canonicalized-tags.js",
+      "sha256": "d58ea58a87df2d406ea77133819b85e577f8c3906b717bd65d354cb154f0156c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 82102.08374999999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/canonicalized-tags.js",
+      "sha256": "d58ea58a87df2d406ea77133819b85e577f8c3906b717bd65d354cb154f0156c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 82657.420875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/canonicalized-unicode-ext-seq.js",
+      "sha256": "f28c103baf336c9519e12163a78ebbe4c0d57f7d59599f887a0331dc95e3e0df",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 82852.401625,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/canonicalized-unicode-ext-seq.js",
+      "sha256": "f28c103baf336c9519e12163a78ebbe4c0d57f7d59599f887a0331dc95e3e0df",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 83073.24274999999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/complex-language-subtag-replacement.js",
+      "sha256": "9d608179eb4eb60a6760d800a1a6365d90de8da895e3b115d37bc52ab43ecdff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 83338.739083,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/complex-language-subtag-replacement.js",
+      "sha256": "9d608179eb4eb60a6760d800a1a6365d90de8da895e3b115d37bc52ab43ecdff",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 83587.51954200001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/complex-region-subtag-replacement.js",
+      "sha256": "c4ac099b51df9db80d748dbf69126b191669dfaf626b5f86adcedad7b4cfee32",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 84118.631666,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/complex-region-subtag-replacement.js",
+      "sha256": "c4ac099b51df9db80d748dbf69126b191669dfaf626b5f86adcedad7b4cfee32",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 84658.295166,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/descriptor.js",
+      "sha256": "e1113dd3b5ccd95f7f2078c58a081b239a03b1015b1a320432d7458eb2338664",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 84859.744209,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/descriptor.js",
+      "sha256": "e1113dd3b5ccd95f7f2078c58a081b239a03b1015b1a320432d7458eb2338664",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 85077.458167,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/duplicates.js",
+      "sha256": "7c83e11eba59e0b9b64de57f128e774f129a5e0ae7245c665624fd7e6f9a19c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 85316.62525,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/duplicates.js",
+      "sha256": "7c83e11eba59e0b9b64de57f128e774f129a5e0ae7245c665624fd7e6f9a19c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 85558.76024999999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/elements-not-reordered.js",
+      "sha256": "92d74f09707c66e6d964741b1eb49b95af2f614eb8418a8ef323a78058086ebc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 85784.51958400001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/elements-not-reordered.js",
+      "sha256": "92d74f09707c66e6d964741b1eb49b95af2f614eb8418a8ef323a78058086ebc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 86005.293083,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/error-cases.js",
+      "sha256": "67631752f9e5a094171e1300918ec05d51fd1a7ef2388222ef1db1a7a150b59a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 86224.675292,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/error-cases.js",
+      "sha256": "67631752f9e5a094171e1300918ec05d51fd1a7ef2388222ef1db1a7a150b59a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 86441.67125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/get-locale.js",
+      "sha256": "fc0b4b61b99fc49ade6bad18b5f0b547e57be55028a4ac694b4beb4b833b3756",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 86650.586417,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/get-locale.js",
+      "sha256": "fc0b4b61b99fc49ade6bad18b5f0b547e57be55028a4ac694b4beb4b833b3756",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 86887.23370900001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/getCanonicalLocales.js",
+      "sha256": "e94fafc3a3d3a2e7a6cdd5f73d4befeb5bdf7bb9b6a5df73f0d5d95d6300e053",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 87103.942958,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/getCanonicalLocales.js",
+      "sha256": "e94fafc3a3d3a2e7a6cdd5f73d4befeb5bdf7bb9b6a5df73f0d5d95d6300e053",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 87321.28125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/grandfathered.js",
+      "sha256": "e33732bc88592db8e60f72247566c9f49c4987614f540b9a795363faa0a1756f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 87554.04245800001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/grandfathered.js",
+      "sha256": "e33732bc88592db8e60f72247566c9f49c4987614f540b9a795363faa0a1756f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 87787.03079199999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/has-property.js",
+      "sha256": "5192a7240115e42b37067dbddf1e7bf740f269671c3feb8480045636c5c8d327",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 88001.29875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/has-property.js",
+      "sha256": "5192a7240115e42b37067dbddf1e7bf740f269671c3feb8480045636c5c8d327",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 88217.199875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/invalid-tags.js",
+      "sha256": "f75b6009e7a9ec52bb105d34f938ef2c2279bf3ec9e2c720d50c3e7224405994",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 88934.413334,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/invalid-tags.js",
+      "sha256": "f75b6009e7a9ec52bb105d34f938ef2c2279bf3ec9e2c720d50c3e7224405994",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 89951.314,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/length.js",
+      "sha256": "d1f0f65ddc3e9db348803baa057be9300387cb923ee0e883d4ead1e7a53736e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 90527.45812499999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/length.js",
+      "sha256": "d1f0f65ddc3e9db348803baa057be9300387cb923ee0e883d4ead1e7a53736e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 91194.008791,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/locales-is-not-a-string.js",
+      "sha256": "0d46360bd23888de6d93af4b8c7484639c800966a82ec59c41412c5ce39576cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 91473.34075,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/locales-is-not-a-string.js",
+      "sha256": "0d46360bd23888de6d93af4b8c7484639c800966a82ec59c41412c5ce39576cf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92053.43612500001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/main.js",
+      "sha256": "8fafc0a3667d4bedb1b6f0e20ec08af4975217101c7e3275675cb07d54b5c2c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92294.29829199999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/main.js",
+      "sha256": "8fafc0a3667d4bedb1b6f0e20ec08af4975217101c7e3275675cb07d54b5c2c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92537.214125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/name.js",
+      "sha256": "aba3794eb84b9024e67f7d90a89d7faa91b8a4aa96fc022073159cc94c5be7aa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92757.799208,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/name.js",
+      "sha256": "aba3794eb84b9024e67f7d90a89d7faa91b8a4aa96fc022073159cc94c5be7aa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92970.23429200001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/non-iana-canon.js",
+      "sha256": "5e68545490c7cdc2c675ee2ba8495a30dddb9743f57f20b030f31e080adb8c63",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 93299.39766700001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/non-iana-canon.js",
+      "sha256": "5e68545490c7cdc2c675ee2ba8495a30dddb9743f57f20b030f31e080adb8c63",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 93628.735958,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/overriden-arg-length.js",
+      "sha256": "f3e35046b2acb6886ec8e93b5c302235395f7e930f0cf4bbf76de70884ae512f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 93852.931417,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/overriden-arg-length.js",
+      "sha256": "f3e35046b2acb6886ec8e93b5c302235395f7e930f0cf4bbf76de70884ae512f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 94080.982,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/overriden-push.js",
+      "sha256": "095b76863d9d747c7eb1983c100913f30e11aa3496c5c531a06b6c214150c056",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 94304.736125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/overriden-push.js",
+      "sha256": "095b76863d9d747c7eb1983c100913f30e11aa3496c5c531a06b6c214150c056",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 94521.327708,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/preferred-grandfathered.js",
+      "sha256": "f1306ea9857bf3fefa04afa5403ed19b2bd3b06eed890081422a6f6507e66673",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 95009.49925000001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/preferred-grandfathered.js",
+      "sha256": "f1306ea9857bf3fefa04afa5403ed19b2bd3b06eed890081422a6f6507e66673",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 95483.303667,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/preferred-variant.js",
+      "sha256": "7b23649733b43ff0cc6b4f4a8ef9c7e32da6b1cd97c83ff0fec8cfba6e6d4bf3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 95704.54125,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/preferred-variant.js",
+      "sha256": "7b23649733b43ff0cc6b4f4a8ef9c7e32da6b1cd97c83ff0fec8cfba6e6d4bf3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 95925.54324999999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/returned-object-is-an-array.js",
+      "sha256": "abb2e7d574224417dadd9265f55fa966bef5549b92f1d9107e25b50e49c09643",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96125.185042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/returned-object-is-an-array.js",
+      "sha256": "abb2e7d574224417dadd9265f55fa966bef5549b92f1d9107e25b50e49c09643",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96344.240875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/returned-object-is-mutable.js",
+      "sha256": "09cdc843745c377a0d7f207d7bd1a84b748dd828edf9361ca16747b0cf212e68",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96586.58466699999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/returned-object-is-mutable.js",
+      "sha256": "09cdc843745c377a0d7f207d7bd1a84b748dd828edf9361ca16747b0cf212e68",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96827.468334,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/to-string.js",
+      "sha256": "04c06d9afe9cc40741eeaaf9a4dcdfa7ed9635f1f43ef92ab3a43a2b5fd0a38c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97045.345958,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/to-string.js",
+      "sha256": "04c06d9afe9cc40741eeaaf9a4dcdfa7ed9635f1f43ef92ab3a43a2b5fd0a38c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97256.801042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-canonical.js",
+      "sha256": "3d2bfcd7317fa52fdaec3a25d7cbd4bc94440a2adfa97c43cc60576828875242",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97548.57233299999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-canonical.js",
+      "sha256": "3d2bfcd7317fa52fdaec3a25d7cbd4bc94440a2adfa97c43cc60576828875242",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97834.58625000001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-invalid.js",
+      "sha256": "e29c14da46efd8fd4b2ee7f465212aafaef05fa17a2f883cc50e1a8dd94385e6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98304.66920799999,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-invalid.js",
+      "sha256": "e29c14da46efd8fd4b2ee7f465212aafaef05fa17a2f883cc50e1a8dd94385e6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98779.80225,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-valid.js",
+      "sha256": "415b510ac2f90e73b0ca0d0c40a5de1c2fda9c10359b67204aac0ae162e2d9f6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 99792.868042,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/transformed-ext-valid.js",
+      "sha256": "415b510ac2f90e73b0ca0d0c40a5de1c2fda9c10359b67204aac0ae162e2d9f6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 100800.27604200001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-calendar.js",
+      "sha256": "47b02be31cd7e24254b845bb26bc7676141cb2bf980192731bdc40519480d1ac",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101052.548208,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-calendar.js",
+      "sha256": "47b02be31cd7e24254b845bb26bc7676141cb2bf980192731bdc40519480d1ac",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101359.408958,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-col-strength.js",
+      "sha256": "193286a893142b21413f5bc1cfabcd5a111270c1d4575104f433467feab176e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101609.46987500001,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-col-strength.js",
+      "sha256": "193286a893142b21413f5bc1cfabcd5a111270c1d4575104f433467feab176e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101856.22225,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-measurement-system.js",
+      "sha256": "b595795285b31ed4fcef37aad72a03b9fe3777b7b887818e5187f7130cfb716e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102081.633208,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-measurement-system.js",
+      "sha256": "b595795285b31ed4fcef37aad72a03b9fe3777b7b887818e5187f7130cfb716e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102309.7815,
+      "batch": 0
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-region.js",
+      "sha256": "03e2b7f538476891d5e9ab0865a9d7f5f803c6aeb38098dd0e325357d1f0c7ea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 62453.92912500001,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-region.js",
+      "sha256": "03e2b7f538476891d5e9ab0865a9d7f5f803c6aeb38098dd0e325357d1f0c7ea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 62844.87375000001,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-subdivision.js",
+      "sha256": "bd2cb56f05d27c301397ddcdde948f064812e0242185d73b23425f284f831bd5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 63574.53766599999,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-subdivision.js",
+      "sha256": "bd2cb56f05d27c301397ddcdde948f064812e0242185d73b23425f284f831bd5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 64475.81479100001,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-timezone.js",
+      "sha256": "c2567495cf846b57c6628ec098ff74fd80054e1b471ee375c21da83a5cec681c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 65334.15308300001,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-timezone.js",
+      "sha256": "c2567495cf846b57c6628ec098ff74fd80054e1b471ee375c21da83a5cec681c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 66215.021958,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-yes-to-true.js",
+      "sha256": "1eb41a2cd01b1a3779c65d946ab2f6efe352abafa4331e585e8c80a07bfbc696",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 66899.17479199999,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-canonicalize-yes-to-true.js",
+      "sha256": "1eb41a2cd01b1a3779c65d946ab2f6efe352abafa4331e585e8c80a07bfbc696",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 67654.17954200001,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-key-with-digit.js",
+      "sha256": "48ed9017c47ba1b99cab845c4f799474914310eeb885e31ef6edcc047ad5835e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 68295.62837499999,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/unicode-ext-key-with-digit.js",
+      "sha256": "48ed9017c47ba1b99cab845c4f799474914310eeb885e31ef6edcc047ad5835e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "testIntl.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testIntl.js",
+          "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 68519.858583,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/weird-cases.js",
+      "sha256": "79a1acb6b1e9a3231bf6f45b0bf358ba78f43f49d4747e55c55f1ea8d08f5627",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 68737.972834,
+      "batch": 1
+    },
+    {
+      "path": "intl402/Intl/getCanonicalLocales/weird-cases.js",
+      "sha256": "79a1acb6b1e9a3231bf6f45b0bf358ba78f43f49d4747e55c55f1ea8d08f5627",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 69241.67095799999,
+      "batch": 1
+    }
+  ]
+}

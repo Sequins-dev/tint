@@ -1,0 +1,1175 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 36,
+        "kind": "execution",
+        "compileMs": 38458.406292,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/Temporal/PlainDate/prototype/toString",
+  "totals": {
+    "total": 36,
+    "passed": 16,
+    "failed": 0,
+    "unsupported": 20,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.4444444444444444
+  },
+  "observations": [
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/basic.js",
+      "sha256": "9c3edebbcf5a372f398b741755e4e0bd91d0859730dec6c6870d224df967f74c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 44853.163291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/basic.js",
+      "sha256": "9c3edebbcf5a372f398b741755e4e0bd91d0859730dec6c6870d224df967f74c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49339.462999999996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/branding.js",
+      "sha256": "33f20c422ff7ed355cc10cc9df412177511eb1d0a9130c70d03485654fe6f097",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 51600.766583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/branding.js",
+      "sha256": "33f20c422ff7ed355cc10cc9df412177511eb1d0a9130c70d03485654fe6f097",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 53855.064834000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/builtin.js",
+      "sha256": "509f3efa53d596497765b8b79b25bd5b1b0a0d6c19921652a5ecf841df716978",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 56107.014458000005,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/builtin.js",
+      "sha256": "509f3efa53d596497765b8b79b25bd5b1b0a0d6c19921652a5ecf841df716978",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58369.870041,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-always.js",
+      "sha256": "c4fa47591b77b8bff2803859fef46835c6ac7a1987ea5d629280ab619ec22969",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 60629.067875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-always.js",
+      "sha256": "c4fa47591b77b8bff2803859fef46835c6ac7a1987ea5d629280ab619ec22969",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 62882.603666,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-auto.js",
+      "sha256": "fe9ba554c6ab944ae9482b8ee55ed15a32c1bb681de075ec763676f68004f98a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 65143.948000000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-auto.js",
+      "sha256": "fe9ba554c6ab944ae9482b8ee55ed15a32c1bb681de075ec763676f68004f98a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 67404.163709,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-critical.js",
+      "sha256": "c9fdc228b8b24e5b9549bb7e7b75bc1078283314788afa6dbd7ba289582c42db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 69664.84504100001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-critical.js",
+      "sha256": "c9fdc228b8b24e5b9549bb7e7b75bc1078283314788afa6dbd7ba289582c42db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 71910.93908299999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-invalid-string.js",
+      "sha256": "ffa3f69cdd4712feb1c30b44240b98a7c23b6a628e8ee98c961b6d859c2358bc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 74170.434959,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-invalid-string.js",
+      "sha256": "ffa3f69cdd4712feb1c30b44240b98a7c23b6a628e8ee98c961b6d859c2358bc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 76430.006542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-never.js",
+      "sha256": "7c843832a73c32b37fd4d7550a1c868c6733b287384148d1e329019f8a994275",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 78685.045167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-never.js",
+      "sha256": "7c843832a73c32b37fd4d7550a1c868c6733b287384148d1e329019f8a994275",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 80934.522125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-undefined.js",
+      "sha256": "adcc36344c97f28fe6297a9db2c09b62e1bfb7c8cd61758ddbf9a5517c3fb7c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 83187.90083299999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-undefined.js",
+      "sha256": "adcc36344c97f28fe6297a9db2c09b62e1bfb7c8cd61758ddbf9a5517c3fb7c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 85470.37700000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-wrong-type.js",
+      "sha256": "e74512bdd1913022a07aaf6f566567de1ba018ff19bb98658de782e7ae10d762",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "compareArray.js",
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 87730.701959,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/calendarname-wrong-type.js",
+      "sha256": "e74512bdd1913022a07aaf6f566567de1ba018ff19bb98658de782e7ae10d762",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "compareArray.js",
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 89988.49225,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/length.js",
+      "sha256": "f40b5d45ea5cce681afb11665b125af193ecd3a68c03633c265ec94162db31d9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92237.60875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/length.js",
+      "sha256": "f40b5d45ea5cce681afb11665b125af193ecd3a68c03633c265ec94162db31d9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 94483.55658300001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/name.js",
+      "sha256": "2d00fb6382f25cabf2db1b7285da78a079ddb82519e8dbe49fb16358bc40165b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96739.07062500001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/name.js",
+      "sha256": "2d00fb6382f25cabf2db1b7285da78a079ddb82519e8dbe49fb16358bc40165b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98995.714083,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/not-a-constructor.js",
+      "sha256": "957deaaaa68542a7f95bbe71e02cedca486362d5eb041d6b0ba70b6be4147181",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Temporal"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101244.08325,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/not-a-constructor.js",
+      "sha256": "957deaaaa68542a7f95bbe71e02cedca486362d5eb041d6b0ba70b6be4147181",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Temporal"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 103494.069708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/options-object.js",
+      "sha256": "35ed3cd4d22a819bc991407ba128f5be4fa03fee11291f2cf1e1ceee68385e7f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 105779.621084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/options-object.js",
+      "sha256": "35ed3cd4d22a819bc991407ba128f5be4fa03fee11291f2cf1e1ceee68385e7f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 108062.18162500001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/options-wrong-type.js",
+      "sha256": "e79c37c6dc42be8a2cfaf368cb65cfeed45c04a6a0c620f37976a6399093fc85",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 110354.00325,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/options-wrong-type.js",
+      "sha256": "e79c37c6dc42be8a2cfaf368cb65cfeed45c04a6a0c620f37976a6399093fc85",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 112674.33012500001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/order-of-operations.js",
+      "sha256": "c1d40f8add3287cd004ef688582e26b18c47373330d89ddcb8853a31d0486feb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "compareArray.js",
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 119761.394708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/order-of-operations.js",
+      "sha256": "c1d40f8add3287cd004ef688582e26b18c47373330d89ddcb8853a31d0486feb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "compareArray.js",
+          "temporalHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 122031.45404200001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/prop-desc.js",
+      "sha256": "2c75e29c0167101b2b41e371d3a935868ac5218e38d70ddb64bb12c26fd98e43",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124270.620792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/prop-desc.js",
+      "sha256": "2c75e29c0167101b2b41e371d3a935868ac5218e38d70ddb64bb12c26fd98e43",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126540.890459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/year-format.js",
+      "sha256": "9f936dca0a4997f882c7bef3f6162a2879b91bd5fec6c6d22fbefea8b3b422b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128818.899416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toString/year-format.js",
+      "sha256": "9f936dca0a4997f882c7bef3f6162a2879b91bd5fec6c6d22fbefea8b3b422b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131083.335291,
+      "batch": 0
+    }
+  ]
+}

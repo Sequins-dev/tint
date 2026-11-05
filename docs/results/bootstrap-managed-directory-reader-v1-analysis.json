@@ -1,0 +1,28 @@
+{
+  "kind": "native-self-build-failure-analysis",
+  "conformance": false,
+  "observation": "docs/results/bootstrap-managed-directory-reader-v1.json",
+  "debuggerLog": ".tint-bootstrap/dr-self-v1/debugger.log",
+  "offlineDisassembly": ".tint-bootstrap/managed-directory-reader-relative-address-disassembly-v1.log",
+  "facts": [
+    "The empty-request fast path was present in this 530-file snapshot. The run reached native code and stopped on EXC_BREAKPOINT after about 982 seconds.",
+    "The trap is relativeAddress+4432, the numeric success-tag check after an allocation callback. The callback completed normally (x0=1); the caller loaded a zero presence tag into x9 and trapped.",
+    "The additional LLDB memory-read command used an incompatible display format, so allocation-vector contents were not captured. No stage2 image was written.",
+    "The configured 3 GiB managed mapping is split into two 1.5 GiB semispaces, each with a 256 MiB nursery and 1.25 GiB old region. This is a capacity fact, not proof that live data exhausted it."
+  ],
+  "nextExperiment": {
+    "script": ".tint-bootstrap/build-allocation-diagnostic-v1.mjs",
+    "diagnosticOnly": true,
+    "baseline": "3c5019a367795740f1b975abc5584d6286a177367863f75923a791f64b767416",
+    "instrumentedSource": "009d058575ceb43c1a0a4f47306cb4c97f046f12ccbff62a4152a5fcd0e21609",
+    "changes": "Only isolated snapshot generational.ts and tracing/nursery.ts: failure stage plus progressive survivor/fixup counts. Production collector code unchanged.",
+    "stateWords": {
+      "15": "failure stage: 1 input/reentrant, 2 minor prepare, 3 major prepare, 4 major live bytes above old capacity, 5 commit, 6 old postcollection capacity, 7 young postcollection capacity",
+      "16": "last discovered survivor count",
+      "17": "last survivor byte count",
+      "18": "last fixup count",
+      "19": "requested allocation bytes"
+    }
+  },
+  "latestPassingCheckpoint": "docs/results/managed-surface-materialization-checkpoint-v1.json"
+}

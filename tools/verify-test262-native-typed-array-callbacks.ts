@@ -1,0 +1,10 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const a=new Uint8Array([19,23,42]),context={x:1};let count=0;if(!a.every(function(v,i,o){if(this!==context||o!==a||v!==a[i])throw 1;count++;return true;},context)||count!==3)throw 2;count=0;if(!a.some(v=>{count++;return v===23;})||count!==2)throw 3;if(a.forEach(()=>{})!==undefined)throw 4;`,
+  `const a=new Uint8Array([19,23,19]);if(a.find(v=>v===19)!==19||a.findIndex(v=>v===19)!==0||a.findLast(v=>v===19)!==19||a.findLastIndex(v=>v===19)!==2)throw 1;if(a.find(()=>false)!==undefined||a.findIndex(()=>false)!==-1)throw 2;let order="";a.findLast((v,i)=>{order+=i;return false;});if(order!=="210")throw 3;`,
+  `const b=new ArrayBuffer(3),a=new Uint8Array(b);a.set([1,2,3]);let count=0;a.forEach((v,i)=>{if(i===0){if(v!==1)throw 1;b.transfer();}else if(v!==undefined)throw 2;count++;});if(count!==3)throw 3;`,
+  `const b=new ArrayBuffer(3,{maxByteLength:6}),a=new Uint8Array(b);let count=0;a.findIndex((v,i)=>{if(i===0)b.resize(1);else if(v!==undefined)throw 1;count++;return false;});if(count!==3)throw 2;`,
+  `const a=new Uint8Array([1,2,3]);if(a.reduce((x,y)=>x+y)!==6||a.reduceRight((x,y)=>x*10+y)!==321)throw 1;let count=0;if(new Uint8Array(0).reduce(()=>{count++;},undefined)!==undefined||count!==0)throw 2;let caught=false;try{new Uint8Array(0).reduce(()=>0);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;`,
+  `const a=new BigInt64Array([19n,23n]);if(a.reduce((x,y)=>x+y,0n)!==42n)throw 1;const b=new ArrayBuffer(3),v=new Uint8Array(b);let count=0;v.reduce((acc,x,i,o)=>{if(o!==v)throw 2;if(i===0)b.transfer();else if(x!==undefined)throw 3;count++;return acc;},42);if(count!==3)throw 4;`,
+  `const a=new Uint8Array(0);let caught=false;try{a.every(null);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;if(!a.every(()=>false)||a.some(()=>true))throw 2;caught=false;try{Uint8Array.prototype.find.call([],()=>true);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;`,
+]);

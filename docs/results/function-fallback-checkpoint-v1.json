@@ -1,0 +1,36 @@
+{
+  "kind": "function-fallback-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "8525a043642f2c51018fef6fe585fe770af1a3234b22556188b59c7bc6171c81",
+    "files": 550
+  },
+  "workspaceGate": {
+    "tests": 4039,
+    "log": ".tint-bootstrap/function-fallback-workspace-check-v3.log"
+  },
+  "nativeReports": [
+    "docs/results/native-dynamic-function-carrier-v6.json",
+    "docs/results/native-test262-function-fallback-validation-v1.json"
+  ],
+  "expectedOutcomes": {
+    "completed": 14,
+    "unsupported": 2
+  },
+  "scope": [
+    "lazy per-function body compilation",
+    "existing profiles remain preferred",
+    "mapped/default/rest/destructuring arguments",
+    "constructor new.target and different Reflect.construct target",
+    "constructor-realm globals, receivers and errors",
+    "function identity and absence of anonymous lexical self binding",
+    "retained closures after allocation churn",
+    "direct string eval remains unsupported"
+  ],
+  "pending": [
+    "full unchanged Function-family comparison against IE7 lineage",
+    "frozen native self-build fixed point",
+    "indirect-eval conformance regressions"
+  ],
+  "retainedFailureAnalysis": "docs/results/native-dynamic-function-carrier-context-fix-v1.json"
+}

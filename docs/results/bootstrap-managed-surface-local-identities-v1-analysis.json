@@ -1,0 +1,14 @@
+{
+  "kind": "native-launch-infrastructure-analysis",
+  "observation": "docs/results/bootstrap-managed-surface-local-identities-v1.json",
+  "nativeEntryEstablished": false,
+  "targetFaultObserved": false,
+  "cause": "Darwin AF_UNIX socket pathname is too long",
+  "socketPathUtf8Bytes": 106,
+  "maximumPathUtf8Bytes": 103,
+  "referenceProbe": {"103Bytes": "bind accepted", "104Bytes": "AF_UNIX path too long", "original106Bytes": "AF_UNIX path too long"},
+  "correction": "Use the short .tint-bootstrap/ms-local-self-v2 debugger directory and reject overlong paths before launch",
+  "regression": "tools/native-debugger-session.test.ts",
+  "followingObservation": "docs/results/bootstrap-managed-surface-local-identities-v2.json",
+  "provenance": "The following observation uses a newer frozen source; the earlier failed result remains unchanged."
+}

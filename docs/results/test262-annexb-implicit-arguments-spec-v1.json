@@ -1,0 +1,11 @@
+{
+  "kind": "conformance-discrepancy-analysis",
+  "test": "annexB/language/function-code/block-decl-func-skip-arguments.js",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "nativeReport": "test262-annexb-function-code-native-v1.json",
+  "nodeReferenceReport": "test262-node-annexb-implicit-arguments-v1.json",
+  "specification": "https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-functiondeclarationinstantiation",
+  "checkedAt": "2026-11-02",
+  "finding": "The pinned test expects implicit arguments to be treated as a formal parameter name when deciding Annex B copies. Current FunctionDeclarationInstantiation separates paramNames (formal names) from paramBindings (including an implicit arguments binding). The copy condition checks paramNames; an existing arguments binding can be updated without creating a new var. Tint and Node v24.12.0 both fail the unchanged legacy expectation.",
+  "policy": "Preserve the unchanged test and its failure in the denominator. Do not change correct current semantics or report this as a pass."
+}

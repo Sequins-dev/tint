@@ -1,0 +1,33 @@
+{
+  "kind": "native-thread-contention-regressions",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+    "files": 505
+  },
+  "artifactManifest": ".tint-bootstrap/native-contention-artifacts-v1/manifest.json",
+  "rows": [
+    {
+      "width": 8,
+      "report": "native-contention-u8-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "width": 16,
+      "report": "native-contention-u16-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "width": 32,
+      "report": "native-contention-u32-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "scope": "Two actual pthread workers, generated platform ABI bridges, shared scalar control/data, forced CAS mismatch, contended updates, subword canaries, callee-save and cleanup checks. No managed worker context, Script agent, waiter service or uint64 contention coverage is claimed."
+}

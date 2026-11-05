@@ -1,0 +1,2408 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/Function/prototype/call",
+  "totals": {
+    "total": 90,
+    "passed": 26,
+    "failed": 3,
+    "unsupported": 43,
+    "timeouts": 0,
+    "harnessErrors": 2,
+    "crashes": 16,
+    "passFraction": 0.28888888888888886
+  },
+  "observations": [
+    {
+      "path": "built-ins/Function/prototype/call/15.3.4.4-1-s.js",
+      "sha256": "0da3227e0f9e47778eb36d21055d636e266cc040ed16fb87c1085b8f1836fb4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4364.265833
+    },
+    {
+      "path": "built-ins/Function/prototype/call/15.3.4.4-2-s.js",
+      "sha256": "965690f95b437b2ae0ed985bf2894ab6963db4c466e6fa1187c9073aceb4b354",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3839.8657079999994
+    },
+    {
+      "path": "built-ins/Function/prototype/call/15.3.4.4-3-s.js",
+      "sha256": "cf2cc90f4c2c608654aed70c85ff115cf2707037a11b436e18d8a6873a4916bd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3863.566290999999
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A10.js",
+      "sha256": "ce1c7ca2f07277b68687023a0f405f88da5c20b8558fa70af662efd6bf7351bf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "harness",
+        "type": "ReferenceError",
+        "message": "native harness threw"
+      },
+      "status": "harness-error",
+      "elapsedMs": 9968.6375
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A10.js",
+      "sha256": "ce1c7ca2f07277b68687023a0f405f88da5c20b8558fa70af662efd6bf7351bf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "harness",
+        "type": "ReferenceError",
+        "message": "native harness threw"
+      },
+      "status": "harness-error",
+      "elapsedMs": 8947.777875
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A11.js",
+      "sha256": "cbeaa7fe024c079c4a4f91d6983f09c191c3a9801d4dc2de2329cb3c7bac7e34",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29447.905375000002
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A11.js",
+      "sha256": "cbeaa7fe024c079c4a4f91d6983f09c191c3a9801d4dc2de2329cb3c7bac7e34",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28807.493292
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A12.js",
+      "sha256": "563fa8d6a9cdb72fa77e607825d4de365c0f7fa64a8cf06336e6ae5a14dc868e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 7444.2094170000055
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A12.js",
+      "sha256": "563fa8d6a9cdb72fa77e607825d4de365c0f7fa64a8cf06336e6ae5a14dc868e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6954.180666
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A13.js",
+      "sha256": "af65afd0c0650a970d042f9024b14924d25b1f609a19423c3499cd77c4468878",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5432.026459000001
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A13.js",
+      "sha256": "af65afd0c0650a970d042f9024b14924d25b1f609a19423c3499cd77c4468878",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4556.636375000002
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A14.js",
+      "sha256": "684af92f88f7e7bffb6dfabffb15a75ce7a0a76e71270e57ea77cbd0744112f5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3824.4067080000095
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A14.js",
+      "sha256": "684af92f88f7e7bffb6dfabffb15a75ce7a0a76e71270e57ea77cbd0744112f5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3822.149417000008
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A15.js",
+      "sha256": "ec40ccf8c6fcdde1b1d0fc90fe2cf3805b0107187e2d5b59e12e1ce2917f2c08",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3760.4428329999937
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A15.js",
+      "sha256": "ec40ccf8c6fcdde1b1d0fc90fe2cf3805b0107187e2d5b59e12e1ce2917f2c08",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3819.3013340000034
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A16.js",
+      "sha256": "bacbc22ad12297b46af2d035e0510472dc0f0e5864777882838ec9e7f13ea3e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":429,\"end\":430,\"position\":{\"line\":13,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.851209000000381
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A16.js",
+      "sha256": "bacbc22ad12297b46af2d035e0510472dc0f0e5864777882838ec9e7f13ea3e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":443,\"end\":444,\"position\":{\"line\":14,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7051659999997355
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A1_T1.js",
+      "sha256": "4196d1c4de8ddd4673aefd1cdbb5ade6920f034ec96e491ba873c3a3deec7c81",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3870.0987910000113
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A1_T1.js",
+      "sha256": "4196d1c4de8ddd4673aefd1cdbb5ade6920f034ec96e491ba873c3a3deec7c81",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3869.7687089999963
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A1_T2.js",
+      "sha256": "d412111a8882c9fe01dcb0901910523d146e30b8057672385b4c73f07253319b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3812.560750000004
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A1_T2.js",
+      "sha256": "d412111a8882c9fe01dcb0901910523d146e30b8057672385b4c73f07253319b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3757.4988750000193
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A2_T1.js",
+      "sha256": "5bfe30bd2ebd8f1f268470a00b5a1b954a0d3d084d98a6464772cb7c00f7958c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3752.783875000023
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A2_T1.js",
+      "sha256": "5bfe30bd2ebd8f1f268470a00b5a1b954a0d3d084d98a6464772cb7c00f7958c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3765.9430409999914
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A2_T2.js",
+      "sha256": "ccf4e7f728bdfebd441aee0e67543133a463af0c2f28ca26a1fbc5ba1b185614",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3875.8916249999893
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A2_T2.js",
+      "sha256": "ccf4e7f728bdfebd441aee0e67543133a463af0c2f28ca26a1fbc5ba1b185614",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3748.2927079999936
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T1.js",
+      "sha256": "1182a257013346365b4d72ef96b995fadcdb3fd50d91e9967422db9682a0385b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3792.4570419999945
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T1.js",
+      "sha256": "1182a257013346365b4d72ef96b995fadcdb3fd50d91e9967422db9682a0385b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3753.459959
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T10.js",
+      "sha256": "d52e78afd708837f251cf4766ef57a2736291729f8ffc9bc8f5eb28df9d4d31e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3922.9018329999817
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T2.js",
+      "sha256": "1fc9514f6ae930da4dc8ed4ab31f9822b64c48d8eb3768e46423ae209bea8865",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3733.3795420000097
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T2.js",
+      "sha256": "1fc9514f6ae930da4dc8ed4ab31f9822b64c48d8eb3768e46423ae209bea8865",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3809.9329169999983
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T3.js",
+      "sha256": "8094db7e55ea93d836e4744ba6830f09ee01f839d14a490157f84ce94f4b59f3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3841.0563750000147
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T3.js",
+      "sha256": "8094db7e55ea93d836e4744ba6830f09ee01f839d14a490157f84ce94f4b59f3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3852.771833000006
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T4.js",
+      "sha256": "56d94b4149f9aceb570586ea89ae57ee7f922eadb472ee35e90ccfd2eacbe562",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3777.4227919999976
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T4.js",
+      "sha256": "56d94b4149f9aceb570586ea89ae57ee7f922eadb472ee35e90ccfd2eacbe562",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3720.9511249999923
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T5.js",
+      "sha256": "7c4ee263314f53b519f8450eefcec58070f8e66a8ca392f16a3b38d7c3d88ca6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4209.312291999988
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T5.js",
+      "sha256": "7c4ee263314f53b519f8450eefcec58070f8e66a8ca392f16a3b38d7c3d88ca6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3777.114791
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T6.js",
+      "sha256": "5ae10e833795277d9a7b3f7b08ce5dd1b852572f40bfe6079f47a66f9bfc83b4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3766.7884579999954
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T7.js",
+      "sha256": "74b3500371f37975f15a6734b7bb98416f45ea1b25005ecc6a1732fed8b5f5ea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3759.5331250000163
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T7.js",
+      "sha256": "74b3500371f37975f15a6734b7bb98416f45ea1b25005ecc6a1732fed8b5f5ea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3725.4433339999814
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T8.js",
+      "sha256": "96e7b22fa0681e980987514718097cb49e51b13589c5aaf585a753acff2c77f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3837.600416000001
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T9.js",
+      "sha256": "97341c73146ccd8336b7e5c8824cf2915812b0cc4fff36cc730defc0e244fb58",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3767.8012500000186
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T9.js",
+      "sha256": "97341c73146ccd8336b7e5c8824cf2915812b0cc4fff36cc730defc0e244fb58",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3754.3125829999917
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T1.js",
+      "sha256": "f7d7fb0530302ea19b7bfe07f2553692bb13309539fe234248deccbc105d21cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3806.785124999995
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T1.js",
+      "sha256": "f7d7fb0530302ea19b7bfe07f2553692bb13309539fe234248deccbc105d21cf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3865.0821249999863
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T2.js",
+      "sha256": "b6c306352b2f9a4559c74698a095b0883e7b4609e5d7d9fe0aa48cd51fea3db6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3799.748083000013
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T2.js",
+      "sha256": "b6c306352b2f9a4559c74698a095b0883e7b4609e5d7d9fe0aa48cd51fea3db6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3877.6877089999907
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T3.js",
+      "sha256": "6bcb3a48e1e663609f20085c3420d651d32152ccf91180b58c5c403eb53007a4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3765.34375
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T4.js",
+      "sha256": "83644959922bc4ce200cc4fac40891cee48d3cd17fa4137b2d7ad81510bde2c4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4579.441083000012
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T5.js",
+      "sha256": "18100a0a9540f55b502d5cfde756b136d2eb40327c905c860934b1237ee4d330",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3972.8378749999974
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T5.js",
+      "sha256": "18100a0a9540f55b502d5cfde756b136d2eb40327c905c860934b1237ee4d330",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3879.900667000009
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T6.js",
+      "sha256": "497fb2d2adea6f7ab52ce172612a5d6ac0344eb502eb000dd2765f4565972647",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3813.162042000011
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T6.js",
+      "sha256": "497fb2d2adea6f7ab52ce172612a5d6ac0344eb502eb000dd2765f4565972647",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3897.3844590000226
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T7.js",
+      "sha256": "96c8fbaa72d2f82787bf8dfcc35398d446dff28d9795c5b5a130d93fbd17a863",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4001.314291000017
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T7.js",
+      "sha256": "96c8fbaa72d2f82787bf8dfcc35398d446dff28d9795c5b5a130d93fbd17a863",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3814.3680419999873
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T8.js",
+      "sha256": "8bc737f7d4a407ff299e1354f8f9883a017a9ae350abd93ed261e8d2e97333cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 21287.841791999992
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T8.js",
+      "sha256": "8bc737f7d4a407ff299e1354f8f9883a017a9ae350abd93ed261e8d2e97333cf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 7348.519874999998
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T1.js",
+      "sha256": "dc35c13be9a19f49d5cecfaab850cd3fd79ac3320d2ac1628f8b10b82b09b14a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 7050.293292000017
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T1.js",
+      "sha256": "dc35c13be9a19f49d5cecfaab850cd3fd79ac3320d2ac1628f8b10b82b09b14a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 6038.076666000008
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T10.js",
+      "sha256": "99e7776da5d6f3f71d773160353fb96790b1efde1de353c84b57ed4d50696615",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 22670.188333
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T10.js",
+      "sha256": "99e7776da5d6f3f71d773160353fb96790b1efde1de353c84b57ed4d50696615",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-VuK3oV/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-VuK3oV/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 34468.17941599997
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T2.js",
+      "sha256": "157de2fbd12faf92e3b8dff04a4e9a9a857e3f78cfe36980b50e07f111fce45b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 6643.990458999993
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T2.js",
+      "sha256": "157de2fbd12faf92e3b8dff04a4e9a9a857e3f78cfe36980b50e07f111fce45b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4033.0893749999814
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T3.js",
+      "sha256": "33c133fd6b03fc78e30c8e6399b32056f120baf208c7b534052d41563fe3302f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3995.9125829999684
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T3.js",
+      "sha256": "33c133fd6b03fc78e30c8e6399b32056f120baf208c7b534052d41563fe3302f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3922.5897499999846
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+      "sha256": "857e28787d2cdff3a2c2b83fa2b6f50660276045e5a4855eaf45c1ae2f5cee9f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4150.850916000025
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+      "sha256": "857e28787d2cdff3a2c2b83fa2b6f50660276045e5a4855eaf45c1ae2f5cee9f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4180.3273749999935
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+      "sha256": "15638acc8b2a5a801d24ed1632948ff2093618a91081bc59cc4c33b0f43878dc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4781.39279100002
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+      "sha256": "15638acc8b2a5a801d24ed1632948ff2093618a91081bc59cc4c33b0f43878dc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 8948.442166000023
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+      "sha256": "70109b0d692a40958c28533009acc3ee195c4e047baa24d337c31effcf334e46",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5549.113416999986
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+      "sha256": "70109b0d692a40958c28533009acc3ee195c4e047baa24d337c31effcf334e46",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4666.483917000005
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+      "sha256": "614be4b8d216edd6d7b24b1f9b352d9a7769c3d36a1c566d2a2280d0dba58407",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4569.209291999985
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+      "sha256": "614be4b8d216edd6d7b24b1f9b352d9a7769c3d36a1c566d2a2280d0dba58407",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5573.156999999948
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T8.js",
+      "sha256": "a0ad84650f974985d05ad271a3393f4c37ea4dbb817a30c629b05ec8cae4d9ec",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 17576.894749999978
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T8.js",
+      "sha256": "a0ad84650f974985d05ad271a3393f4c37ea4dbb817a30c629b05ec8cae4d9ec",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 29707.228125000023
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T9.js",
+      "sha256": "d2e730f24592f97520815e1891f52ce7ea143e585f7730bcf4fbc30033b51223",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-teIr5V/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-teIr5V/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31411.934833000007
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T9.js",
+      "sha256": "d2e730f24592f97520815e1891f52ce7ea143e585f7730bcf4fbc30033b51223",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eKjQZS/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eKjQZS/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 36432.198167000024
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T3.js",
+      "sha256": "13f06e01fec1efb21fa588a6510823120bbfd685d5ba51e601f8714638018f5d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17302.03145899996
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T3.js",
+      "sha256": "13f06e01fec1efb21fa588a6510823120bbfd685d5ba51e601f8714638018f5d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TedzDF/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TedzDF/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 37716.65187499998
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T4.js",
+      "sha256": "de7d1e744da94020dfb105b91c3b60d927fba66666422b600ecd764c1f7b4545",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-h77fDv/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-h77fDv/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 32931.0640420001
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T4.js",
+      "sha256": "de7d1e744da94020dfb105b91c3b60d927fba66666422b600ecd764c1f7b4545",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jCMc0N/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jCMc0N/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 36036.537416000036
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T5.js",
+      "sha256": "d460d2cc47e11217b1c3f08823309f2a10026240eec608d9e6c2f5b2b7f26e4b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-y1fGOX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-y1fGOX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31532.601208999986
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T5.js",
+      "sha256": "d460d2cc47e11217b1c3f08823309f2a10026240eec608d9e6c2f5b2b7f26e4b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BcnjnZ/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BcnjnZ/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31377.84358300001
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T6.js",
+      "sha256": "e9e37a56417b4a7ee93d286f4de701f8a6c4043e7dc38fe437bfb65dd0dd48c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dfonqk/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dfonqk/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31400.77454200003
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T6.js",
+      "sha256": "e9e37a56417b4a7ee93d286f4de701f8a6c4043e7dc38fe437bfb65dd0dd48c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-uAGphY/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-uAGphY/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31429.28816700005
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A9.js",
+      "sha256": "957b7253b93af055eb96a5997a5f9b943e6cad13557f8829a19816844c9ca393",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Akfys/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Akfys/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31426.22470800008
+    },
+    {
+      "path": "built-ins/Function/prototype/call/S15.3.4.4_A9.js",
+      "sha256": "957b7253b93af055eb96a5997a5f9b943e6cad13557f8829a19816844c9ca393",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-58Mn0u/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-58Mn0u/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31528.2435000001
+    },
+    {
+      "path": "built-ins/Function/prototype/call/name.js",
+      "sha256": "4fc65aeb0009dc5acfd67deb7b1ce07482fa14e77589fc0309b55e50f2882f88",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yDczrJ/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yDczrJ/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 33608.828416000004
+    },
+    {
+      "path": "built-ins/Function/prototype/call/name.js",
+      "sha256": "4fc65aeb0009dc5acfd67deb7b1ce07482fa14e77589fc0309b55e50f2882f88",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DGin1f/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DGin1f/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 33448.559708999936
+    },
+    {
+      "path": "built-ins/Function/prototype/call/not-a-constructor.js",
+      "sha256": "de7d6a3fc263c659476286b73f7184a80e98081a22ed9c164960abc77d43fe4c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Zx8Ase/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Zx8Ase/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31699.430708000087
+    },
+    {
+      "path": "built-ins/Function/prototype/call/not-a-constructor.js",
+      "sha256": "de7d6a3fc263c659476286b73f7184a80e98081a22ed9c164960abc77d43fe4c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0JWfi6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0JWfi6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 33578.87183399999
+    }
+  ]
+}

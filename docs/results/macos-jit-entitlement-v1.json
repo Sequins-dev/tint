@@ -1,0 +1,29 @@
+{
+  "kind": "native-image-capability-validation",
+  "nativeCodeExecuted": false,
+  "scope": "Tint generated both signed entitlement encodings; system codesign validates signatures and reads explicit JIT permission. This does not yet establish executable-memory or runtime source-compilation support.",
+  "observations": [
+    {
+      "path": ".tint-bootstrap/jit-permission-v1/jit",
+      "allowDebugger": false,
+      "allowJit": true,
+      "bytes": 17258,
+      "sha256": "f95202aa2a7c03afc38265dcc14c1f9b44a75419c2daf085c2f47c8e11e08736",
+      "signatureVerified": true,
+      "systemReadEntitlement": false,
+      "entitlements": "[Dict]\n\t[Key] com.apple.security.cs.allow-jit\n\t[Value]\n\t\t[Bool] true\nExecutable=/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/jit-permission-v1/jit\n",
+      "verifyError": ""
+    },
+    {
+      "path": ".tint-bootstrap/jit-permission-v1/jit-debug",
+      "allowDebugger": true,
+      "allowJit": true,
+      "bytes": 17349,
+      "sha256": "d89e171e1122a1203adb4241be91f7e345387d85091befd7cfee0354837339b3",
+      "signatureVerified": true,
+      "systemReadEntitlement": false,
+      "entitlements": "[Dict]\n\t[Key] com.apple.security.cs.allow-jit\n\t[Value]\n\t\t[Bool] true\n\t[Key] com.apple.security.get-task-allow\n\t[Value]\n\t\t[Bool] true\nExecutable=/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/jit-permission-v1/jit-debug\n",
+      "verifyError": ""
+    }
+  ]
+}

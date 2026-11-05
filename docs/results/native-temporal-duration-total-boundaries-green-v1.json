@@ -1,0 +1,51 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "bad8e819f633da568589e3fe735707c9587491fb6c734bdc92afe80f26da17d3",
+      "files": 410
+    },
+    "imageSha256": "b878e557bf2172d7dba610d1004d46898858fe06068ba4bde2f6814ca43931a2",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(new Temporal.Duration(0,1,0,0,10).total({unit:\"month\",relativeTo:new Temporal.PlainDate(2020,1,31)})!==1.0134408602150538)throw 1;",
+        "sha256": "1e1f497c078d2ccb69d61d4e4d0fdc6ea9b950c68f4db432fefce160f4a72f10"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Temporal.Duration();if(d.total({unit:\"day\",relativeTo:\"+275760-09-12T00:00:00+00:00[UTC]\"})!==0)throw 1;let ok=false;try{d.total({unit:\"day\",relativeTo:\"+275760-09-12T00:00:01+00:00[UTC]\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;",
+        "sha256": "c54492fd911e467071791914e5171cafbc6e44f4618cc992e442db1e9ac8bb25"
+      }
+    ]
+  },
+  "cases": 2,
+  "completed": 2,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

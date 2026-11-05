@@ -1,0 +1,20 @@
+{
+  "kind": "debugger-launch-investigation",
+  "scope": "Diagnostic probes only; not conformance rechecks",
+  "observations": [
+    {
+      "mode": "standard LLDB launch then attach",
+      "result": "intermittent attach/pause failures before native entry; successful task_for_pid and ptrace recorded by debugserver"
+    },
+    {
+      "mode": "direct debugserver posix-spawn",
+      "result": "same pause failure; LLDB could not connect before the server finished launch; owned processes terminated after observation"
+    },
+    {
+      "mode": "direct debugserver fork-exec",
+      "result": "task_for_pid failed; debugserver terminated its child"
+    }
+  ],
+  "signatureVerification": "prototype fixture verified valid on disk",
+  "runnerChanged": false
+}

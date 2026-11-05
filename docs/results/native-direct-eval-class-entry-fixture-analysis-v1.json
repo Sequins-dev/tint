@@ -1,0 +1,12 @@
+{
+  "kind": "native-fixture-failure-analysis",
+  "conformance": false,
+  "observations": [
+    "docs/results/native-direct-eval-class-entry-v1.json",
+    "docs/results/native-direct-eval-class-entry-diagnostic-v1.json"
+  ],
+  "diagnosis": "The AOT fixture used createObject for the newTarget constructor. constructObject correctly rejected it because internalConstruct was undefined. Diagnostic exit75 isolated the first super call; prior checks of literal, uninitialized this and owning-realm ReferenceError passed.",
+  "fix": "Use createConstructorObject for the fixture constructor as required by constructObject; no runtime or lowerer change.",
+  "productionChanges": false,
+  "next": "New immutable native run; preserve original failures."
+}

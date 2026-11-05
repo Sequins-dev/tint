@@ -1,0 +1,164 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "ff75839508a525ebce313676fc4cc2b91dbabdda9c4972d10c7c7c293deb456a",
+      "files": 424
+    },
+    "imageSha256": "fdf93adec4bc8ce970f45bc80b48bc6750e25520490cb779ec0a357dd051b8d9",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(!Object.is(new Date(2024,0,1,12,34,56,789).getTime(),1704083696789))throw 1;",
+        "sha256": "926e51b8495a9b387f89fa3a4fb86c697ba5bc4ea7412166a48f27198b99f806"
+      },
+      {
+        "index": 1,
+        "source": "if(!Object.is(new Date(99,12,0,24).getTime(),946656000000))throw 1;",
+        "sha256": "1a534ea07736a1d396948d25ce50d44110cccc4a2fe4928d96cdb49e4cf51df9"
+      },
+      {
+        "index": 2,
+        "source": "if(!Object.is(new Date(2000,-1,32,-1,61,-1,1001).getTime(),946656060001))throw 1;",
+        "sha256": "db2a3f376de60132f5e5d23233d650b9b89fd904c030be98fc8b6f4891c974b4"
+      },
+      {
+        "index": 3,
+        "source": "if(!Object.is(new Date(-271821,3,20).getTime(),-8639999942632000))throw 1;",
+        "sha256": "9b16a00b3953ddeb086d8f9069ebec9ac27f85912849b0652dee0712b99de0cb"
+      },
+      {
+        "index": 4,
+        "source": "if(!Object.is(new Date(275760,8,13).getTime(),8639999971200000))throw 1;",
+        "sha256": "091685cc9d31bb205d619467901010a6b1e3907a7f46173ac373142301723e05"
+      },
+      {
+        "index": 5,
+        "source": "if(!Object.is(new Date(275760,8,13,0,0,0,1).getTime(),8639999971200001))throw 1;",
+        "sha256": "73895677a013b2d7328e1484ca45fe9ebbc0e0d778b0c0120659650c2e60eff1"
+      },
+      {
+        "index": 6,
+        "source": "if(!Object.is(new Date(1e+100,0).getTime(),NaN))throw 1;",
+        "sha256": "94bdc6ce598b0725bf937f6727bfe6a6963dc545aace2df95d34231353720428"
+      },
+      {
+        "index": 7,
+        "source": "if(!Object.is(new Date(2024,2,10,2,30,0,123).getTime(),1710009000123))throw 1;",
+        "sha256": "e09db49c94c76ea423c9b13ef4669504fbaa6028acf30585789b289856a4dedc"
+      },
+      {
+        "index": 8,
+        "source": "if(!Object.is(new Date(2024,10,3,1,30,0,999).getTime(),1730568600999))throw 1;",
+        "sha256": "3c319faa4386ff6bd171ca4e05a5967049669fd620bb2da8ec14a43400b2f4f4"
+      },
+      {
+        "index": 9,
+        "source": "if(Date.parse(\"1970-01-01T00:00:00.123\")!==-28799877||new Date(\"1970-01-01T00:00:00.123\").getTime()!==-28799877||Date.parse(\"1970-01-01\")!==0)throw 1;",
+        "sha256": "3c060dbd53ecdd4d3b460dd002201ec5995e3b3b567a76fa1ecff6b90ac32a49"
+      },
+      {
+        "index": 10,
+        "source": "let log=\"\";function value(key,n){return{valueOf(){log+=key;return n;}};}const d=new Date(value(\"y\",NaN),value(\"m\",0),value(\"d\",1),value(\"h\",0),value(\"n\",0),value(\"s\",0),value(\"i\",0));if(log!==\"ymdhnsi\"||!Number.isNaN(d.getTime()))throw 1;",
+        "sha256": "096181942e86d86cce0e9fecbce503f29392a58b0eeb6cf56b8d7ae620760657"
+      },
+      {
+        "index": 11,
+        "source": "class D extends Date{}const d=new D(2024,0,1);if(Object.getPrototypeOf(d)!==D.prototype||!(d instanceof Date)||d.getTime()!==new Date(2024,0,1).getTime())throw 1;for(let i=0;i<1024;i++){const x=new Date(2024,i%12,i%28+1,12,0,0,i%1000);if(Date.parse(x.toISOString())!==x.getTime())throw 2;}",
+        "sha256": "d3edf9a8112015de470673ceae43a655d94ee94cfc184a24c59742d563a6ce11"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

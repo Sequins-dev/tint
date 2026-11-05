@@ -1,0 +1,73 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "bb40f9c8881e4c390215b5eb0f4ef0a7e89a8df5ad611d3a02d6ca42536fcd2a",
+      "files": 407
+    },
+    "imageSha256": "ea9fef43f80f30c5cd9a9a316b73866cea5d6054ee2535529cbf92805488fda7",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.PlainDate(2019,1,1),b=new Temporal.PlainDate(2019,2,15);if(a.until(b,{smallestUnit:\"month\",roundingMode:\"halfExpand\"}).months!==2||b.until(a,{smallestUnit:\"month\",roundingMode:\"halfExpand\"}).months!==-1)throw 1;",
+        "sha256": "e9c3a0edd2a9bf707f2f1087946659889d554bd6d77523389bc63f7ebaa33c6a"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.PlainDate(2022,1,1),b=new Temporal.PlainDate(2023,12,25);const d=a.until(b,{largestUnit:\"year\",smallestUnit:\"month\",roundingMode:\"expand\"});if(d.years!==2||d.months!==0)throw 1;",
+        "sha256": "1aba61cdd525dfe3c8533b4fe9b5e95cc026791ed3e864d1f84f5188e848e3e7"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.PlainDate(2019,1,1),b=new Temporal.PlainDate(2020,7,2);if(a.until(b,{smallestUnit:\"year\",roundingMode:\"halfEven\"}).years!==2||a.until(b,{smallestUnit:\"year\",roundingMode:\"halfTrunc\"}).years!==1||a.since(b,{smallestUnit:\"year\",roundingMode:\"halfFloor\"}).years!==-2)throw 1;",
+        "sha256": "a41224cfa2615f8a2e2d486baf954db99735d73f68e533ba16266ff1a4f3c2c6"
+      },
+      {
+        "index": 3,
+        "source": "const a=new Temporal.PlainDate(1970,1,1),b=new Temporal.PlainDate(1971,1,1);let ok=false;try{a.until(b,{smallestUnit:\"month\",roundingIncrement:100000000});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;const d=new Temporal.PlainDate(2021,1,31).until(\"2021-02-28\",{smallestUnit:\"month\",roundingMode:\"trunc\"});if(d.months!==1||d.days!==0)throw 2;",
+        "sha256": "be52654eb9ec3c1aa5fb3b85bdc16331fd96877bab48a71cce1f5771e6469aef"
+      }
+    ]
+  },
+  "cases": 4,
+  "completed": 4,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

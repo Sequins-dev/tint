@@ -1,0 +1,26 @@
+{
+  "kind": "workspace-validation",
+  "sourceSnapshot": {
+    "sha256": "c7a560da7a2d52d94b8d899852e2fdc6203e508460b00bbb4aa8667bf95b6fa2",
+    "files": 507
+  },
+  "packages": 49,
+  "nodeTests": {
+    "passed": 3649,
+    "failed": 0,
+    "log": ".tint-bootstrap/unicode-normalization-waiter-full-node-v1.log"
+  },
+  "gates": [
+    "tsc -b",
+    "tsc -p tsconfig.tests.json",
+    "tsc -p tsconfig.host.json",
+    "node tools/check-boundaries.ts",
+    "prettier --check packages tools types *.json pnpm-workspace.yaml"
+  ],
+  "formatLog": ".tint-bootstrap/unicode-normalization-waiter-format-v1.log",
+  "native": [
+    "unicode-normalization-native-v2.json"
+  ],
+  "test262": "test262-string-normalize-native-v1.json",
+  "scope": "Workspace gates include normalization and fixture-only native contention/waiter tooling. Native algorithms, Test262 and self-hosting retain separate reports."
+}

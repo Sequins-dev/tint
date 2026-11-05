@@ -1,0 +1,31 @@
+{
+  "kind": "native-syntax-validation-incomplete",
+  "conformance": false,
+  "testSourcesExecuted": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": ".",
+  "variants": 103264,
+  "observed": 97085,
+  "counts": {
+    "accepted": 89107,
+    "negative-rejected": 7978
+  },
+  "mismatchesBeforeFault": 0,
+  "nativeFault": {
+    "index": 97085,
+    "case": {
+      "path": "language/statements/function/S13.2.1_A1_T1.js",
+      "sha256": "92538a981853d536d0a90d3db608f7a8f0ff8a0b526a6b354504076d49c3b447",
+      "variant": "sloppy",
+      "negative": false
+    },
+    "signal": "EXC_BAD_ACCESS",
+    "site": "ts-syntax lexer next; recursive parser frames",
+    "cause": "under investigation"
+  },
+  "unobserved": 6179,
+  "log": {
+    "path": ".tint-bootstrap/native-parser-full-v1/native.log",
+    "sha256": "36a884565e1f713b316b50e41f04baaa2f02d1fd0f61b4011373ecd661e5b9ec"
+  }
+}

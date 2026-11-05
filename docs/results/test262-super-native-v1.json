@@ -1,0 +1,5288 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/super",
+  "totals": {
+    "total": 184,
+    "passed": 20,
+    "failed": 4,
+    "unsupported": 134,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 26,
+    "passFraction": 0.10869565217391304
+  },
+  "observations": [
+    {
+      "path": "language/expressions/super/call-arg-evaluation-err.js",
+      "sha256": "a8f11bb2918b3187d286657ca4d83527c5fef93d78f36a6e4fea4333e83d3099",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":537,\"end\":542,\"position\":{\"line\":22,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 7.236374999999981
+    },
+    {
+      "path": "language/expressions/super/call-arg-evaluation-err.js",
+      "sha256": "a8f11bb2918b3187d286657ca4d83527c5fef93d78f36a6e4fea4333e83d3099",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":551,\"end\":556,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.593041999999997
+    },
+    {
+      "path": "language/expressions/super/call-bind-this-value-twice.js",
+      "sha256": "3f903f3a7daf61852dd78989dbe68c0916f35c5c8707bd9b8a7f9caef3615f01",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":784,\"end\":789,\"position\":{\"line\":28,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.858875000000012
+    },
+    {
+      "path": "language/expressions/super/call-bind-this-value-twice.js",
+      "sha256": "3f903f3a7daf61852dd78989dbe68c0916f35c5c8707bd9b8a7f9caef3615f01",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":798,\"end\":803,\"position\":{\"line\":29,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.083584000000002
+    },
+    {
+      "path": "language/expressions/super/call-bind-this-value.js",
+      "sha256": "d7381fd8304c9ad8d8e7174d04059df56aaa801e22a6e8d623dbbf3099b728a4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":591,\"end\":596,\"position\":{\"line\":23,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7987079999999764
+    },
+    {
+      "path": "language/expressions/super/call-bind-this-value.js",
+      "sha256": "d7381fd8304c9ad8d8e7174d04059df56aaa801e22a6e8d623dbbf3099b728a4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":605,\"end\":610,\"position\":{\"line\":24,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.061292000000009
+    },
+    {
+      "path": "language/expressions/super/call-construct-error.js",
+      "sha256": "a192b56817d1b2a9798a5a5840fd2ace067e264176686fb5216304ef403cf042",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":523,\"end\":528,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.870042000000012
+    },
+    {
+      "path": "language/expressions/super/call-construct-error.js",
+      "sha256": "a192b56817d1b2a9798a5a5840fd2ace067e264176686fb5216304ef403cf042",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":537,\"end\":542,\"position\":{\"line\":24,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1342909999999904
+    },
+    {
+      "path": "language/expressions/super/call-construct-invocation.js",
+      "sha256": "2cace70ee02bc3b4f160acb1999a6e5ff638c643651587c8b822420b17361a45",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target",
+          "Reflect",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":547,\"end\":548,\"position\":{\"line\":19,\"column\":24}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.218291999999991
+    },
+    {
+      "path": "language/expressions/super/call-construct-invocation.js",
+      "sha256": "2cace70ee02bc3b4f160acb1999a6e5ff638c643651587c8b822420b17361a45",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target",
+          "Reflect",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":561,\"end\":562,\"position\":{\"line\":20,\"column\":24}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.5408749999999998
+    },
+    {
+      "path": "language/expressions/super/call-expr-value.js",
+      "sha256": "c21a0901420343977814e6ec0b0201ed547a0864d46451b99dea57672c686a68",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":559,\"end\":564,\"position\":{\"line\":23,\"column\":13}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7326669999999922
+    },
+    {
+      "path": "language/expressions/super/call-expr-value.js",
+      "sha256": "c21a0901420343977814e6ec0b0201ed547a0864d46451b99dea57672c686a68",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":573,\"end\":578,\"position\":{\"line\":24,\"column\":13}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1886250000000018
+    },
+    {
+      "path": "language/expressions/super/call-poisoned-underscore-proto.js",
+      "sha256": "84ad8a774c591e69a49572cf81f1b5d8fcb6004b64f6f24ae453fc50bb2867a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":516,\"end\":540,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.645417000000009
+    },
+    {
+      "path": "language/expressions/super/call-poisoned-underscore-proto.js",
+      "sha256": "84ad8a774c591e69a49572cf81f1b5d8fcb6004b64f6f24ae453fc50bb2867a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":530,\"end\":554,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7062919999999906
+    },
+    {
+      "path": "language/expressions/super/call-proto-not-ctor.js",
+      "sha256": "bcac1ca27113185c15387617f6270dd3821c30ecc2b4a91e248bd25410476071",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":608,\"end\":613,\"position\":{\"line\":22,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.055958000000004
+    },
+    {
+      "path": "language/expressions/super/call-proto-not-ctor.js",
+      "sha256": "bcac1ca27113185c15387617f6270dd3821c30ecc2b4a91e248bd25410476071",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":622,\"end\":627,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0400830000000099
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-expr-throws.js",
+      "sha256": "dd35e07f2f197811ddf733143fe76f1bf1a1e4169ba36515b83499c465e573e5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1110,\"end\":1115,\"position\":{\"line\":36,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0038330000000144
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-expr-throws.js",
+      "sha256": "dd35e07f2f197811ddf733143fe76f1bf1a1e4169ba36515b83499c465e573e5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1124,\"end\":1129,\"position\":{\"line\":37,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9565839999999923
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-iter-get-value.js",
+      "sha256": "e76e604d26fe3cf75b32c006ac3659e7e989edb9101dbb6b66b076e434301d9b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1422,\"end\":1427,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.5674999999999955
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-iter-get-value.js",
+      "sha256": "e76e604d26fe3cf75b32c006ac3659e7e989edb9101dbb6b66b076e434301d9b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1436,\"end\":1441,\"position\":{\"line\":48,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9536659999999983
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-get-call.js",
+      "sha256": "f7664a4a48eceaef49b66e9eb26ffc397b26341c849b3b24fcd9cfdd1a0d2ed5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1355,\"end\":1360,\"position\":{\"line\":45,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.080666000000008
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-get-call.js",
+      "sha256": "f7664a4a48eceaef49b66e9eb26ffc397b26341c849b3b24fcd9cfdd1a0d2ed5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1369,\"end\":1374,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9210419999999999
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-get-get.js",
+      "sha256": "6f32b8f81248fd778fc625eebdd73d479d9b8df1c093aa9e57e0869e2aac0a6a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1395,\"end\":1400,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9347920000000158
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-get-get.js",
+      "sha256": "6f32b8f81248fd778fc625eebdd73d479d9b8df1c093aa9e57e0869e2aac0a6a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1409,\"end\":1414,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.781958000000003
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-step.js",
+      "sha256": "adf4f4a912580937ef4b3e1f5ae8f954e09c23bc1a0b82b882b474a452ca1da8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1536,\"end\":1541,\"position\":{\"line\":55,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.838957999999991
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-step.js",
+      "sha256": "adf4f4a912580937ef4b3e1f5ae8f954e09c23bc1a0b82b882b474a452ca1da8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1550,\"end\":1555,\"position\":{\"line\":56,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8177499999999895
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-value.js",
+      "sha256": "640772b22ef92f3ea9ffd0b8ce03a1974fe0410b69cdda0bed03125339211dff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1545,\"end\":1550,\"position\":{\"line\":58,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.3280420000000106
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-itr-value.js",
+      "sha256": "640772b22ef92f3ea9ffd0b8ce03a1974fe0410b69cdda0bed03125339211dff",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1559,\"end\":1564,\"position\":{\"line\":59,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8359159999999974
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-obj-unresolvable.js",
+      "sha256": "53c8ce76322ca8287bbdf6f8201dde51888417b7ed88242140022d40dc7b4f03",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1158,\"end\":1163,\"position\":{\"line\":37,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7841669999999965
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-obj-unresolvable.js",
+      "sha256": "53c8ce76322ca8287bbdf6f8201dde51888417b7ed88242140022d40dc7b4f03",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1172,\"end\":1177,\"position\":{\"line\":38,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7510829999999942
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-unresolvable.js",
+      "sha256": "91f849b82ca00175b0ce8622fc0f89462603762c01b923b8ca782a7272a8a5ed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1297,\"end\":1302,\"position\":{\"line\":41,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.105209000000002
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-mult-err-unresolvable.js",
+      "sha256": "91f849b82ca00175b0ce8622fc0f89462603762c01b923b8ca782a7272a8a5ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1311,\"end\":1316,\"position\":{\"line\":42,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7746670000000222
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-expr-throws.js",
+      "sha256": "a796599f5e667f567c90e99a4e272cb44f4c3ab6f0060caa0c4e02ba748c9c0b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1098,\"end\":1103,\"position\":{\"line\":36,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7179169999999999
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-expr-throws.js",
+      "sha256": "a796599f5e667f567c90e99a4e272cb44f4c3ab6f0060caa0c4e02ba748c9c0b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1112,\"end\":1117,\"position\":{\"line\":37,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7135409999999922
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-call.js",
+      "sha256": "00f0d71df09ab61729139126d0935e74e6b14f6c60d5c1250b9179a6dcfc6a2c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1344,\"end\":1349,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.3360409999999945
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-call.js",
+      "sha256": "00f0d71df09ab61729139126d0935e74e6b14f6c60d5c1250b9179a6dcfc6a2c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1358,\"end\":1363,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8610000000000184
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-get.js",
+      "sha256": "51a57e9f368668a07ad0892d5d99bb4fe02e3b9d30de57c2e5ec9349a1ee7551",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1384,\"end\":1389,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9275000000000091
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-get.js",
+      "sha256": "51a57e9f368668a07ad0892d5d99bb4fe02e3b9d30de57c2e5ec9349a1ee7551",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1398,\"end\":1403,\"position\":{\"line\":48,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9497090000000128
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-value.js",
+      "sha256": "6f2845c69f162f2cbf2ba4042cb61513754ff43d4469e7d0ebba1367f8f3cad0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1373,\"end\":1378,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1473330000000033
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-get-value.js",
+      "sha256": "6f2845c69f162f2cbf2ba4042cb61513754ff43d4469e7d0ebba1367f8f3cad0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1387,\"end\":1392,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7972080000000119
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-step.js",
+      "sha256": "9150bc65b4edbbb55b0d6761b90dce78a31e109f80b17aa533f3b57ec9076183",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1617,\"end\":1622,\"position\":{\"line\":59,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.757000000000005
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-step.js",
+      "sha256": "9150bc65b4edbbb55b0d6761b90dce78a31e109f80b17aa533f3b57ec9076183",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1631,\"end\":1636,\"position\":{\"line\":60,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8265420000000177
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-value.js",
+      "sha256": "7ba73ddef76908129f86007628f3d12536f7377bf7eb44e553600f542b2ce24e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1748,\"end\":1753,\"position\":{\"line\":65,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1625840000000096
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-itr-value.js",
+      "sha256": "7ba73ddef76908129f86007628f3d12536f7377bf7eb44e553600f542b2ce24e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1762,\"end\":1767,\"position\":{\"line\":66,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7736670000000174
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-obj-unresolvable.js",
+      "sha256": "8b606132e9207e32567c7f782faf805eabb07790868f76ee7503411854320297",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1158,\"end\":1163,\"position\":{\"line\":37,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7018750000000011
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-obj-unresolvable.js",
+      "sha256": "8b606132e9207e32567c7f782faf805eabb07790868f76ee7503411854320297",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1172,\"end\":1177,\"position\":{\"line\":38,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6798749999999814
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-unresolvable.js",
+      "sha256": "01eaaef19bc731af369a91f81a0f7706b43fbc057406a5ed641cb03211043037",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1286,\"end\":1291,\"position\":{\"line\":42,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0624589999999898
+    },
+    {
+      "path": "language/expressions/super/call-spread-err-sngl-err-unresolvable.js",
+      "sha256": "01eaaef19bc731af369a91f81a0f7706b43fbc057406a5ed641cb03211043037",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1300,\"end\":1305,\"position\":{\"line\":43,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7654160000000161
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-empty.js",
+      "sha256": "23f401d926bc281c15b51d42fe34c52b32e5a035cdf40f6b6274472db40f8a5b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1425,\"end\":1430,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8162079999999889
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-empty.js",
+      "sha256": "23f401d926bc281c15b51d42fe34c52b32e5a035cdf40f6b6274472db40f8a5b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1439,\"end\":1444,\"position\":{\"line\":47,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7799590000000194
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-expr.js",
+      "sha256": "3203e93b26f3bb95dc9f9700e908d6f66890c3af309387362b83015d3897fb90",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1582,\"end\":1587,\"position\":{\"line\":51,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2154590000000098
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-expr.js",
+      "sha256": "3203e93b26f3bb95dc9f9700e908d6f66890c3af309387362b83015d3897fb90",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1596,\"end\":1601,\"position\":{\"line\":52,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8211670000000026
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-iter.js",
+      "sha256": "44ba8e7b92e1d19a5f352ce58c8579f28b2af30ed68e0a8f3db9d6c13a26b607",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1840,\"end\":1845,\"position\":{\"line\":63,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8019999999999925
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-iter.js",
+      "sha256": "44ba8e7b92e1d19a5f352ce58c8579f28b2af30ed68e0a8f3db9d6c13a26b607",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1854,\"end\":1859,\"position\":{\"line\":64,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9672919999999863
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-literal.js",
+      "sha256": "c3eb3544d10760fce7bf4421794ab9419dc392027b6022adbc23ae58601c7fc1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1511,\"end\":1516,\"position\":{\"line\":48,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.3099579999999946
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-literal.js",
+      "sha256": "c3eb3544d10760fce7bf4421794ab9419dc392027b6022adbc23ae58601c7fc1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1525,\"end\":1530,\"position\":{\"line\":49,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8155000000000143
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-ident.js",
+      "sha256": "9c0fcef88ba24c65025b7211b6fb95fcfc85947ec1115bce7ed0fb224ad302e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1779,\"end\":1784,\"position\":{\"line\":73,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.381292000000002
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-ident.js",
+      "sha256": "9c0fcef88ba24c65025b7211b6fb95fcfc85947ec1115bce7ed0fb224ad302e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1793,\"end\":1798,\"position\":{\"line\":74,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.5944159999999954
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-null.js",
+      "sha256": "319b533256e5c852c3abcf2822049ea04e1b1c801eb0f0a93c43b22e5f57c746",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1296,\"end\":1301,\"position\":{\"line\":44,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.952416999999997
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-null.js",
+      "sha256": "319b533256e5c852c3abcf2822049ea04e1b1c801eb0f0a93c43b22e5f57c746",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1310,\"end\":1315,\"position\":{\"line\":45,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8509999999999991
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-undefined.js",
+      "sha256": "ecabd34896f1a18b19eb2c0cf29c6c132f04d25f6800af515fec77179c9763dc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1300,\"end\":1305,\"position\":{\"line\":44,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8032499999999914
+    },
+    {
+      "path": "language/expressions/super/call-spread-mult-obj-undefined.js",
+      "sha256": "ecabd34896f1a18b19eb2c0cf29c6c132f04d25f6800af515fec77179c9763dc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1314,\"end\":1319,\"position\":{\"line\":45,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.9015420000000063
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-getter-descriptor.js",
+      "sha256": "efc8b5b5015bd7f2864ce6a5cfc63f3f3a383bc0126d9da0de3ea403c92c05f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1515,\"end\":1520,\"position\":{\"line\":58,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.829374999999999
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-getter-descriptor.js",
+      "sha256": "efc8b5b5015bd7f2864ce6a5cfc63f3f3a383bc0126d9da0de3ea403c92c05f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1529,\"end\":1534,\"position\":{\"line\":59,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.5964170000000024
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-getter-init.js",
+      "sha256": "8f37c2ba36b7f3482495546e2cb6271ca2f5266025cdf9f75cc31c5dd696f134",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":996,\"end\":1001,\"position\":{\"line\":38,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8239169999999945
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-getter-init.js",
+      "sha256": "8f37c2ba36b7f3482495546e2cb6271ca2f5266025cdf9f75cc31c5dd696f134",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1010,\"end\":1015,\"position\":{\"line\":39,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7398340000000019
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-manipulate-outter-obj-in-getter.js",
+      "sha256": "9eb9d9968285c73490ef0a4fcf8312c8eb36c659627beb4b13502b081d6713c2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1504,\"end\":1509,\"position\":{\"line\":52,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7470830000000035
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-manipulate-outter-obj-in-getter.js",
+      "sha256": "9eb9d9968285c73490ef0a4fcf8312c8eb36c659627beb4b13502b081d6713c2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1518,\"end\":1523,\"position\":{\"line\":53,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.745332999999988
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-mult-spread-getter.js",
+      "sha256": "13f991859b6aff6dfea5aafb4db0709a82df420209902be753b22bb8fc333cea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1422,\"end\":1427,\"position\":{\"line\":52,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7482080000000053
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-mult-spread-getter.js",
+      "sha256": "13f991859b6aff6dfea5aafb4db0709a82df420209902be753b22bb8fc333cea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1436,\"end\":1441,\"position\":{\"line\":53,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1190420000000074
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-mult-spread.js",
+      "sha256": "0897261be7b822d944817d4b32e0c25dbc4aaa3d982265f7699cc89e6dc5d890",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1377,\"end\":1382,\"position\":{\"line\":50,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8386659999999893
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-mult-spread.js",
+      "sha256": "0897261be7b822d944817d4b32e0c25dbc4aaa3d982265f7699cc89e6dc5d890",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1391,\"end\":1396,\"position\":{\"line\":51,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7899159999999767
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-null.js",
+      "sha256": "1b06b72052335fa16e8a5a871438ec40bcca5d2ff0a18bd2f58cc66b7fe7e181",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1192,\"end\":1197,\"position\":{\"line\":42,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7620419999999797
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-null.js",
+      "sha256": "1b06b72052335fa16e8a5a871438ec40bcca5d2ff0a18bd2f58cc66b7fe7e181",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1206,\"end\":1211,\"position\":{\"line\":43,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7453340000000139
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-override-immutable.js",
+      "sha256": "39f5d16dcd908829f3b74a2976fb80dee2ea53b9aa90d957a1e7606ddc51bf2c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1260,\"end\":1265,\"position\":{\"line\":51,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.214874999999978
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-override-immutable.js",
+      "sha256": "39f5d16dcd908829f3b74a2976fb80dee2ea53b9aa90d957a1e7606ddc51bf2c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1274,\"end\":1279,\"position\":{\"line\":52,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.6957499999999754
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-overrides-prev-properties.js",
+      "sha256": "209c55754bb7510a12bbd225174f0f068921dfabcb1eed25036f1d9187b70185",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1386,\"end\":1391,\"position\":{\"line\":48,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7350000000000136
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-overrides-prev-properties.js",
+      "sha256": "209c55754bb7510a12bbd225174f0f068921dfabcb1eed25036f1d9187b70185",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1400,\"end\":1405,\"position\":{\"line\":49,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6840410000000077
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-skip-non-enumerable.js",
+      "sha256": "badb38524a2ecca76aad20e28a63bf811a3f5db10584e99ca467046b12dcb793",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":984,\"end\":989,\"position\":{\"line\":36,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6734170000000006
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-skip-non-enumerable.js",
+      "sha256": "badb38524a2ecca76aad20e28a63bf811a3f5db10584e99ca467046b12dcb793",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":998,\"end\":1003,\"position\":{\"line\":37,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6523340000000246
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-spread-order.js",
+      "sha256": "10f832476748c602ea5b1081eac17958eee34d363f8e01e9f5e32f577f9945a2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1592,\"end\":1597,\"position\":{\"line\":49,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0484590000000082
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-spread-order.js",
+      "sha256": "10f832476748c602ea5b1081eac17958eee34d363f8e01e9f5e32f577f9945a2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1606,\"end\":1611,\"position\":{\"line\":50,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.171875
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-symbol-property.js",
+      "sha256": "a95fbd435a56e043e0d8b1344437d135919c8e62db8a53414a269167478adf35",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1495,\"end\":1500,\"position\":{\"line\":50,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7744169999999997
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-symbol-property.js",
+      "sha256": "a95fbd435a56e043e0d8b1344437d135919c8e62db8a53414a269167478adf35",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1509,\"end\":1514,\"position\":{\"line\":51,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7460409999999911
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-undefined.js",
+      "sha256": "421824c354b46b2780da14334a8673a4c470deaa2882b4b32f6fdba0540885a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1202,\"end\":1207,\"position\":{\"line\":42,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7234160000000145
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-undefined.js",
+      "sha256": "421824c354b46b2780da14334a8673a4c470deaa2882b4b32f6fdba0540885a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1216,\"end\":1221,\"position\":{\"line\":43,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6755410000000097
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-with-overrides.js",
+      "sha256": "2411efe93ac5d9b1ddb7b1c4ee133f8cc0d1dc5b2ba4936df3622528adea8021",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1641,\"end\":1646,\"position\":{\"line\":54,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.711291999999986
+    },
+    {
+      "path": "language/expressions/super/call-spread-obj-with-overrides.js",
+      "sha256": "2411efe93ac5d9b1ddb7b1c4ee133f8cc0d1dc5b2ba4936df3622528adea8021",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol",
+          "object-spread"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1655,\"end\":1660,\"position\":{\"line\":55,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.720249999999993
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-empty.js",
+      "sha256": "285335da3e7deb81a4bd40b0d56ddc474a29a9a0b84bb2b21a54ee7f008e87aa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1301,\"end\":1306,\"position\":{\"line\":45,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6475419999999872
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-empty.js",
+      "sha256": "285335da3e7deb81a4bd40b0d56ddc474a29a9a0b84bb2b21a54ee7f008e87aa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1315,\"end\":1320,\"position\":{\"line\":46,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0744589999999903
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-expr.js",
+      "sha256": "824b53053610d5cff986f69cd6ff1bb6c04666fa4cd131499182288167017d6b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1607,\"end\":1612,\"position\":{\"line\":53,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.669542000000007
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-expr.js",
+      "sha256": "824b53053610d5cff986f69cd6ff1bb6c04666fa4cd131499182288167017d6b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1621,\"end\":1626,\"position\":{\"line\":54,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6695839999999862
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-iter.js",
+      "sha256": "115d4d8afe4a92a4efbc3c754d65ff84088221475190cf26626ad3c81ad15e82",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1726,\"end\":1731,\"position\":{\"line\":60,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7152910000000077
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-iter.js",
+      "sha256": "115d4d8afe4a92a4efbc3c754d65ff84088221475190cf26626ad3c81ad15e82",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1740,\"end\":1745,\"position\":{\"line\":61,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6804159999999797
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-literal.js",
+      "sha256": "20dc12ce552ad0f749455018f7635daff27b7ec00c409a6cf430a5c193a49f07",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1529,\"end\":1534,\"position\":{\"line\":50,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6692500000000052
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-literal.js",
+      "sha256": "20dc12ce552ad0f749455018f7635daff27b7ec00c409a6cf430a5c193a49f07",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1543,\"end\":1548,\"position\":{\"line\":51,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.6537079999999946
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-obj-ident.js",
+      "sha256": "3e598c14c8ca4919cf25021592beb3b0699389d1d3b51b6b54f4e6596c2238db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1522,\"end\":1527,\"position\":{\"line\":59,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.848124999999982
+    },
+    {
+      "path": "language/expressions/super/call-spread-sngl-obj-ident.js",
+      "sha256": "3e598c14c8ca4919cf25021592beb3b0699389d1d3b51b6b54f4e6596c2238db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":1536,\"end\":1541,\"position\":{\"line\":60,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.1791670000000067
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-null-proto.js",
+      "sha256": "15eeb33cbc0c7b0a4fd835ab7a6c0119521b75c727f8adfaa616d1755d03ec3b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":913,\"end\":1025,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7521249999999782
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-null-proto.js",
+      "sha256": "15eeb33cbc0c7b0a4fd835ab7a6c0119521b75c727f8adfaa616d1755d03ec3b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":927,\"end\":1039,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.8697500000000105
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-ref-strict.js",
+      "sha256": "622113a2204ac0ef51401f7044a4e6fcb56c346f1138981f7fa63c80d77e5e98",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26111.664041999997
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-ref-strict.js",
+      "sha256": "622113a2204ac0ef51401f7044a4e6fcb56c346f1138981f7fa63c80d77e5e98",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-86FcPK/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-86FcPK/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31555.781250000004
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-ref-this.js",
+      "sha256": "b0439493b1590c3b8f13bd097386e0828e9dc91e339d6a857113e6cc8db4ce5e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1647,\"end\":1749,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.471624999998312
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-ref-this.js",
+      "sha256": "b0439493b1590c3b8f13bd097386e0828e9dc91e339d6a857113e6cc8db4ce5e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1661,\"end\":1763,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7327920000025188
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-this-uninit.js",
+      "sha256": "659d534510167df3288260f15ced848e99b087ec6a23af1d7fe37f2afb5b1a5a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1075,\"end\":1194,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.4260839999988093
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-this-uninit.js",
+      "sha256": "659d534510167df3288260f15ced848e99b087ec6a23af1d7fe37f2afb5b1a5a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1089,\"end\":1208,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2550000000046566
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val-from-arrow.js",
+      "sha256": "6d64f35be6752cebe1a6c9958906908e861095a099943cad6ecf36aa81fed061",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1167,\"end\":1187,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.5567499999961
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val-from-arrow.js",
+      "sha256": "6d64f35be6752cebe1a6c9958906908e861095a099943cad6ecf36aa81fed061",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1181,\"end\":1201,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.3329589999993914
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val-from-eval.js",
+      "sha256": "2b5092ad4a5555c7839aa6902e0a2edc4f0d09de154f57f0080fce00967153fe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1150,\"end\":1170,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.264999999999418
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val-from-eval.js",
+      "sha256": "2b5092ad4a5555c7839aa6902e0a2edc4f0d09de154f57f0080fce00967153fe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1164,\"end\":1184,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2018749999988358
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val.js",
+      "sha256": "0c9b61cbb45bf02a3411daccd5de859cd4fb82d89d2a9020e0000b9a88acb807",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1129,\"end\":1149,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1595420000012382
+    },
+    {
+      "path": "language/expressions/super/prop-dot-cls-val.js",
+      "sha256": "0c9b61cbb45bf02a3411daccd5de859cd4fb82d89d2a9020e0000b9a88acb807",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1143,\"end\":1163,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2102080000040587
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-null-proto.js",
+      "sha256": "b11b3034eb1473b562d2e1171c972c93e9cce675f1de0827fd970cac5beba4e7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yPOBZn/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yPOBZn/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31662.271124999992
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-null-proto.js",
+      "sha256": "b11b3034eb1473b562d2e1171c972c93e9cce675f1de0827fd970cac5beba4e7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30662.172708
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-ref-non-strict.js",
+      "sha256": "66487ae54f72c1a494c840f4de0fd5d6a4f64ef7f7759ffb5ebfabfbe44fc69c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zqzEhQ/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zqzEhQ/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31707.761583999993
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-ref-strict.js",
+      "sha256": "1a90b7fd316b9e27d6fdb1daa3a1e9f6737a11f3bb1525cf1d705a97c7f8295a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-l8Cl4O/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-l8Cl4O/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31772.922334000003
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-ref-this.js",
+      "sha256": "414587a4912aa66fca40c13239e6561efc02b3041d2f43602911d9e8855dd4f5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XXCVgM/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XXCVgM/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31925.400834
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-ref-this.js",
+      "sha256": "414587a4912aa66fca40c13239e6561efc02b3041d2f43602911d9e8855dd4f5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8990.390541
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val-from-arrow.js",
+      "sha256": "48d37ce67bc34305a7d166ff3b2e3ab2f680eae9c8c5d0b8b83344113366186a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZQISuR/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZQISuR/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31589.742916999996
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val-from-arrow.js",
+      "sha256": "48d37ce67bc34305a7d166ff3b2e3ab2f680eae9c8c5d0b8b83344113366186a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27447.31791699998
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val-from-eval.js",
+      "sha256": "a938096aaa0da4e08f50fe5ba1bd6b3dba4129139bf775ad7bce8d3ef1f5cd6f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 23046.17629099998
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val-from-eval.js",
+      "sha256": "a938096aaa0da4e08f50fe5ba1bd6b3dba4129139bf775ad7bce8d3ef1f5cd6f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 29576.123375000025
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val.js",
+      "sha256": "a7a190d08bf948d27834b6a168dac7bd840c5211b0317329dd85281c4edd5f8d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23954.25429100002
+    },
+    {
+      "path": "language/expressions/super/prop-dot-obj-val.js",
+      "sha256": "a7a190d08bf948d27834b6a168dac7bd840c5211b0317329dd85281c4edd5f8d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8271.691458000045
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-err.js",
+      "sha256": "f019a77052583420f6ff278a50d9105dbd57a35ffa4be847116b0ce49ba0dafd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 8011.721708999947
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-err.js",
+      "sha256": "f019a77052583420f6ff278a50d9105dbd57a35ffa4be847116b0ce49ba0dafd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21744.38500000001
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-key-err.js",
+      "sha256": "ca9dbfe8ea81a42d78cd7d9a5031753ad0fd0beeeaafe19bc6dbad0f6ceaf998",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33210.91654200002
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-key-err.js",
+      "sha256": "ca9dbfe8ea81a42d78cd7d9a5031753ad0fd0beeeaafe19bc6dbad0f6ceaf998",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30847.70662499999
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-null-proto.js",
+      "sha256": "9230e5e7acff089ee6472f55bb219e0beb54a7ecca7294c27d8017c65b0f61ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":866,\"end\":981,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.508458999975119
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-null-proto.js",
+      "sha256": "9230e5e7acff089ee6472f55bb219e0beb54a7ecca7294c27d8017c65b0f61ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":880,\"end\":995,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7047080000047572
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-ref-strict.js",
+      "sha256": "870f819ed44ee798e60496e22df309e22fd9674dfd2214aac415f6e36ea3deb4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23908.499709000054
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-ref-strict.js",
+      "sha256": "870f819ed44ee798e60496e22df309e22fd9674dfd2214aac415f6e36ea3deb4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24685.874582999968
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-ref-this.js",
+      "sha256": "2aca9a601e3764ab03024727da726924574fd0d504aaf5123d310eb5b4a51386",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1600,\"end\":1708,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.0524159999913536
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-ref-this.js",
+      "sha256": "2aca9a601e3764ab03024727da726924574fd0d504aaf5123d310eb5b4a51386",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1614,\"end\":1722,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2827500000130385
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-this-uninit.js",
+      "sha256": "4c7df703c41f2c4d7bda61554e84723036214ee68bfce5315c2dbf3bf24ed992",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1028,\"end\":1150,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0792920000385493
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-this-uninit.js",
+      "sha256": "4c7df703c41f2c4d7bda61554e84723036214ee68bfce5315c2dbf3bf24ed992",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1042,\"end\":1164,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1052090000011958
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-unresolvable.js",
+      "sha256": "5f8a708db4541aae43d48d50321ceb61b23b538e8fc1d0228314eb21db6a00a5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Rhf4R/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Rhf4R/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31306.68154099997
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-unresolvable.js",
+      "sha256": "5f8a708db4541aae43d48d50321ceb61b23b538e8fc1d0228314eb21db6a00a5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24778.433917000075
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val-from-arrow.js",
+      "sha256": "1a2b9ae91af7224aa65881ac90bca2553b3ee7efbc52f05878ebf772aa377b6b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1120,\"end\":1140,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.290999999968335
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val-from-arrow.js",
+      "sha256": "1a2b9ae91af7224aa65881ac90bca2553b3ee7efbc52f05878ebf772aa377b6b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1134,\"end\":1154,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.3124159999424592
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val-from-eval.js",
+      "sha256": "454eeb5b99fa69c25e5294e70e511e370046f6eaee0c69f11f6a5e75131315cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1099,\"end\":1119,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2487500000279397
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val-from-eval.js",
+      "sha256": "454eeb5b99fa69c25e5294e70e511e370046f6eaee0c69f11f6a5e75131315cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1113,\"end\":1133,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0723749999888241
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val.js",
+      "sha256": "c1d5a88098e226726b24712154f7ce873d301fd9b259cdb42752031342b6778b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1082,\"end\":1102,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1873340000165626
+    },
+    {
+      "path": "language/expressions/super/prop-expr-cls-val.js",
+      "sha256": "c1d5a88098e226726b24712154f7ce873d301fd9b259cdb42752031342b6778b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1096,\"end\":1116,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1219580000033602
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-getvalue.js",
+      "sha256": "948eb977696ff974467c3d77343d4faafda9b0fc7b4ebf08c5dabefbde437ab7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pkHqOM/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pkHqOM/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31338.74220800004
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-getvalue.js",
+      "sha256": "948eb977696ff974467c3d77343d4faafda9b0fc7b4ebf08c5dabefbde437ab7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 10177.126999999979
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue-compound-assign.js",
+      "sha256": "6eb42126df222d91b5fc5653defad0fe4768f439c211b44bec8b1dbb0591bb21",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-T9t1zj/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-T9t1zj/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 34145.30700000003
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue-compound-assign.js",
+      "sha256": "6eb42126df222d91b5fc5653defad0fe4768f439c211b44bec8b1dbb0591bb21",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nJT4vR/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nJT4vR/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31445.86358299991
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue-increment.js",
+      "sha256": "b36bdab2418846719f04b694cdeec77fe91e441e690a84998c8c5ec32ca5360a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11142.018999999971
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue-increment.js",
+      "sha256": "b36bdab2418846719f04b694cdeec77fe91e441e690a84998c8c5ec32ca5360a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AFoHCI/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AFoHCI/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31322.573915999965
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue.js",
+      "sha256": "2ab526b7c840926616d20b057e545121d01cadff822cce1dfa4eff374bb2ce19",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QNCrEr/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QNCrEr/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31329.084959
+    },
+    {
+      "path": "language/expressions/super/prop-expr-getsuperbase-before-topropertykey-putvalue.js",
+      "sha256": "2ab526b7c840926616d20b057e545121d01cadff822cce1dfa4eff374bb2ce19",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-CPUADD/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-CPUADD/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31395.723708000034
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-err.js",
+      "sha256": "198fc1386cc236e653dd1fc5151959d7aea0be440a1db3862e37bfbd7bf88770",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 7958.300958000007
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-err.js",
+      "sha256": "198fc1386cc236e653dd1fc5151959d7aea0be440a1db3862e37bfbd7bf88770",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kP7qHc/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kP7qHc/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31515.061374999932
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-key-err.js",
+      "sha256": "a0cc1b5b74d81211632d2314b1467d1588d7ca9a38543c3ca5aeab17c5350ae3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8GrzdT/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8GrzdT/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31772.96649999998
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-key-err.js",
+      "sha256": "a0cc1b5b74d81211632d2314b1467d1588d7ca9a38543c3ca5aeab17c5350ae3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18407.83079200005
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-null-proto.js",
+      "sha256": "115d7a7d5405d7e83cf47c2541549a842dc1dd20753041e8bc024f0efaf01c09",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0gMTFB/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0gMTFB/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31412.97841699992
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-null-proto.js",
+      "sha256": "115d7a7d5405d7e83cf47c2541549a842dc1dd20753041e8bc024f0efaf01c09",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-spv6dl/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-spv6dl/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31293.344083999982
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-ref-non-strict.js",
+      "sha256": "b170b6aaa7c0c6e4d5380f5f195435d4c8f1e7d74bc1d193916e5e8afa782026",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-M2hAAO/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-M2hAAO/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31291.932625000016
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-ref-strict.js",
+      "sha256": "6237e2cdf93cc28fda277bb5ba4fb6118acbbf1cf7928f2e7b6976b45140f9b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18449.43987500004
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-ref-this.js",
+      "sha256": "bdd5b18c521df09f327b62e1705381b1257debe24d8de92e8bb3ef4fddbb704d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-OJaRAi/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-OJaRAi/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31234.626749999938
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-ref-this.js",
+      "sha256": "bdd5b18c521df09f327b62e1705381b1257debe24d8de92e8bb3ef4fddbb704d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13423.859042000026
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-unresolvable.js",
+      "sha256": "0d1501dda997ca2d59de556a9191a1a6b5c9dd9e8f5e373dedcf4c0ae4853051",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-w2yzqM/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-w2yzqM/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31175.077750000055
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-unresolvable.js",
+      "sha256": "0d1501dda997ca2d59de556a9191a1a6b5c9dd9e8f5e373dedcf4c0ae4853051",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5103.413249999983
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val-from-arrow.js",
+      "sha256": "140c778adef6cd57e45e3857a70770530b1cb358f4c73533faa4a43683a36f86",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-x9w70b/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-x9w70b/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31221.76908300002
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val-from-arrow.js",
+      "sha256": "140c778adef6cd57e45e3857a70770530b1cb358f4c73533faa4a43683a36f86",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-VcyTRu/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-VcyTRu/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31404.415124999825
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val-from-eval.js",
+      "sha256": "253dcbdfe8d05827e5f6ae13297f80feb53f813534a01138d49e5a03384434c5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 13475.043499999912
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val-from-eval.js",
+      "sha256": "253dcbdfe8d05827e5f6ae13297f80feb53f813534a01138d49e5a03384434c5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-GJw7ww/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-GJw7ww/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31227.23383400007
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val.js",
+      "sha256": "8f47be8b3c107b3de496a5d4770e9af89cb0a6a78317cdd3d78f4fd642a3bbb8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6iem7H/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6iem7H/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31466.98949999991
+    },
+    {
+      "path": "language/expressions/super/prop-expr-obj-val.js",
+      "sha256": "8f47be8b3c107b3de496a5d4770e9af89cb0a6a78317cdd3d78f4fd642a3bbb8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dEimHm/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dEimHm/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31422.736375000095
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-getvalue.js",
+      "sha256": "828261b086481a383697e25f1f0e2005836ac879506f6f0b74713d21fc3bf35c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":665,\"end\":670,\"position\":{\"line\":27,\"column\":18}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.970915999962017
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-getvalue.js",
+      "sha256": "828261b086481a383697e25f1f0e2005836ac879506f6f0b74713d21fc3bf35c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":679,\"end\":684,\"position\":{\"line\":28,\"column\":18}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.2396670000161976
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue-compound-assign.js",
+      "sha256": "b434d7b3307cd2d5c2ee7e7b0b198905693b7fdfa151acd44fca8da35d1c07e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":683,\"end\":688,\"position\":{\"line\":27,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5.3199579999782145
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue-compound-assign.js",
+      "sha256": "b434d7b3307cd2d5c2ee7e7b0b198905693b7fdfa151acd44fca8da35d1c07e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":697,\"end\":702,\"position\":{\"line\":28,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.8174999998882413
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue-increment.js",
+      "sha256": "7d7faa98238862dbac2d8e766ea3263dced85d7203cd335d4cca5ba5d107baee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":682,\"end\":687,\"position\":{\"line\":27,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.8582080001942813
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue-increment.js",
+      "sha256": "7d7faa98238862dbac2d8e766ea3263dced85d7203cd335d4cca5ba5d107baee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":696,\"end\":701,\"position\":{\"line\":28,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.417416999815032
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue.js",
+      "sha256": "03000c8dcbc45d7f0a9ea5be164d6768189ab92fff4f0060b0ea23780f53e72e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":658,\"end\":663,\"position\":{\"line\":27,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.829583999933675
+    },
+    {
+      "path": "language/expressions/super/prop-expr-uninitialized-this-putvalue.js",
+      "sha256": "03000c8dcbc45d7f0a9ea5be164d6768189ab92fff4f0060b0ea23780f53e72e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":672,\"end\":677,\"position\":{\"line\":28,\"column\":11}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.4920000000856817
+    },
+    {
+      "path": "language/expressions/super/prop-poisoned-underscore-proto.js",
+      "sha256": "67ccb96403c7326adc01dff7020b8ea8225853c60c2559c93093c982675007b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4628.544457999989
+    },
+    {
+      "path": "language/expressions/super/prop-poisoned-underscore-proto.js",
+      "sha256": "67ccb96403c7326adc01dff7020b8ea8225853c60c2559c93093c982675007b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bnAQhU/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bnAQhU/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31194.533709000098
+    },
+    {
+      "path": "language/expressions/super/realm.js",
+      "sha256": "1f0182259cfcaa55eaaf5a37f84ff5da9192bb4cdafeee68e8816530ce75ddef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":872,\"end\":877,\"position\":{\"line\":31,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.130083000054583
+    },
+    {
+      "path": "language/expressions/super/realm.js",
+      "sha256": "1f0182259cfcaa55eaaf5a37f84ff5da9192bb4cdafeee68e8816530ce75ddef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"super constructor calls are not implemented\",\"start\":886,\"end\":891,\"position\":{\"line\":32,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.4589169998653233
+    },
+    {
+      "path": "language/expressions/super/super-reference-resolution.js",
+      "sha256": "67e186689f57f9fbb90cb637f71cd8a058682038aee3e333889071a38ac271de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":454,\"end\":513,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.9630839999299496
+    },
+    {
+      "path": "language/expressions/super/super-reference-resolution.js",
+      "sha256": "67e186689f57f9fbb90cb637f71cd8a058682038aee3e333889071a38ac271de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":468,\"end\":527,\"code\":\"UNSUPPORTED\",\"message\":\"derived class lowering is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.9630420000758022
+    }
+  ]
+}

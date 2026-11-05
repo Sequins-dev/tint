@@ -1,0 +1,51 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-map-iteration.ts",
+  "fixtureSha256": "354d7921a7901846f5b150aa8efe9de05cd3760e9e8ea736e58ea2d0fc0eccb6",
+  "imageSha256": "0b49e1f6f3a23a4db9438f11689af9f69307e76747504af95b149f60a957dc06",
+  "cases": 6,
+  "passed": 5,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

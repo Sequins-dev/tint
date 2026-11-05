@@ -1,0 +1,226 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+import type {
+  ObjectHooks,
+  OrdinaryObject,
+  ScriptPropertyKey,
+} from "../src/objects/index.ts";
+bindHostRecordViews();
+const objects = await import("../src/objects/index.ts");
+const hooks: ObjectHooks<unknown> = {
+  undefinedValue: undefined,
+  sameValue: Object.is,
+  call: () => assert.fail("unexpected hook"),
+};
+function realms() {
+  const caller = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const callee = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+    caller.symbolRegistry,
+    caller.agent,
+  );
+  return { caller, callee };
+}
+function errorPrototype(error: unknown) {
+  return (error as OrdinaryObject<ScriptPropertyKey, unknown>).prototype;
+}
+for (const derived of [false, true]) {
+  test(`${derived ? "derived" : "base"} class rejects a direct call in its defining realm`, () => {
+    const { caller, callee } = realms();
+    const base = objects.createBaseClass(
+      "Base",
+      0,
+      undefined,
+      [],
+      callee,
+      hooks,
+    );
+    const constructor = derived
+      ? objects.createDerivedClass(
+          "Derived",
+          0,
+          undefined,
+          [],
+          callee,
+          hooks,
+          base,
+          objects.createObject(callee.objectPrototype),
+        )
+      : base;
+    assert.equal(objects.getFunctionRealm(constructor, caller), callee);
+    assert.throws(
+      () =>
+        caller.executionContext.run(() =>
+          objects.callObject(constructor, undefined, [], undefined),
+        ),
+      (error) => errorPrototype(error) === callee.prototypes.get("type"),
+    );
+    assert.equal(caller.agent.activeContext, undefined);
+  });
+}
+for (const returned of [0, undefined]) {
+  test(`derived constructor return ${String(returned)} creates its completion error after restoring the caller`, () => {
+    const { caller, callee } = realms();
+    const base = objects.createBaseClass(
+      "Base",
+      0,
+      undefined,
+      [],
+      callee,
+      hooks,
+    );
+    let called = false;
+    const constructor = objects.createDerivedClass(
+      "Derived",
+      0,
+      () => {
+        called = true;
+        assert.equal(callee.agent.activeContext?.realm, callee);
+        return returned;
+      },
+      [],
+      callee,
+      hooks,
+      base,
+      objects.createObject(callee.objectPrototype),
+    );
+    assert.throws(
+      () =>
+        caller.executionContext.run(() =>
+          objects.constructObject(
+            constructor,
+            [],
+            { value: constructor, object: constructor },
+            undefined,
+          ),
+        ),
+      (error) =>
+        errorPrototype(error) ===
+        caller.prototypes.get(returned === undefined ? "reference" : "type"),
+    );
+    assert.equal(called, true);
+    assert.equal(caller.agent.activeContext, undefined);
+  });
+}
+test("a derived constructor body keeps its own realm and thrown identity", () => {
+  const { caller, callee } = realms();
+  const base = objects.createBaseClass("Base", 0, undefined, [], callee, hooks);
+  const failure = objects.createRuntimeError(callee, "type");
+  const constructor = objects.createDerivedClass(
+    "Derived",
+    0,
+    () => {
+      assert.equal(callee.agent.activeContext?.realm, callee);
+      throw failure;
+    },
+    [],
+    callee,
+    hooks,
+    base,
+    objects.createObject(callee.objectPrototype),
+  );
+  assert.throws(
+    () =>
+      caller.executionContext.run(() =>
+        objects.constructObject(
+          constructor,
+          [],
+          { value: constructor, object: constructor },
+          undefined,
+        ),
+      ),
+    (error) => error === failure,
+  );
+  assert.equal(caller.agent.activeContext, undefined);
+});
+
+test("nested constructor completion errors restore the immediate caller realm", () => {
+  const { caller, callee } = realms();
+  const base = objects.createBaseClass("Base", 0, undefined, [], callee, hooks);
+  let constructor: OrdinaryObject<ScriptPropertyKey, unknown>;
+  let nested = false;
+  constructor = objects.createDerivedClass(
+    "Derived",
+    0,
+    (_context, args) => {
+      assert.equal(callee.agent.activeContext?.realm, callee);
+      if (args[0] === true) {
+        assert.throws(
+          () =>
+            objects.constructObject(
+              constructor,
+              [],
+              { value: constructor, object: constructor },
+              undefined,
+            ),
+          (error) => errorPrototype(error) === callee.prototypes.get("type"),
+        );
+        assert.equal(callee.agent.activeContext?.realm, callee);
+        nested = true;
+      }
+      return 0;
+    },
+    [],
+    callee,
+    hooks,
+    base,
+    objects.createObject(callee.objectPrototype),
+  );
+  assert.throws(
+    () =>
+      caller.executionContext.run(() =>
+        objects.constructObject(
+          constructor,
+          [true],
+          { value: constructor, object: constructor },
+          undefined,
+        ),
+      ),
+    (error) => errorPrototype(error) === caller.prototypes.get("type"),
+  );
+  assert.equal(nested, true);
+  assert.equal(caller.agent.activeContext, undefined);
+});
+
+test("base fields and body still execute in their defining source context", () => {
+  const { caller, callee } = realms();
+  const order: string[] = [];
+  const constructor = objects.createBaseClass(
+    "Base",
+    0,
+    () => {
+      assert.equal(callee.agent.activeContext?.realm, callee);
+      order.push("body");
+      return undefined;
+    },
+    [
+      {
+        name: "field",
+        initialize: () => {
+          assert.equal(callee.agent.activeContext?.realm, callee);
+          order.push("field");
+          return 42;
+        },
+      },
+    ],
+    callee,
+    hooks,
+  );
+  caller.executionContext.run(() => {
+    const result = objects.constructObject(
+      constructor,
+      [],
+      { value: constructor, object: constructor },
+      undefined,
+    );
+    assert.equal(result.error, "none");
+    return undefined;
+  });
+  assert.deepEqual(order, ["field", "body"]);
+  assert.equal(caller.agent.activeContext, undefined);
+});

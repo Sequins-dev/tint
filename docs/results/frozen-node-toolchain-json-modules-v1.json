@@ -1,0 +1,22 @@
+{
+  "kind": "frozen-node-toolchain",
+  "sourceSnapshot": {
+    "sha256": "7b7c6a94e85409238f21898db0c216896eb0a66b5fb6703fc15346c62ad751ff",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-modules-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-modules-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-modules-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-modules-v1/source-snapshot.json",
+    "sha256": "3b6f228b83f52988e9415b10da2686ef662591784aaa0ee69fc6e3444bcdaca5"
+  },
+  "runIdentity": "b81129863fdca202f629c51df96e7cd0d1224bb02bdb9532a089b2c56ee1961c",
+  "workspaceGate": {
+    "tests": 4382,
+    "log": ".tint-bootstrap/modules-json-workspace-check-v4.log"
+  },
+  "nativeGate": "pending JSON host execution; runtime-only gates passed",
+  "compilerGate": "pending; native self-build must wait for JSON host acceptance",
+  "scope": "Protects the tested source and host image while the prior frozen compiler uses the serial native lane. Capturing/building stage1 is not acceptance."
+}

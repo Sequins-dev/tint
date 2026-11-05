@@ -1,0 +1,78 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "dbf3aa7866739831ded829c546b9f06ddb9b6a61203216da37993ea49d39efd3",
+    "files": 435
+  },
+  "imageSha256": "a5f839b1fde7bcf0078cf4a7953d9da7335967dd0a5ade77582dcfa94fa07dba",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let log=\"\";const d=new Temporal.Duration(0,0,0,0,1,59,31),r=d.round({get largestUnit(){log+=\"l\";return \"auto\";},get relativeTo(){log+=\"r\";return undefined;},get roundingIncrement(){log+=\"i\";return 1;},get roundingMode(){log+=\"m\";return \"halfExpand\";},get smallestUnit(){log+=\"s\";return \"minute\";}});if(log!==\"lrims\"||r.hours!==2||r.minutes!==0||r===d)throw 1;if(d.round(\"hours\").hours!==2||d.round({largestUnit:\"auto\"}).seconds!==31)throw 2;",
+      "sha256": "8bdd8bffa53641cd7b2429e195295e6f1435489418ee67c8a1163d118f9b0a63"
+    },
+    {
+      "index": 1,
+      "source": "const d=new Temporal.Duration(0,1,0,14,12),r=d.round({largestUnit:\"month\",smallestUnit:\"day\",relativeTo:\"2020-01-01\"});if(r.months!==1||r.days!==15||r.hours!==0)throw 1;const c=new Temporal.Duration(0,1,0,28,12).round({largestUnit:\"month\",smallestUnit:\"day\",relativeTo:\"2020-01-01\"});if(c.months!==2||c.days!==0)throw 2;",
+      "sha256": "7e01dda40003f20dc8aea0617cfc06c2b5b3acace14bc44658f3cec879787061"
+    },
+    {
+      "index": 2,
+      "source": "const d=new Temporal.Duration(0,0,0,1);for(const [relativeTo,hours] of [[\"2024-03-09T12:00[America/New_York]\",23],[\"2024-11-02T12:00[America/New_York]\",25]]){const o={largestUnit:\"hour\",smallestUnit:\"hour\",relativeTo};if(d.round(o).hours!==hours||d.total({unit:\"hour\",relativeTo})!==hours)throw 1;const z=Temporal.ZonedDateTime.from(relativeTo);if(d.round({...o,relativeTo:z}).hours!==hours||Temporal.Duration.compare(d,{hours:24},{relativeTo:z})!==(hours===23?-1:1))throw 2;}",
+      "sha256": "54041de2720026d8c7f777637518a7969da86f42d9c37893b27632e494bcd13a"
+    },
+    {
+      "index": 3,
+      "source": "let count=0;for(const options of [undefined,null,true,1,\"auto\",\"\",{}, {smallestUnit:\"minute\",roundingIncrement:7},{largestUnit:\"month\",smallestUnit:\"day\",roundingIncrement:2,relativeTo:\"2020-01-01\"}]){try{new Temporal.Duration().round(options);}catch(e){if(e instanceof TypeError||e instanceof RangeError)count++;}}if(count!==9)throw count;",
+      "sha256": "b84884a203fd14f60f63268a2213c382af2fb0680299aa33ddedbe3b54fa97ea"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

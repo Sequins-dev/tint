@@ -1,0 +1,89 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "e282383d58e90aaac3522417681fa5428c5af80aa40b4198710051c23dab8cf7",
+      "files": 446
+    },
+    "imageSha256": "216c95f8d42138d2fb3ea80d26495749f5800f4e56c6b628b2ccff444c9e478a",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "(async()=>{const GeneratorFunction=Object.getPrototypeOf(function*(){}).constructor;const f=GeneratorFunction(\"value\",\"return value;\");if(f.length!==1||f.name!==\"anonymous\"||Object.getPrototypeOf(f)!==GeneratorFunction.prototype)throw 1;const value={},g=f(value),first=g.next();if(first.value!==value||!first.done||!g.next().done||g.next().value!==undefined||g[Symbol.iterator]()!==g)throw 2;const returned=f(42).return(19);if(returned.value!==19||!returned.done)throw 3;let caught;try{f(42).throw(value);}catch(e){caught=e;}if(caught!==value)throw 4;let construct=false;try{new f();}catch(e){construct=e instanceof TypeError;}if(!construct)throw 5;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-kind\"));",
+        "sha256": "7cfcc8933f60f215b88d440c3dea793c86e816ff9de959af223b78020017384d"
+      },
+      {
+        "index": 1,
+        "source": "(async()=>{const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;const f=AsyncFunction(\"value\",\"return value;\");if(f.length!==1||f.name!==\"anonymous\"||Object.getPrototypeOf(f)!==AsyncFunction.prototype||f.hasOwnProperty(\"prototype\"))throw 1;const input=Promise.resolve(42),result=f(input);if(!(result instanceof Promise)||result===input||await result!==42)throw 2;let called=0;const adopted=f({then(resolve){called++;resolve(19);}});if(called!==0||await adopted!==19||called!==1)throw 3;const marker={};let caught;try{await f({get then(){throw marker;}});}catch(e){caught=e;}if(caught!==marker)throw 4;let construct=false;try{new f();}catch(e){construct=e instanceof TypeError;}if(!construct)throw 5;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-kind\"));",
+        "sha256": "ce0f05090d026f9cab71cfd3b1a5a2831b601c48541abfb24039e6c6e05e8102"
+      },
+      {
+        "index": 2,
+        "source": "(async()=>{const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor,GeneratorFunction=Object.getPrototypeOf(function*(){}).constructor;for(const C of [AsyncFunction,GeneratorFunction]){const f=C(\"return this;\"),strict=C(\"'use strict';return this;\");if(C===AsyncFunction){if(await f()!==globalThis||await strict.call(null)!==null)throw 1;}else{if(f().next().value!==globalThis||strict.call(null).next().value!==null)throw 2;}}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-kind\"));",
+        "sha256": "a566895ed0b2b961de228df53f24a83c2e34ac9c2b02d574671a987a1dc91e52"
+      },
+      {
+        "index": 3,
+        "source": "(async()=>{const other=$262.createRealm().global,target=other.Function(\"return this;\");target.prototype=null;const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor,GeneratorFunction=Object.getPrototypeOf(function*(){}).constructor;for(const C of [AsyncFunction,GeneratorFunction]){const f=Reflect.construct(C,[\"return this;\"],target),prototype=Object.getPrototypeOf(f);if(prototype===C.prototype||Object.getPrototypeOf(prototype)!==other.Function.prototype)throw 1;if(C===AsyncFunction){if(await f()!==globalThis)throw 2;}else if(f().next().value!==globalThis)throw 3;}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-kind\"));",
+        "sha256": "4cfe0614f7b09c5167f6e4a7dcc52a1b4976872e0d00fe05e2b53856cbc9ed9f"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": "completed",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xOL4MQ/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xOL4MQ/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xOL4MQ/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xOL4MQ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xOL4MQ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: "
+      }
+    },
+    {
+      "index": 1,
+      "expected": "completed",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6EipTP/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6EipTP/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6EipTP/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6EipTP/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6EipTP/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: "
+      }
+    },
+    {
+      "index": 2,
+      "expected": "completed",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BM2eZY/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BM2eZY/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BM2eZY/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BM2eZY/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BM2eZY/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: "
+      }
+    },
+    {
+      "index": 3,
+      "expected": "completed",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Ca0pca/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Ca0pca/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Ca0pca/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jJl0C3/test\\\",\\\"3\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Ca0pca/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Ca0pca/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: "
+      }
+    }
+  ]
+}

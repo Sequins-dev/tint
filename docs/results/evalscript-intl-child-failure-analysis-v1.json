@@ -1,0 +1,10 @@
+{
+  "kind": "native-conformance-failure-analysis",
+  "conformance": false,
+  "observation": "docs/results/test262-evalscript-child-intl-evalscript-host-native-v1.json",
+  "test": "intl402/FallbackSymbol/per-realm.js",
+  "outcomes": "two runtime TypeErrors",
+  "sourceInspection": "The test calls Intl.DateTimeFormat.call before creating its child realm. installIntlIntrinsics does not install DateTimeFormat; intlFallbackSymbol already belongs to each ErrorRealm.",
+  "inference": "The missing DateTimeFormat constructor blocks this test before the evalScript realm handoff, so these outcomes do not establish a fallback-symbol realm defect.",
+  "owner": "docs/test262-backlog/intl-dtf.md"
+}

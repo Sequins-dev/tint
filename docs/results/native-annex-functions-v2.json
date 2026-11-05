@@ -1,0 +1,144 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "290c4a3cb74772e1e6e211b899f5891419e4155e180d1a5593221128a23cce9e",
+    "files": 444
+  },
+  "imageSha256": "1c3c0f194ed76c4d0f6bfb3f702e10f7460b8b875c02c64163a71a74d6d2b5f9",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "if(typeof f!==\"undefined\")throw 1;if(false){function f(){return 19;}}if(typeof f!==\"undefined\")throw 2;{function f(){return 42;}}if(f()!==42)throw 3;",
+      "sha256": "672c6056d2caefb44144bda470c2cff51779f3559cdc28e1e7134a114c40db32"
+    },
+    {
+      "index": 1,
+      "source": "let f=19;{function f(){return 42;}if(f()!==42)throw 1;}if(f!==19)throw 2;function g(f){{function f(){return 42;}}return f;}if(g(19)!==19)throw 3;function h(f=19){{function f(){return 42;}}return f;}if(h()!==19)throw 4;",
+      "sha256": "07e38af731d74ffdff563b95251aedf80d09fcadba2a3560c5d2ac44f435f2a1"
+    },
+    {
+      "index": 2,
+      "source": "var seen;{seen=f();function f(){return 19;}function f(){return 42;}}if(seen!==42||f()!==42)throw 1;{f=19;function f(){return 42;}}if(f!==19)throw 2;",
+      "sha256": "0a49d16323e14203b94b7d6f4bfc984f1950f92d58c9c18701a60c48ea96a8dd"
+    },
+    {
+      "index": 3,
+      "source": "function g(){if(typeof f!==\"undefined\")throw 1;{function f(){return 42;}}return f();}if(g()!==42)throw 2;function h(){{function arguments(){return 42;}}return arguments();}if(h()!==42)throw 3;",
+      "sha256": "1c6d66fef40b0e71ed08b4e3596fca58446522c0f987d3af2871d5295e5f63f8"
+    },
+    {
+      "index": 4,
+      "source": "let f=19;function g(){{function f(){return 42;}}return f();}if(g()!==42||f!==19)throw 1;function h(){let f=19;{function f(){return 42;}}return f;}if(h()!==19)throw 2;",
+      "sha256": "26f54d630462ec23179db5b16f6d0ea0c33b27ccf52697645ec9621abd105479"
+    },
+    {
+      "index": 5,
+      "source": "try{throw 19;}catch(f){{function f(){return 42;}}if(f!==19)throw 1;}if(f()!==42)throw 2;var x;try{throw {x:19};}catch({x}){{function x(){return 42;}}}if(x!==undefined)throw 3;",
+      "sha256": "f96e7723b240ba1babf39b896fdcac4df494596ae41c1387942f5f2d5de55ebb"
+    },
+    {
+      "index": 6,
+      "source": "var f=19;const object={f:7};with(object){{function f(){return 42;}}}if(f()!==42||object.f!==7)throw 1;",
+      "sha256": "ecbd2df504b8e55b21f3ec778a2da88c7636c51d46059eafcb61e418443dc6f0"
+    },
+    {
+      "index": 7,
+      "source": "if(false)function f(){return 19;}if(typeof f!==\"undefined\")throw 1;if(true)function f(){return 42;}else function f(){return 19;}if(f()!==42)throw 2;let g=19;if(true)function g(){return 42;}if(g!==19)throw 3;",
+      "sha256": "aeb94f32c79ebcacb7275a41c5a4e3a2802979cdbe6cd8827dba8b93f06abed0"
+    },
+    {
+      "index": 8,
+      "source": "var seen;{seen=f();label:function f(){return 42;}}if(seen!==42||f()!==42)throw 1;let g=19;{label:function g(){return 42;}if(g()!==42)throw 2;}if(g!==19)throw 3;",
+      "sha256": "f19c706514327f90e81b3f0018b16fc0f2053947045377245ed39d86023badee"
+    },
+    {
+      "index": 9,
+      "source": "let f=19;const object={m(){if(typeof f!==\"undefined\")throw 1;{function f(){return 42;}}return f();}};if(object.m()!==42||f!==19)throw 2;const arrow=()=>{if(typeof f!==\"undefined\")throw 3;{function f(){return 42;}}return f();};if(arrow()!==42||f!==19)throw 4;",
+      "sha256": "301fc21b05b037ac9ad0574eb1ad92ce3b76a2fea3f840f703ac3e20a5ca2f25"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "a7bce35319aac2e99c85754a1dee66932c6b20509373b954b867b970de741f8e",
+    "files": 444
+  },
+  "imageSha256": "685d99936b49d9c9db2e107c1d14be4146da506de15c4a9425f0a9121c994990",
+  "cases": [
+    "let caught=false;try{Function({toString(){throw 42;}});}catch(e){caught=e===42;}if(!caught)throw 1;",
+    "let caught=false;try{Function(Symbol());}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;"
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

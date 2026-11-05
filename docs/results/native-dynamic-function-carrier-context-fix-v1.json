@@ -1,0 +1,9 @@
+{
+  "kind": "native-fixture-correction-validation",
+  "conformance": false,
+  "failedObservation": "docs/results/native-dynamic-function-carrier-v5.json",
+  "analysis": "docs/results/native-dynamic-function-carrier-v5-analysis.json",
+  "validatedObservation": "docs/results/native-dynamic-function-carrier-v6.json",
+  "outcome": "completed",
+  "scope": "Standalone carrier calls use callObjectValue to restore the captured source execution context; production internal calls reuse the outer Function execution context. Arithmetic, identity, mapped arguments, default/rest, new.target, arguments.callee and post-GC calls all pass."
+}

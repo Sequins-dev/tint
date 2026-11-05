@@ -1,0 +1,73 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "f0a9599931a8e55e417483db876e1df4265a1f3b3a0680246be1508baa784ab6",
+      "files": 406
+    },
+    "imageSha256": "385e084c651bfad9dd22ab18bff3dd2984b25a38e08555e0a02760cdbb9ed3ef",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.ZonedDateTime(0n,\"UTC\"),b=new Temporal.ZonedDateTime(7200000000003n,\"+05:30\"),d=a.until(b);if(d.hours!==2||d.nanoseconds!==3||b.since(a).hours!==2||a.since(b).hours!==-2||a.since(b).nanoseconds!==-3)throw 1;if(a.until(\"1970-01-01T00:00[UTC]\").sign!==0)throw 2;",
+        "sha256": "590cc5af815d31f184f9ee51ee714af239f1ca47238f4afc59106a2d7835b7ba"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.ZonedDateTime(0n,\"UTC\"),b=new Temporal.ZonedDateTime(1500000000n,\"UTC\");if(a.until(b,{smallestUnit:\"second\",roundingMode:\"floor\"}).seconds!==1||a.since(b,{smallestUnit:\"second\",roundingMode:\"floor\"}).seconds!==-2)throw 1;let log=\"\";a.until(b,{get largestUnit(){log+=\"l\";return \"hour\";},get roundingIncrement(){log+=\"i\";return 1;},get roundingMode(){log+=\"m\";return \"trunc\";},get smallestUnit(){log+=\"s\";return \"nanosecond\";}});if(log!==\"lims\")throw 2;",
+        "sha256": "e4a95231f0d7c7dbcb055efafb5a5b72c91e398f6c37f71714e2883e65ffab1c"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.ZonedDateTime(0n,\"UTC\"),b=new Temporal.ZonedDateTime(0n,\"+00:00\");let ok=false;try{a.until(b,{largestUnit:\"day\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;for(const unit of [\"day\",\"week\",\"month\",\"year\"]){const d=a.until(a,{largestUnit:unit});if(d.sign!==0||d.years!==0||d.hours!==0)throw 2;}if(a.until(b,{largestUnit:\"hour\"}).sign!==0)throw 3;",
+        "sha256": "d86ec38875a7c37cef431842c3697527e143e35aeeb5957a8d72ba15a7a7c25d"
+      },
+      {
+        "index": 3,
+        "source": "const a=new Temporal.ZonedDateTime(0n,\"UTC\");let touched=false,ok=false;try{a.until(\"invalid\",{get largestUnit(){touched=true;return \"hour\";}});}catch(e){ok=e instanceof RangeError;}if(!ok||touched)throw 1;class Z extends Temporal.ZonedDateTime{}if(!(new Z(0n,\"UTC\").until(a) instanceof Temporal.Duration))throw 2;",
+        "sha256": "b5b519b5ca4790eec9c1c3d10351f3ad64f5f66b909007ba6e69d2a910b912d6"
+      }
+    ]
+  },
+  "cases": 4,
+  "completed": 4,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1908 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, agents, async syntax, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/Promise/prototype/finally",
+  "totals": {
+    "total": 58,
+    "passed": 56,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9655172413793104
+  },
+  "observations": [
+    {
+      "path": "built-ins/Promise/prototype/finally/invokes-then-with-function.js",
+      "sha256": "71813906bdeb7ae5b8cfb872ab30fdddaa6255c3c5d56fb56750a75486f08bf4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5278.925209
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/invokes-then-with-function.js",
+      "sha256": "71813906bdeb7ae5b8cfb872ab30fdddaa6255c3c5d56fb56750a75486f08bf4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4484.496459
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/invokes-then-with-non-function.js",
+      "sha256": "5df0914933ea6d0d7c7ac303342853bb82b0f2637a3e42aaa3bd7806bec3902b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4214.708208
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/invokes-then-with-non-function.js",
+      "sha256": "5df0914933ea6d0d7c7ac303342853bb82b0f2637a3e42aaa3bd7806bec3902b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4306.399250000002
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/is-a-function.js",
+      "sha256": "a33818089b2a39ed92ecbee6b201f9c7e18a21b54ca9c270ba1738b6d4c2ebc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4013.102167000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/is-a-function.js",
+      "sha256": "a33818089b2a39ed92ecbee6b201f9c7e18a21b54ca9c270ba1738b6d4c2ebc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3908.398874999999
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/is-a-method.js",
+      "sha256": "2b7e0b786fe270462e96eb13499f3702037016e15de7365bc85457776cf496f8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3955.784667
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/is-a-method.js",
+      "sha256": "2b7e0b786fe270462e96eb13499f3702037016e15de7365bc85457776cf496f8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4167.661584000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/length.js",
+      "sha256": "6b1ec0a2bc898b2d1111698ef1aa838b5e2e7eda4dfa9dac5983a440c9f01fc7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6711.249916000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/length.js",
+      "sha256": "6b1ec0a2bc898b2d1111698ef1aa838b5e2e7eda4dfa9dac5983a440c9f01fc7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6703.837333000003
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/name.js",
+      "sha256": "0fccda5deaa280042a1502311ca156ebf1507d9c471e569c52ca0304b4bebe0f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6281.674666999999
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/name.js",
+      "sha256": "0fccda5deaa280042a1502311ca156ebf1507d9c471e569c52ca0304b4bebe0f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6416.664417
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/not-a-constructor.js",
+      "sha256": "57c81b63e5d5ca1f5ed0df9366285474eddaddb37b630075e23b9f348e9687b6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Promise.prototype.finally",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4539.492415999994
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/not-a-constructor.js",
+      "sha256": "57c81b63e5d5ca1f5ed0df9366285474eddaddb37b630075e23b9f348e9687b6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Promise.prototype.finally",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4194.241084000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/prop-desc.js",
+      "sha256": "9d803213571305144e0e45df4786eb53a6ab1eee37e3b42316fc8a1424698b54",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6214.3924169999955
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/prop-desc.js",
+      "sha256": "9d803213571305144e0e45df4786eb53a6ab1eee37e3b42316fc8a1424698b54",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6820.6942500000005
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls-PromiseResolve.js",
+      "sha256": "ce92fd2d31a855d5552b6588134e247b6867d3f72fe465c932f58e2572f6f946",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4104.28358399999
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls-PromiseResolve.js",
+      "sha256": "ce92fd2d31a855d5552b6588134e247b6867d3f72fe465c932f58e2572f6f946",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3977.003250000009
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls-argument.js",
+      "sha256": "ec4642d25813c5c7cb106ca565de16ca7e6ba7059a3cf36ad65024ef6950a136",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "class",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4125.440791000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls-argument.js",
+      "sha256": "ec4642d25813c5c7cb106ca565de16ca7e6ba7059a3cf36ad65024ef6950a136",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "class",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4326.190457999997
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls.js",
+      "sha256": "6d24b796a78f712743b9913352bd85b32c7b13ca91b25533ee1d16f2e423e7a2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4632.857250000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejected-observable-then-calls.js",
+      "sha256": "6d24b796a78f712743b9913352bd85b32c7b13ca91b25533ee1d16f2e423e7a2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4525.853541999997
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejection-reason-no-fulfill.js",
+      "sha256": "e8cc1fad266bf6e03ec76372a020b5dceb54cfbce3b7c9dd3138a8251f8e1262",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4519.729791999998
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejection-reason-no-fulfill.js",
+      "sha256": "e8cc1fad266bf6e03ec76372a020b5dceb54cfbce3b7c9dd3138a8251f8e1262",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4475.494416000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejection-reason-override-with-throw.js",
+      "sha256": "7bb1cb00c1d172147341997f78d933af622f730d404bba46891265f939f673fe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4434.800792000009
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/rejection-reason-override-with-throw.js",
+      "sha256": "7bb1cb00c1d172147341997f78d933af622f730d404bba46891265f939f673fe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4448.701000000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolution-value-no-override.js",
+      "sha256": "56378f7ee14df6e926d0bb5669ca9a5ef12ec6f5162497e2772f1cecf7965c80",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5013.290915999998
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolution-value-no-override.js",
+      "sha256": "56378f7ee14df6e926d0bb5669ca9a5ef12ec6f5162497e2772f1cecf7965c80",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4599.5800829999935
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls-PromiseResolve.js",
+      "sha256": "3219d6c9d703728e43fb25f643ec92c3bbba40a52b719d966f2bfb03ab817da8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6660.923624999996
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls-PromiseResolve.js",
+      "sha256": "3219d6c9d703728e43fb25f643ec92c3bbba40a52b719d966f2bfb03ab817da8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4746.828083
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls-argument.js",
+      "sha256": "61700eaa57472c184c228348d5a852f56264db412a3f92ec6731720f9089337b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4461.04791600001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls-argument.js",
+      "sha256": "61700eaa57472c184c228348d5a852f56264db412a3f92ec6731720f9089337b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally",
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4509.307082999992
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls.js",
+      "sha256": "55793ad2b94abf80a5e520b4abd90deaf16dc6a6622be9df44f03075e44d8fe6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4786.023833000014
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/resolved-observable-then-calls.js",
+      "sha256": "55793ad2b94abf80a5e520b4abd90deaf16dc6a6622be9df44f03075e44d8fe6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": [
+          "promiseHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "promiseHelper.js",
+          "sha256": "76cf933b2a7069dc22fcff70d6d4f082ab777b3485e08b79ab4d6a18aef9df9c"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4581.284958999982
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/species-constructor-throws.js",
+      "sha256": "df59c47d2ec8de631e2343f3004b69bcfa091155b07ed4f04f0c9a182f55e084",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise",
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4231.402624999988
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/species-constructor-throws.js",
+      "sha256": "df59c47d2ec8de631e2343f3004b69bcfa091155b07ed4f04f0c9a182f55e084",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise",
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4054.605458999984
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/species-constructor.js",
+      "sha256": "ab9fc5fac1298881b916ffa49be822dbc691b3302981e1c469807df0099ff696",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4186.567417000013
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/species-constructor.js",
+      "sha256": "ab9fc5fac1298881b916ffa49be822dbc691b3302981e1c469807df0099ff696",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4303.576750000007
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-reject-count.js",
+      "sha256": "249131719095fb0c25e2f0048c1e93202ee38bbccbdbe3f555ec4fc301bf83d9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4413.218874999991
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-reject-count.js",
+      "sha256": "249131719095fb0c25e2f0048c1e93202ee38bbccbdbe3f555ec4fc301bf83d9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4306.600624999992
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-resolve-count.js",
+      "sha256": "419d2b8a83e21526f98e80f85c5a75173d264ea8a2866e197b77f4f602652da0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4340.903208000003
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-resolve-count.js",
+      "sha256": "419d2b8a83e21526f98e80f85c5a75173d264ea8a2866e197b77f4f602652da0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4645.522666000004
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+      "sha256": "40238310d279c4f159df9529654126b65df3b31570ce7649825846d67fed57a3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4363.008166000014
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+      "sha256": "40238310d279c4f159df9529654126b65df3b31570ce7649825846d67fed57a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4557.269166000013
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-species-constructor-resolve-count.js",
+      "sha256": "1d0a66d8ab2cf7dd2c141b3ba56170c0b4d87c9e44251569b22a942e12491f5e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4624.078041999979
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/subclass-species-constructor-resolve-count.js",
+      "sha256": "1d0a66d8ab2cf7dd2c141b3ba56170c0b4d87c9e44251569b22a942e12491f5e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4544.152667000017
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-non-object.js",
+      "sha256": "3181cf4db267c3ebaf61a220ccfa7acf09407908653465537a60f190308ad865",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4390.579666999984
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-non-object.js",
+      "sha256": "3181cf4db267c3ebaf61a220ccfa7acf09407908653465537a60f190308ad865",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4671.680666999979
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-proxy.js",
+      "sha256": "97cd74fd79467db363d14bf4d6132fb5d95bbc35c72b70fb7adaa8afcd1c4283",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4707.663834000006
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-proxy.js",
+      "sha256": "97cd74fd79467db363d14bf4d6132fb5d95bbc35c72b70fb7adaa8afcd1c4283",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4935.192540999997
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-not-callable.js",
+      "sha256": "84e2df5c6b8356e1a06537a04790a8e314862824e3f4f229e6a88b384084c70e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6757.569791999995
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-not-callable.js",
+      "sha256": "84e2df5c6b8356e1a06537a04790a8e314862824e3f4f229e6a88b384084c70e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4607.066500000015
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-poisoned.js",
+      "sha256": "82a8ae2b4cad106c22e15bbe43015d959900642611065d3e3d86a69264d0415c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4505.700291999994
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-poisoned.js",
+      "sha256": "82a8ae2b4cad106c22e15bbe43015d959900642611065d3e3d86a69264d0415c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4704.438750000001
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-throws.js",
+      "sha256": "705c39a2a9b63049e4449336104378e11760bc0bbd1cee69222c189ccc1be5bb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4530.799374999973
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-then-throws.js",
+      "sha256": "705c39a2a9b63049e4449336104378e11760bc0bbd1cee69222c189ccc1be5bb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4530.181458000006
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-thenable.js",
+      "sha256": "4582553053042279fe1c80f1d27a8c8a861438907f69be3efa86af49a01ccafb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4736.621416000009
+    },
+    {
+      "path": "built-ins/Promise/prototype/finally/this-value-thenable.js",
+      "sha256": "4582553053042279fe1c80f1d27a8c8a861438907f69be3efa86af49a01ccafb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Promise.prototype.finally"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5110.277915999992
+    }
+  ]
+}

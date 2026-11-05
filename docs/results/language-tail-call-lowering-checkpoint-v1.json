@@ -1,0 +1,57 @@
+{
+  "kind": "language-tail-call-lowering-checkpoint",
+  "conformance": false,
+  "accepted": false,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4334,
+    "log": ".tint-bootstrap/tail-lowering-workspace-check-v2.log"
+  },
+  "native": {
+    "aot": "docs/results/tail-lowering-native-validation-v1.json",
+    "aotCases": 10,
+    "inImage": "docs/results/tail-in-image-native-validation-v1.json",
+    "transfersPerCase": 100000
+  },
+  "nodeCensus": "docs/results/language-tail-call-preparation-census-node-v1.json",
+  "selfBuild": {
+    "priorPreEntryFailure": "docs/results/bootstrap-language-tail-calls-v1.json",
+    "launchControl": "docs/results/language-tail-calls-launch-control-v1.json",
+    "currentObservation": "docs/results/bootstrap-language-tail-calls-v2.json",
+    "state": "running after verified initial stop"
+  },
+  "nextSelections": [
+    {
+      "selection": "language/expressions/call",
+      "variants": 171
+    },
+    {
+      "selection": "language/expressions/super",
+      "variants": 184
+    },
+    {
+      "selection": "language/expressions/assignment",
+      "variants": 850
+    },
+    {
+      "selection": "language/statements/for-of",
+      "variants": 1442
+    }
+  ],
+  "remainingTailPaths": [
+    "Proxy apply trap forwarding while preserving ObjectHooks.call",
+    "Raw class constructor callback tail positions"
+  ],
+  "fullCoverageInventory": "docs/test262-inventory.md",
+  "priority": "Foundational language semantics before broad Object/Array APIs; full-suite measurement and compiler performance deferred",
+  "selectionStatus": {
+    "original": "docs/results/test262-language-call-reference-core-v1.json",
+    "passes": 165,
+    "total": 171,
+    "faultsAfterEntry": 6,
+    "rerun": "withheld until frozen self-build and artifact checks pass"
+  }
+}

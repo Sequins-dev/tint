@@ -1,0 +1,13 @@
+{
+  "kind": "native-fixture-binding-analysis",
+  "conformance": false,
+  "originalReport": "docs/results/native-direct-eval-entry-v1.json",
+  "followupReport": "docs/results/native-direct-eval-entry-v2.json",
+  "sourceSnapshot": {
+    "sha256": "a933de824b21745d545e30d0e1076a31592a2fa25d4dc1760121a20dc3d836cc",
+    "files": 552
+  },
+  "cause": "The first embedding omitted the standard object/symbol/BigInt checked-view bindings required by the JavaScript runtime. The lowered body caught the unbound-view exception, and the fixture returned status 60.",
+  "correction": "Add the existing ordinary-object retained export and record-view bindings, as used by other hosted JS fixtures. Portable sources are identical between the two observations.",
+  "result": "completed"
+}

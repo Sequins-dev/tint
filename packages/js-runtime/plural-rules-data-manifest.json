@@ -1,0 +1,63 @@
+{
+  "kind": "cldr-plural-rule-data",
+  "version": "49",
+  "archive": {
+    "url": "https://unicode.org/Public/cldr/49/core.zip",
+    "sha256": "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89"
+  },
+  "license": "LICENSE-CLDR.txt",
+  "inputs": [
+    {
+      "path": "common/supplemental/plurals.xml",
+      "sha256": "69a30c57a621de9c52ec6ca95fe7bf9f06df6f8c13ca71a72e447b532c92cff7"
+    },
+    {
+      "path": "common/supplemental/ordinals.xml",
+      "sha256": "6c62fa2250f4f0150a3c7e24fc93c20ae6722f65bd26b49aaad799b40f8014b3"
+    },
+    {
+      "path": "common/supplemental/pluralRanges.xml",
+      "sha256": "4dd1651a8c0b2d27687513ffab8d1d4559b4a3762e803ee749bd20ab166ba0cc"
+    },
+    {
+      "path": "common/supplemental/supplementalData.xml",
+      "sha256": "745150ec1408d50e1a272b65654a5dd645f3e60f5cc2898b576f725b28538d1a"
+    }
+  ],
+  "statistics": [
+    {
+      "type": "cardinal",
+      "groups": 39,
+      "localeAssignments": 228,
+      "canonicalAssignments": 222,
+      "rules": 131,
+      "samples": 2937
+    },
+    {
+      "type": "ordinal",
+      "groups": 28,
+      "localeAssignments": 111,
+      "canonicalAssignments": 107,
+      "rules": 87,
+      "samples": 970
+    }
+  ],
+  "ranges": {
+    "groups": 22,
+    "localeAssignments": 92,
+    "rules": 175,
+    "missingPair": "end",
+    "ordinal": "end; no ordinal matrix in source data"
+  },
+  "parentComponent": "plurals",
+  "parentOverrides": 0,
+  "output": {
+    "path": "packages/js-runtime/src/objects/plural-rule-data.ts",
+    "sha256": "18c3e83d0875076cb41924b25c728a93e37375b256a66f612be5802c152932d2"
+  },
+  "fixture": {
+    "path": "packages/js-runtime/test/fixtures/plural-rule-samples.txt",
+    "sha256": "a697dd5e87e0a03cb8be47a85d235f196dacf3982272a39a94bdd029a3a6c8af",
+    "samples": 3907
+  }
+}

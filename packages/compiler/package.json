@@ -1,0 +1,43 @@
+{
+  "name": "@tint/compiler",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./native": {
+      "types": "./dist/native/index.d.ts",
+      "import": "./dist/native/index.js"
+    },
+    "./build": {
+      "types": "./dist/build.d.ts",
+      "import": "./dist/build.js"
+    },
+    "./project": {
+      "types": "./dist/project.d.ts",
+      "import": "./dist/project.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "import": "./dist/catalog.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/ts-native": "workspace:*",
+    "@tint/typescript": "workspace:*",
+    "@tint/ir": "workspace:*",
+    "@tint/abi": "workspace:*",
+    "@tint/codegen": "workspace:*",
+    "@tint/image": "workspace:*",
+    "@tint/platform": "workspace:*",
+    "@tint/native-runtime": "workspace:*",
+    "@tint/source": "workspace:*",
+    "@tint/foundation": "workspace:*"
+  }
+}

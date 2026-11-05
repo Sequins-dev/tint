@@ -1,0 +1,62 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "34281484c75d6c6f619a88add32f17b51c8f866f413ff219eb3dc4a116999c5b",
+      "files": 408
+    },
+    "imageSha256": "496088de8a36b14aad72acf577b64d70a4bf0a412545254dca1679c0aae2d59c",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.PlainDate(2000,5,2),b=new Temporal.PlainDate(2000,5,7);if(a.until(b,{roundingIncrement:2.5,roundingMode:\"trunc\"}).days!==4||a.until(b,{roundingIncrement:1000000000.5,roundingMode:\"expand\"}).days!==1000000000)throw 1;",
+        "sha256": "17710a08352b0958d9c63e60dc4d9ce69c87c0104fd3d90ea44485c4f8ebe084"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.PlainDateTime(2000,5,2),b=new Temporal.PlainDateTime(2000,5,7);if(a.until(b,{smallestUnit:\"day\",roundingIncrement:1000000000,roundingMode:\"expand\"}).days!==1000000000||a.since(b,{smallestUnit:\"day\",roundingIncrement:1000000000,roundingMode:\"floor\"}).days!==-1000000000)throw 1;",
+        "sha256": "2c0d1fd804d1bc5700f7898ebc0b9deed807fb93ff625fe5dea16f806919228c"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.PlainDate(1970,1,1),b=new Temporal.PlainDate(1971,1,1);let ok=false;try{a.until(b,{smallestUnit:\"month\",roundingIncrement:100000000});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;",
+        "sha256": "d933caffde76c2236efd7b53729478a084ffe655df28302410d12146419d9270"
+      }
+    ]
+  },
+  "cases": 3,
+  "completed": 3,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

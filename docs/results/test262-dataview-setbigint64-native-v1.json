@@ -1,0 +1,1635 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 16,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 10402.468375,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 7063.628333000001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 16,
+        "kind": "execution",
+        "compileMs": 12248.091166999991,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/DataView/prototype/setBigInt64",
+  "totals": {
+    "total": 48,
+    "passed": 44,
+    "failed": 4,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9166666666666666
+  },
+  "observations": [
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-after-bigint-value.js",
+      "sha256": "f408e9dfe672688395c1bc4ac6bb1fa4557cf5472f024dca8a381b75448e3621",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13250.498084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-after-bigint-value.js",
+      "sha256": "f408e9dfe672688395c1bc4ac6bb1fa4557cf5472f024dca8a381b75448e3621",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15603.546417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-after-toindex-byteoffset.js",
+      "sha256": "470c11024b5d8483592715c89eb5305d5cb31695bf235e21336108dc544b7fa6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17831.522459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-after-toindex-byteoffset.js",
+      "sha256": "470c11024b5d8483592715c89eb5305d5cb31695bf235e21336108dc544b7fa6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20149.980042,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-before-outofrange-byteoffset.js",
+      "sha256": "92f7504bb34d2535da925c7d43904764615c19462e1b43544954ec3c913be229",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22462.332292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer-before-outofrange-byteoffset.js",
+      "sha256": "92f7504bb34d2535da925c7d43904764615c19462e1b43544954ec3c913be229",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24679.857209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer.js",
+      "sha256": "121b144cb641ab502dd850b523787cce737066f8520c5d4a9a3804d1d10df7ec",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26926.389375000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/detached-buffer.js",
+      "sha256": "121b144cb641ab502dd850b523787cce737066f8520c5d4a9a3804d1d10df7ec",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29176.896083,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/immutable-buffer.js",
+      "sha256": "56cdcf10d011a38bdcb847e3050cd9474cb188d5b69db2a09eb8842c8b73e0cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "immutable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 31594.312459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/immutable-buffer.js",
+      "sha256": "56cdcf10d011a38bdcb847e3050cd9474cb188d5b69db2a09eb8842c8b73e0cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "immutable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 33944.842625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/index-check-before-value-conversion.js",
+      "sha256": "03a2b7efe6536ac3058ab471eab2154209a3cfbaba6ec05c4910869c2944a8fa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36346.10125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/index-check-before-value-conversion.js",
+      "sha256": "03a2b7efe6536ac3058ab471eab2154209a3cfbaba6ec05c4910869c2944a8fa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 38733.210959,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/index-is-out-of-range.js",
+      "sha256": "469d78b8afb4706e8f781b855eb9bb6a7b931ecf6c76165b1b445183264a5cb0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 41010.324917000005,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/index-is-out-of-range.js",
+      "sha256": "469d78b8afb4706e8f781b855eb9bb6a7b931ecf6c76165b1b445183264a5cb0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 43378.022875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/length.js",
+      "sha256": "8fe9629515e648d031d12b5b37da14551f001bac000add7a4b251dee5020b2c5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 45763.736958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/length.js",
+      "sha256": "8fe9629515e648d031d12b5b37da14551f001bac000add7a4b251dee5020b2c5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 48108.634708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/name.js",
+      "sha256": "0f360b75a3cb71d90f0504742c8def78e417912dffd64df6ba9f841b8d18bde5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 9863.645624999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/name.js",
+      "sha256": "0f360b75a3cb71d90f0504742c8def78e417912dffd64df6ba9f841b8d18bde5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 12100.503666999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/negative-byteoffset-throws.js",
+      "sha256": "3149382a221198b4047ed70f7b180dc20bb87bc06252ac45a5f77f51c8eb51ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 14493.113250000002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/negative-byteoffset-throws.js",
+      "sha256": "3149382a221198b4047ed70f7b180dc20bb87bc06252ac45a5f77f51c8eb51ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 16813.4015,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/no-value-arg.js",
+      "sha256": "a33ac7baaf281794cf90bb30fc0958cd0a46ea90c8a814b09d9b0af44f0e86ab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19166.212792000006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/no-value-arg.js",
+      "sha256": "a33ac7baaf281794cf90bb30fc0958cd0a46ea90c8a814b09d9b0af44f0e86ab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21491.40950000001,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/not-a-constructor.js",
+      "sha256": "65cf3ce426576dfd8b320dd4e296693cfe213825d625a0350c98d0f393d6c29e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "BigInt",
+          "DataView",
+          "arrow-function",
+          "ArrayBuffer"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23735.242750000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/not-a-constructor.js",
+      "sha256": "65cf3ce426576dfd8b320dd4e296693cfe213825d625a0350c98d0f393d6c29e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "BigInt",
+          "DataView",
+          "arrow-function",
+          "ArrayBuffer"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25977.803333000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/range-check-after-value-conversion.js",
+      "sha256": "208e712e1a237abb785462f6341a38f9e6998b03f4f62924be4dbfb6dd82964f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28260.501957999993,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/range-check-after-value-conversion.js",
+      "sha256": "208e712e1a237abb785462f6341a38f9e6998b03f4f62924be4dbfb6dd82964f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30622.150167,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/resizable-buffer.js",
+      "sha256": "160ce246b00f0760196882fc38da5b79957e9b370abe4fa6ef25cb98e7387dfe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33018.83575,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/resizable-buffer.js",
+      "sha256": "160ce246b00f0760196882fc38da5b79957e9b370abe4fa6ef25cb98e7387dfe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35437.548375,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tobigint-value-symbol.js",
+      "sha256": "f0763ac642791229cb20ccc7864a5a5bc274ff97509db90f7c5b71c2db094bbc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37789.16166700001,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tobigint-value-symbol.js",
+      "sha256": "f0763ac642791229cb20ccc7864a5a5bc274ff97509db90f7c5b71c2db094bbc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 40032.401125,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tobigint-value.js",
+      "sha256": "f2bd8e9564fb08f6eebaf34cd81cb6a1b7268f10c80903c2d1cda9994ef20d20",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42266.005875,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tobigint-value.js",
+      "sha256": "f2bd8e9564fb08f6eebaf34cd81cb6a1b7268f10c80903c2d1cda9994ef20d20",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 44485.098167,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tonumber-byteoffset-symbol.js",
+      "sha256": "26f1dc13ed6d82751356537d04e5e8f2bbd27ba6abc93b26efe8a1fe278f3189",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15180.555124999999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tonumber-byteoffset-symbol.js",
+      "sha256": "26f1dc13ed6d82751356537d04e5e8f2bbd27ba6abc93b26efe8a1fe278f3189",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17537.42287499999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tonumber-byteoffset.js",
+      "sha256": "6dc089d07416b78d861ff27122a0f2d16223bd3b77069c8ddf127407f852333b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19789.274000000005,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/return-abrupt-from-tonumber-byteoffset.js",
+      "sha256": "6dc089d07416b78d861ff27122a0f2d16223bd3b77069c8ddf127407f852333b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22085.878708000004,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/set-values-little-endian-order.js",
+      "sha256": "4ce83c35ffd5cd4e6c7ce8e49f6b9a7bbe49a378cbe13833949082a27f2a0745",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25975.761542000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/set-values-little-endian-order.js",
+      "sha256": "4ce83c35ffd5cd4e6c7ce8e49f6b9a7bbe49a378cbe13833949082a27f2a0745",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28226.025792,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/set-values-return-undefined.js",
+      "sha256": "7ea4bee57800e8bb787f06c11cf62257589c34d211bc78b53f24ee0d8e0d165e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt",
+          "arrow-function"
+        ],
+        "includes": [
+          "byteConversionValues.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "byteConversionValues.js",
+          "sha256": "33d19f8bec615dcaf7a99298035df4f7155fe371ff33e54fef2fdb78b658c3da"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30487.312791999997,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/set-values-return-undefined.js",
+      "sha256": "7ea4bee57800e8bb787f06c11cf62257589c34d211bc78b53f24ee0d8e0d165e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt",
+          "arrow-function"
+        ],
+        "includes": [
+          "byteConversionValues.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "byteConversionValues.js",
+          "sha256": "33d19f8bec615dcaf7a99298035df4f7155fe371ff33e54fef2fdb78b658c3da"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32788.49558300001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/this-has-no-dataview-internal.js",
+      "sha256": "ebb4afeb10bd420799beb39ff63f4c110f92b6d53d9ca9f541c957d67cf1486a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 35155.18233400001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/this-has-no-dataview-internal.js",
+      "sha256": "ebb4afeb10bd420799beb39ff63f4c110f92b6d53d9ca9f541c957d67cf1486a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 37494.319,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/this-is-not-object.js",
+      "sha256": "d11ba7419a535e905aecfc9494e1f0fac3c62b666517c366f316383c45a8a165",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 39784.09150000001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/this-is-not-object.js",
+      "sha256": "d11ba7419a535e905aecfc9494e1f0fac3c62b666517c366f316383c45a8a165",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42067.31291699999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/to-boolean-littleendian.js",
+      "sha256": "39eb708ceefc5be4129dcb3a583741a7f105826506712bdb36ec13b38cbdeb5e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 44473.985167000006,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/to-boolean-littleendian.js",
+      "sha256": "39eb708ceefc5be4129dcb3a583741a7f105826506712bdb36ec13b38cbdeb5e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 46780.873708000014,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/toindex-byteoffset.js",
+      "sha256": "b6c652695ccda5f7c6ffdd6e57416c6b422382e722a64031983a7e5adb54f1c0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49151.51024999999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DataView/prototype/setBigInt64/toindex-byteoffset.js",
+      "sha256": "b6c652695ccda5f7c6ffdd6e57416c6b422382e722a64031983a7e5adb54f1c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "DataView",
+          "ArrayBuffer",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 51465.2855,
+      "batch": 2
+    }
+  ]
+}

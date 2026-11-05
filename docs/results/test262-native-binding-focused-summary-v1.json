@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-selection-summary",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "scope": "Disjoint focused early-error selections only; not whole-suite coverage.",
+  "totals": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "reports": [
+    {
+      "report": "test262-native-binding-duplicate-let-v1.json",
+      "sha256": "22b3d22a296a8fb08ecc009fd0697ef42555ca23c53e00c9eb1e525bd8821c09",
+      "selection": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-let.js"
+    },
+    {
+      "report": "test262-native-binding-module-functions-v1.json",
+      "sha256": "0b5784c649dbb50dcfe532e6b87b30eb6c2dae9678de31abca6d67458ec73e6e",
+      "selection": "language/module-code/early-dup-top-function.js"
+    },
+    {
+      "report": "test262-native-binding-export-duplicate-v1.json",
+      "sha256": "d145897a284f0399bf6758af5abc4c952e19c37455fca3bcec2a395f36cee80c",
+      "selection": "language/module-code/early-dup-export-id.js"
+    },
+    {
+      "report": "test262-native-binding-export-unresolved-v1.json",
+      "sha256": "8a6aa1b68d21a77bac869beb7dd6c9d9bbe9a39c271fa31657b5994c7d0e9e54",
+      "selection": "language/module-code/early-export-unresolvable.js"
+    },
+    {
+      "report": "test262-native-binding-export-alias-v1.json",
+      "sha256": "b9d60ce32f737bf999fd6a78c49183e04ad865f6b6d01bded962aea68f471441",
+      "selection": "language/module-code/early-dup-export-id-as.js"
+    }
+  ]
+}

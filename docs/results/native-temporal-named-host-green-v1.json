@@ -1,0 +1,91 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "bb9de88ac83775fb76c5d57776401764538218b993d11f871ca6a2bfd7211cd6",
+      "files": 432
+    },
+    "imageSha256": "a454c893c5abb2b9f553eb5922da456ec4a34eb5fa81d2d40b8aaee4afeb297d",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const early=Temporal.ZonedDateTime.from(\"2024-11-03T01:30[America/New_York]\");const later=Temporal.ZonedDateTime.from(\"2024-11-03T01:30[America/New_York]\",{disambiguation:\"later\"});if(early.epochNanoseconds!==1730611800000000000n||later.epochNanoseconds!==1730615400000000000n)throw 1;let caught=false;try{Temporal.ZonedDateTime.from(\"2024-11-03T01:30[America/New_York]\",{disambiguation:\"reject\"});}catch(e){caught=e instanceof RangeError;}if(!caught)throw 2;const p=new Temporal.PlainDateTime(2024,11,3,1,30);if(p.toZonedDateTime(\"America/New_York\",{disambiguation:\"later\"}).epochNanoseconds!==later.epochNanoseconds)throw 3;",
+        "sha256": "44fd88b26691c48d0894ecb9fe26ab724954544af8307dd7aad4b720bbfc3152"
+      },
+      {
+        "index": 1,
+        "source": "const a=Temporal.ZonedDateTime.from(\"1880-01-01T00:00-04:56[America/New_York]\");if(a.epochNanoseconds!==-2840123038000000000n||a.offset!==\"-04:56:02\")throw 1;for(const text of [\"1880-01-01T00:00-04:56:00[America/New_York]\"]){let caught=false;try{Temporal.ZonedDateTime.from(text);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 2;}if(!Temporal.ZonedDateTime.from(\"1880-01-01T00:00-04:56:02[America/New_York]\").equals(a))throw 3;let exact=false;try{Temporal.ZonedDateTime.from({year:1880,month:1,day:1,timeZone:\"America/New_York\",offset:\"-04:56\"});}catch(e){exact=e instanceof RangeError;}if(!exact)throw 4;",
+        "sha256": "29d7bd1adc1ba7ccc54d3ead391c70379b94a623f4243ccf99249da069c9ec89"
+      },
+      {
+        "index": 2,
+        "source": "const a=Temporal.ZonedDateTime.from(\"2024-03-09T12:00[America/New_York]\");const b=a.add({days:1});if(b.hour!==12||b.offset!==\"-04:00\"||b.epochNanoseconds-a.epochNanoseconds!==82800000000000n)throw 1;if(b.hoursInDay!==23||Temporal.ZonedDateTime.from(\"2024-11-03T12:00[America/New_York]\").hoursInDay!==25)throw 2;if(b.startOfDay().hour!==0||b.startOfDay().offset!==\"-05:00\"||!b.withPlainTime().equals(b.startOfDay()))throw 3;",
+        "sha256": "06d2701cb3331287ed7f5599feefe8a0bbc527b7f7f856af97b0344cddcb592f"
+      },
+      {
+        "index": 3,
+        "source": "const a=Temporal.ZonedDateTime.from(\"2024-03-10T12:15[America/New_York]\");if(a.round({smallestUnit:\"day\"}).day!==10)throw 1;const b=Temporal.ZonedDateTime.from(\"2024-03-10T12:45[America/New_York]\");if(b.round({smallestUnit:\"day\"}).day!==11)throw 2;const c=Temporal.ZonedDateTime.from(\"2024-11-03T01:40-05:00[America/New_York]\").round({smallestUnit:\"hour\",roundingMode:\"floor\"});if(c.hour!==1||c.minute!==0||c.offset!==\"-05:00\")throw 3;",
+        "sha256": "a2648d58f6b4222a375e433d9b500dd3cf4bd7389c624317bb57136d6992bb93"
+      },
+      {
+        "index": 4,
+        "source": "const a=Temporal.ZonedDateTime.from(\"2024-03-10T02:30[America/New_York]\");if(a.hour!==3||a.minute!==30)throw 1;if(a.withPlainTime(\"02:15\").hour!==3)throw 2;const b=Temporal.ZonedDateTime.from(\"2024-03-10T02:30[America/New_York]\",{disambiguation:\"earlier\"});if(b.hour!==1||b.minute!==30)throw 3;if(!a.equals(a.withTimeZone(\"US/Eastern\")))throw 4;",
+        "sha256": "f37c50b6ac34b988409bd8bd2fedab6de572d71c70298aa8c96a5c2ae7f1cc9f"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

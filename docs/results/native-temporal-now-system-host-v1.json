@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "215381a793d9f8e06e7bbf6c14e34ca2092e36feaabe59a072161034cdfd96ea",
+      "files": 432
+    },
+    "imageSha256": "aeb4b5b30b3ef7894b06f4cabae92b625db13f93cbfb1b5c51dc8842004902b1",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const id=Temporal.Now.timeZoneId();if(typeof id!==\"string\"||id.length===0)throw 1;const start=Temporal.Now.instant();const z=Temporal.Now.zonedDateTimeISO();const end=Temporal.Now.instant();if(z.timeZoneId!==id||z.epochNanoseconds<start.epochNanoseconds||z.epochNanoseconds>end.epochNanoseconds||z.calendarId!==\"iso8601\")throw 2;for(const name of [\"plainDateISO\",\"plainTimeISO\",\"plainDateTimeISO\"]){const v=Temporal.Now[name]();if(Object.prototype.toString.call(v).indexOf(\"Temporal.Plain\")<0)throw 3;}if(Temporal.Now.timeZoneId.call(null)!==id)throw 4;",
+        "sha256": "2e87e6425c022910d9196aba2d9cf2f90884d3200f24758cf07d2606a2460857"
+      },
+      {
+        "index": 1,
+        "source": "for(const name of [\"plainDateTimeISO\",\"plainDateISO\",\"plainTimeISO\",\"zonedDateTimeISO\"]){const a=Temporal.Now[name](\"America/New_York\"),b=Temporal.Now[name](\"+05:30\");if(a===b)throw 1;for(const value of [null,{},1,true,0n]){let caught=false;try{Temporal.Now[name](value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}}",
+        "sha256": "8f111a0524d204f1dafb44fa2b16a0a533bf083de7e3faa96f13e97589826843"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

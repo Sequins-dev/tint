@@ -1,0 +1,33 @@
+{
+  "kind": "language-semantics-spec-review",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "implementationChanges": 0,
+  "finding": "Deferred computed-key conversion is intentional; preserve raw reference names until GetValue/PutValue",
+  "referenceEngine": "v24.12.0",
+  "specification": "https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#sec-evaluate-property-access-with-expression-key",
+  "cases": [
+    {
+      "mode": "plain",
+      "log": [
+        "rhs",
+        "key"
+      ]
+    },
+    {
+      "mode": "compound",
+      "log": [
+        "key",
+        "rhs",
+        "key"
+      ]
+    },
+    {
+      "mode": "nullish",
+      "log": [
+        "rhs"
+      ],
+      "error": "TypeError"
+    }
+  ]
+}

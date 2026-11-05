@@ -1,0 +1,31 @@
+{
+  "kind": "native-managed-script-failure-analysis",
+  "conformance": false,
+  "observation": "native-managed-script-v3.json",
+  "diagnostic": "native-managed-script-execution-diagnostic-v3.json",
+  "finding": "Published Script code hit a record-read failure trap. Lowering had merged distinct surface record types by storage layout, and the binder left ambiguous descriptors private; field reads nevertheless require AOT descriptor identity.",
+  "staticMapping": {
+    "arenaBase": "0x10a8f8000",
+    "trapOffset": "0x99c8",
+    "function": "closure_3",
+    "irBlock": 90,
+    "record": 39,
+    "field": 0,
+    "operation": "read",
+    "layout": [
+      "string",
+      "boolean"
+    ],
+    "evidence": [
+      ".tint-bootstrap/e4-node-ir-v1.json",
+      ".tint-bootstrap/e4-jit-trap-instructions-v1.log"
+    ]
+  },
+  "repair": "Add an optional frontend record-identity partition to lowering. Managed JIT records use exact surface type contracts as partition keys; private records retain physical interning. Reject all ambiguous imported record identities, including read-only uses.",
+  "validation": {
+    "nodeTests": 3904,
+    "workspaceLog": ".tint-bootstrap/managed-record-identity-workspace-check-v1.log",
+    "native": "native-managed-script-v4.json"
+  },
+  "timingLimit": "The earlier 121s observation includes debugger launch and is not a measurement of compiler execution alone."
+}

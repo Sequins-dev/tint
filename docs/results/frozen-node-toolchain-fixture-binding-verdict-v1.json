@@ -1,0 +1,25 @@
+{
+  "kind": "frozen-node-toolchain",
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-fixture-binding-verdict-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-fixture-binding-verdict-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-fixture-binding-verdict-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-fixture-binding-verdict-v1/source-snapshot.json",
+    "sha256": "f17897a3093fef5ee9b5b3ada371af52406bdb9e11b275728ef29d29ff11991f"
+  },
+  "runIdentity": "d97fa51ca43c5938dd3abf1806604cfdb59ead6b6ed0c2264b93d9d286698d6f",
+  "workspaceGate": {
+    "tests": 4290,
+    "log": ".tint-bootstrap/fixture-binding-verdict-workspace-check-v1.log"
+  },
+  "compilerGate": "docs/results/bootstrap-dynamic-import-v1.json",
+  "nativeGate": {
+    "report": "docs/results/fixture-binding-verdict-native-validation-v1.json",
+    "statusAtFreeze": "queued; required before conformance execution"
+  },
+  "purpose": "Preserve the validated tools-only slice while foundational language implementation continues"
+}

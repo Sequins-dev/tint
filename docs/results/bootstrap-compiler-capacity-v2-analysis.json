@@ -1,0 +1,16 @@
+{
+  "kind": "native-self-build-experiment-analysis",
+  "conformance": false,
+  "report": "docs/results/bootstrap-compiler-capacity-v2.json",
+  "outcome": "failed with original stage1 heap; larger-capacity hypothesis not tested",
+  "reason": "source default change does not override projectBuildRequest imported by the Node bootstrap tool",
+  "observedOldCapacityBytes": 1342177280,
+  "sourceDefaultBytes": 4294967296,
+  "stage1ManagedBytes": 3221225472,
+  "nextExperiment": {
+    "bootstrapOverride": 4026531840,
+    "sourceDefault": 4026531840,
+    "report": "docs/results/bootstrap-compiler-capacity-v3.json"
+  },
+  "ignoreTrailingDiagnosticWords": "allocator vector has16 words; words16-19 in the captured noninstrumented process are not counters"
+}

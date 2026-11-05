@@ -1,0 +1,300 @@
+{
+  "schema": "tint-foundation-unicode-consolidation-validation-v1",
+  "status": "ownership-and-all-node-gates-complete-native-regression-execution-pending-root",
+  "scope": "Pure ownership/import/provider-path migration. No algorithms, Unicode data, runtime namespaces, host permissions, Atomics/jobs sources, Test262 dashboard, normalization implementation or existing frozen/report inputs changed.",
+  "baseline": {
+    "sourceSnapshot": {
+      "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+      "files": 505
+    },
+    "packages": 52,
+    "owners": ["unicode-identifiers", "unicode-properties", "unicode-casing"],
+    "tables": [
+      {
+        "old": "packages/unicode-identifiers/src/ranges.ts",
+        "next": "packages/foundation/src/unicode/identifiers/ranges.ts",
+        "sha256": "193d8ca368dd5ad4320a1672c7b96c992f57ff84c7dd16c14bbbc35092f7737a",
+        "bytes": 20902
+      },
+      {
+        "old": "packages/unicode-properties/src/data.ts",
+        "next": "packages/foundation/src/unicode/properties/data.ts",
+        "sha256": "5fab753408e73a5d7fa9544d454cc62c66b8e723c0cd6e8ccac17a9d9bc0d015",
+        "bytes": 600883
+      },
+      {
+        "old": "packages/unicode-casing/src/data.ts",
+        "next": "packages/foundation/src/unicode/casing/data.ts",
+        "sha256": "95e64db69cc9313abe00824baa3e2c5aaab3e80b3494febdf96b3e42e889d04e",
+        "bytes": 47558
+      }
+    ],
+    "implementationFiles": 6,
+    "testFiles": 3
+  },
+  "current": {
+    "packages": 49,
+    "sha256": "6ffcfa907a61e1a5181ebb5e8128229d2129f5573f88ea967f29bd35ad49d353",
+    "files": 505,
+    "nodeTests": 3634,
+    "explicitImportGrants": 514
+  },
+  "publicEntries": [
+    "@tint/foundation/unicode/identifiers",
+    "@tint/foundation/unicode/properties",
+    "@tint/foundation/unicode/casing"
+  ],
+  "changedContracts": [
+    "Removed unicode-identifiers/unicode-properties/unicode-casing owners; replaced their roots with three exact foundation Unicode exports, no root/Unicode barrel, compatibility aliases or wildcard exports.",
+    "Rebound callers, manifests, TypeScript references, dependency contracts, offline lockfile/workspace links and generated compiler source catalog.",
+    "Casing imports properties through an internal relative module; foundation stays dependency-free and graphs remain purpose-specific.",
+    "Updated Unicode generator output paths only; did not execute generators or fetch source data.",
+    "Preserved README contracts and common Unicode license under packages/foundation/docs/unicode; generated table headers remain verbatim."
+  ],
+  "unchangedContracts": {
+    "publicExportNames": true,
+    "unicodeVersion": "17.0.0",
+    "allThreeTablesByteIdentical": true,
+    "tableBytes": 669343,
+    "runtimeProvidersEqual": true,
+    "hostBindingsEqual": true,
+    "projectRootsEqual": true,
+    "capturedNativeCapabilitiesEqual": true
+  },
+  "parity": {
+    "movedImplementations": 6,
+    "movedTests": 3,
+    "allBodiesEqual": true,
+    "method": "Pinned TypeScript parses declarations in order; remove import declarations, normalize reexport module strings; ordered scanner tokens ignore trivia and trailing commas only",
+    "details": ".tint-bootstrap/foundation-unicode-parity-v1.json",
+    "allNonGeneratedPortableBodies": 504,
+    "workspaceDetails": ".tint-bootstrap/foundation-unicode-workspace-body-parity-v1.json",
+    "tables": [
+      {
+        "old": "packages/unicode-identifiers/src/ranges.ts",
+        "next": "packages/foundation/src/unicode/identifiers/ranges.ts",
+        "sha256": "193d8ca368dd5ad4320a1672c7b96c992f57ff84c7dd16c14bbbc35092f7737a",
+        "bytes": 20902,
+        "byteIdentical": true
+      },
+      {
+        "old": "packages/unicode-properties/src/data.ts",
+        "next": "packages/foundation/src/unicode/properties/data.ts",
+        "sha256": "5fab753408e73a5d7fa9544d454cc62c66b8e723c0cd6e8ccac17a9d9bc0d015",
+        "bytes": 600883,
+        "byteIdentical": true
+      },
+      {
+        "old": "packages/unicode-casing/src/data.ts",
+        "next": "packages/foundation/src/unicode/casing/data.ts",
+        "sha256": "95e64db69cc9313abe00824baa3e2c5aaab3e80b3494febdf96b3e42e889d04e",
+        "bytes": 47558,
+        "byteIdentical": true
+      }
+    ],
+    "generators": {
+      "method": "Pinned TypeScript scanner tokens after exact output-path rebinding; input URLs, checksums, generator templates and algorithms untouched; generators never executed.",
+      "entries": [
+        {
+          "file": "tools/generate-unicode-identifiers.ts",
+          "onlyDestinationAndTriviaChanged": true,
+          "bodySha256": "4911ef32dd8efa063b1b6f8fc9b9d0591557fdcfa8dc76252e1d9db999759058"
+        },
+        {
+          "file": "tools/generate-unicode-properties.ts",
+          "onlyDestinationAndTriviaChanged": true,
+          "bodySha256": "edadaf95e2052022a69fa36d7b1c61dc6f7bb9e0b01afd24f5d23c38cce9ac9d"
+        },
+        {
+          "file": "tools/generate-unicode-casing.ts",
+          "onlyDestinationAndTriviaChanged": true,
+          "bodySha256": "ea48c96e95d594ad1d6b66f284d1e34110bfac991c7969fe0e092611f7daedf5"
+        }
+      ]
+    }
+  },
+  "gates": [
+    {
+      "name": "TDD ownership contract red",
+      "result": "three expected missing new ownership / obsolete owner/import failures",
+      "log": ".tint-bootstrap/foundation-unicode-red-v1.log"
+    },
+    {
+      "name": "production TypeScript build",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-unicode-build-v3.log"
+    },
+    {
+      "name": "test TypeScript checks",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-unicode-test-types-v1.log"
+    },
+    {
+      "name": "host TypeScript checks",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-unicode-host-types-v1.log"
+    },
+    {
+      "name": "focused ownership/frozen/export/framework contracts",
+      "result": "15 passed,0 failed",
+      "log": ".tint-bootstrap/foundation-unicode-focused-v1.log"
+    },
+    {
+      "name": "full Node including self-host source checks and complete retained Unicode tests",
+      "result": "3634 passed,0 failed",
+      "log": ".tint-bootstrap/foundation-unicode-full-node-v1.log"
+    },
+    {
+      "name": "boundaries",
+      "result": "passed,49 acyclic portable packages",
+      "log": ".tint-bootstrap/foundation-unicode-boundaries-v1.log"
+    },
+    {
+      "name": "workspace formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-unicode-workspace-format-v1.log"
+    },
+    {
+      "name": "catalog",
+      "result": "505 sources,514 explicit import grants",
+      "log": ".tint-bootstrap/foundation-unicode-catalog-v2.log"
+    },
+    {
+      "name": "before/after Node AOT smoke",
+      "result": "byte-identical,1321778bytes,SHA2562b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+      "details": ".tint-bootstrap/foundation-unicode-artifacts-v1.json"
+    },
+    {
+      "name": "captured public exports/provider/host/capability parity",
+      "result": "passed",
+      "details": ".tint-bootstrap/foundation-unicode-capability-parity-v1.json"
+    },
+    {
+      "name": "new frozen source/Node toolchain contracts",
+      "result": "49 packages; three exact entries; old owners absent; captured native roles unchanged",
+      "details": ".tint-bootstrap/foundation-unicode-artifacts-v1.json"
+    },
+    {
+      "name": "dedicated Unicode17 native fixture build only",
+      "result": "passed,debug,expected42,exact source identity before/after",
+      "log": ".tint-bootstrap/foundation-unicode-fixture-build-v2.log"
+    }
+  ],
+  "preservedFailure": {
+    "log": ".tint-bootstrap/foundation-unicode-catalog-v1.log",
+    "diagnosis": "Initially placed the common Unicode license next to tables to preserve their historical relative header link. Strict source inventory correctly rejects non-TypeScript files in src. Kept all license terms under foundation docs instead, preserved table/header bytes and the strict source inventory policy; generation v2 passed."
+  },
+  "artifacts": {
+    "sourceSnapshot": {
+      "sha256": "6ffcfa907a61e1a5181ebb5e8128229d2129f5573f88ea967f29bd35ad49d353",
+      "files": 505
+    },
+    "frozen": {
+      "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-unicode-after-v1",
+      "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-unicode-after-v1/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-unicode-after-v1/toolchain.json",
+      "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-unicode-after-v1/source-snapshot.json",
+      "sha256": "318085d7ba0fab6b1ea915e6c5601f2b365e27e6ae037095481d41d106caf2ef"
+    },
+    "frozenContract": {
+      "packages": 49,
+      "entries": {
+        "@tint/foundation/unicode/identifiers": "./src/unicode/identifiers/index.ts",
+        "@tint/foundation/unicode/properties": "./src/unicode/properties/index.ts",
+        "@tint/foundation/unicode/casing": "./src/unicode/casing/index.ts"
+      },
+      "capabilities": {
+        "disposal": true,
+        "asyncDisposal": true,
+        "sharedBuffers": true,
+        "atomics": true,
+        "spinHint": "packages/native-process/src/spin-hint.ts",
+        "sharedAtomics": true
+      }
+    },
+    "artifacts": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-foundation-unicode-v1-MN2lZS/foundation-unicode-v1",
+        "sourceSnapshot": {
+          "sha256": "6ffcfa907a61e1a5181ebb5e8128229d2129f5573f88ea967f29bd35ad49d353",
+          "files": 505
+        },
+        "fixture": "tools/build-foundation-unicode-fixture.ts",
+        "fixtureSha256": "be6f4c3f948793fca9707b8c238fd894894ea75fa6ed97aaa47274a2e3d45482",
+        "imageSha256": "4469dcd3ddf3b6123d1dacbcab90b3651692127a1779a2f533d622b3c07b48da",
+        "expectedExitStatus": 42,
+        "buildOnly": true,
+        "debugSymbols": true,
+        "sourceBeforeAfterEqual": true,
+        "semanticChecks": "Unicode17 identifier additions/invalid points; property ranges/scripts/script extensions; full/supplementary/expanding/contextual casing and lone-surrogate preservation"
+      }
+    ],
+    "smoke": {
+      "before": {
+        "kind": "framework-migration-smoke",
+        "sourceSnapshot": {
+          "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+          "files": 505
+        },
+        "toolchain": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-unicode-before-v1",
+        "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-unicode-smoke-before-v1/smoke",
+        "expectedExitStatus": 42,
+        "bytes": 1321778,
+        "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+        "policy": {
+          "debugSymbols": false,
+          "allowDebugger": true,
+          "runtimeEntry": "initializeCopyingRuntime",
+          "denseReferenceLists": false,
+          "managedBytes": 16777216,
+          "allocationCapacity": 1048576,
+          "rootCapacity": 65536,
+          "stackBytes": 1048576
+        },
+        "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+      },
+      "after": {
+        "kind": "framework-migration-smoke",
+        "sourceSnapshot": {
+          "sha256": "6ffcfa907a61e1a5181ebb5e8128229d2129f5573f88ea967f29bd35ad49d353",
+          "files": 505
+        },
+        "toolchain": "live-workspace",
+        "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-unicode-smoke-after-v1/smoke",
+        "expectedExitStatus": 42,
+        "bytes": 1321778,
+        "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+        "policy": {
+          "debugSymbols": false,
+          "allowDebugger": true,
+          "runtimeEntry": "initializeCopyingRuntime",
+          "denseReferenceLists": false,
+          "managedBytes": 16777216,
+          "allocationCapacity": 1048576,
+          "rootCapacity": 65536,
+          "stackBytes": 1048576
+        },
+        "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+      },
+      "byteIdentical": true
+    }
+  },
+  "nativeSelfBuild": {
+    "latestProven": {
+      "report": "docs/results/bootstrap-atomics-agent-policy-v1.json",
+      "sourceSnapshot": {
+        "sha256": "4126859a4a6d1062aa15aa2944c782b2cff3d598d48e6c3358305b10c20e6179",
+        "files": 505
+      },
+      "packages": 52,
+      "nativeExitStatus": 0,
+      "byteIdentical": true
+    },
+    "unicodeSource": "No native execution/self-build claimed. Root owns serialized fixture and later self-build validation."
+  },
+  "limits": [
+    "This agent launched no native processes. The dedicated algorithms fixture is build-only pending parent execution at the frozen source identity.",
+    "Bespoke regressions, smoke identity, Node reference tests and full Test262 conformance remain distinct evidence.",
+    "No normalization feature or additional Unicode tables are introduced."
+  ]
+}

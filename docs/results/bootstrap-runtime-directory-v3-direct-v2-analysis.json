@@ -1,0 +1,19 @@
+{
+  "kind": "native-self-build-failure-analysis",
+  "conformance": false,
+  "sourceReport": "docs/results/bootstrap-runtime-directory-v3-direct-v2.json",
+  "phase": "AArch64 emission, writeUnsigned/check result allocation",
+  "observed": {
+    "nurseryUsed": 268435424,
+    "nurseryCapacity": 268435456,
+    "oldUsed": 1701005872,
+    "oldCapacity": 1744830464
+  },
+  "confirmed": "Native execution reached an allocator breakpoint. The ordinary 16-word control block does not record why collection failed.",
+  "hypothesis": "Old-space live-set pressure at nursery evacuation; scanner/preparation failure is not yet excluded.",
+  "nextDiagnostic": {
+    "source": ".tint-bootstrap/source-directory-allocation-diagnostic-v2",
+    "report": "docs/results/bootstrap-directory-allocation-diagnostic-v2.json",
+    "change": "Isolated 20-word allocation state with collection failure kind and survivor/fixup/request counters; production source is unchanged."
+  }
+}

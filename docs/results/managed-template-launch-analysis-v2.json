@@ -1,0 +1,27 @@
+{
+  "kind": "native-managed-template-launch-analysis",
+  "conformance": false,
+  "accepted": false,
+  "priorAttempt": "docs/results/managed-template-timeout-analysis-v1.json",
+  "control": {
+    "report": "docs/results/managed-template-debugger-connected-control-v1.json",
+    "outcome": {
+      "kind": "completed"
+    },
+    "elapsedMs": 60734.837834000005
+  },
+  "newImage": {
+    "report": "docs/results/native-managed-templates-case-0-v2.json",
+    "outcomeKind": "crash",
+    "elapsedMs": 50358.664542,
+    "confirmedInitialStop": false,
+    "reason": "LLDB reports failed to catch stop after launch; launch state=10, initial state=10, pid=0. Remote qProcessInfo and qEcho did not complete."
+  },
+  "staticChecks": {
+    "codesign": ".tint-bootstrap/managed-template-image-signature-v1.log",
+    "newMachO": ".tint-bootstrap/managed-template-macho-v1.txt",
+    "controlMachO": ".tint-bootstrap/managed-import-control-macho-v1.txt",
+    "finding": "Both are arm64 PIE executables with the same 11 load commands, 672-byte entry offset, dylib and fixup structure. Size/offset, UUID and signature differences are expected from changed generated code. No malformed header was identified."
+  },
+  "limits": "The passing control establishes one working launch path, not why the new artifact failed. No automatic acceptance retry; a separate local-stdio diagnostic will distinguish launch protocol from behavior."
+}

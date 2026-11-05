@@ -1,0 +1,32 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "4126859a4a6d1062aa15aa2944c782b2cff3d598d48e6c3358305b10c20e6179",
+    "files": 505
+  },
+  "tests": {
+    "passed": 3621,
+    "failed": 0,
+    "log": ".tint-bootstrap/can-block-policy-full-node-v1.log"
+  },
+  "checks": [
+    "production build types",
+    "test types",
+    "host types",
+    "public dependency boundaries:52 packages",
+    "full source/tool/config format"
+  ],
+  "native": "native-agent-policy-validation-v1.json",
+  "scope": "Execution plans retain CanBlock flags, native cases select immutable agent suspension policies, child realms share the agent, and Node reference marks unsupported non-suspending policy explicitly. No real waiting or worker execution is provided.",
+  "preservedObservations": [
+    {
+      "log": ".tint-bootstrap/native-agent-policy-observation-build-v1.log",
+      "cause": "Fixture exported run rather than Script callback contract execute; link failure."
+    },
+    {
+      "log": ".tint-bootstrap/native-agent-policy-observation-build-v2.log",
+      "cause": "Successful image was eagerly JSON-stringified as an assertion message, exceeding string length. Only failure outcomes are now stringified."
+    }
+  ]
+}

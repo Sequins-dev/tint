@@ -1,0 +1,29 @@
+{
+  "kind": "native-managed-template-feature-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "workspace": {
+    "tests": 4394,
+    "log": ".tint-bootstrap/managed-template-workspace-check-v3.log"
+  },
+  "nativeGate": "docs/results/managed-templates-native-validation-v4.json",
+  "runtimeCacheGate": "docs/results/native-managed-template-cache-runtime-v1.json",
+  "compilerGraph": "docs/results/managed-template-bootstrap-graph-node-v1.json",
+  "acceptedCompiler": "docs/results/json-await-native-compiler-acceptance-v1.json",
+  "frozenTools": "docs/results/frozen-node-toolchain-managed-templates-v1.json",
+  "nativeSemanticChecks": 10,
+  "caseInputPolicy": "Cases 0–7 retain unchanged passing observations at the identical portable source, with per-image provenance. Case 8 uses a smaller bespoke identity loop under the unchanged 256 KiB cap; its original oversized unsupported observation is retained separately. Case 9 was not previously run.",
+  "inputCopies": [
+    "docs/results/managed-template-native-inputs-v1.json",
+    "docs/results/managed-template-native-inputs-v2.json"
+  ],
+  "retainedFailures": [
+    "docs/results/managed-template-launch-analysis-v3.json",
+    "docs/results/managed-template-async-budget-analysis-v1.json"
+  ],
+  "limits": "Native feature and resource-boundary evidence only. The original 273248-byte async fixture remains unsupported under the unchanged 262144-byte entry cap. No unchanged Test262 variant has yet been accepted in this feature record; focused and complete selections must report separately."
+}

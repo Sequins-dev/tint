@@ -1,0 +1,11 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const a=new Uint8Array([19,23,42]),context={x:1};const b=a.map(function(v,i,o){if(this!==context||o!==a||v!==a[i])throw 1;return v+1;},context);if(!(b instanceof Uint8Array)||b===a||b.join()!=="20,24,43"||a.join()!=="19,23,42")throw 2;const c=a.filter(v=>v>20);if(c.join()!=="23,42")throw 3;`,
+  `const a=new Uint8Array([1,2]);let order="";Object.defineProperty(a,"constructor",{get(){order+="s";return {[Symbol.species]:function(n){order+="c";return new Uint16Array(n);}};}});const b=a.map(v=>{order+="m";return v+256;});if(order!=="scmm"||!(b instanceof Uint16Array)||b.join()!=="257,258")throw 1;order="";const c=a.filter(v=>{order+="f";return true;});if(order!=="ffsc"||!(c instanceof Uint16Array)||c.join()!=="1,2")throw 2;`,
+  `const a=new Uint8Array([19,23]);a.constructor={[Symbol.species]:function(n){return new Uint8Array(n+1);}};if(a.map(v=>v).join()!=="19,23,0")throw 1;a.constructor={[Symbol.species]:function(n){return new Uint8Array(n-1);}};let caught=false;try{a.map(v=>v);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;`,
+  `const b=new BigInt64Array([19n,23n]);if(b.map(v=>v+1n).join()!=="20,24"||b.filter(v=>v>20n).join()!=="23")throw 1;`,
+  `const b=new ArrayBuffer(2),a=new Uint8Array(b);a.constructor={[Symbol.species]:function(n){b.transfer();return new Uint8Array(n);}};let count=0;const result=a.map(v=>{if(v!==undefined)throw 1;count++;return 19;});if(count!==2||result.join()!=="19,19")throw 2;`,
+  `const b=new ArrayBuffer(3,{maxByteLength:6}),a=new Uint8Array(b);a.set([1,2,3]);let count=0;const result=a.filter((v,i)=>{if(i===0)b.resize(1);else if(v!==undefined)throw 1;count++;return true;});if(count!==3||result.join()!=="1,0,0")throw 2;`,
+  `const a=new Uint8Array([19]);a.constructor=undefined;const original=Uint8Array.prototype.constructor;Uint8Array.prototype.constructor=null;const result=a.map(v=>v);Uint8Array.prototype.constructor=original;if(!(result instanceof Uint8Array)||result[0]!==19)throw 1;`,
+  `const a=new Uint8Array(0);let observed=false;Object.defineProperty(a,"constructor",{get(){observed=true;throw 1;}});let caught=false;try{a.map(null);}catch(e){caught=e instanceof TypeError;}if(!caught||observed)throw 2;`,
+]);

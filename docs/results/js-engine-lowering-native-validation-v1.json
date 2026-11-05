@@ -1,0 +1,38 @@
+{
+  "kind": "native-lowering-compatibility-validation",
+  "sourceSnapshot": {
+    "sha256": "f7e532c38f092726a66d5d70dda369861d7fbdcc547ad500c9bff3bfd02e3281",
+    "files": 507
+  },
+  "conformance": false,
+  "observation": "js-engine-lowering-native-stack-local-v3.json",
+  "expectedExitStatus": 42,
+  "passed": true,
+  "resources": {
+    "managedBytes": 4194304,
+    "allocationCapacity": 65536,
+    "rootCapacity": 4096,
+    "stackBytes": 16777216
+  },
+  "retainedObservations": [
+    "js-engine-lowering-native-v1.json",
+    "js-engine-lowering-native-stack-v2.json"
+  ],
+  "diagnosis": {
+    "firstFault": "EXC_BAD_ACCESS code2 at statement+112, first low-frame stack spill after allocating156432 bytes",
+    "evidence": ".tint-bootstrap/js-engine-lowering-fault-disassembly-v1.log",
+    "changed": "Stack only, from1MiB to16MiB; managed heap and allocation/root capacities unchanged. The intervening connected launch failed before entry.",
+    "scope": "Compiler-workload fixture only. Test262 budgets unchanged."
+  },
+  "workspace": "js-engine-lowering-cleanup-workspace-v1.json",
+  "pureOwnership": "framework-js-engine-lowering-parity-v1.json",
+  "coverage": [
+    "class/private/super lowering",
+    "generator continuation lowering",
+    "parameter/destructuring/rest",
+    "optional chains and assignment order",
+    "resource/label scopes",
+    "sloppy with scopes",
+    "strict rejection of with"
+  ]
+}

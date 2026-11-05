@@ -1,0 +1,9 @@
+{
+  "kind": "native-regression-analysis",
+  "currentReport": "native-temporal-duration-focused-v2.json",
+  "priorReport": "native-temporal-duration-focused-v1.json",
+  "observation": "Original case 0 failed before execution during LLDB attach. A separate complete diagnostic using the system Apple LLDB passed all four cases. Original failed observation retained.",
+  "debugger": "/usr/bin/lldb",
+  "version": "lldb-2103.0.34.407",
+  "causeAssessment": "PATH selected Homebrew LLDB 22.1.8 while the host debugserver is Apple 2103. The matching host tools are now preferred; a small passing diagnostic does not establish that all launch failures are eliminated."
+}

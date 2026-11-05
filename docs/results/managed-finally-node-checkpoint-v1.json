@@ -1,0 +1,22 @@
+{
+  "kind": "managed-finally-node-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "5c5932ba36cd78079b692375d1a4f848d86c410da03de53d31119e4085d75570",
+    "files": 552
+  },
+  "workspaceTests": 4124,
+  "workspaceLog": ".tint-bootstrap/managed-finally-workspace-check-v2.log",
+  "red": ".tint-bootstrap/managed-finally-red-v1.log",
+  "green": ".tint-bootstrap/managed-finally-green-v1.log",
+  "nativeSourceCheck": ".tint-bootstrap/managed-finally-selfcheck-green-v1.json",
+  "change": "A generated cleanup factory is a named local declaration, admitted only by the existing proven direct-call exception. No callback gate, public type or frame change.",
+  "compilerSourceAgreement": "docs/results/engine-only-compiler-graph-agreement-v1.json",
+  "compilerGate": "docs/results/bootstrap-eval-private-v1.json",
+  "nativeStatus": "Async-body image and five finalizer cases built; native execution pending earlier engine gates",
+  "remaining": [
+    "native finalizer and async-body cases",
+    "AOT and managed regressions",
+    "unchanged AsyncFunction Test262 selection"
+  ]
+}

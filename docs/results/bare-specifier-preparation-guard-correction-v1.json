@@ -1,0 +1,8 @@
+{
+  "kind": "native-preparation-guard-correction",
+  "conformance": false,
+  "stoppedNodeBuild": 20109,
+  "nativeExecutionStarted": false,
+  "reason": "Avoid eagerly serializing a successful native image in an assertion message. Only serialize the small failure outcome. Corrected during Node compilation before image publication or native execution.",
+  "replacement": ".tint-bootstrap/run-bare-specifier-focused-conformance-v2.mjs"
+}

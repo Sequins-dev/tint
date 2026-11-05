@@ -1,0 +1,2146 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/optional-chaining",
+  "totals": {
+    "total": 76,
+    "passed": 28,
+    "failed": 4,
+    "unsupported": 44,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.3684210526315789
+  },
+  "observations": [
+    {
+      "path": "language/expressions/optional-chaining/call-expression-super-no-base.js",
+      "sha256": "93fadfdd37e14b3bf105627705c6377822ad21a22db61a6dbcbb0f1d38881e6c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"super call requires a derived constructor context\",\"start\":466,\"end\":471,\"position\":{\"line\":21,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.518416000000002
+    },
+    {
+      "path": "language/expressions/optional-chaining/call-expression-super-no-base.js",
+      "sha256": "93fadfdd37e14b3bf105627705c6377822ad21a22db61a6dbcbb0f1d38881e6c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"super call requires a derived constructor context\",\"start\":480,\"end\":485,\"position\":{\"line\":22,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.2147499999999809
+    },
+    {
+      "path": "language/expressions/optional-chaining/call-expression.js",
+      "sha256": "fc1eca21ad14c895607e7e47dfa898d8e0f747f338f177136d092f8cc069051a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":1410,\"end\":1417,\"position\":{\"line\":75,\"column\":34}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 7.403250000000014
+    },
+    {
+      "path": "language/expressions/optional-chaining/call-expression.js",
+      "sha256": "fc1eca21ad14c895607e7e47dfa898d8e0f747f338f177136d092f8cc069051a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":1424,\"end\":1431,\"position\":{\"line\":76,\"column\":34}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.3304169999999544
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-op-template-string-esi.js",
+      "sha256": "c932c6264417b6a899f570e58691863b9d5766009975b4dbbb72006c44087548",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":619,\"end\":626,\"position\":{\"line\":25,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0936659999999847
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-op-template-string-esi.js",
+      "sha256": "c932c6264417b6a899f570e58691863b9d5766009975b4dbbb72006c44087548",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":633,\"end\":640,\"position\":{\"line\":26,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.09629200000000537
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-op-template-string.js",
+      "sha256": "898c8de6297a55b043a73045f1b44a2fcc920edfb81005c3b8bd486abd74743f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":530,\"end\":537,\"position\":{\"line\":22,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.11983300000002828
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-op-template-string.js",
+      "sha256": "898c8de6297a55b043a73045f1b44a2fcc920edfb81005c3b8bd486abd74743f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":544,\"end\":551,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0855420000000322
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-optchain-template-string-esi.js",
+      "sha256": "92d59a4b6ecb0e24085d872cbe52aa9084cf11e7c650da0aadd16633adb29196",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":621,\"end\":628,\"position\":{\"line\":25,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.105666000000042
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-optchain-template-string-esi.js",
+      "sha256": "92d59a4b6ecb0e24085d872cbe52aa9084cf11e7c650da0aadd16633adb29196",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":635,\"end\":642,\"position\":{\"line\":26,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08787499999999682
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-optchain-template-string.js",
+      "sha256": "6f851e6970739affb064a770c1a4f90e007d4a46b7c981b3c2747e86cc9db35f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":532,\"end\":539,\"position\":{\"line\":22,\"column\":9}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08087499999999181
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-null-optchain-template-string.js",
+      "sha256": "6f851e6970739affb064a770c1a4f90e007d4a46b7c981b3c2747e86cc9db35f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":546,\"end\":553,\"position\":{\"line\":23,\"column\":9}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06325000000003911
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-op-template-string-esi.js",
+      "sha256": "40c934f347b0051761980250a14564397be9dd189701b682ee1a2906b2d45bfa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":642,\"end\":649,\"position\":{\"line\":27,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.09091599999999289
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-op-template-string-esi.js",
+      "sha256": "40c934f347b0051761980250a14564397be9dd189701b682ee1a2906b2d45bfa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":656,\"end\":663,\"position\":{\"line\":28,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07308399999999438
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-op-template-string.js",
+      "sha256": "3fbcf59dd3a3975804641ed37bd1d80e51043b8ff863b7a6c31c0ecc072dd0e4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":553,\"end\":560,\"position\":{\"line\":24,\"column\":4}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0750409999999988
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-op-template-string.js",
+      "sha256": "3fbcf59dd3a3975804641ed37bd1d80e51043b8ff863b7a6c31c0ecc072dd0e4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":567,\"end\":574,\"position\":{\"line\":25,\"column\":4}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06575000000003683
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-optchain-template-string-esi.js",
+      "sha256": "b5124aa9559a24d73e1b97e837b0aeb98832eac6002b5ce12cb424b17f1eee52",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":633,\"end\":640,\"position\":{\"line\":27,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08233300000000554
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-optchain-template-string-esi.js",
+      "sha256": "b5124aa9559a24d73e1b97e837b0aeb98832eac6002b5ce12cb424b17f1eee52",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":647,\"end\":654,\"position\":{\"line\":28,\"column\":3}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07550000000003365
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-optchain-template-string.js",
+      "sha256": "7dab2e00b8287bf39260e8a62155a0c60b25e313a31faf765f366c3efe563d31",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":544,\"end\":551,\"position\":{\"line\":24,\"column\":6}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0811670000000504
+    },
+    {
+      "path": "language/expressions/optional-chaining/early-errors-tail-position-optchain-template-string.js",
+      "sha256": "7dab2e00b8287bf39260e8a62155a0c60b25e313a31faf765f366c3efe563d31",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":558,\"end\":565,\"position\":{\"line\":25,\"column\":6}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06670800000000554
+    },
+    {
+      "path": "language/expressions/optional-chaining/eval-optional-call.js",
+      "sha256": "8ee86992e92b85c7155b8adf6c84d6923099693407792ca0100c81d8cc626f39",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4430.417125
+    },
+    {
+      "path": "language/expressions/optional-chaining/eval-optional-call.js",
+      "sha256": "8ee86992e92b85c7155b8adf6c84d6923099693407792ca0100c81d8cc626f39",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3848.288792000001
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-do.js",
+      "sha256": "5eb82bf4847fbdcafae76fbf822c1ac154b49fffc721ab6bc4b64248b518d29e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3954.030166999999
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-do.js",
+      "sha256": "5eb82bf4847fbdcafae76fbf822c1ac154b49fffc721ab6bc4b64248b518d29e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3912.4412079999984
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-await-of.js",
+      "sha256": "012adbf7d5444b6fa260e2d23bb91fcafbf4a62613c75c08b0517d2c5f8ac575",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.7136669999999867
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-await-of.js",
+      "sha256": "012adbf7d5444b6fa260e2d23bb91fcafbf4a62613c75c08b0517d2c5f8ac575",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.12141700000211131
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-in.js",
+      "sha256": "30ad3187be0d08aaae819be4424a377f5323eb183f0b87f87e66c8ca3b64c451",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3760.180625000001
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-in.js",
+      "sha256": "30ad3187be0d08aaae819be4424a377f5323eb183f0b87f87e66c8ca3b64c451",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3978.509582999999
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-of-type-error.js",
+      "sha256": "fb4c4edb4bb3403e1ffd0738ca15f2de572c4167c6a7cadd855a84ece995035d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":402,\"end\":428,\"code\":\"UNSUPPORTED\",\"message\":\"Script statement lowering is not implemented: for-of\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.0458749999997963
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for-of-type-error.js",
+      "sha256": "fb4c4edb4bb3403e1ffd0738ca15f2de572c4167c6a7cadd855a84ece995035d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":416,\"end\":442,\"code\":\"UNSUPPORTED\",\"message\":\"Script statement lowering is not implemented: for-of\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.8412909999969997
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for.js",
+      "sha256": "afd7a82ae9815f97a57f588676fdea7490e9b730af7c33069af5637ecb6f788a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3921.6243329999998
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-for.js",
+      "sha256": "afd7a82ae9815f97a57f588676fdea7490e9b730af7c33069af5637ecb6f788a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3917.3819580000018
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-while.js",
+      "sha256": "ebd6f8777fff1e0150ec97c92e80145037b7d9af02fc572f41e957ed8471e812",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3978.929
+    },
+    {
+      "path": "language/expressions/optional-chaining/iteration-statement-while.js",
+      "sha256": "ebd6f8777fff1e0150ec97c92e80145037b7d9af02fc572f41e957ed8471e812",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3828.8881669999973
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-identifier.js",
+      "sha256": "60f84949b600df47ce93e90a1ae38ddeb9e1680127fdc1e95b9277aad5fc38f0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.24633300000277814
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-identifier.js",
+      "sha256": "60f84949b600df47ce93e90a1ae38ddeb9e1680127fdc1e95b9277aad5fc38f0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.12358300000050804
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-literal.js",
+      "sha256": "b76dead7c6191f4c27bc7fb74b8b51b4d688def96b817d391cae109c8aba39dd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.12654200000542914
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-literal.js",
+      "sha256": "b76dead7c6191f4c27bc7fb74b8b51b4d688def96b817d391cae109c8aba39dd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.11641599999711616
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-this.js",
+      "sha256": "e174f2f410bf24dea61149e973fc9739a766a34790a840e0999728782416d26f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08791599999676691
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression-async-this.js",
+      "sha256": "e174f2f410bf24dea61149e973fc9739a766a34790a840e0999728782416d26f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07758300000568852
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression.js",
+      "sha256": "01d84d40740bc737edca904689ea6b48ce7b6b8c292cb01b3f96d4d817b9f70f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"generator-functions\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"generator functions are not implemented\",\"start\":920,\"end\":921,\"position\":{\"line\":35,\"column\":33}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.013291000002937
+    },
+    {
+      "path": "language/expressions/optional-chaining/member-expression.js",
+      "sha256": "01d84d40740bc737edca904689ea6b48ce7b6b8c292cb01b3f96d4d817b9f70f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"generator-functions\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"generator functions are not implemented\",\"start\":934,\"end\":935,\"position\":{\"line\":36,\"column\":33}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.9460419999959413
+    },
+    {
+      "path": "language/expressions/optional-chaining/new-target-optional-call.js",
+      "sha256": "ccec252ee271165b065bb9cbb51f6384bfbd4d9750ada660ec7d3d46a3d8168b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3903.4655000000057
+    },
+    {
+      "path": "language/expressions/optional-chaining/new-target-optional-call.js",
+      "sha256": "ccec252ee271165b065bb9cbb51f6384bfbd4d9750ada660ec7d3d46a3d8168b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 3805.2727499999964
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-call-preserves-this.js",
+      "sha256": "e62500065fc7ddabffdf446723a8ae42a723202e0a8611dd7d73646187281b03",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3867.412333
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-call-preserves-this.js",
+      "sha256": "e62500065fc7ddabffdf446723a8ae42a723202e0a8611dd7d73646187281b03",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3969.9319579999938
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-async-optional-chain-square-brackets.js",
+      "sha256": "f8e1994dc1994a9574c5341d6c2a9382703d49ba8e3262baa1cd1a241e352b5b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.1653749999968568
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-async-optional-chain-square-brackets.js",
+      "sha256": "f8e1994dc1994a9574c5341d6c2a9382703d49ba8e3262baa1cd1a241e352b5b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.1005829999994603
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-async-square-brackets.js",
+      "sha256": "4671c9d7943e8e2cc4d28347da6ca1b3143278eeab7c4d08c7aa2b08700359f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.11429199999838602
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-async-square-brackets.js",
+      "sha256": "4671c9d7943e8e2cc4d28347da6ca1b3143278eeab7c4d08c7aa2b08700359f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.10187500000029104
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-expression-optional-expression.js",
+      "sha256": "b009e6840a60e442d1b99c1117b14ce7f76c2db2208be692e0a192e885706a18",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3876.2832080000007
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-expression-optional-expression.js",
+      "sha256": "b009e6840a60e442d1b99c1117b14ce7f76c2db2208be692e0a192e885706a18",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3910.004166999999
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-arguments.js",
+      "sha256": "5003adb167c138c66a7a04bab1b055bab855a7babad8da48077846cf2c739de2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":495,\"end\":498,\"position\":{\"line\":19,\"column\":25}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.1954580000019632
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-arguments.js",
+      "sha256": "5003adb167c138c66a7a04bab1b055bab855a7babad8da48077846cf2c739de2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected supported expression\",\"start\":509,\"end\":512,\"position\":{\"line\":20,\"column\":25}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.353000000002794
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-expression.js",
+      "sha256": "0d50afe6b4c929e56034ef635334e3a7949466e4f9ec1f07a27b906dfa9a72b0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4157.760625000003
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-expression.js",
+      "sha256": "0d50afe6b4c929e56034ef635334e3a7949466e4f9ec1f07a27b906dfa9a72b0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4112.935124999989
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-identifiername.js",
+      "sha256": "b5f578b9cb0e9e445b89d9a5949e0d35beff7afaac6affbd89decb48478a38c1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4069.4347500000003
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain-prod-identifiername.js",
+      "sha256": "b5f578b9cb0e9e445b89d9a5949e0d35beff7afaac6affbd89decb48478a38c1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3934.469750000004
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain.js",
+      "sha256": "2d217215d9f0d5d7d998e91eb27350a6c05cd3ab96438498c16f3ef6a43d5f9c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3880.7299169999897
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-chain.js",
+      "sha256": "2d217215d9f0d5d7d998e91eb27350a6c05cd3ab96438498c16f3ef6a43d5f9c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3860.2685829999973
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-expression.js",
+      "sha256": "819d4fca788904eb87ccfe69028378f66a25dd0c498a9e39deb240022db02a98",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3790.099000000002
+    },
+    {
+      "path": "language/expressions/optional-chaining/optional-expression.js",
+      "sha256": "819d4fca788904eb87ccfe69028378f66a25dd0c498a9e39deb240022db02a98",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3825.490208000003
+    },
+    {
+      "path": "language/expressions/optional-chaining/punctuator-decimal-lookahead.js",
+      "sha256": "bbba0a611851cd7b8bea56040752de40de13a7524637239427e7909518f13dea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3800.921000000002
+    },
+    {
+      "path": "language/expressions/optional-chaining/punctuator-decimal-lookahead.js",
+      "sha256": "bbba0a611851cd7b8bea56040752de40de13a7524637239427e7909518f13dea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3883.911917000005
+    },
+    {
+      "path": "language/expressions/optional-chaining/runtime-semantics-evaluation.js",
+      "sha256": "1d3c338c8ad5d75fe736306a380992ea07ca64a0002ec0f5469c6d21162c2519",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3835.941374999995
+    },
+    {
+      "path": "language/expressions/optional-chaining/runtime-semantics-evaluation.js",
+      "sha256": "1d3c338c8ad5d75fe736306a380992ea07ca64a0002ec0f5469c6d21162c2519",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3949.1845420000027
+    },
+    {
+      "path": "language/expressions/optional-chaining/short-circuiting.js",
+      "sha256": "7eb89d90bd1ff6d17d7c2109aae56bb4de3ffdd3893edd5f761c1ce2df0d0b4a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3933.725250000003
+    },
+    {
+      "path": "language/expressions/optional-chaining/short-circuiting.js",
+      "sha256": "7eb89d90bd1ff6d17d7c2109aae56bb4de3ffdd3893edd5f761c1ce2df0d0b4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3831.9474580000096
+    },
+    {
+      "path": "language/expressions/optional-chaining/static-semantics-simple-assignment.js",
+      "sha256": "457603dd6c433aa0a6fda09206eb93a6cf0fa62dfe008be6e2ea1396262cda54",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":488,\"end\":490,\"position\":{\"line\":23,\"column\":10}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.2523749999963911
+    },
+    {
+      "path": "language/expressions/optional-chaining/static-semantics-simple-assignment.js",
+      "sha256": "457603dd6c433aa0a6fda09206eb93a6cf0fa62dfe008be6e2ea1396262cda54",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":502,\"end\":504,\"position\":{\"line\":24,\"column\":10}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.12458400000468828
+    },
+    {
+      "path": "language/expressions/optional-chaining/super-property-optional-call.js",
+      "sha256": "7a9d656f1fa1b77f1057c841aed086ca13db42135106833f6de09e02571564da",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4008.298332999999
+    },
+    {
+      "path": "language/expressions/optional-chaining/super-property-optional-call.js",
+      "sha256": "7a9d656f1fa1b77f1057c841aed086ca13db42135106833f6de09e02571564da",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3822.5111659999966
+    },
+    {
+      "path": "language/expressions/optional-chaining/update-expression-postfix.js",
+      "sha256": "c45893063ab877c95db9bd6249cfd575f24c5ebab3db631b8481f320dcceb389",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid update target\",\"start\":520,\"end\":521,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.17291699998895638
+    },
+    {
+      "path": "language/expressions/optional-chaining/update-expression-postfix.js",
+      "sha256": "c45893063ab877c95db9bd6249cfd575f24c5ebab3db631b8481f320dcceb389",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid update target\",\"start\":534,\"end\":535,\"position\":{\"line\":24,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08800000000337604
+    },
+    {
+      "path": "language/expressions/optional-chaining/update-expression-prefix.js",
+      "sha256": "d310cb97db03560817f4ab05a4ccfa93023254d4aec8b046ea39656cf9edd1d3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid update target\",\"start\":512,\"end\":513,\"position\":{\"line\":23,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.09120799999800511
+    },
+    {
+      "path": "language/expressions/optional-chaining/update-expression-prefix.js",
+      "sha256": "d310cb97db03560817f4ab05a4ccfa93023254d4aec8b046ea39656cf9edd1d3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "optional-chaining"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid update target\",\"start\":526,\"end\":527,\"position\":{\"line\":24,\"column\":7}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06395799999882001
+    }
+  ]
+}

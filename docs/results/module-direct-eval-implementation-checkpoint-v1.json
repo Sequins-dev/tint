@@ -1,0 +1,28 @@
+{
+  "kind": "module-direct-eval-implementation-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "901ec69a234b3ddd94d1e5149ee7f59378fef76987569d3073b22f355e71473e",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4366,
+    "log": ".tint-bootstrap/module-direct-eval-workspace-check-v1.log",
+    "additionalToolTypes": ".tint-bootstrap/module-direct-eval-tools-typecheck-v1.log",
+    "additionalToolFormat": ".tint-bootstrap/module-direct-eval-tools-format-check-v1.log"
+  },
+  "red": ".tint-bootstrap/module-direct-eval-lowering-red-v1.log",
+  "native": "docs/results/module-direct-eval-native-validation-v1.json",
+  "preparation": "docs/results/module-direct-eval-preparation-node-v1.json",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-module-direct-eval-v1.json",
+  "scope": "Direct eval in AOT module bodies and their source functions; existing scope/site/compiler services and effective ScriptOrModule context reused. No new frame, runtime export, parser goal, surface vocabulary or managed ABI.",
+  "remaining": [
+    "Unchanged three-variant native selections in progress",
+    "Combined frozen native self-build queued after the prior assignment selection",
+    "Runtime source-text module compilation and import() inside runtime-compiled eval/Function code remain separate capabilities"
+  ],
+  "specification": [
+    "https://tc39.es/ecma262/multipage/global-object.html#sec-performeval",
+    "https://tc39.es/ecma262/multipage/ecmascript-language-scripts-and-modules.html#sec-source-text-module-record-execute-module"
+  ]
+}

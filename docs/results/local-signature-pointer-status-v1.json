@@ -1,0 +1,32 @@
+{
+  "kind": "compiler-slice-validation-status",
+  "createdAt": "2026-11-03T04:10:28.154737+00:00",
+  "scope": "Image-private permanent signature pointer identities; no cross-image imports or managed execution admission",
+  "sourceSnapshot": {
+    "sha256": "16d3d62e809235ccf7ebacf5d0274eaa11ee4b96482f52908f8e855b81846101",
+    "files": 491
+  },
+  "workspaceChecks": {
+    "types": "passed",
+    "tests": 3401,
+    "passed": 3401,
+    "boundaries": "passed",
+    "formatting": "passed"
+  },
+  "nodeBootstrap": {
+    "path": ".tint-bootstrap/stage1-signature-pointer-v1",
+    "bytes": 59660834,
+    "sha256": "85604c5397c2caa05df1ec8af69027c5e004da118f9731308d9d0087c725dac2",
+    "sourceSnapshotMatches": true
+  },
+  "nativeValidation": {
+    "status": "pending; launches failed before entry",
+    "observations": [
+      "native-signature-pointer-script-case-0-v1.json",
+      "native-signature-pointer-script-case-0-v2.json"
+    ],
+    "readyMovingFixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-moving-runtime-1E10bI/runtime",
+    "selfbuildNotRun": true
+  },
+  "hostBlocker": "Sophos scan extension active with broker services absent; authorized macOS administrator-authenticated stop command pending. No generated-code fault established."
+}

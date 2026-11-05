@@ -1,0 +1,30 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-date-time-round.ts",
+  "fixtureSha256": "2efe80a732566db887eac19101dfbb68b7be001b0d7e79cec99331a59baa7a5c",
+  "imageSha256": "535461f64b0f0d7da355f4678caf6767dc3b414b1f1285435d6ab1c6634c78d0",
+  "cases": 2,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

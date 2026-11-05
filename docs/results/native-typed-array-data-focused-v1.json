@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-hosted-typed-array-data.ts",
+  "fixtureSha256": "9efeb002389384dca94761956738259e8a41a4567cfa4c59642043178c41b3dc",
+  "imageSha256": "d3ebeea985e1c5f9b744b0f8884a58de6a531ade8a1ed739bc5718627884b60e",
+  "cases": 1,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "unexpected native exit status 70"
+      }
+    }
+  ]
+}

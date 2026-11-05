@@ -1,0 +1,13 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    `const chunks=[1,2,3,4,5].values().chunks(2).toArray();if(chunks.length!==3||chunks[0].join()!=="1,2"||chunks[1].join()!=="3,4"||chunks[2].join()!=="5")throw 1;const windows=[1,2,3,4].values().windows(2).toArray();if(windows.length!==3||windows[0].join()!=="1,2"||windows[1].join()!=="2,3"||windows[2].join()!=="3,4")throw 2;`,
+    `if([1,2].values().windows(3).toArray().length!==0||[1,2].values().windows(3,"allow-partial").toArray()[0].join()!=="1,2"||[].values().windows(3,"allow-partial").toArray().length!==0)throw 1;const it=[1,2,3].values().windows(2);const a=it.next().value;a[1]=99;const b=it.next().value;if(b.join()!=="2,3"||a===b)throw 2;`,
+    `for(const method of ["chunks","windows"]){for(const size of [undefined,null,"2",1n,NaN,Infinity,1.5,0,-1,4294967296]){let read=0,closed=0;const it={get next(){read++;throw 1;},return(){closed++;throw 2;}};let caught;try{Iterator.prototype[method].call(it,size);}catch(e){caught=e;}const range=typeof size==="number"&&Number.isInteger(size)&&(size<1||size>4294967295);if(!(caught instanceof(range?RangeError:TypeError))||read!==0||closed!==1)throw 3;}}`,
+    `for(const method of ["chunks","windows"]){let read=0,next=0,closed=0;const source={get next(){read++;return function(){next++;return {value:next,done:false};};},return(){closed++;return {};}};const helper=Iterator.prototype[method].call(source,2);if(read!==1||next!==0)throw 1;helper.return();if(next!==0||closed!==1||!helper.next().done)throw 2;const later=Iterator.prototype[method].call(source,2);if(later.next().value.length!==2||next!==2)throw 3;later.return();if(closed!==2)throw 4;}`,
+    `for(const method of ["chunks","windows"]){let next=0,closed=0;const source={next(){return next++===0?{value:42,done:false}:{done:true};},return(){closed++;return {};}};const helper=Iterator.prototype[method].call(source,2,"allow-partial");if(helper.next().value[0]!==42)throw 1;helper.return();if(closed!==0||!helper.next().done)throw 2;}`,
+    `for(const method of ["chunks","windows"]){const marker={};let closed=0;const helper=Iterator.prototype[method].call({next(){throw marker;},return(){closed++;return {};}} ,2);let caught;try{helper.next();}catch(e){caught=e;}if(caught!==marker||closed!==0||!helper.next().done)throw 1;helper.return();if(closed!==0)throw 2;}`,
+    `let closed=0,read=0;try{Iterator.prototype.windows.call({get next(){read++;throw 1;},return(){closed++;return {};}} ,2,{toString(){throw 2;}});throw 3;}catch(e){if(!(e instanceof TypeError))throw 4;}if(closed!==1||read!==0)throw 5;const it=[1].values().chunks(4294967295);if(it.next().value[0]!==1||!it.next().done)throw 6;`,
+  ],
+  { nodeReference: false },
+);

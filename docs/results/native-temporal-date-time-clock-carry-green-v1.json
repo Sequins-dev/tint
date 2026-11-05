@@ -1,0 +1,51 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "ff8d278a98fe19084bc3c21470e9dc84967693bdf783336429c3533b07c8bd80",
+      "files": 411
+    },
+    "imageSha256": "1a5270e52ac8e3cd3e43337f3936ac27fbb22715a6dc714d597475862db25a97",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.PlainDateTime(1970,1,1),b=new Temporal.PlainDateTime(1971,12,31,23,59,59,999,999,999);const d=a.until(b,{largestUnit:\"year\",smallestUnit:\"microsecond\",roundingMode:\"expand\"});if(d.years!==2||d.months!==0||d.days!==0||d.hours!==0||d.nanoseconds!==0)throw 1;",
+        "sha256": "161ce674aa642a2b66bc5a5f0506d8d4676dc85e1b1db9dd781e6d491992593a"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.PlainDateTime(2021,1,31),b=new Temporal.PlainDateTime(2021,2,27,23,59,59,999,999,999);const d=a.until(b,{largestUnit:\"month\",smallestUnit:\"microsecond\",roundingMode:\"expand\"});if(d.months!==1||d.days!==0||d.nanoseconds!==0)throw 1;const n=a.since(b,{largestUnit:\"month\",smallestUnit:\"microsecond\",roundingMode:\"floor\"});if(n.months!==-1||n.days!==0)throw 2;",
+        "sha256": "48720533b0d28d2110a0524ee4936d640850453258467a1c5fa3be0d070999ef"
+      }
+    ]
+  },
+  "cases": 2,
+  "completed": 2,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

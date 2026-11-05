@@ -1,0 +1,35 @@
+{
+  "name": "@tint/image",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js"
+    },
+    "./dwarf": {
+      "types": "./dist/dwarf.d.ts",
+      "import": "./dist/dwarf.js"
+    },
+    "./darwin/dyld-fixups": {
+      "types": "./dist/darwin/dyld-fixups.d.ts",
+      "import": "./dist/darwin/dyld-fixups.js"
+    },
+    "./darwin/signature": {
+      "types": "./dist/darwin/signature.d.ts",
+      "import": "./dist/darwin/signature.js"
+    },
+    "./darwin/macho": {
+      "types": "./dist/darwin/macho/index.d.ts",
+      "import": "./dist/darwin/macho/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/foundation": "workspace:*",
+    "@tint/abi": "workspace:*"
+  }
+}

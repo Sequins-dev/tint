@@ -1,0 +1,12 @@
+{
+  "kind": "native-self-hosting-failure-analysis",
+  "conformance": false,
+  "originalReport": "bootstrap-temporal-conversions-v1.json",
+  "acceptedCheckpoint": false,
+  "finding": "The debugger consumed --debug-symbols before launching the compiler. Stage2 exited 0 but is not byte-identical and has no debug-info sections. dwarfdump --verify alone accepts an image without DWARF.",
+  "evidence": [
+    "native-debugger-flag-arguments-red-v2.json",
+    "native-debugger-flag-arguments-green-v1.json"
+  ],
+  "correctedValidation": "Require nonempty __debug_info and __debug_line as well as dwarfdump verification and byte equality."
+}

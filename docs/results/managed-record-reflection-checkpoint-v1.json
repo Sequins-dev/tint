@@ -1,0 +1,31 @@
+{
+  "kind": "managed-record-reflection-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "b7651181d316de351822c40b208dddb389184724d2b5ff73cb5e6b8ea72575c0",
+    "files": 506
+  },
+  "packages": 14,
+  "workspace": {
+    "tests": 3665,
+    "failed": 0,
+    "types": true,
+    "testTypes": true,
+    "hostTypes": true,
+    "boundaries": true,
+    "format": true
+  },
+  "nativeSelfBuild": "bootstrap-record-reflection-v1.json",
+  "sourceSnapshotBytesVerified": true,
+  "signatureVerified": true,
+  "dwarfVerified": true,
+  "nativeRegressions": [
+    "native-record-descriptor-reflection-v1.json",
+    "native-managed-two-helper-frame-v1.json"
+  ],
+  "frozenTwoHelperFixture": {
+    "path": ".tint-bootstrap/managed-frame-original-native-v1.ts",
+    "sha256": "f2b3c99bba00e5160d5f82ad6a398aef48dfce97ee1cc386618061160d30923d"
+  },
+  "scope": "Explicitly granted AOT record reflection, stable exact descriptor addresses after copying GC, and an independently emitted entry using two AOT helpers through a typed traced frame. Helpers retain fresh object/closure identity, exception payloads, nested invocation and root restoration. Context-domain authorization and the general source-to-managed entry adapter remain to be integrated; no general Script/Function fallback or Test262 credit."
+}

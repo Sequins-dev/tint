@@ -1,0 +1,707 @@
+{
+  "schemaVersion": 1,
+  "kind": "binding-audit",
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": "new negative-accepted variants in syntax v31 versus v29",
+  "counts": {
+    "rejected": 59,
+    "unsupported": 4
+  },
+  "observations": [
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 608,
+        "end": 624,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 622,
+        "end": 638,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 620,
+        "end": 636,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 634,
+        "end": 650,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 695,
+        "end": 696,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 709,
+        "end": 710,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "diagnostic": {
+        "start": 603,
+        "end": 618,
+        "code": "UNSUPPORTED",
+        "message": "sloppy block functions require Annex B binding"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 633,
+        "end": 649,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 614,
+        "end": 624,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 628,
+        "end": 638,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 628,
+        "end": 633,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 642,
+        "end": 647,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "diagnostic": {
+        "start": 642,
+        "end": 657,
+        "code": "UNSUPPORTED",
+        "message": "sloppy block functions require Annex B binding"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 656,
+        "end": 671,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 622,
+        "end": 638,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 636,
+        "end": 652,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 622,
+        "end": 623,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 636,
+        "end": 637,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 666,
+        "end": 667,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 680,
+        "end": 681,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 1051,
+        "end": 1052,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 1065,
+        "end": 1066,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 1075,
+        "end": 1076,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 1089,
+        "end": 1090,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 610,
+        "end": 626,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 624,
+        "end": 640,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 639,
+        "end": 640,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 653,
+        "end": 654,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 663,
+        "end": 664,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 677,
+        "end": 678,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/expressions/class/elements/syntax/early-errors/grammar-privatemeth-duplicate-gen.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 822,
+        "end": 831,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate private name: #m"
+      }
+    },
+    {
+      "path": "language/expressions/class/elements/syntax/early-errors/grammar-privatemeth-duplicate-gen.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 836,
+        "end": 845,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate private name: #m"
+      }
+    },
+    {
+      "path": "language/expressions/object/method-definition/generator-param-redecl-const.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 428,
+        "end": 433,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: a"
+      }
+    },
+    {
+      "path": "language/expressions/object/method-definition/generator-param-redecl-const.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 442,
+        "end": 447,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: a"
+      }
+    },
+    {
+      "path": "language/expressions/object/method-definition/generator-param-redecl-let.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 426,
+        "end": 431,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: a"
+      }
+    },
+    {
+      "path": "language/expressions/object/method-definition/generator-param-redecl-let.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 440,
+        "end": 445,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: a"
+      }
+    },
+    {
+      "path": "language/module-code/early-dup-export-decl.js",
+      "variant": "module",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 408,
+        "end": 431,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/module-code/early-dup-top-function-generator.js",
+      "variant": "module",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 549,
+        "end": 565,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: x"
+      }
+    },
+    {
+      "path": "language/module-code/parse-err-hoist-lex-gen.js",
+      "variant": "module",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 738,
+        "end": 754,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: g"
+      }
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/grammar-privatemeth-duplicate-gen.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 817,
+        "end": 826,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate private name: #m"
+      }
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/grammar-privatemeth-duplicate-gen.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 831,
+        "end": 840,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate private name: #m"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 669,
+        "end": 685,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 683,
+        "end": 699,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 681,
+        "end": 697,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 695,
+        "end": 711,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "diagnostic": {
+        "start": 655,
+        "end": 670,
+        "code": "UNSUPPORTED",
+        "message": "sloppy block functions require Annex B binding"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 694,
+        "end": 710,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 675,
+        "end": 685,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 689,
+        "end": 699,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 689,
+        "end": 694,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 703,
+        "end": 708,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "diagnostic": {
+        "start": 703,
+        "end": 718,
+        "code": "UNSUPPORTED",
+        "message": "sloppy block functions require Annex B binding"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 717,
+        "end": 732,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 683,
+        "end": 699,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 697,
+        "end": 713,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 683,
+        "end": 684,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 697,
+        "end": 698,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 723,
+        "end": 724,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 737,
+        "end": 738,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 671,
+        "end": 687,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 685,
+        "end": 701,
+        "code": "DUPLICATE_NAME",
+        "message": "duplicate value binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "variant": "sloppy",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 687,
+        "end": 688,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    },
+    {
+      "path": "language/statements/switch/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "variant": "strict",
+      "status": "rejected",
+      "diagnostic": {
+        "start": 701,
+        "end": 702,
+        "code": "DUPLICATE_NAME",
+        "message": "var conflicts with an enclosing lexical binding: f"
+      }
+    }
+  ]
+}

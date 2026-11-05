@@ -1,0 +1,11 @@
+{
+  "kind": "native-host-recovery-checkpoint",
+  "action": "Authenticated macOS systemextensionsctl gc after verifying Sophos was the sole orphaned registration and Sony containing app/reference remained valid.",
+  "cleanupOutput": "Successfully cleaned up BundleID: com.sophos.endpoint.scanextension, teamID: 2H5GFH3774, version:1.0/1.0",
+  "observedState": "Sophos disabled/inactive; process84126 absent; terminated waiting to uninstall on reboot. Sony remains activated/enabled.",
+  "freshNativeProbe": "native-orphan-recovery-launch-v1.json",
+  "probeElapsedMs": 648.737375,
+  "probeIdentifier": "tint-orphan-recovery-probe-v1",
+  "restart": "Not requested: fresh executable completed promptly. User authorizes normal restart if the same pre-entry conflict recurs, after checkpointing active work.",
+  "limitations": "Recovery observation does not independently establish the original stall cause. No SIP/configuration database edits."
+}

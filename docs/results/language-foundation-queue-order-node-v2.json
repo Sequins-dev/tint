@@ -1,0 +1,27 @@
+{
+  "kind": "native-selection-queue-order-correction",
+  "nativeExecutions": 0,
+  "conformance": false,
+  "retiredIdleWaiters": [
+    {
+      "pid": 74664,
+      "command": "node .tint-bootstrap/run-language-function-control-checkpoints-v4.mjs",
+      "nativeChildren": 0
+    },
+    {
+      "pid": 74859,
+      "command": "node .tint-bootstrap/run-language-class-foundation-checkpoints-v2.mjs",
+      "nativeChildren": 0
+    }
+  ],
+  "functionController": ".tint-bootstrap/run-language-function-control-checkpoints-v5.mjs",
+  "classController": ".tint-bootstrap/run-language-class-foundation-checkpoints-v3.mjs",
+  "order": [
+    "Complete tagged-template selection already executing",
+    "Complete existing direct-eval 336 variants",
+    "Complete existing for-of 1442 variants",
+    "Function/control checkpoints 23 selections",
+    "Class foundation checkpoints 29 selections"
+  ],
+  "reason": "Prevent new measurement groups from repeatedly pausing the already-started foundational selections. Completed assignment and current top-level-await evidence remain reused; old-source TLA is not a prerequisite. Unexpected prior gaps block widening. No live native child or existing observation/journal was altered."
+}

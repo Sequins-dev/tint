@@ -1,0 +1,19 @@
+{
+  "kind": "native-record-contract-fault-analysis",
+  "conformance": false,
+  "diagnostic": "annex-eval-trap-diagnostic-v1.json",
+  "function": "program:packages/js-runtime/src/environments/global/declarations.ts:instantiateGlobalDeclarations [__tint_specialized_6690$20012]",
+  "sourceLine": "packages/js-runtime/src/environments/global/declarations.ts:116",
+  "fieldWrite": "declaration.admitted = false",
+  "pc": "0x104df9070",
+  "imageSlide": "0x878000",
+  "observedDescriptor": "0x1228a27f0",
+  "expectedAOTDescriptor": "0x1092ea028",
+  "jitCallerPC": "0x12289b0a8",
+  "nodeBefore": ".tint-bootstrap/annex-record-identities-v1.json",
+  "nodeAfter": ".tint-bootstrap/annex-record-identities-v2.json",
+  "cause": "Generated admission temporary inferred mutable name; surface AnnexGlobalFunction requires readonly name. Exact matching left its JIT descriptor private; AOT record-write dispatch accepted only image descriptors and trapped. Storage offsets alone do not grant record identity.",
+  "fix": "Annotate generated admission temporary with the public AnnexGlobalFunction type and include its conditional type-only import. No runtime declaration behavior or optimizer change.",
+  "nativeFixEvidence": "test262-annex-admission-first-native-v1.json",
+  "followup": "Conservative profile rejection of unbound records differing only in readonly contracts; Node-tested, dedicated native validation pending."
+}

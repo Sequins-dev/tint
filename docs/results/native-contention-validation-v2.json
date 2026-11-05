@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-contention-validation",
+  "conformance": false,
+  "reports": [
+    "native-contention-u8-v2.json",
+    "native-contention-u16-v2.json",
+    "native-contention-u32-v2.json"
+  ],
+  "passed": 2,
+  "total": 3,
+  "remaining": "u32 retained pre-entry debugger failure; no u32 v2 native behavior observed. All three widths passed the separately retained v1 observation.",
+  "prior": "native-contention-validation-v1.json",
+  "correction": "The v2 first-attempt completion gate prevents the initial winner wrapping before the peer attempts CAS; the earlier v1 barrier did not deterministically force mismatch, although those successful observations checked actual mismatch counts.",
+  "focusedEvidence": ".tint-bootstrap/native-contention-t1-validation-v2.json",
+  "sourceSnapshot": {
+    "sha256": "c7a560da7a2d52d94b8d899852e2fdc6203e508460b00bbb4aa8667bf95b6fa2",
+    "files": 507
+  }
+}

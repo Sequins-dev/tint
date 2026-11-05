@@ -1,0 +1,41 @@
+{
+  "kind": "language-assignment-name-inference-triage",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "baselineReport": "docs/results/test262-language-assignment-reference-core-v1.json",
+  "baselineSource": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "liveSource": {
+    "sha256": "620076ef36c07bc72b97fec283efeb398d6e254c1b4513826364e9cf6d41d83a",
+    "files": 566
+  },
+  "cases": [
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "sloppy",
+      "before": [
+        "fn"
+      ],
+      "after": [
+        ""
+      ]
+    },
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "strict",
+      "before": [
+        "fn"
+      ],
+      "after": [
+        ""
+      ]
+    }
+  ],
+  "cause": "assignmentName stripped parenthesized left-hand targets before checking the grammar IsIdentifierRef condition; reference capture must unwrap them, but name inference must not.",
+  "specification": "https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#sec-assignment-operators-runtime-semantics-evaluation",
+  "red": ".tint-bootstrap/assignment-cover-name-red-v1.log",
+  "nodeGate": ".tint-bootstrap/assignment-cover-name-focused-v1.log",
+  "nativeAndSelfBuild": "pending combined validation; no unchanged-source rerun claimed"
+}

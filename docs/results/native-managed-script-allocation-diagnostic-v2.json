@@ -1,0 +1,55 @@
+{
+  "kind": "native-managed-script-allocation-diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-pc82Wi/managed-script",
+  "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-pc82Wi/managed-script.manifest.json",
+  "sourceSnapshot": {
+    "sha256": "588736f87f2ef4ebab5a4edc81833cc6c76aaddfe305e767e91003cb2d4a7244",
+    "files": 546
+  },
+  "elapsedMs": 78859.952625,
+  "debuggerStatus": 0,
+  "error": null,
+  "initial": {
+    "stopped": true,
+    "pid": 90388
+  },
+  "final": null,
+  "diagnostic": {
+    "sp": 4772072992,
+    "pc": 4368061028,
+    "instruction": [
+      96,
+      0,
+      32,
+      212
+    ],
+    "context": 4772167264,
+    "allocationState": 4688188912,
+    "words": [
+      33554416,
+      33554432,
+      0,
+      0,
+      262931072,
+      1,
+      0,
+      0
+    ],
+    "regionBase": 4683677696,
+    "rootHeader": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "roots": null,
+    "error": "success",
+    "stopped": true,
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x1045b5264)"
+  },
+  "log": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/e4-alloc-v2/debugger.log",
+  "relatedReports": [
+    "docs/results/native-managed-script-v2.json"
+  ]
+}

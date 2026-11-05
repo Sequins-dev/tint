@@ -1,0 +1,21 @@
+{
+  "kind": "managed-declaration-interchange-regressions",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "39c39f3663180aafeb6a97949aabc69edacd134584a395160405460147f5eec1",
+    "files": 522
+  },
+  "nativeFixture": "docs/results/native-managed-surface-interchange-v1.json",
+  "workspaceTests": 3752,
+  "testLog": ".tint-bootstrap/managed-interchange-workspace-tests-v1.log",
+  "formatLog": ".tint-bootstrap/managed-interchange-format-v1.log",
+  "previousSelfBuild": "docs/results/managed-entry-checkpoint-v1.json",
+  "selfBuildMatchesThisSource": false,
+  "scope": "Canonical declaration-only text and versioned plain surface data; native print/parse/check/restore and managed import adaptation. No helper code is serialized and no native pointer authority is inferred.",
+  "remaining": [
+    "Automatic AOT surface retention",
+    "Semantic function membership including callback variance",
+    "Physical identity directory and contract digest",
+    "General managed publication and eval execution"
+  ]
+}

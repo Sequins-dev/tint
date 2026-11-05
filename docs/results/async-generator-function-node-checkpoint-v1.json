@@ -1,0 +1,28 @@
+{
+  "kind": "node-feature-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "9e011b0ae9676ae6b6d6a9a1bcc3f678966f982b07ca4214eeb74eccf1c8b359",
+    "files": 552
+  },
+  "feature": "General AsyncGeneratorFunction bodies",
+  "workspaceGate": {
+    "tests": 4132,
+    "pass": 4132,
+    "fail": 0,
+    "log": ".tint-bootstrap/async-generator-function-workspace-check-v2.log"
+  },
+  "focused": {
+    "tests": 93,
+    "pass": 93,
+    "log": ".tint-bootstrap/async-generator-function-green-v1.log"
+  },
+  "portableCheck": {
+    "stage": "checked",
+    "functions": 4207,
+    "log": ".tint-bootstrap/async-generator-function-selfcheck-v1.json"
+  },
+  "native": "queued after GeneratorFunction; no native feature claim",
+  "compilerGate": "docs/results/eval-private-selfhost-checkpoint-v1.json",
+  "compilerSourceAgreement": "docs/results/engine-only-compiler-graph-agreement-v4.json"
+}

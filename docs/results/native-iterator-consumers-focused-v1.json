@@ -1,0 +1,63 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-iterator-consumers.ts",
+  "fixtureSha256": "dedbe7a653648cbe59c022f70cd2a05a6f455117e2168576b6ee93d719f5914c",
+  "imageSha256": "c8a4cc272389f37ed2724554d1a3755497663668f9fef8c4b3d216f3d10ccb6d",
+  "cases": 8,
+  "passed": 5,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 1\n"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-p4IqwU/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 2\n"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

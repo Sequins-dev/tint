@@ -1,0 +1,68 @@
+{
+  "kind": "authorized-normal-host-restart-checkpoint",
+  "createdAt": "2026-11-03T12:34:18.224952+00:00",
+  "authorization": "User: If it continues to conflict, just restart the computer so that can be fully unloaded.",
+  "reason": "After authenticated orphan cleanup and a successful fresh0.65second probe, newly built class/module fixtures again stalled before initial debugger entry. Sophos pending uninstall on reboot.",
+  "bootSession": "88E5A524-8A1C-4CF0-9EA7-E19454592FD2",
+  "pausedConformance": {
+    "owner": 22414,
+    "active": {
+      "kind": "active-native-conformance-run",
+      "pid": 5335,
+      "pausePath": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262-native-v6.pause",
+      "report": "docs/results/test262-full-suite-native-v6.json",
+      "journal": "docs/results/test262-full-suite-native-v6.jsonl",
+      "log": "/tmp/tint-test262-full-suite-native-v6.log",
+      "toolchain": {
+        "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v6-arity-v1",
+        "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v6-arity-v1/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v6-arity-v1/toolchain.json",
+        "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v6-arity-v1/source-snapshot.json",
+        "sha256": "77749ed39ed39d61123edb477415588f2773143e6edb9de3009b00fa2748321a"
+      },
+      "sourceSnapshot": {
+        "sha256": "bbe7ef08cc86dd826544d7afe8bc693f68586bd1256e1f362a18e066b9f4dd9d",
+        "files": 449
+      },
+      "variantPolicy": "Every syntaxVariants variant in the complete clean pinned suite; failures and unsupported outcomes remain in the denominator",
+      "batchSize": 64
+    },
+    "checkpoint": {
+      "pid": 5335,
+      "state": "between-variants"
+    }
+  },
+  "journal": {
+    "path": "docs/results/test262-full-suite-native-v6.jsonl",
+    "bytes": 7272463,
+    "sha256": "c55c1cd27187357a041df6c6e24f7585df3d8df042282da7c098868fcc53ca1f",
+    "lastObservation": {
+      "kind": "observation",
+      "path": "built-ins/Date/prototype/setUTCMilliseconds/date-value-read-before-tonumber-when-date-is-invalid.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  },
+  "workspace": {
+    "packages": 66,
+    "sources": 494,
+    "sourceSha256": "f683e451944bdd6c2aa8d34a10a7468f26734eeb4e0183494558da1c184abf4d",
+    "tests": 3502,
+    "nodeGates": "passed",
+    "lastFullNativeSelfbuild": "bootstrap-framework-compiler-v1.json",
+    "currentNativeMetadata": [
+      "export-metadata-native-smoke-v1.json",
+      "export-metadata-native-class-v1.json"
+    ],
+    "interruptedModuleObservation": "export-metadata-native-modules-v1.json",
+    "interruptionNote": "Run-owned debugger terminated deliberately for authorized restart after pre-entry stall; not a compiler fault/retry."
+  },
+  "savedPlans": ".tint-bootstrap/restart-context-v1",
+  "nextWork": [
+    "Verify Sophos removed/inactive and fresh native startup after reboot.",
+    "Read saved SharedArrayBuffer plan; freeze current sources and run complete baseline SharedArrayBuffer208/ArrayBuffer442 before implementation, serialize native jobs.",
+    "Complete native shared-export-metadata module fixture, then ts-native ownership phaseC separately.",
+    "Preserve old449-source v6 survey/journal; it has no whole-suite pass rate. Runner has no resume flag: implement journal-aware resume or retain/retire explicitly; never overwrite or restart as if complete.",
+    "Old PIDs/markers in native-conformance-active.json and restart checkpoint are stale after reboot; compare boot session before using PIDs. No agents remain active."
+  ]
+}

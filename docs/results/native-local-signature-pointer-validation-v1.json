@@ -1,0 +1,25 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T08:27:27.173973+00:00",
+  "scope": "Image-private permanent function signature descriptor identities; ordinary indirect calls, JS runtime callbacks and moving generational GC with captured receivers/closures",
+  "sourceSnapshot": {
+    "sha256": "16d3d62e809235ccf7ebacf5d0274eaa11ee4b96482f52908f8e855b81846101",
+    "files": 491
+  },
+  "fixtures": {
+    "passed": 7,
+    "total": 7,
+    "reports": [
+      "native-signature-pointer-script-case-0-v3.json",
+      "native-signature-pointer-script-case-1-v3.json",
+      "native-signature-pointer-script-case-2-v3.json",
+      "native-signature-pointer-script-case-3-v3.json",
+      "native-signature-pointer-script-case-4-v3.json",
+      "native-signature-pointer-script-case-5-v3.json",
+      "native-signature-pointer-moving-v3.json"
+    ]
+  },
+  "earlierStatus": "local-signature-pointer-status-v1.json",
+  "selfbuild": "queued; snapshot stage1-signature-pointer-v1 built by Node, native stage2 comparison pending",
+  "limitations": "No cross-image imports or managed executable calls implemented by this slice. Native regressions do not count as Test262 passes. Earlier pre-entry failures remain recorded."
+}

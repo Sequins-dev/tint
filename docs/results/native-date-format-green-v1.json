@@ -1,0 +1,71 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "40c63653023301f603f25daccabacb3d13a2863e292b4604264c2acbc4a0833d",
+      "files": 416
+    },
+    "imageSha256": "901c1b22d20ca45f2a2bbc0cf93a021977c03f2ce02a11c06a06ee3090a2dac7",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(new Date(0).toISOString()!==\"1970-01-01T00:00:00.000Z\")throw 1;if(new Date(-1).toISOString()!==\"1969-12-31T23:59:59.999Z\")throw 2;if(new Date(8640000000000000).toISOString()!==\"+275760-09-13T00:00:00.000Z\")throw 3;let caught=false;try{new Date(NaN).toISOString();}catch(e){caught=e instanceof RangeError;}if(!caught)throw 4;",
+        "sha256": "3efc601c834e382f6600b3310eba1e7be5d375fc92c75e824351b3af45632dd7"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(0);if(d.toUTCString()!==\"Thu, 01 Jan 1970 00:00:00 GMT\")throw 1;if(d.toGMTString!==d.toUTCString)throw 2;if(new Date(NaN).toUTCString()!==\"Invalid Date\")throw 3;if(new Date(-62198755200000).toUTCString()!==\"Fri, 01 Jan -0001 00:00:00 GMT\")throw 4;",
+        "sha256": "66ca105f32fc488e98df2668d269fa74b11715b86b8a3ddf4e45d87b0fd7e440"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(0);if(d.toJSON()!==\"1970-01-01T00:00:00.000Z\")throw 1;if(new Date(NaN).toJSON()!==null)throw 2;let order=\"\";const x={valueOf(){order+=\"v\";return 1;},get toISOString(){order+=\"g\";return function(){if(this!==x||arguments.length!==0)throw 3;order+=\"c\";return 17;};}};if(Date.prototype.toJSON.call(x)!==17||order!==\"vgc\")throw 4;",
+        "sha256": "dd792abff53e0fc462b6021d45886f2d93800c5c3f714fa6f0bf780a95296481"
+      },
+      {
+        "index": 3,
+        "source": "const x={toString(){return \"text\";},valueOf(){return 7;}};const p=Date.prototype[Symbol.toPrimitive];if(p.call(x,\"default\")!==\"text\"||p.call(x,\"string\")!==\"text\"||p.call(x,\"number\")!==7)throw 1;let caught=false;try{p.call(x,\"bad\");}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;",
+        "sha256": "f1ad69c5abeb1197ca9d87c81300f70cd07fd7e30d92e800723efc7a9d2c5db0"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

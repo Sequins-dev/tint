@@ -1,0 +1,1946 @@
+{
+  "kind": "core-focus-selection-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "families": [
+    {
+      "family": "language",
+      "files": 23828,
+      "variants": 44701
+    },
+    {
+      "family": "built-ins/Object",
+      "files": 3411,
+      "variants": 6802
+    },
+    {
+      "family": "built-ins/Array",
+      "files": 3083,
+      "variants": 6119
+    }
+  ],
+  "groups": [
+    {
+      "group": "language/statements/class",
+      "files": 4419,
+      "variants": 8766,
+      "syntaxNegatives": 1308,
+      "modules": 6,
+      "async": 2064
+    },
+    {
+      "group": "language/expressions/class",
+      "files": 4109,
+      "variants": 8127,
+      "syntaxNegatives": 1220,
+      "modules": 7,
+      "async": 2060
+    },
+    {
+      "group": "language/statements/for-await-of",
+      "files": 1234,
+      "variants": 2431,
+      "syntaxNegatives": 178,
+      "modules": 0,
+      "async": 2251
+    },
+    {
+      "group": "language/expressions/object",
+      "files": 1170,
+      "variants": 2252,
+      "syntaxNegatives": 300,
+      "modules": 1,
+      "async": 434
+    },
+    {
+      "group": "built-ins/Object/defineProperty",
+      "files": 1131,
+      "variants": 2250,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/dynamic-import",
+      "files": 1005,
+      "variants": 1900,
+      "syntaxNegatives": 717,
+      "modules": 38,
+      "async": 801
+    },
+    {
+      "group": "language/statements/for-of",
+      "files": 751,
+      "variants": 1442,
+      "syntaxNegatives": 165,
+      "modules": 2,
+      "async": 2
+    },
+    {
+      "group": "built-ins/Object/defineProperties",
+      "files": 632,
+      "variants": 1264,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/async-generator",
+      "files": 623,
+      "variants": 1212,
+      "syntaxNegatives": 164,
+      "modules": 0,
+      "async": 818
+    },
+    {
+      "group": "language/expressions/assignment",
+      "files": 485,
+      "variants": 850,
+      "syntaxNegatives": 153,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/compound-assignment",
+      "files": 454,
+      "variants": 786,
+      "syntaxNegatives": 45,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/function",
+      "files": 451,
+      "variants": 783,
+      "syntaxNegatives": 96,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/for",
+      "files": 385,
+      "variants": 758,
+      "syntaxNegatives": 97,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/arrow-function",
+      "files": 343,
+      "variants": 643,
+      "syntaxNegatives": 170,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/create",
+      "files": 320,
+      "variants": 640,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/assignmenttargettype",
+      "files": 324,
+      "variants": 627,
+      "syntaxNegatives": 614,
+      "modules": 6,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/getOwnPropertyDescriptor",
+      "files": 310,
+      "variants": 620,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/async-generator",
+      "files": 301,
+      "variants": 590,
+      "syntaxNegatives": 64,
+      "modules": 0,
+      "async": 413
+    },
+    {
+      "group": "language/expressions/generators",
+      "files": 290,
+      "variants": 546,
+      "syntaxNegatives": 77,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/identifiers [direct files]",
+      "files": 268,
+      "variants": 535,
+      "syntaxNegatives": 231,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/reduce",
+      "files": 260,
+      "variants": 517,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/reduceRight",
+      "files": 260,
+      "variants": 517,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/generators",
+      "files": 266,
+      "variants": 510,
+      "syntaxNegatives": 62,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/function",
+      "files": 264,
+      "variants": 484,
+      "syntaxNegatives": 66,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/regexp",
+      "files": 240,
+      "variants": 480,
+      "syntaxNegatives": 376,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/filter",
+      "files": 242,
+      "variants": 480,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/some",
+      "files": 219,
+      "variants": 434,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/every",
+      "files": 218,
+      "variants": 433,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/map",
+      "files": 216,
+      "variants": 429,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/arguments-object [direct files]",
+      "files": 215,
+      "variants": 409,
+      "syntaxNegatives": 1,
+      "modules": 0,
+      "async": 120
+    },
+    {
+      "group": "built-ins/Array/prototype/indexOf",
+      "files": 201,
+      "variants": 401,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/lastIndexOf",
+      "files": 198,
+      "variants": 395,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/try",
+      "files": 201,
+      "variants": 388,
+      "syntaxNegatives": 52,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/forEach",
+      "files": 190,
+      "variants": 376,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/eval-code/direct",
+      "files": 286,
+      "variants": 336,
+      "syntaxNegatives": 0,
+      "modules": 2,
+      "async": 48
+    },
+    {
+      "group": "language/statements/variable",
+      "files": 178,
+      "variants": 309,
+      "syntaxNegatives": 65,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/numeric",
+      "files": 157,
+      "variants": 301,
+      "syntaxNegatives": 102,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/let",
+      "files": 145,
+      "variants": 287,
+      "syntaxNegatives": 52,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/module-code [direct files]",
+      "files": 284,
+      "variants": 284,
+      "syntaxNegatives": 155,
+      "modules": 284,
+      "async": 1
+    },
+    {
+      "group": "language/function-code [direct files]",
+      "files": 217,
+      "variants": 281,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/const",
+      "files": 136,
+      "variants": 271,
+      "syntaxNegatives": 51,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/module-code/top-level-await",
+      "files": 251,
+      "variants": 253,
+      "syntaxNegatives": 8,
+      "modules": 249,
+      "async": 32
+    },
+    {
+      "group": "language/block-scope/syntax",
+      "files": 113,
+      "variants": 223,
+      "syntaxNegatives": 201,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/switch",
+      "files": 111,
+      "variants": 216,
+      "syntaxNegatives": 137,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/for-in",
+      "files": 119,
+      "variants": 206,
+      "syntaxNegatives": 98,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/asi [direct files]",
+      "files": 102,
+      "variants": 204,
+      "syntaxNegatives": 70,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/await-using",
+      "files": 98,
+      "variants": 188,
+      "syntaxNegatives": 51,
+      "modules": 6,
+      "async": 131
+    },
+    {
+      "group": "built-ins/Object/seal",
+      "files": 94,
+      "variants": 186,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/fromAsync",
+      "files": 95,
+      "variants": 186,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 176
+    },
+    {
+      "group": "language/expressions/super",
+      "files": 94,
+      "variants": 184,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/with",
+      "files": 181,
+      "variants": 182,
+      "syntaxNegatives": 17,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/call",
+      "files": 92,
+      "variants": 171,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/splice",
+      "files": 81,
+      "variants": 162,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/async-function",
+      "files": 93,
+      "variants": 161,
+      "syntaxNegatives": 67,
+      "modules": 0,
+      "async": 88
+    },
+    {
+      "group": "language/statementList [direct files]",
+      "files": 80,
+      "variants": 160,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/using",
+      "files": 80,
+      "variants": 154,
+      "syntaxNegatives": 53,
+      "modules": 4,
+      "async": 6
+    },
+    {
+      "group": "built-ins/Array/prototype/slice",
+      "files": 71,
+      "variants": 142,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/concat",
+      "files": 69,
+      "variants": 137,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/white-space [direct files]",
+      "files": 67,
+      "variants": 134,
+      "syntaxNegatives": 12,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/async-function",
+      "files": 74,
+      "variants": 133,
+      "syntaxNegatives": 49,
+      "modules": 0,
+      "async": 74
+    },
+    {
+      "group": "language/expressions/logical-assignment",
+      "files": 78,
+      "variants": 132,
+      "syntaxNegatives": 18,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/string",
+      "files": 73,
+      "variants": 128,
+      "syntaxNegatives": 55,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/hasOwnProperty",
+      "files": 63,
+      "variants": 126,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/if",
+      "files": 69,
+      "variants": 125,
+      "syntaxNegatives": 71,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/hasOwn",
+      "files": 62,
+      "variants": 124,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/yield",
+      "files": 63,
+      "variants": 123,
+      "syntaxNegatives": 6,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object [direct files]",
+      "files": 61,
+      "variants": 122,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/eval-code/indirect",
+      "files": 61,
+      "variants": 118,
+      "syntaxNegatives": 0,
+      "modules": 2,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/new",
+      "files": 59,
+      "variants": 118,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/bigint",
+      "files": 59,
+      "variants": 118,
+      "syntaxNegatives": 78,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/isFrozen",
+      "files": 59,
+      "variants": 118,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/keys",
+      "files": 59,
+      "variants": 118,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/template-literal",
+      "files": 57,
+      "variants": 114,
+      "syntaxNegatives": 32,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/async-arrow-function",
+      "files": 60,
+      "variants": 110,
+      "syntaxNegatives": 56,
+      "modules": 0,
+      "async": 46
+    },
+    {
+      "group": "language/import/import-defer",
+      "files": 103,
+      "variants": 109,
+      "syntaxNegatives": 12,
+      "modules": 97,
+      "async": 11
+    },
+    {
+      "group": "built-ins/Array/prototype/sort",
+      "files": 54,
+      "variants": 107,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/array",
+      "files": 52,
+      "variants": 104,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/freeze",
+      "files": 53,
+      "variants": 104,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/delete",
+      "files": 69,
+      "variants": 103,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array [direct files]",
+      "files": 50,
+      "variants": 100,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/greater-than",
+      "files": 49,
+      "variants": 97,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/addition",
+      "files": 48,
+      "variants": 95,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/equals",
+      "files": 47,
+      "variants": 93,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/less-than-or-equal",
+      "files": 47,
+      "variants": 93,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/getOwnPropertyNames",
+      "files": 45,
+      "variants": 90,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/from",
+      "files": 47,
+      "variants": 90,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/division",
+      "files": 45,
+      "variants": 89,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/left-shift",
+      "files": 45,
+      "variants": 89,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/less-than",
+      "files": 45,
+      "variants": 89,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/unsigned-right-shift",
+      "files": 45,
+      "variants": 89,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/exponentiation",
+      "files": 44,
+      "variants": 88,
+      "syntaxNegatives": 14,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/greater-than-or-equal",
+      "files": 43,
+      "variants": 85,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/instanceof",
+      "files": 43,
+      "variants": 85,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/future-reserved-words [direct files]",
+      "files": 55,
+      "variants": 85,
+      "syntaxNegatives": 34,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/line-terminators [direct files]",
+      "files": 41,
+      "variants": 82,
+      "syntaxNegatives": 34,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/toString",
+      "files": 41,
+      "variants": 82,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/modulus",
+      "files": 40,
+      "variants": 79,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/multiplication",
+      "files": 40,
+      "variants": 79,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/getPrototypeOf",
+      "files": 39,
+      "variants": 78,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/preventExtensions",
+      "files": 40,
+      "variants": 78,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/copyWithin",
+      "files": 39,
+      "variants": 78,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/optional-chaining",
+      "files": 38,
+      "variants": 76,
+      "syntaxNegatives": 24,
+      "modules": 0,
+      "async": 12
+    },
+    {
+      "group": "built-ins/Object/assign",
+      "files": 38,
+      "variants": 76,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/isExtensible",
+      "files": 38,
+      "variants": 76,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/does-not-equals",
+      "files": 38,
+      "variants": 75,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/subtraction",
+      "files": 38,
+      "variants": 75,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/global-code [direct files]",
+      "files": 42,
+      "variants": 75,
+      "syntaxNegatives": 27,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/right-shift",
+      "files": 37,
+      "variants": 73,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/while",
+      "files": 38,
+      "variants": 72,
+      "syntaxNegatives": 31,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/do-while",
+      "files": 36,
+      "variants": 70,
+      "syntaxNegatives": 33,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/in",
+      "files": 36,
+      "variants": 69,
+      "syntaxNegatives": 17,
+      "modules": 0,
+      "async": 2
+    },
+    {
+      "group": "language/expressions/postfix-increment",
+      "files": 38,
+      "variants": 66,
+      "syntaxNegatives": 19,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/isSealed",
+      "files": 33,
+      "variants": 66,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/postfix-decrement",
+      "files": 37,
+      "variants": 65,
+      "syntaxNegatives": 18,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/directive-prologue [direct files]",
+      "files": 62,
+      "variants": 62,
+      "syntaxNegatives": 11,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/length",
+      "files": 30,
+      "variants": 60,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/includes",
+      "files": 30,
+      "variants": 60,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/toSpliced",
+      "files": 30,
+      "variants": 60,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/bitwise-and",
+      "files": 30,
+      "variants": 59,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/bitwise-or",
+      "files": 30,
+      "variants": 59,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/bitwise-xor",
+      "files": 30,
+      "variants": 59,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/strict-does-not-equals",
+      "files": 30,
+      "variants": 59,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/strict-equals",
+      "files": 30,
+      "variants": 59,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/computed-property-names/class",
+      "files": 29,
+      "variants": 58,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/prefix-decrement",
+      "files": 34,
+      "variants": 58,
+      "syntaxNegatives": 11,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/isArray",
+      "files": 29,
+      "variants": 58,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/prefix-increment",
+      "files": 33,
+      "variants": 57,
+      "syntaxNegatives": 10,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/reserved-words [direct files]",
+      "files": 27,
+      "variants": 53,
+      "syntaxNegatives": 25,
+      "modules": 1,
+      "async": 0
+    },
+    {
+      "group": "language/keywords [direct files]",
+      "files": 25,
+      "variants": 50,
+      "syntaxNegatives": 50,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/fromEntries",
+      "files": 25,
+      "variants": 50,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/reference",
+      "files": 29,
+      "variants": 49,
+      "syntaxNegatives": 4,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/tagged-template",
+      "files": 27,
+      "variants": 48,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/continue",
+      "files": 24,
+      "variants": 48,
+      "syntaxNegatives": 24,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/string",
+      "files": 24,
+      "variants": 48,
+      "syntaxNegatives": 12,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/join",
+      "files": 24,
+      "variants": 48,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/push",
+      "files": 24,
+      "variants": 48,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/flatMap",
+      "files": 24,
+      "variants": 47,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/comments [direct files]",
+      "files": 23,
+      "variants": 46,
+      "syntaxNegatives": 12,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/coalesce",
+      "files": 24,
+      "variants": 46,
+      "syntaxNegatives": 8,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/findLast",
+      "files": 24,
+      "variants": 46,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/findLastIndex",
+      "files": 24,
+      "variants": 46,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/pop",
+      "files": 23,
+      "variants": 46,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/await",
+      "files": 22,
+      "variants": 44,
+      "syntaxNegatives": 6,
+      "modules": 0,
+      "async": 26
+    },
+    {
+      "group": "built-ins/Array/prototype/fill",
+      "files": 22,
+      "variants": 44,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/find",
+      "files": 23,
+      "variants": 44,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/findIndex",
+      "files": 23,
+      "variants": 44,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/unshift",
+      "files": 22,
+      "variants": 44,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/arguments-object/mapped",
+      "files": 43,
+      "variants": 43,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/conditional",
+      "files": 22,
+      "variants": 42,
+      "syntaxNegatives": 4,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/property-accessors",
+      "files": 21,
+      "variants": 42,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/entries",
+      "files": 21,
+      "variants": 42,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/is",
+      "files": 21,
+      "variants": 42,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/toSorted",
+      "files": 21,
+      "variants": 42,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/with",
+      "files": 21,
+      "variants": 42,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/block",
+      "files": 21,
+      "variants": 40,
+      "syntaxNegatives": 28,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/break",
+      "files": 20,
+      "variants": 40,
+      "syntaxNegatives": 22,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/valueOf",
+      "files": 20,
+      "variants": 40,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/values",
+      "files": 20,
+      "variants": 40,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/shift",
+      "files": 20,
+      "variants": 40,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/number",
+      "files": 21,
+      "variants": 39,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/logical-not",
+      "files": 19,
+      "variants": 38,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/module-code/namespace",
+      "files": 38,
+      "variants": 38,
+      "syntaxNegatives": 0,
+      "modules": 38,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/flat",
+      "files": 19,
+      "variants": 38,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/destructuring/binding",
+      "files": 19,
+      "variants": 37,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/labeled",
+      "files": 24,
+      "variants": 37,
+      "syntaxNegatives": 22,
+      "modules": 2,
+      "async": 0
+    },
+    {
+      "group": "language/types/object",
+      "files": 19,
+      "variants": 36,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/getOwnPropertyDescriptors",
+      "files": 18,
+      "variants": 36,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/reverse",
+      "files": 18,
+      "variants": 36,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/comments/hashbang",
+      "files": 29,
+      "variants": 35,
+      "syntaxNegatives": 21,
+      "modules": 1,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/logical-and",
+      "files": 18,
+      "variants": 34,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/logical-or",
+      "files": 18,
+      "variants": 34,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/unary-plus",
+      "files": 17,
+      "variants": 34,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/toReversed",
+      "files": 17,
+      "variants": 34,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/bitwise-not",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/typeof",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/__lookupGetter__",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/__lookupSetter__",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/propertyIsEnumerable",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/of",
+      "files": 16,
+      "variants": 32,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/return",
+      "files": 16,
+      "variants": 31,
+      "syntaxNegatives": 20,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/block-scope/leave",
+      "files": 15,
+      "variants": 30,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/block-scope/shadowing",
+      "files": 15,
+      "variants": 30,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype [direct files]",
+      "files": 15,
+      "variants": 30,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/__proto__",
+      "files": 15,
+      "variants": 30,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/new.target",
+      "files": 14,
+      "variants": 28,
+      "syntaxNegatives": 4,
+      "modules": 0,
+      "async": 2
+    },
+    {
+      "group": "language/expressions/unary-minus",
+      "files": 14,
+      "variants": 28,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/throw",
+      "files": 14,
+      "variants": 28,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/groupBy",
+      "files": 14,
+      "variants": 28,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/import.meta",
+      "files": 22,
+      "variants": 27,
+      "syntaxNegatives": 13,
+      "modules": 17,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/at",
+      "files": 13,
+      "variants": 26,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/computed-property-names/object",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/getOwnPropertySymbols",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/setPrototypeOf",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/entries",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/keys",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/values",
+      "files": 12,
+      "variants": 24,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/identifier-resolution [direct files]",
+      "files": 14,
+      "variants": 22,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/punctuators [direct files]",
+      "files": 11,
+      "variants": 22,
+      "syntaxNegatives": 20,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/rest-parameters [direct files]",
+      "files": 11,
+      "variants": 22,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/__defineGetter__",
+      "files": 11,
+      "variants": 22,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/__defineSetter__",
+      "files": 11,
+      "variants": 22,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/toLocaleString",
+      "files": 12,
+      "variants": 22,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/toLocaleString",
+      "files": 12,
+      "variants": 22,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/toString",
+      "files": 11,
+      "variants": 22,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/isPrototypeOf",
+      "files": 10,
+      "variants": 20,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/void",
+      "files": 9,
+      "variants": 18,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/import/import-attributes",
+      "files": 17,
+      "variants": 17,
+      "syntaxNegatives": 0,
+      "modules": 17,
+      "async": 1
+    },
+    {
+      "group": "language/expressions/grouping",
+      "files": 9,
+      "variants": 16,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/undefined",
+      "files": 8,
+      "variants": 15,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype [direct files]",
+      "files": 7,
+      "variants": 14,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/module-code/import-attributes",
+      "files": 13,
+      "variants": 13,
+      "syntaxNegatives": 3,
+      "modules": 13,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/internals",
+      "files": 6,
+      "variants": 12,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/comma",
+      "files": 6,
+      "variants": 11,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/this",
+      "files": 6,
+      "variants": 11,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/concatenation",
+      "files": 5,
+      "variants": 10,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/module-code/ambiguous-export-bindings",
+      "files": 10,
+      "variants": 10,
+      "syntaxNegatives": 0,
+      "modules": 10,
+      "async": 0
+    },
+    {
+      "group": "language/types/boolean",
+      "files": 5,
+      "variants": 10,
+      "syntaxNegatives": 4,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/Symbol.unscopables",
+      "files": 5,
+      "variants": 10,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/arguments-object/unmapped",
+      "files": 5,
+      "variants": 8,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/computed-property-names/to-name-side-effects",
+      "files": 4,
+      "variants": 8,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/boolean",
+      "files": 4,
+      "variants": 8,
+      "syntaxNegatives": 4,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/null",
+      "files": 4,
+      "variants": 8,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/Symbol.species",
+      "files": 4,
+      "variants": 8,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/computed-property-names/basics",
+      "files": 3,
+      "variants": 6,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/literals/null",
+      "files": 3,
+      "variants": 6,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/expression",
+      "files": 3,
+      "variants": 6,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/types/list",
+      "files": 3,
+      "variants": 6,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/import/import-bytes",
+      "files": 5,
+      "variants": 5,
+      "syntaxNegatives": 0,
+      "modules": 5,
+      "async": 0
+    },
+    {
+      "group": "language/block-scope/return-from",
+      "files": 2,
+      "variants": 4,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/import [direct files]",
+      "files": 4,
+      "variants": 4,
+      "syntaxNegatives": 4,
+      "modules": 4,
+      "async": 0
+    },
+    {
+      "group": "language/module-code/source-phase-import",
+      "files": 3,
+      "variants": 4,
+      "syntaxNegatives": 0,
+      "modules": 2,
+      "async": 2
+    },
+    {
+      "group": "language/statements/debugger",
+      "files": 2,
+      "variants": 4,
+      "syntaxNegatives": 2,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/statements/empty",
+      "files": 2,
+      "variants": 4,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Object/prototype/constructor",
+      "files": 2,
+      "variants": 4,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/export [direct files]",
+      "files": 3,
+      "variants": 3,
+      "syntaxNegatives": 3,
+      "modules": 3,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/member-expression",
+      "files": 1,
+      "variants": 2,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions/relational",
+      "files": 1,
+      "variants": 2,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/source-text [direct files]",
+      "files": 1,
+      "variants": 2,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "built-ins/Array/prototype/Symbol.iterator",
+      "files": 1,
+      "variants": 2,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    },
+    {
+      "group": "language/expressions [direct files]",
+      "files": 1,
+      "variants": 1,
+      "syntaxNegatives": 0,
+      "modules": 0,
+      "async": 0
+    }
+  ]
+}

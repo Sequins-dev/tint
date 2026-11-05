@@ -1,0 +1,122 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "098f1c9b6f4a850a7d93c9f7dca3af82ff27cf96f2d58a2814472d728289682d",
+    "files": 444
+  },
+  "imageSha256": "c2a14eabb43575801400b1528850384227f266786943276ddbfb17fc60f8fbb8",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let log=\"\";{using a={[Symbol.dispose](){log+=\"a\";}},b={[Symbol.dispose](){log+=\"b\";}};log+=\"x\";}if(log!==\"xba\")throw 1;",
+      "sha256": "912f923a43cb74b20586afb0ca9d73b1dc4c3c0b46d11215750c59982b94ec76"
+    },
+    {
+      "index": 1,
+      "source": "let log=\"\";function f(){using a={[Symbol.dispose](){log+=\"d\";}};log+=\"b\";return 42;}if(f()!==42||log!==\"bd\")throw 1;",
+      "sha256": "6b70b70529c5887908e45c4b8f7f836ba1b0adac8a42c459d02c70bcc0cd73c4"
+    },
+    {
+      "index": 2,
+      "source": "let caught;try{{using a={[Symbol.dispose](){throw 19;}},b={[Symbol.dispose](){throw 42;}};throw 9;}}catch(e){caught=e;}if(!(caught instanceof SuppressedError)||caught.error!==19||!(caught.suppressed instanceof SuppressedError)||caught.suppressed.error!==42||caught.suppressed.suppressed!==9)throw 1;",
+      "sha256": "aa43cc4282a1a47ba4581fb1a72ebad8290bb8fd051fa425e4dc4a2a9a165e27"
+    },
+    {
+      "index": 3,
+      "source": "let log=\"\",caught;try{{using a={[Symbol.dispose](){log+=\"a\";throw 19;}};using b={get [Symbol.dispose](){throw 17;}};}}catch(e){caught=e;}if(log!==\"a\"||!(caught instanceof SuppressedError)||caught.error!==19||caught.suppressed!==17)throw 1;",
+      "sha256": "59d2c18eb0f54858a1f29d1374f735cc6e653929ebb315ed67f9b35b6688cdd8"
+    },
+    {
+      "index": 4,
+      "source": "let log=\"\",caught=false;try{{using a={[Symbol.dispose](){log+=\"a\";}};using b={get [Symbol.dispose](){return b;}};}}catch(e){caught=e instanceof ReferenceError;}if(!caught||log!==\"a\")throw 1;",
+      "sha256": "fcce4c745baa63745b24b2e942eddccf6380324dc053894dd9b8eedc8878cd98"
+    },
+    {
+      "index": 5,
+      "source": "let log=\"\";for(let i=0;i<3;i++){using a={[Symbol.dispose](){log+=i;}};if(i===0)continue;if(i===1)break;}if(log!==\"01\")throw 1;function f(){using a={[Symbol.dispose](){throw 19;}};return 42;}let caught;try{f();}catch(e){caught=e;}if(caught!==19)throw 2;",
+      "sha256": "cd425700c1cc5841c7d9c81f1fd1a4bab2426967435fc2c6fd60169725dbdbc2"
+    },
+    {
+      "index": 6,
+      "source": "let log=\"\";const source={[Symbol.iterator](){let i=0;return {next(){return {done:i++>0,value:{[Symbol.dispose](){log+=\"d\";}}};},return(){log+=\"r\";return {done:true};}};}};for(using x of source){log+=\"b\";break;}if(log!==\"bdr\")throw 1;for(using x of [{[Symbol.dispose](){log+=\"a\";}},{[Symbol.dispose](){log+=\"c\";}}]){continue;}if(log!==\"bdrac\")throw 2;",
+      "sha256": "4295433a240e7c67f7f0377f64ca7e06a073a502ba0f79af20b7f0afd5a4c2b4"
+    },
+    {
+      "index": 7,
+      "source": "let log=\"\";function*g(){using x={[Symbol.dispose](){log+=\"d\";}};yield 1;log+=\"b\";yield 2;}const i=g();if(i.next().value!==1||log!==\"\")throw 1;i.return();if(log!==\"d\")throw 2;function*h(){using x={[Symbol.dispose](){throw 42;}};yield 1;}const j=h();j.next();let caught;try{j.throw(19);}catch(e){caught=e;}if(!(caught instanceof SuppressedError)||caught.error!==42||caught.suppressed!==19)throw 3;",
+      "sha256": "50846e1f945fa8fbd509bc812fe689202a3de33c6e16b4c4b5026c2ee4558ff8"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "c79dd427f0969e81af225549f184a7e02ca1632ccd7089df5070f0ffe3bf83a2",
+      "files": 425
+    },
+    "imageSha256": "326ed4f4ab2c44ec515a07b11b52724c9bfc95e63b43b0f1c12c1cfc45ffac7f",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": "America/New_York",
+        "path": "/usr/share/zoneinfo/America/New_York"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setFullYear(2025,1,28),1740764096789)||!Object.is(d.getTime(),1740764096789))throw 1;",
+        "sha256": "39e5eb60229ad8ba228c85ab2231627e786e7319726a543d03ff4e6b6a4bf140"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setMonth(13,0),1738344896789)||!Object.is(d.getTime(),1738344896789))throw 1;",
+        "sha256": "f0975bb9a75c48cc5f3a075e1f4b16e2b7349ed4d394be2e52f88fa5c28ab035"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setDate(0),1704044096789)||!Object.is(d.getTime(),1704044096789))throw 1;",
+        "sha256": "53d8141992bb80bad6ea2b1f2702a07b3e37cccacc84c0ac4e551038eeb75faf"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setHours(25,61,61,1001),1705388522001)||!Object.is(d.getTime(),1705388522001))throw 1;",
+        "sha256": "814861abadb0c38252446be28219ccf9d683431bb71b4ae0197f3e51c932866c"
+      },
+      {
+        "index": 4,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setMinutes(90,61,1001),1705343462001)||!Object.is(d.getTime(),1705343462001))throw 1;",
+        "sha256": "90b4a9cfae90fa9adb97d18684eadbb60d194115bad919065df2db25f9db4ed7"
+      },
+      {
+        "index": 5,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setSeconds(90,1001),1705340131001)||!Object.is(d.getTime(),1705340131001))throw 1;",
+        "sha256": "00ebe48b98927a9c20f771d23fe438f5c3f88fb7ed06fcc19a197f4742f81b6c"
+      },
+      {
+        "index": 6,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setMilliseconds(1001),1705340097001)||!Object.is(d.getTime(),1705340097001))throw 1;",
+        "sha256": "884e48dfd24b1bad5efb4a87e9ef8f828b0e8b81ac340b26f9ba90d9fa70f1fb"
+      },
+      {
+        "index": 7,
+        "source": "const d=new Date(1705340096789);if(!Object.is(d.setYear(99),916421696789)||!Object.is(d.getTime(),916421696789))throw 1;",
+        "sha256": "afa7430e3e852389401ae66e94ef4df966e8951cca662540f25cd4abab3b77ae"
+      },
+      {
+        "index": 8,
+        "source": "const d=new Date(0);const n={valueOf(){d.setTime(NaN);return 1;}};if(d.setSeconds(n)!==1000||d.getTime()!==1000)throw 1;d.setTime(NaN);const change={valueOf(){d.setTime(123);return 0;}};if(!Number.isNaN(d.setSeconds(change))||d.getTime()!==123)throw 2;",
+        "sha256": "2c098d7fcaf78ef4bfab7ba5eb885e7c15d931c6f62489ffd31e1cd6c2fa929f"
+      },
+      {
+        "index": 9,
+        "source": "const d=new Date(NaN),year={valueOf(){d.setTime(123456789);return 2000;}};if(d.setFullYear(year)!==new Date(2000,0,1).getTime())throw 1;d.setTime(NaN);const marker={},hour={valueOf(){d.setTime(123);return NaN;}},minute={valueOf(){throw marker;}};let caught=false;try{d.setHours(hour,minute);}catch(e){caught=e===marker;}if(!caught||d.getTime()!==123)throw 2;",
+        "sha256": "c40414382b9d7a3777c2cbd2fdf618c82e4947fced152285765c132018800951"
+      },
+      {
+        "index": 10,
+        "source": "const d=new Date(0),month=d.getMonth(),day=d.getDate();d.setYear(99);if(d.getFullYear()!==1999||d.getMonth()!==month||d.getDate()!==day)throw 1;if(d.getYear()!==99)throw 2;const y={valueOf(){d.setTime(123);return NaN;}};if(!Number.isNaN(d.setYear(y))||!Number.isNaN(d.getTime()))throw 3;",
+        "sha256": "3facb31ba7b33d972c72c6e5c8274b8f2ac28a02743a46810f103f0fac0dbfde"
+      },
+      {
+        "index": 11,
+        "source": "const d=new Date(1710052200123);if(d.setHours(2)!==1710055800123||d.getTime()!==1710055800123)throw 1;",
+        "sha256": "2e9b1e7573ef1a3404688df295346cc96d6fdcc608efdabf44d63fce34c6c9ba"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

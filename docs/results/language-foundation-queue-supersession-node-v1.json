@@ -1,0 +1,21 @@
+{
+  "kind": "native-selection-queue-supersession",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "stoppedIdleWaiters": [
+    {
+      "pid": 29817,
+      "command": "node .tint-bootstrap/run-language-function-control-checkpoints-v3.mjs",
+      "nativeChildren": 0
+    },
+    {
+      "pid": 77185,
+      "command": "node .tint-bootstrap/run-language-class-foundation-checkpoints-v1.mjs",
+      "nativeChildren": 0
+    }
+  ],
+  "newFunctionController": ".tint-bootstrap/run-language-function-control-checkpoints-v4.mjs",
+  "newClassController": ".tint-bootstrap/run-language-class-foundation-checkpoints-v2.mjs",
+  "acceptedSource": "docs/results/frozen-node-toolchain-managed-templates-v1.json",
+  "reason": "Use current accepted template support and completed 850/850 assignment plus 253/253 top-level-await evidence. Independent function/control work no longer waits for a future obsolete old-source TLA rerun. Direct-eval and for-of observations continue separately; no outcomes, journals or their live processes were altered. New queues start after the complete tagged-template checkpoint and retain all unexpected non-passes as widening blockers."
+}

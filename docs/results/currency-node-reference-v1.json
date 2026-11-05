@@ -1,0 +1,7250 @@
+{
+  "kind": "node-reference-differential",
+  "conformance": false,
+  "scope": "Direct pure currency formatter; twelve locales, six currencies, three displays, two currency-sign modes, five signDisplay modes, six values",
+  "sourceSnapshot": {
+    "sha256": "75c9a10e4ee75a708def2956716296565e984ed613d5cd2724d0410f85ec00ca",
+    "files": 490
+  },
+  "reference": {
+    "name": "Node.js",
+    "node": "24.12.0",
+    "icu": "77.1",
+    "cldr": "47.0"
+  },
+  "dataPolicy": "Tint preserves pinned CLDR49 patterns and labels. All 723 differences are Arabic/Persian locale-data or bidi layout differences; no controls are removed to force agreement with a different data implementation.",
+  "total": 12960,
+  "matched": 12237,
+  "differences": [
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 US$",
+      "expected": "‎+؜0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 US$",
+      "expected": "‎+؜12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا US$",
+      "expected": "‎+؜ليس رقمًاUS$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ US$",
+      "expected": "‎+؜∞US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 US$",
+      "expected": "‏1,234.50 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 US$",
+      "expected": "‏0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 US$",
+      "expected": "‏0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 US$",
+      "expected": "‏12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاUS$",
+      "expected": "‏ليس رقمًا US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞US$",
+      "expected": "‏∞ US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 US$",
+      "expected": "‎+؜12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ US$",
+      "expected": "‎+؜∞US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 US$",
+      "expected": "‎+؜0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 US$",
+      "expected": "‎+؜12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا US$",
+      "expected": "‎+؜ليس رقمًاUS$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ US$",
+      "expected": "‎+؜∞US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 US$",
+      "expected": "‏1,234.50 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 US$",
+      "expected": "‏0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 US$",
+      "expected": "‏0.00 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 US$",
+      "expected": "‏12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاUS$",
+      "expected": "‏ليس رقمًا US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞US$",
+      "expected": "‏∞ US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 US$",
+      "expected": "‎+؜12.13 US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ US$",
+      "expected": "‎+؜∞US$"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 USD",
+      "expected": "‎+؜0.00 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 USD",
+      "expected": "‎+؜12.13 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا USD",
+      "expected": "‎+؜ليس رقمًاUSD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ USD",
+      "expected": "‎+؜∞USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 USD",
+      "expected": "‏1,234.50 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 USD",
+      "expected": "‏0.00 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 USD",
+      "expected": "‏0.00 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 USD",
+      "expected": "‏12.13 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاUSD",
+      "expected": "‏ليس رقمًا USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞USD",
+      "expected": "‏∞ USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 USD",
+      "expected": "‎+؜12.13 USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ USD",
+      "expected": "‎+؜∞USD"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 €",
+      "expected": "‎+؜0.00€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 €",
+      "expected": "‎+؜12.13€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا €",
+      "expected": "‎+؜ليس رقمًا€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ €",
+      "expected": "‎+؜∞€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50€",
+      "expected": "‏1,234.50 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00€",
+      "expected": "‏0.00 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00€",
+      "expected": "‏0.00 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13€",
+      "expected": "‏12.13 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًا€",
+      "expected": "‏ليس رقمًا €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞€",
+      "expected": "‏∞ €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 €",
+      "expected": "‎+؜12.13€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ €",
+      "expected": "‎+؜∞€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 €",
+      "expected": "‎+؜0.00€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 €",
+      "expected": "‎+؜12.13€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا €",
+      "expected": "‎+؜ليس رقمًا€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ €",
+      "expected": "‎+؜∞€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50€",
+      "expected": "‏1,234.50 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00€",
+      "expected": "‏0.00 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00€",
+      "expected": "‏0.00 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13€",
+      "expected": "‏12.13 €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًا€",
+      "expected": "‏ليس رقمًا €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞€",
+      "expected": "‏∞ €"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 €",
+      "expected": "‎+؜12.13€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ €",
+      "expected": "‎+؜∞€"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 EUR",
+      "expected": "‎+؜0.00 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 EUR",
+      "expected": "‎+؜12.13 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا EUR",
+      "expected": "‎+؜ليس رقمًاEUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ EUR",
+      "expected": "‎+؜∞EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 EUR",
+      "expected": "‏1,234.50 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 EUR",
+      "expected": "‏0.00 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 EUR",
+      "expected": "‏0.00 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 EUR",
+      "expected": "‏12.13 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاEUR",
+      "expected": "‏ليس رقمًا EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞EUR",
+      "expected": "‏∞ EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 EUR",
+      "expected": "‎+؜12.13 EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ EUR",
+      "expected": "‎+؜∞EUR"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 CA$",
+      "expected": "‎+؜0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CA$",
+      "expected": "‎+؜12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا CA$",
+      "expected": "‎+؜ليس رقمًاCA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CA$",
+      "expected": "‎+؜∞CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 CA$",
+      "expected": "‏1,234.50 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CA$",
+      "expected": "‏0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CA$",
+      "expected": "‏0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 CA$",
+      "expected": "‏12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاCA$",
+      "expected": "‏ليس رقمًا CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞CA$",
+      "expected": "‏∞ CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CA$",
+      "expected": "‎+؜12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CA$",
+      "expected": "‎+؜∞CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 CA$",
+      "expected": "‎+؜0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CA$",
+      "expected": "‎+؜12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا CA$",
+      "expected": "‎+؜ليس رقمًاCA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CA$",
+      "expected": "‎+؜∞CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 CA$",
+      "expected": "‏1,234.50 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CA$",
+      "expected": "‏0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CA$",
+      "expected": "‏0.00 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 CA$",
+      "expected": "‏12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاCA$",
+      "expected": "‏ليس رقمًا CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞CA$",
+      "expected": "‏∞ CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CA$",
+      "expected": "‎+؜12.13 CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CA$",
+      "expected": "‎+؜∞CA$"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 CAD",
+      "expected": "‎+؜0.00 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CAD",
+      "expected": "‎+؜12.13 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا CAD",
+      "expected": "‎+؜ليس رقمًاCAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CAD",
+      "expected": "‎+؜∞CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 CAD",
+      "expected": "‏1,234.50 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CAD",
+      "expected": "‏0.00 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 CAD",
+      "expected": "‏0.00 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 CAD",
+      "expected": "‏12.13 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاCAD",
+      "expected": "‏ليس رقمًا CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞CAD",
+      "expected": "‏∞ CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 CAD",
+      "expected": "‎+؜12.13 CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ CAD",
+      "expected": "‎+؜∞CAD"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0 JP¥",
+      "expected": "‎+؜0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12 JP¥",
+      "expected": "‎+؜12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا JP¥",
+      "expected": "‎+؜ليس رقمًاJP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JP¥",
+      "expected": "‎+؜∞JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,235 JP¥",
+      "expected": "‏1,235 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JP¥",
+      "expected": "‏0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JP¥",
+      "expected": "‏0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12 JP¥",
+      "expected": "‏12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاJP¥",
+      "expected": "‏ليس رقمًا JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞JP¥",
+      "expected": "‏∞ JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12 JP¥",
+      "expected": "‎+؜12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JP¥",
+      "expected": "‎+؜∞JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0 JP¥",
+      "expected": "‎+؜0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12 JP¥",
+      "expected": "‎+؜12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا JP¥",
+      "expected": "‎+؜ليس رقمًاJP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JP¥",
+      "expected": "‎+؜∞JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,235 JP¥",
+      "expected": "‏1,235 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JP¥",
+      "expected": "‏0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JP¥",
+      "expected": "‏0 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12 JP¥",
+      "expected": "‏12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاJP¥",
+      "expected": "‏ليس رقمًا JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞JP¥",
+      "expected": "‏∞ JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12 JP¥",
+      "expected": "‎+؜12 JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JP¥",
+      "expected": "‎+؜∞JP¥"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0 JPY",
+      "expected": "‎+؜0 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12 JPY",
+      "expected": "‎+؜12 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا JPY",
+      "expected": "‎+؜ليس رقمًاJPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JPY",
+      "expected": "‎+؜∞JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,235 JPY",
+      "expected": "‏1,235 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JPY",
+      "expected": "‏0 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0 JPY",
+      "expected": "‏0 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12 JPY",
+      "expected": "‏12 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاJPY",
+      "expected": "‏ليس رقمًا JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞JPY",
+      "expected": "‏∞ JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12 JPY",
+      "expected": "‎+؜12 JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ JPY",
+      "expected": "‎+؜∞JPY"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.000 د.ب.‏",
+      "expected": "‎+؜0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.125 د.ب.‏",
+      "expected": "‎+؜12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا د.ب.‏",
+      "expected": "‎+؜ليس رقمًاد.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ د.ب.‏",
+      "expected": "‎+؜∞د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.500 د.ب.‏",
+      "expected": "‏1,234.500 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 د.ب.‏",
+      "expected": "‏0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 د.ب.‏",
+      "expected": "‏0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.125 د.ب.‏",
+      "expected": "‏12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاد.ب.‏",
+      "expected": "‏ليس رقمًا د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞د.ب.‏",
+      "expected": "‏∞ د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.125 د.ب.‏",
+      "expected": "‎+؜12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ د.ب.‏",
+      "expected": "‎+؜∞د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.000 د.ب.‏",
+      "expected": "‎+؜0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.125 د.ب.‏",
+      "expected": "‎+؜12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا د.ب.‏",
+      "expected": "‎+؜ليس رقمًاد.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ د.ب.‏",
+      "expected": "‎+؜∞د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.500 د.ب.‏",
+      "expected": "‏1,234.500 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 د.ب.‏",
+      "expected": "‏0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 د.ب.‏",
+      "expected": "‏0.000 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.125 د.ب.‏",
+      "expected": "‏12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاد.ب.‏",
+      "expected": "‏ليس رقمًا د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞د.ب.‏",
+      "expected": "‏∞ د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.125 د.ب.‏",
+      "expected": "‎+؜12.125 د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ د.ب.‏",
+      "expected": "‎+؜∞د.ب.‏"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.000 BHD",
+      "expected": "‎+؜0.000 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.125 BHD",
+      "expected": "‎+؜12.125 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا BHD",
+      "expected": "‎+؜ليس رقمًاBHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ BHD",
+      "expected": "‎+؜∞BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.500 BHD",
+      "expected": "‏1,234.500 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 BHD",
+      "expected": "‏0.000 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.000 BHD",
+      "expected": "‏0.000 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.125 BHD",
+      "expected": "‏12.125 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاBHD",
+      "expected": "‏ليس رقمًا BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞BHD",
+      "expected": "‏∞ BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.125 BHD",
+      "expected": "‎+؜12.125 BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ BHD",
+      "expected": "‎+؜∞BHD"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 ZZZ",
+      "expected": "‎+؜0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا ZZZ",
+      "expected": "‎+؜ليس رقمًاZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 ZZZ",
+      "expected": "‏1,234.50 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 ZZZ",
+      "expected": "‏12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاZZZ",
+      "expected": "‏ليس رقمًا ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞ZZZ",
+      "expected": "‏∞ ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 ZZZ",
+      "expected": "‎+؜0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا ZZZ",
+      "expected": "‎+؜ليس رقمًاZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 ZZZ",
+      "expected": "‏1,234.50 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 ZZZ",
+      "expected": "‏12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاZZZ",
+      "expected": "‏ليس رقمًا ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞ZZZ",
+      "expected": "‏∞ ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‏‎+0.00 ZZZ",
+      "expected": "‎+؜0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‏‎+ليس رقمًا ZZZ",
+      "expected": "‎+؜ليس رقمًاZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "؜1,234.50 ZZZ",
+      "expected": "‏1,234.50 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "؜0.00 ZZZ",
+      "expected": "‏0.00 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "؜12.13 ZZZ",
+      "expected": "‏12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "؜ليس رقمًاZZZ",
+      "expected": "‏ليس رقمًا ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "؜∞ZZZ",
+      "expected": "‏∞ ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‏‎+12.13 ZZZ",
+      "expected": "‎+؜12.13 ZZZ"
+    },
+    {
+      "locale": "ar",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‏‎+∞ ZZZ",
+      "expected": "‎+؜∞ZZZ"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎$۰٫۰۰",
+      "expected": "‎+‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎$ناعدد",
+      "expected": "‎+‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ $",
+      "expected": "‎$۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎$۰٫۰۰",
+      "expected": "‎+‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎$ناعدد",
+      "expected": "‎+‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ $",
+      "expected": "‎$۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ USD)",
+      "expected": "‎(USD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ USD)",
+      "expected": "‎(USD ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ USD",
+      "expected": "‎USD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد USD",
+      "expected": "‎USD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ USD",
+      "expected": "‎USD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ USD)",
+      "expected": "‎(USD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ USD)",
+      "expected": "‎(USD ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎USDناعدد",
+      "expected": "‎+‎USD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎USD∞",
+      "expected": "‎+‎USD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ USD",
+      "expected": "‎USD ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ USD",
+      "expected": "‎USD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد USD",
+      "expected": "‎USDناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ USD",
+      "expected": "‎USD∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ USD)",
+      "expected": "‎(USD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد USD",
+      "expected": "‎USD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎USD∞",
+      "expected": "‎+‎USD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ USD)",
+      "expected": "‎(USD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ USD",
+      "expected": "‎USD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ USD",
+      "expected": "‎USD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد USD",
+      "expected": "‎USD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "USD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ USD",
+      "expected": "‎USD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ €)",
+      "expected": "‎(€ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ €)",
+      "expected": "‎(€ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎€۰٫۰۰",
+      "expected": "‎+‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎€۱۲٫۱۳",
+      "expected": "‎+‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎€ناعدد",
+      "expected": "‎+‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎€∞",
+      "expected": "‎+‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ €",
+      "expected": "‎€۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎€۱۲٫۱۳",
+      "expected": "‎+‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎€∞",
+      "expected": "‎+‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ €)",
+      "expected": "‎(€ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ €)",
+      "expected": "‎(€ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎€۰٫۰۰",
+      "expected": "‎+‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎€۱۲٫۱۳",
+      "expected": "‎+‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎€ناعدد",
+      "expected": "‎+‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎€∞",
+      "expected": "‎+‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ €",
+      "expected": "‎€۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎€۱۲٫۱۳",
+      "expected": "‎+‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎€∞",
+      "expected": "‎+‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ €)",
+      "expected": "‎(€ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ €",
+      "expected": "‎€ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ €",
+      "expected": "‎€ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد €",
+      "expected": "‎€ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ €",
+      "expected": "‎€ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ EUR)",
+      "expected": "‎(EUR ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ EUR)",
+      "expected": "‎(EUR ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ EUR",
+      "expected": "‎EUR ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد EUR",
+      "expected": "‎EUR ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ EUR",
+      "expected": "‎EUR ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ EUR)",
+      "expected": "‎(EUR ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ EUR)",
+      "expected": "‎(EUR ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎EURناعدد",
+      "expected": "‎+‎EUR ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎EUR∞",
+      "expected": "‎+‎EUR ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ EUR",
+      "expected": "‎EUR ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ EUR",
+      "expected": "‎EUR ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد EUR",
+      "expected": "‎EURناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ EUR",
+      "expected": "‎EUR∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ EUR)",
+      "expected": "‎(EUR ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد EUR",
+      "expected": "‎EUR ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎EUR∞",
+      "expected": "‎+‎EUR ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ EUR)",
+      "expected": "‎(EUR ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ EUR",
+      "expected": "‎EUR ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ EUR",
+      "expected": "‎EUR ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد EUR",
+      "expected": "‎EUR ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "EUR",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ EUR",
+      "expected": "‎EUR ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $CA)",
+      "expected": "‎($CA ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ $CA)",
+      "expected": "‎($CA ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $CA",
+      "expected": "‎$CA ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد $CA",
+      "expected": "‎$CA ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ $CA",
+      "expected": "‎$CA ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $CA)",
+      "expected": "‎($CA ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ $CA)",
+      "expected": "‎($CA ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎$CAناعدد",
+      "expected": "‎+‎$CA ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎$CA∞",
+      "expected": "‎+‎$CA ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ $CA",
+      "expected": "‎$CA ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $CA",
+      "expected": "‎$CA ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد $CA",
+      "expected": "‎$CAناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ $CA",
+      "expected": "‎$CA∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $CA)",
+      "expected": "‎($CA ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد $CA",
+      "expected": "‎$CA ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎$CA∞",
+      "expected": "‎+‎$CA ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $CA)",
+      "expected": "‎($CA ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $CA",
+      "expected": "‎$CA ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $CA",
+      "expected": "‎$CA ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد $CA",
+      "expected": "‎$CA ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ $CA",
+      "expected": "‎$CA ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ $)",
+      "expected": "‎($ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎$۰٫۰۰",
+      "expected": "‎+‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎$ناعدد",
+      "expected": "‎+‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ $",
+      "expected": "‎$۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎$۱۲٫۱۳",
+      "expected": "‎+‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎$∞",
+      "expected": "‎+‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ $)",
+      "expected": "‎($ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ $",
+      "expected": "‎$ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ $",
+      "expected": "‎$ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد $",
+      "expected": "‎$ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ $",
+      "expected": "‎$ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ CAD)",
+      "expected": "‎(CAD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ CAD)",
+      "expected": "‎(CAD ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ CAD",
+      "expected": "‎CAD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد CAD",
+      "expected": "‎CAD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ CAD",
+      "expected": "‎CAD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ CAD)",
+      "expected": "‎(CAD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ CAD)",
+      "expected": "‎(CAD ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎CADناعدد",
+      "expected": "‎+‎CAD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎CAD∞",
+      "expected": "‎+‎CAD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ CAD",
+      "expected": "‎CAD ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ CAD",
+      "expected": "‎CAD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد CAD",
+      "expected": "‎CADناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ CAD",
+      "expected": "‎CAD∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ CAD)",
+      "expected": "‎(CAD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد CAD",
+      "expected": "‎CAD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎CAD∞",
+      "expected": "‎+‎CAD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ CAD)",
+      "expected": "‎(CAD ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ CAD",
+      "expected": "‎CAD ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ CAD",
+      "expected": "‎CAD ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد CAD",
+      "expected": "‎CAD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "CAD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ CAD",
+      "expected": "‎CAD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰ ¥)",
+      "expected": "‎(¥ ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰ ¥)",
+      "expected": "‎(¥ ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎¥۰",
+      "expected": "‎+‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎¥۱۲",
+      "expected": "‎+‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎¥ناعدد",
+      "expected": "‎+‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎¥∞",
+      "expected": "‎+‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۵ ¥",
+      "expected": "‎¥۱٬۲۳۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎¥۱۲",
+      "expected": "‎+‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎¥∞",
+      "expected": "‎+‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰ ¥)",
+      "expected": "‎(¥ ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰ ¥)",
+      "expected": "‎(¥ ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "‎+‎¥۰",
+      "expected": "‎+‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "12.125",
+      "actual": "‎+‎¥۱۲",
+      "expected": "‎+‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎¥ناعدد",
+      "expected": "‎+‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎¥∞",
+      "expected": "‎+‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۵ ¥",
+      "expected": "‎¥۱٬۲۳۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "12.125",
+      "actual": "‎+‎¥۱۲",
+      "expected": "‎+‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎¥∞",
+      "expected": "‎+‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ ¥)",
+      "expected": "‎(¥ ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ ¥",
+      "expected": "‎¥ ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲ ¥",
+      "expected": "‎¥ ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد ¥",
+      "expected": "‎¥ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ ¥",
+      "expected": "‎¥ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ JPY)",
+      "expected": "‎(JPY ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰ JPY)",
+      "expected": "‎(JPY ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲ JPY",
+      "expected": "‎JPY ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد JPY",
+      "expected": "‎JPY ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ JPY",
+      "expected": "‎JPY ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ JPY)",
+      "expected": "‎(JPY ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰ JPY)",
+      "expected": "‎(JPY ۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎JPYناعدد",
+      "expected": "‎+‎JPY ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎JPY∞",
+      "expected": "‎+‎JPY ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۵ JPY",
+      "expected": "‎JPY ۱٬۲۳۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲ JPY",
+      "expected": "‎JPY ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد JPY",
+      "expected": "‎JPYناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ JPY",
+      "expected": "‎JPY∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ JPY)",
+      "expected": "‎(JPY ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد JPY",
+      "expected": "‎JPY ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎JPY∞",
+      "expected": "‎+‎JPY ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۵ JPY)",
+      "expected": "‎(JPY ۱٬۲۳۵)"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰ JPY",
+      "expected": "‎JPY ۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲ JPY",
+      "expected": "‎JPY ۱۲"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد JPY",
+      "expected": "‎JPY ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "JPY",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ JPY",
+      "expected": "‎JPY ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎BHDناعدد",
+      "expected": "‎+‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰۰ BHD",
+      "expected": "‎BHD ۱٬۲۳۴٫۵۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHDناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎BHDناعدد",
+      "expected": "‎+‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰۰ BHD",
+      "expected": "‎BHD ۱٬۲۳۴٫۵۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHDناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰۰ BHD)",
+      "expected": "‎(BHD ۰٫۰۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎BHDناعدد",
+      "expected": "‎+‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰۰ BHD",
+      "expected": "‎BHD ۱٬۲۳۴٫۵۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHDناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎BHD∞",
+      "expected": "‎+‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰۰ BHD)",
+      "expected": "‎(BHD ۱٬۲۳۴٫۵۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰۰ BHD",
+      "expected": "‎BHD ۰٫۰۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۲۵ BHD",
+      "expected": "‎BHD ۱۲٫۱۲۵"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد BHD",
+      "expected": "‎BHD ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "BHD",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ BHD",
+      "expected": "‎BHD ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎ZZZناعدد",
+      "expected": "‎+‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ ZZZ",
+      "expected": "‎ZZZ ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "symbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎ZZZناعدد",
+      "expected": "‎+‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ ZZZ",
+      "expected": "‎ZZZ ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "narrowSymbol",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "auto",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "0",
+      "actual": "(۰٫۰۰ ZZZ)",
+      "expected": "‎(ZZZ ۰٫۰۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "NaN",
+      "actual": "‎+‎ZZZناعدد",
+      "expected": "‎+‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "always",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "-1234.5",
+      "actual": "۱٬۲۳۴٫۵۰ ZZZ",
+      "expected": "‎ZZZ ۱٬۲۳۴٫۵۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "never",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "exceptZero",
+      "value": "Infinity",
+      "actual": "‎+‎ZZZ∞",
+      "expected": "‎+‎ZZZ ∞"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "-1234.5",
+      "actual": "(۱٬۲۳۴٫۵۰ ZZZ)",
+      "expected": "‎(ZZZ ۱٬۲۳۴٫۵۰)"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "0",
+      "actual": "۰٫۰۰ ZZZ",
+      "expected": "‎ZZZ ۰٫۰۰"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "12.125",
+      "actual": "۱۲٫۱۳ ZZZ",
+      "expected": "‎ZZZ ۱۲٫۱۳"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "NaN",
+      "actual": "ناعدد ZZZ",
+      "expected": "‎ZZZ ناعدد"
+    },
+    {
+      "locale": "fa",
+      "currency": "ZZZ",
+      "display": "code",
+      "sign": "accounting",
+      "signDisplay": "negative",
+      "value": "Infinity",
+      "actual": "∞ ZZZ",
+      "expected": "‎ZZZ ∞"
+    }
+  ]
+}

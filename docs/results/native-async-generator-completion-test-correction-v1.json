@@ -1,0 +1,30 @@
+{
+  "kind": "bespoke-test-correction",
+  "conformance": false,
+  "reason": "The first fixture incorrectly expected bare return to Await. Native green v1 passed that incorrect expectation; it is not evidence of correct job ordering.",
+  "supersedesEvidenceForOrdering": "native-async-generator-completion-green-v1.json",
+  "specification": "https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-return-statement-runtime-semantics-evaluation",
+  "observations": [
+    {
+      "source": "",
+      "events": [
+        "body",
+        "promise"
+      ]
+    },
+    {
+      "source": "return;",
+      "events": [
+        "body",
+        "promise"
+      ]
+    },
+    {
+      "source": "return undefined;",
+      "events": [
+        "promise",
+        "body"
+      ]
+    }
+  ]
+}

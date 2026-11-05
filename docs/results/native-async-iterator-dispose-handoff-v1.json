@@ -1,0 +1,89 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "020307fc44d8e4dcfd5da3e79be9f4612610f2fb16efb368dd1bf9cee6da7b0d",
+    "files": 444
+  },
+  "imageSha256": "8732c590ec82abf61e7949ef2dabea5c98c7b46af2228968e4e2bb0a79a7f5fd",
+  "asynchronous": true,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "(async()=>{const proto=Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf((async function*(){})())));const dispose=proto[Symbol.asyncDispose];for(const result of [undefined,null,42,Promise.resolve(9),{then(resolve){resolve(7);}}]){let calls=0;const receiver={return(){if(this!==receiver||arguments.length)throw 1;calls++;return result;}};const promise=dispose.call(receiver);if(!(promise instanceof Promise)||calls!==1||await promise!==undefined)throw 2;}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:disposal\"));",
+      "sha256": "89197986a78d2f3b9ae14ab73ecdfa81afd82b329082fcfe2a47a78db63ecde1"
+    },
+    {
+      "index": 1,
+      "source": "(async()=>{const dispose=Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf((async function*(){})())))[Symbol.asyncDispose];for(const receiver of [{},{return:null},1,\"x\",true,Symbol(),1n]){if(await dispose.call(receiver)!==undefined)throw 1;}for(const receiver of [null,undefined,{return:1}]){const promise=dispose.call(receiver);if(!(promise instanceof Promise))throw 2;let caught=false;try{await promise;}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:disposal\"));",
+      "sha256": "f8fea82d3d1755fe26131543d0294a7a1325c9dc9091f65627a604d7b5bc96da"
+    },
+    {
+      "index": 2,
+      "source": "(async()=>{const dispose=Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf((async function*(){})())))[Symbol.asyncDispose],marker={};for(const receiver of [{get return(){throw marker;}},{return(){throw marker;}},{return(){return Promise.reject(marker);}},{return(){return {get then(){throw marker;}};}}]){const promise=dispose.call(receiver);let caught;try{await promise;}catch(e){caught=e;}if(caught!==marker)throw 1;}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:disposal\"));",
+      "sha256": "2d25e09be6d3e4fe04db0b8043840ff30d83f58ba1bdaa555a2be7c4ebec8efe"
+    },
+    {
+      "index": 3,
+      "source": "(async()=>{let closed=0;async function* g(){try{yield 1;}finally{await 0;closed++;}}const i=g();await i.next();if(await i[Symbol.asyncDispose]()!==undefined||closed!==1||!(await i.next()).done)throw 1;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:disposal\"));",
+      "sha256": "1b2cfea17e04aec8929fc512ff3d7572f5fdac89e15309af840360d5a4523152"
+    },
+    {
+      "index": 4,
+      "source": "(async()=>{const dispose=Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf((async function*(){})())))[Symbol.asyncDispose];let calls=0;const result=Promise.resolve(42);Object.defineProperty(result,\"then\",{get(){throw 1;}});const receiver={return(){calls++;return result;}};if(await dispose.call(receiver)!==undefined||await dispose.call(receiver)!==undefined||calls!==2)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:disposal\"));",
+      "sha256": "deb9d976e9ed602965f644e47e1bf1695a730b799d03e5663ef09f43c29c5d5e"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

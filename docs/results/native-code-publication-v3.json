@@ -1,0 +1,29 @@
+{
+  "kind": "native-code-publication-validation",
+  "conformance": false,
+  "build": {
+    "kind": "native-code-publication-fixture",
+    "sourceSnapshot": {
+      "sha256": "07e04725df6ef28636a53aa800e7af8c4f6d04fdae80577d987ebdf145484645",
+      "files": 444
+    },
+    "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-code-v3/native-code",
+    "expectedExitStatus": 42,
+    "source": "import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,unmapMemory} from \"memory\";\nimport {writeInstruction,type Instruction} from \"assembler\";\nfunction code(value:number):Uint8Array {\n const instructions:Instruction[]=[{op:\"movz\",width:64,rd:9,immediate:value,shift:0},{op:\"scvtf-d-x\",rd:0,rn:9},{op:\"ret\",rn:30}];\n const bytes=new Uint8Array(instructions.length*4);\n for(let i=0;i<instructions.length;i++){const instruction=instructions[i];if(instruction===undefined)throw \"INSTRUCTION_INVARIANT\";if(!writeInstruction(bytes,i*4,instruction).ok)throw \"ENCODING_FAILED\";}\n return bytes;\n}\nexport function run():number {\n const size=16384,address=mapExecutableMemory(size);if(address<=0)return 1;\n const first=code(42);if(writeExecutableMemory(address,size,0,first)!==0)return 2;\n if(callExecutableNumber(address)!==42)return 3;\n if(writeExecutableMemory(address,size,size,first)===0)return 4;\n const second=code(43);if(writeExecutableMemory(address,size,16,second)!==0)return 5;\n if(callExecutableNumber(address+16)!==43||callExecutableNumber(address)!==42)return 6;\n if(writeExecutableMemory(address,size,0,second)!==0||callExecutableNumber(address)!==43)return 7;\n if(unmapMemory(address,size)!==0)return 8;\n return 42;\n}",
+    "scope": "A native Tint program generates AArch64 instructions using Tint's assembler, publishes executable memory, invokes numeric entries and republishes code. This is not yet runtime TypeScript source compilation."
+  },
+  "initial": {
+    "state": "stopped",
+    "pid": 22310
+  },
+  "outcome": {
+    "state": "exited",
+    "exitStatus": 42,
+    "description": null
+  },
+  "elapsedMs": 763.5151249999999,
+  "quietCheckpoint": {
+    "pid": 9481,
+    "state": "between-variants"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "20483fa0f487b6a602c2e4a6bf3aa53371e08b2078983072659f31eddecd0114",
+    "files": 505
+  },
+  "packages": 52,
+  "nodeTests": {
+    "passed": 3617,
+    "failed": 0,
+    "log": ".tint-bootstrap/atomics-notify-full-node-v1.log"
+  },
+  "checks": [
+    "build types",
+    "test types",
+    "host types",
+    "dependency boundaries",
+    "full source/tool/config formatting"
+  ],
+  "nativeRegression": "atomics-notify-native-v1.json",
+  "scope": "Notify validation, ordinary buffer return-zero after count conversion, explicit shared-notification authority. New combined fixture also covers existing exact-width CAS and all six read-modify-write operations. No native waiter registry or worker host is provided.",
+  "preservedBuildFailures": [
+    {
+      "log": ".tint-bootstrap/atomics-notify-observation-build-v1.log",
+      "reason": "Fixture callback omitted the two context parameters required by current strict-native function checking. Corrected in build-v2; production notify logic unchanged."
+    }
+  ]
+}

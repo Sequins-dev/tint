@@ -1,0 +1,12 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    `if(Iterator.concat([1,2],[],new Set([3,4])).toArray().join()!=="1,2,3,4"||!Iterator.concat().next().done)throw 1;if(Object.getPrototypeOf(Iterator.concat())!==Object.getPrototypeOf([].values().map(x=>x)))throw 2;`,
+    `let log="";function item(id){return {get [Symbol.iterator](){log+="g"+id;return function(){log+="o"+id;let done=false;return {get next(){log+="n"+id;return function(){if(arguments.length!==0)throw 1;if(done)return {done:true};done=true;return {done:false,value:id};};}};};}};}const iterator=Iterator.concat(item(1),item(2));if(log!=="g1g2"||iterator.next().value!==1||log!=="g1g2o1n1"||iterator.next().value!==2||log!=="g1g2o1n1o2n2"||!iterator.next().done)throw 2;`,
+    `let opened=0,closed=0;const a={[Symbol.iterator](){opened++;return {next(){return {done:false,value:42};},return(){if(arguments.length!==0)throw 1;closed++;return {};}};}};const before=Iterator.concat(a);before.return();if(opened!==0||closed!==0)throw 2;const after=Iterator.concat(a,a);after.next();after.return();if(opened!==1||closed!==1||!after.next().done)throw 3;`,
+    `for(const value of [undefined,null,1,"abc",Symbol(),1n,{}]){let opened=0;const a={[Symbol.iterator](){opened++;return [].values();}};let caught=false;try{Iterator.concat(a,value);}catch(e){caught=e instanceof TypeError;}if(!caught||opened!==0)throw 1;}const marker={};let calls=0,caught;try{Iterator.concat({get [Symbol.iterator](){throw marker;}},{get [Symbol.iterator](){calls++;return ()=>[].values();}});}catch(e){caught=e;}if(caught!==marker||calls!==0)throw 2;`,
+    `const marker={};let closed=0;const iterator=Iterator.concat({[Symbol.iterator](){return {next(){throw marker;},return(){closed++;return {};}};}});let caught;try{iterator.next();}catch(e){caught=e;}if(caught!==marker||closed!==0||!iterator.next().done)throw 1;iterator.return();if(closed!==0)throw 2;`,
+    `const marker={};const iterator=Iterator.concat({[Symbol.iterator](){return {next(){return {done:false,value:1};},return(){throw marker;}};}});iterator.next();let caught;try{iterator.return();}catch(e){caught=e;}if(caught!==marker||!iterator.next().done)throw 1;let helper;helper=Iterator.concat({[Symbol.iterator](){helper.next();return [].values();}});try{helper.next();throw 2;}catch(e){if(!(e instanceof TypeError))throw 3;}if(!helper.next().done)throw 4;`,
+  ],
+  { nodeReference: false },
+);

@@ -1,0 +1,30 @@
+{
+  "kind": "native-fixture-expectation-analysis",
+  "conformance": false,
+  "observation": "docs/results/native-test262-eval-site-v1-12.json",
+  "cause": "The planned case put eval in catch after an empty try, so the string branch never executed. Completion is correct and does not indicate a guard bypass.",
+  "change": "Throw into the catch before calling direct string eval; keep unsupported as the expected outcome.",
+  "productionChange": false,
+  "retainedCompletedCases": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "notRunInOriginalBatch": [
+    13
+  ],
+  "cancelledBuild": {
+    "log": ".tint-bootstrap/direct-eval-site-plumbing-native-build-v4.log",
+    "toolchain": "docs/results/frozen-node-toolchain-direct-eval-site-plumbing-v2.json",
+    "reason": "An edit-script assertion prevented the fixture correction. The stale build was cancelled before native execution."
+  }
+}

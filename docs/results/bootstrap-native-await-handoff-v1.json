@@ -1,0 +1,32 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "snapshot": ".tint-bootstrap/source-native-await-handoff-v1",
+  "stage1": ".tint-bootstrap/stage1-native-await-handoff-v1",
+  "stage2": ".tint-bootstrap/stage2-native-await-handoff-v1",
+  "bytes": 57285698,
+  "sha256": "125be41bdd4131fd673448b591f5ecebb8459d602a79ec0c9549d6af00b7046e",
+  "nativeExitStatus": 0,
+  "launch": "debugserver-direct",
+  "elapsedMs": 483926.376375,
+  "byteIdentical": true,
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 575750,
+      "__debug_line": 15054612
+    },
+    "stage2": {
+      "__debug_info": 575750,
+      "__debug_line": 15054612
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "debuggerPermission": "com.apple.security.get-task-allow (XML and DER; Tint signer)",
+  "scope": "444-source snapshot including actual-suspension-aware resource disposal, Annex B block and conditional function declarations, labelled block functions, optional global-var admission and declaration-time var copies. Includes compiler-owned await-operation handoff to preserve exact lexical-disposal job boundaries. Native conformance and bespoke fixtures remain separate evidence."
+}

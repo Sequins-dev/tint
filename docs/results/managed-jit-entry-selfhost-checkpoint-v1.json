@@ -1,0 +1,28 @@
+{
+  "kind": "native-selfhost-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "3fed367d375af90de30974d47719484af6f5f1fa61b680f68720e9573a1faaa8",
+    "files": 545
+  },
+  "stageImages": {
+    "bytes": 69829010,
+    "sha256": "1053f3bda9c43f47f2d1631d28812d11d8cd2acf27dc0a7a3dff879850306125",
+    "byteIdentical": true
+  },
+  "managedBytes": 4294966272,
+  "selfbuild": "bootstrap-managed-jit-entry-v1.json",
+  "smokeBuild": "bootstrap-managed-jit-entry-smoke-connected-v2.json",
+  "smokeExecution": "native-managed-jit-entry-smoke-v2.json",
+  "smokeSourceSnapshot": {
+    "sha256": "673480739eb581ea054d9aa1888e431781ab4d8072352b1c2b5406371db76739",
+    "files": 546
+  },
+  "validation": {
+    "codesignStrict": true,
+    "dwarfVerifyLog": ".tint-bootstrap/managed-jit-entry-dwarf-v1.log",
+    "debugInfoBytes": 2127921,
+    "debugLineBytes": 18055404
+  },
+  "scope": "ScriptRecord lowering, host-frame adapter and managed JIT entry assembly. The fixed-point snapshot predates the E4 function-flow guard. Smoke adds its unused source module to the earlier frozen compiler sources; both compilers produce identical smoke output."
+}

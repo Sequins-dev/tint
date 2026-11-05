@@ -1,0 +1,38 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "4126859a4a6d1062aa15aa2944c782b2cff3d598d48e6c3358305b10c20e6179",
+    "files": 505
+  },
+  "packages": 52,
+  "snapshot": ".tint-bootstrap/source-atomics-agent-policy-v1",
+  "stage1": ".tint-bootstrap/stage1-atomics-agent-policy-v1",
+  "stage2": ".tint-bootstrap/stage2-atomics-agent-policy-v1",
+  "bytes": 61370034,
+  "sha256": "6192f6ec218e116a18e74014fb0baedeeddf465dbf51b105762bb717edc9d5a9",
+  "nativeExitStatus": 0,
+  "initialStopVerified": true,
+  "byteIdentical": true,
+  "elapsedMs": 542690,
+  "launch": "lldb-local",
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 1792093,
+      "__debug_line": 15754838
+    },
+    "stage2": {
+      "__debug_info": 1792093,
+      "__debug_line": 15754838
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "log": ".tint-bootstrap/atomics-agent-policy-selfbuild-native-v1.log",
+  "scope": "Frozen 52-package/505-source snapshot verifies foundation text ownership and compiler composition after non-waiting Atomics, notify validation and explicit agent suspension policy changes. This is self-hosting correctness evidence, not Test262 conformance."
+}

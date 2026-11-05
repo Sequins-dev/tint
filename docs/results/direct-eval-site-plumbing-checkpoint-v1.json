@@ -1,0 +1,35 @@
+{
+  "kind": "direct-eval-site-plumbing-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "09a4ced692b0bd083afa1d16a30fee7198b374e4c7f2bbf3ffa29752f6835881",
+    "files": 552
+  },
+  "nativeReport": "docs/results/native-test262-eval-site-validation-v2.json",
+  "nativeViewReport": "docs/results/native-direct-eval-site-v2.json",
+  "workspaceGate": {
+    "tests": 4070,
+    "log": ".tint-bootstrap/direct-eval-site-plumbing-workspace-check-v3.log"
+  },
+  "surface": {
+    "entries": 124,
+    "instantiated": 39,
+    "helpers": 102,
+    "types": 22,
+    "recordClasses": 182,
+    "signatureClasses": 162,
+    "runtimeProviders": 41
+  },
+  "scope": [
+    "typed caller sites and linked catches",
+    "opaque guard flags and sites",
+    "method/derived/private capability deferral",
+    "indirect eval global variable-scope correction",
+    "capture-gated retained checked view",
+    "native generator AOT sites, realm identity, runtime-compiled ordinary sites and allocation churn"
+  ],
+  "notEnabled": "direct string eval",
+  "retainedFixtureCorrection": "docs/results/native-test262-eval-site-v1-expectation-analysis.json",
+  "managedSuspensionLimitation": "docs/results/direct-eval-site-managed-suspension-analysis-v1.json",
+  "selfBuild": "deferred to the DE4 frozen batch"
+}

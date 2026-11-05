@@ -1,0 +1,164 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "ff75839508a525ebce313676fc4cc2b91dbabdda9c4972d10c7c7c293deb456a",
+      "files": 424
+    },
+    "imageSha256": "7050bd55a80741821b1312a5ceef37e1fa42a6a40a4b1dbd39a999798346b0f4",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": "America/New_York",
+        "path": "/usr/share/zoneinfo/America/New_York"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(!Object.is(new Date(2024,0,1,12,34,56,789).getTime(),1704130496789))throw 1;",
+        "sha256": "fcade9c08fb28af8811759add5a07288ceceee35777d546b23f552a88eb25ef8"
+      },
+      {
+        "index": 1,
+        "source": "if(!Object.is(new Date(99,12,0,24).getTime(),946702800000))throw 1;",
+        "sha256": "622e63a7a536feaa553892730c1ec5d4233500842ebe5f1c239696b6bab30dc4"
+      },
+      {
+        "index": 2,
+        "source": "if(!Object.is(new Date(2000,-1,32,-1,61,-1,1001).getTime(),946702860001))throw 1;",
+        "sha256": "d9691aa066c8b5ba40e049f4b908b0c96d35d690935e642bebc9fe1284fe5eb8"
+      },
+      {
+        "index": 3,
+        "source": "if(!Object.is(new Date(-271821,3,20).getTime(),-8639999982238000))throw 1;",
+        "sha256": "aeb4ddb0d9e7f832d55ce16133bc8954f6d0046491ebf28785c1682c55f964db"
+      },
+      {
+        "index": 4,
+        "source": "if(!Object.is(new Date(275760,8,13).getTime(),NaN))throw 1;",
+        "sha256": "eba54329d7963a168eddb19a7cf676516c5abe8e0a742e51d407b225d8c21dbd"
+      },
+      {
+        "index": 5,
+        "source": "if(!Object.is(new Date(275760,8,13,0,0,0,1).getTime(),NaN))throw 1;",
+        "sha256": "02ae458e10d2c9374d6afaa025594eee5e63f3d9f16bd6ab914acf204f9c1cc2"
+      },
+      {
+        "index": 6,
+        "source": "if(!Object.is(new Date(1e+100,0).getTime(),NaN))throw 1;",
+        "sha256": "94bdc6ce598b0725bf937f6727bfe6a6963dc545aace2df95d34231353720428"
+      },
+      {
+        "index": 7,
+        "source": "if(!Object.is(new Date(2024,2,10,2,30,0,123).getTime(),1710055800123))throw 1;",
+        "sha256": "1c3d7a57d95fe9b0cf9984bf5e50846249da8375159257939fd28564b2c8e552"
+      },
+      {
+        "index": 8,
+        "source": "if(!Object.is(new Date(2024,10,3,1,30,0,999).getTime(),1730611800999))throw 1;",
+        "sha256": "b62522a000ce0f019d50723721d53933be12a4fdbb011b82f9ab9a9c1f960ed2"
+      },
+      {
+        "index": 9,
+        "source": "if(Date.parse(\"1970-01-01T00:00:00.123\")!==18000123||new Date(\"1970-01-01T00:00:00.123\").getTime()!==18000123||Date.parse(\"1970-01-01\")!==0)throw 1;",
+        "sha256": "0e2136b1ad1671adf4f8459578b69ed5d1a9834ee53e932cc2892d7783de33d5"
+      },
+      {
+        "index": 10,
+        "source": "let log=\"\";function value(key,n){return{valueOf(){log+=key;return n;}};}const d=new Date(value(\"y\",NaN),value(\"m\",0),value(\"d\",1),value(\"h\",0),value(\"n\",0),value(\"s\",0),value(\"i\",0));if(log!==\"ymdhnsi\"||!Number.isNaN(d.getTime()))throw 1;",
+        "sha256": "096181942e86d86cce0e9fecbce503f29392a58b0eeb6cf56b8d7ae620760657"
+      },
+      {
+        "index": 11,
+        "source": "class D extends Date{}const d=new D(2024,0,1);if(Object.getPrototypeOf(d)!==D.prototype||!(d instanceof Date)||d.getTime()!==new Date(2024,0,1).getTime())throw 1;for(let i=0;i<1024;i++){const x=new Date(2024,i%12,i%28+1,12,0,0,i%1000);if(Date.parse(x.toISOString())!==x.getTime())throw 2;}",
+        "sha256": "d3edf9a8112015de470673ceae43a655d94ee94cfc184a24c59742d563a6ce11"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

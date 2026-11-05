@@ -1,0 +1,10 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `/* 😀 before offset */ function f /* a */ (x) { return x; } if(String(f)!=="function f /* a */ (x) { return x; }")throw 1;Object.defineProperty(f,"name",{get(){throw 2;}});if(Function.prototype.toString.call(f)!=="function f /* a */ (x) { return x; }")throw 3;`,
+  `const a = ( x /* a */ ) => x + 1;const b = async x => x;if(String(a)!=="( x /* a */ ) => x + 1"||String(b)!=="async x => x")throw 1;const f = function /* anonymous */ (x){return x;};if(String(f)!=="function /* anonymous */ (x){return x;}")throw 2;`,
+  `function* g /* a */ () {yield 1;} async function f(){return 2;} async function* a(){yield 3;}if(String(g)!=="function* g /* a */ () {yield 1;}"||String(f)!=="async function f(){return 2;}"||String(a)!=="async function* a(){yield 3;}")throw 1;`,
+  `const o={get /* a */ x(){return 1;},set x(v){},async /* b */ *g(){yield 2;},["m"] /* c */ (){return 3;}};if(String(Object.getOwnPropertyDescriptor(o,"x").get)!=="get /* a */ x(){return 1;}"||String(Object.getOwnPropertyDescriptor(o,"x").set)!=="set x(v){}"||String(o.g)!=="async /* b */ *g(){yield 2;}"||String(o.m)!=='["m"] /* c */ (){return 3;}')throw 1;`,
+  `class C /* a */ {constructor(x){this.x=x;}m /* b */ (){return this.x;}static /* c */ async *g(){yield 2;}get x(){return 1;}set x(v){}}if(String(C)!=="class C /* a */ {constructor(x){this.x=x;}m /* b */ (){return this.x;}static /* c */ async *g(){yield 2;}get x(){return 1;}set x(v){}}"||String(C.prototype.m)!=="m /* b */ (){return this.x;}"||String(C.g)!=="async *g(){yield 2;}"||String(Object.getOwnPropertyDescriptor(C.prototype,"x").get)!=="get x(){return 1;}")throw 1;`,
+  `class C{#m /* a */ (){return 1;}static #s(){return 2;}get #x(){return 3;}method(){return this.#m;}static method(){return this.#s;}}if(String(new C().method())!=="#m /* a */ (){return 1;}"||String(C.method())!=="#s(){return 2;}")throw 1;`,
+  `const C=class /* a */ {static m(){return 1;}};if(String(C)!=="class /* a */ {static m(){return 1;}}"||String(C.m)!=="m(){return 1;}")throw 1;const o={m(){return ()=>42;}};if(String(o.m())!=="()=>42")throw 2;`,
+]);

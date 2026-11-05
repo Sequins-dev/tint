@@ -1,0 +1,23 @@
+{
+  "kind": "native-managed-script-failure-analysis",
+  "conformance": false,
+  "observation": "native-managed-script-v1.json",
+  "diagnostic": "native-managed-script-allocation-diagnostic-v1.json",
+  "finding": "Copying collector exhausted pointer-fixup workspace during managed compilation, before JIT publication. The allocator returned undefined and the generated allocation guard trapped.",
+  "evidence": {
+    "collectorFailure": 1,
+    "allocationTop": 33554352,
+    "semispaceBytes": 33554432,
+    "requestedBytes": 112,
+    "discoveredObjects": 320509,
+    "discoveredLiveBytes": 22242528,
+    "fixups": 532480,
+    "fixupCapacity": 532480
+  },
+  "nextExperiment": {
+    "managedBytes": 67108864,
+    "allocationCapacity": 4194304,
+    "rootCapacity": 16384
+  },
+  "scope": "The first execution is retained as a native crash. No Test262 coverage claim; no change to collector semantics or heap budget."
+}

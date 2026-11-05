@@ -1,0 +1,110 @@
+{
+  "kind": "debugger-direct-launch-diagnostic",
+  "conformance": false,
+  "launch": "debugserver-posix-spawn-no-logging",
+  "expectedExitStatus": 42,
+  "observations": [
+    {
+      "index": 0,
+      "selected": 0,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3623
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-od6jSR/test\"\nCurrent executable set to '/tmp/tint-direct-cold-od6jSR/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61809\nProcess 3623 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000105b009c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x105b009c0 <+0>:  mov    x0, sp\n    0x105b009c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x105b009c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x105b009cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-od6jSR/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3623 resuming\nProcess 3623 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-od6jSR/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 624.768,
+      "debugLog": ""
+    },
+    {
+      "index": 1,
+      "selected": 1,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3630
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-tLP7SE/test\"\nCurrent executable set to '/tmp/tint-direct-cold-tLP7SE/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61812\nProcess 3630 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000105bd49c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x105bd49c0 <+0>:  mov    x0, sp\n    0x105bd49c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x105bd49c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x105bd49cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-tLP7SE/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3630 resuming\nProcess 3630 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-tLP7SE/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 561.375292,
+      "debugLog": ""
+    },
+    {
+      "index": 2,
+      "selected": 0,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3634
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-Mntrz3/test\"\nCurrent executable set to '/tmp/tint-direct-cold-Mntrz3/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61814\nProcess 3634 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001015909c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1015909c0 <+0>:  mov    x0, sp\n    0x1015909c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1015909c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1015909cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-Mntrz3/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3634 resuming\nProcess 3634 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-Mntrz3/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 542.240875,
+      "debugLog": ""
+    },
+    {
+      "index": 3,
+      "selected": 1,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3638
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-xwFDor/test\"\nCurrent executable set to '/tmp/tint-direct-cold-xwFDor/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61816\nProcess 3638 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010578c9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10578c9c0 <+0>:  mov    x0, sp\n    0x10578c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10578c9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10578c9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-xwFDor/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3638 resuming\nProcess 3638 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-xwFDor/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 544.141625,
+      "debugLog": ""
+    },
+    {
+      "index": 4,
+      "selected": 0,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3642
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-KfCdE4/test\"\nCurrent executable set to '/tmp/tint-direct-cold-KfCdE4/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61818\nProcess 3642 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001017509c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1017509c0 <+0>:  mov    x0, sp\n    0x1017509c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1017509c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1017509cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-KfCdE4/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3642 resuming\nProcess 3642 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-KfCdE4/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 548.406958,
+      "debugLog": ""
+    },
+    {
+      "index": 5,
+      "selected": 1,
+      "status": 0,
+      "initial": {
+        "state": 5,
+        "pid": 3646
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42
+      },
+      "stdout": "(lldb) target create \"/tmp/tint-direct-cold-PWsD35/test\"\nCurrent executable set to '/tmp/tint-direct-cold-PWsD35/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61821\nProcess 3646 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000105ff89c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x105ff89c0 <+0>:  mov    x0, sp\n    0x105ff89c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x105ff89c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x105ff89cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-direct-cold-PWsD35/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n25\n(lldb) continue\nProcess 3646 resuming\nProcess 3646 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-cold-PWsD35/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+      "stderr": "",
+      "elapsedMs": 541.2904159999998,
+      "debugLog": ""
+    }
+  ]
+}

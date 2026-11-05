@@ -1,0 +1,35 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T11:10:48.095463+00:00",
+  "slice": "M3 source framework",
+  "beforeSource": {
+    "sha256": "1c9b56fd923a8f12d10df0bb1e8105d2fee146cb110e8346358f84f7e75dc2b0",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "ef410a7c06d72ef7699717a8b74f2376f2967b659fd8ee7914f56695a5dffd31",
+    "files": 492
+  },
+  "packages": 83,
+  "workspaceGates": {
+    "tests": 3459,
+    "passed": 3459,
+    "types": "passed build/tests/host",
+    "boundaries": "83 packages",
+    "formatting": "passed",
+    "evidence": "framework-source-workspace-validation-v1.json"
+  },
+  "implementationPreservation": "text and catalog byte-identical; resolver differs only in two same-package relative imports",
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-source-after-v1/manifest.json"
+  },
+  "hostParserRegression": "framework-source-parser-regression-v1.json",
+  "selfbuild": "bootstrap-framework-source-v1.json",
+  "selfbuildBytes": 60624978,
+  "selfbuildByteIdentical": true,
+  "additionalNativeFixture": "Native scanner fixture built, execution queued separately; no scanner-execution claim in this checkpoint. Native self-build exercises source parsing/catalog/resolution.",
+  "limitations": "Architecture and host syntax regression evidence, not additional Test262 native behavior coverage."
+}

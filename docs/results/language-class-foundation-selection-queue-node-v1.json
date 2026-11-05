@@ -1,0 +1,160 @@
+{
+  "kind": "language-class-foundation-selection-queue",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "variants": 2081,
+  "selections": [
+    {
+      "selection": "language/statements/class/syntax",
+      "label": "language-class-statements-class-syntax",
+      "variants": 26
+    },
+    {
+      "selection": "language/statements/class/definition",
+      "label": "language-class-statements-class-definition",
+      "variants": 130
+    },
+    {
+      "selection": "language/statements/class/name-binding",
+      "label": "language-class-statements-class-name-binding",
+      "variants": 12
+    },
+    {
+      "selection": "language/statements/class/arguments",
+      "label": "language-class-statements-class-arguments",
+      "variants": 4
+    },
+    {
+      "selection": "language/statements/class/strict-mode",
+      "label": "language-class-statements-class-strict-mode",
+      "variants": 4
+    },
+    {
+      "selection": "language/statements/class/super",
+      "label": "language-class-statements-class-super",
+      "variants": 16
+    },
+    {
+      "selection": "language/statements/class/method",
+      "label": "language-class-statements-class-method",
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/method-static",
+      "label": "language-class-statements-class-method-static",
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/method",
+      "label": "language-class-expressions-class-method",
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/method-static",
+      "label": "language-class-expressions-class-method-static",
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/accessor-name-inst",
+      "label": "language-class-statements-class-accessor-name-inst",
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/accessor-name-static",
+      "label": "language-class-statements-class-accessor-name-static",
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "label": "language-class-expressions-class-accessor-name-inst",
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-static",
+      "label": "language-class-expressions-class-accessor-name-static",
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/subclass",
+      "label": "language-class-statements-class-subclass",
+      "variants": 217
+    },
+    {
+      "selection": "language/statements/class/subclass-builtins",
+      "label": "language-class-statements-class-subclass-builtins",
+      "variants": 72
+    },
+    {
+      "selection": "language/expressions/class/subclass-builtins",
+      "label": "language-class-expressions-class-subclass-builtins",
+      "variants": 72
+    },
+    {
+      "selection": "language/statements/class/gen-method",
+      "label": "language-class-statements-class-gen-method",
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/gen-method-static",
+      "label": "language-class-statements-class-gen-method-static",
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method",
+      "label": "language-class-expressions-class-gen-method",
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method-static",
+      "label": "language-class-expressions-class-gen-method-static",
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/async-method",
+      "label": "language-class-statements-class-async-method",
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/async-method-static",
+      "label": "language-class-statements-class-async-method-static",
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method",
+      "label": "language-class-expressions-class-async-method",
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method-static",
+      "label": "language-class-expressions-class-async-method-static",
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/async-gen-method",
+      "label": "language-class-statements-class-async-gen-method",
+      "variants": 191
+    },
+    {
+      "selection": "language/statements/class/async-gen-method-static",
+      "label": "language-class-statements-class-async-gen-method-static",
+      "variants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method",
+      "label": "language-class-expressions-class-async-gen-method",
+      "variants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method-static",
+      "label": "language-class-expressions-class-async-gen-method-static",
+      "variants": 191
+    }
+  ],
+  "sourceSnapshot": {
+    "sha256": "1d06070d45015519f71c3888200353cf3626288ec47f5d95f88d3ce11ccf75c4",
+    "files": 568
+  },
+  "scope": "Disjoint class syntax, names, definitions, methods/accessors, inheritance, built-in subclassing and generator/async method selections. Queued after the accepted prior eval, iteration and function/control-flow checkpoints. Counts are planning, not passes. Decorator and large class-element/destructuring groups are separate follow-ups.",
+  "blockingRule": "Any unexpected earlier result or any non-pass in these class selections stops widening; retain the observation for investigation.",
+  "controller": ".tint-bootstrap/run-language-class-foundation-checkpoints-v1.mjs"
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "native-regression-fixture-analysis",
+  "conformance": false,
+  "observation": "docs/results/native-record-identity-compiler-v1.json",
+  "exitStatus": 67,
+  "signalFaultObserved": false,
+  "diagnosis": "Nested compiler fixture selected a retained runtime export as the application entry. Existing instance preparation rejects this composition before IR emission. The equivalent Node request reproduces stage runtime: selected module export must be a function declaration.",
+  "correction": "Use a separate application module calling the authorized identity facade, matching the actual hosted-runtime composition. No portable implementation change is required for this correction. Corrected native validation will be recorded separately.",
+  "probe": ".tint-bootstrap/probe-record-identity-nested-compile-v1.mjs",
+  "cancelledDependents": [
+    ".tint-bootstrap/run-record-identity-selfbuild-v1.mjs",
+    ".tint-bootstrap/record-managed-selection-checkpoints-v1.mjs record-identity 3770"
+  ]
+}

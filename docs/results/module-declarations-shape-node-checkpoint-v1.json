@@ -1,0 +1,38 @@
+{
+  "kind": "runtime-feature-node-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "f33c96290c9efe9d530f1b59fe3f8633c30b10125254f809996d94bad9616ea4",
+    "files": 561
+  },
+  "implemented": [
+    "M1b overlapping asynchronous load fix",
+    "shared module request canonicalization and UTF-16 ordering",
+    "M2a module declaration collector",
+    "M2a source module shape builder"
+  ],
+  "workspace": {
+    "tests": 4200,
+    "pass": 4200,
+    "fail": 0,
+    "log": ".tint-bootstrap/module-shape-workspace-check-v1.log"
+  },
+  "focused": {
+    "declarations": 4,
+    "shape": 6,
+    "overlappingLoad": 1
+  },
+  "strictNativeChecker": {
+    "stage": "checked",
+    "functions": 769,
+    "log": ".tint-bootstrap/module-shape-selfcheck-v1.json"
+  },
+  "nativeBuild": ".tint-bootstrap/module-evaluation-native-build-v8.log",
+  "nativeExecution": "withheld: docs/results/module-launch-control-analysis-v1.json",
+  "remaining": [
+    "M2a runtime factory",
+    "M2a body lowering",
+    "M2b native Test262 host integration",
+    "native acceptance and frozen self-build"
+  ]
+}

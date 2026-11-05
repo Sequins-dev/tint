@@ -1,0 +1,30 @@
+{
+  "kind": "node-reference-fixture",
+  "conformance": false,
+  "cases": [
+    {
+      "index": 0,
+      "source": "(async()=>{const holder={value:Function(\"return 'a\\\\0\\\\ud800';\")()};let checksum=0;for(let i=0;i<10;i++){const bytes=new Uint8Array(8*1024*1024);bytes[0]=i;checksum+=bytes[0];}if(checksum!==45||holder.value.length!==3||holder.value.charCodeAt(0)!==97||holder.value.charCodeAt(1)!==0||holder.value.charCodeAt(2)!==0xd800)throw 1;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:code-literals\"));",
+      "sha256": "44df3634f2b5ab1cff8d770387c7c53b3dcefa49d5573a666a3751fd71166aea"
+    },
+    {
+      "index": 1,
+      "source": "(async()=>{const f=Function(\"return '😀literal';\");if(f()!==\"😀literal\"||f()!==f())throw 1;const GeneratorFunction=(function*(){}).constructor,g=GeneratorFunction(\"return 'generator';\")().next();if(!g.done||g.value!==\"generator\")throw 2;const AsyncFunction=(async function(){}).constructor;if(await AsyncFunction(\"return 'async';\")()!==\"async\")throw 3;const AsyncGeneratorFunction=(async function*(){}).constructor,a=await AsyncGeneratorFunction(\"return 'async-generator';\")().next();if(!a.done||a.value!==\"async-generator\")throw 4;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:code-literals\"));",
+      "sha256": "b010cbbd9be780e546b2a2dcaf18e1bbc42a29f5044da6e76a9561aac43551e6"
+    }
+  ],
+  "observations": [
+    {
+      "index": 0,
+      "printed": [
+        "Test262:AsyncTestComplete"
+      ]
+    },
+    {
+      "index": 1,
+      "printed": [
+        "Test262:AsyncTestComplete"
+      ]
+    }
+  ]
+}

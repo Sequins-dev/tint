@@ -1,0 +1,78 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "fa33bb4e31787a51a755926bd966d66e75b33f3acb40043fa6e375f60a790c5a",
+    "files": 445
+  },
+  "imageSha256": "6826139ded555ae34527fb1d8a6dc76639d7c63e95ef5d744c79ecaf83f3bf85",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "if(eval.name!==\"eval\"||eval.length!==1||eval.hasOwnProperty(\"prototype\"))throw 1;const g=Object.getOwnPropertyDescriptor(globalThis,\"eval\"),n=Object.getOwnPropertyDescriptor(eval,\"name\"),l=Object.getOwnPropertyDescriptor(eval,\"length\");if(!g.writable||g.enumerable||!g.configurable||n.writable||n.enumerable||!n.configurable||l.writable||l.enumerable||!l.configurable)throw 2;",
+      "sha256": "95c4c238af724c9a444b643640289c0a863ed78156d1b531146b98f05f062669"
+    },
+    {
+      "index": 1,
+      "source": "for(const value of [undefined,null,false,42,Symbol(),{},new String(\"source\")]){if(eval(value)!==value)throw 1;}if(eval()!==undefined)throw 2;let count=0;const value={toString(){count++;throw 1;},[Symbol.toPrimitive](){count++;throw 2;}};if(eval(value)!==value||count!==0)throw 3;",
+      "sha256": "39c9359e80dac17776e11199e11225cffb80cb709232d65cc701a34dbb7a3e38"
+    },
+    {
+      "index": 2,
+      "source": "let caught=false;try{new eval();}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;const evaluate=eval;if(evaluate(42)!==42)throw 2;",
+      "sha256": "a0b0823cfb16df8cd9c9161c5ddfb13c6302290c95c5c8526a23df63d9bbb120"
+    },
+    {
+      "index": 3,
+      "source": "const source=Function.prototype.toString.call(eval);Object.defineProperty(eval,\"name\",{value:\"changed\"});if(Function.prototype.toString.call(eval)!==source||!source.includes(\"eval\"))throw 1;",
+      "sha256": "330411d9eb5bca398e7540604fa96fc1c2fc8a984acb4794a41f11647a79b0ab"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

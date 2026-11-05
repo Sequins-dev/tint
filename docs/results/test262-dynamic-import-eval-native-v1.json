@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 2,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v18-managed-dynamic-import",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true
+  },
+  "scope": "Exactly two unchanged previously unsupported eval-import Script variants, selected by the retained baseline. Each uses the original harness and variant policy in a fresh native process. One compiled batch is reused. No whole-directory or whole-suite claim.",
+  "variantPolicy": "The exact path/variant inputs listed in this report; strictness and harnesses preserved, no source edits.",
+  "sourceSnapshot": {
+    "sha256": "1d06070d45015519f71c3888200353cf3626288ec47f5d95f88d3ce11ccf75c4",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-dynamic-import-v1/source-snapshot.json",
+  "frozenToolchainSha256": "fabcb1002048d0f7eee0eb968fe53e7508c310bee95d5d7a714117d0e2df2875",
+  "resumption": {
+    "restoredVariants": 0
+  },
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/dynamic-import/usage-from-eval.js",
+  "rootSelection": "language/expressions/dynamic-import",
+  "requestedVariants": 2,
+  "complete": true,
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": [
+    {
+      "id": 0,
+      "variants": 2,
+      "compileMs": 128606.63104200002,
+      "outcome": "compiled",
+      "kind": "execution"
+    }
+  ],
+  "observations": [
+    {
+      "path": "language/expressions/dynamic-import/usage-from-eval.js",
+      "sha256": "3e884a5bd18579c1c490210151f98ce5ca36dabfb324073894e2d5aa004b1982",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "module-code_FIXTURE.js",
+          "sha256": "1fcb9dc69fdb07c40aad6a6222574c496fefa8d717605d3945c76e2727f5dca3"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34362.992000000086,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/usage-from-eval.js",
+      "sha256": "3e884a5bd18579c1c490210151f98ce5ca36dabfb324073894e2d5aa004b1982",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "module-code_FIXTURE.js",
+          "sha256": "1fcb9dc69fdb07c40aad6a6222574c496fefa8d717605d3945c76e2727f5dca3"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33266.39633300004,
+      "batch": 0
+    }
+  ],
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "timingPolicy": "Per-variant native execution elapsedMs; compilation is recorded separately.",
+  "imageSha256": "7a7dd56885ac6aeb23d0de1bdac50be92bea3d358f7ebb2a708ef870b3cf19aa",
+  "baseline": "docs/results/test262-script-dynamic-import-directory-v1.json",
+  "overlap": "These variants overlap the retained 1900-variant directory report; the totals must not be added or merged."
+}

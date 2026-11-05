@@ -1,0 +1,31 @@
+{
+  "kind": "managed-directory-data-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "c879f30e73d1395f0bfa55cce5562d27372f585bdc377b0e5792bf85c456c847",
+    "files": 527
+  },
+  "selfBuild": "docs/results/bootstrap-managed-directory-data-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-directory-data-compiler-v1.json"
+  ],
+  "workspaceTests": 3784,
+  "bytes": 65525010,
+  "sha256": "bee96591ea4df9331db54e9a766496cc11d8f9b1d345a5afb627e01bddb6ea2d",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-directory-data-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-directory-data-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "Canonical contracts, physical layouts and digest",
+    "Managed publication and general eval/Function"
+  ]
+}

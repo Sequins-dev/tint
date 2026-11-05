@@ -1,0 +1,61 @@
+{
+  "kind": "managed-template-async-compilation-diagnostic",
+  "native": false,
+  "conformance": false,
+  "observations": [
+    {
+      "source": "(async function(){function tag(s){return s;}const values=[];for(let i=0;i<2;i++){await 0;values.push(tag`same`);}return values[0]===values[1];})()",
+      "maximum": 262144,
+      "result": {
+        "ok": false,
+        "stage": "budget"
+      },
+      "codeBytes": 0
+    },
+    {
+      "source": "(async function(){function tag(s){return s;}const values=[];for(let i=0;i<2;i++){await 0;values.push(tag`same`);}return values[0]===values[1];})()",
+      "maximum": 1048576,
+      "result": {
+        "ok": true,
+        "address": 117440512
+      },
+      "codeBytes": 273248
+    },
+    {
+      "source": "(async function(){function tag(s){return s;}let first;for(let i=0;i<2;i++){await 0;const value=tag`same`;if(i===0)first=value;else if(value!==first)return false;}return true;})()",
+      "maximum": 262144,
+      "result": {
+        "ok": true,
+        "address": 117440512
+      },
+      "codeBytes": 241008
+    },
+    {
+      "source": "(async function(){function tag(s){return s;}let first;for(let i=0;i<2;i++){await 0;const value=tag`same`;if(i===0)first=value;else if(value!==first)return false;}return true;})()",
+      "maximum": 1048576,
+      "result": {
+        "ok": true,
+        "address": 117440512
+      },
+      "codeBytes": 241008
+    },
+    {
+      "source": "(async function(){function tag(s){return s;}const first=tag`same`;await 0;return first===first;})()",
+      "maximum": 262144,
+      "result": {
+        "ok": true,
+        "address": 117440512
+      },
+      "codeBytes": 147528
+    },
+    {
+      "source": "(async function(){function tag(s){return s;}const first=tag`same`;await 0;return first===first;})()",
+      "maximum": 1048576,
+      "result": {
+        "ok": true,
+        "address": 117440512
+      },
+      "codeBytes": 147528
+    }
+  ]
+}

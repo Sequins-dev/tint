@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-regression-incomplete",
+  "conformance": false,
+  "fixture": "tools/verify-test262-native-proxy.ts",
+  "completedCases": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "unverifiedCases": [
+    5,
+    6,
+    7
+  ],
+  "failure": "LLDB attach failure before case 5 executed; no native fault established.",
+  "log": "{\"index\":0,\"outcome\":{\"kind\":\"completed\"}}\n{\"index\":1,\"outcome\":{\"kind\":\"completed\"}}\n{\"index\":2,\"outcome\":{\"kind\":\"completed\"}}\n{\"index\":3,\"outcome\":{\"kind\":\"completed\"}}\n{\"index\":4,\"outcome\":{\"kind\":\"completed\"}}\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"index\":5,\"outcome\":{\"kind\":\"crash\",\"detail\":\"LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\\n(lldb) target create \\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test\\\"\\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test' (arm64).\\n(lldb) settings set target.disable-aslr false\\n(lldb) process launch --stop-at-entry -- 5\\n\"}}\n+ actual - expected\n\n  {\n+   detail: 'LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\\n' +\n+     '(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test\"\\n' +\n+     \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test' (arm64).\\n\" +\n+     '(lldb) settings set target.disable-aslr false\\n' +\n+     '(lldb) process launch --stop-at-entry -- 5\\n',\n+   kind: 'crash'\n-   kind: 'completed'\n  }\n\n    at verifyNativeScriptCases (file:///Users/stephenbelanger/Code/nodejs/tint/tools/native-script-fixture.ts:32:12)\n    at file:///Users/stephenbelanger/Code/nodejs/tint/tools/verify-test262-native-proxy.ts:2:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: {\n    kind: 'crash',\n    detail: 'LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\\n' +\n      '(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test\"\\n' +\n      \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iQdxAS/test' (arm64).\\n\" +\n      '(lldb) settings set target.disable-aslr false\\n' +\n      '(lldb) process launch --stop-at-entry -- 5\\n'\n  },\n  expected: { kind: 'completed' },\n  operator: 'deepStrictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n"
+}

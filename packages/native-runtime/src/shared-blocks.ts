@@ -1,0 +1,833 @@
+import type {
+  SharedBlockDescriptor,
+  SharedBlockAtomics,
+  SharedBlockService,
+  SharedOrder,
+  SharedResult,
+  SharedStatus,
+  SharedUnsignedWidth,
+} from "@tint/js-runtime/bytes/shared";
+import {
+  sharedRegistryMagic,
+  sharedRegistryHeaderBytes,
+  sharedRegistryMagicOffset,
+  sharedRegistryEngineOffset,
+  sharedRegistryBlockLimitOffset,
+  sharedRegistryReservationLimitOffset,
+  sharedRegistryPageSizeOffset,
+  sharedRegistryPublishedCountOffset,
+  sharedRegistryReservedBytesOffset,
+  sharedRegistryLockOffset,
+  sharedBlockDescriptorBytes,
+  sharedBlockStateOffset,
+  sharedBlockAddressOffset,
+  sharedBlockReservationOffset,
+  sharedBlockMaximumOffset,
+  sharedBlockLengthOffset,
+  sharedBlockGrowableOffset,
+  sharedBlockPublished,
+} from "@tint/abi/shared-block";
+import { mapMemory, unmapMemory } from "./intrinsics/memory.ts";
+import {
+  readSharedUnsigned,
+  writeSharedUnsigned,
+  readSharedWord64,
+  writeSharedWord64,
+  compareExchangeSharedWord64,
+  compareExchangeSharedUnsigned,
+} from "./intrinsics/shared-atomics.ts";
+
+/** Explicit trusted leaves. Calls cannot allocate managed objects, throw, invoke
+ * callbacks or reenter this registry. map/unmap return failures as numeric status.
+ * The owner supplies the real normal-memory page size and owns every successful
+ * registry/payload mapping through engine/process lifetime. No collector grants. */
+export interface NativeSharedMemoryHost {
+  mapMemory(length: number): number;
+  unmapMemory(address: number, length: number): number;
+  readSharedUnsigned(
+    address: number,
+    length: number,
+    offset: number,
+    width: number,
+    order: number,
+  ): number;
+  writeSharedUnsigned(
+    address: number,
+    length: number,
+    offset: number,
+    width: number,
+    value: number,
+    order: number,
+  ): number;
+  readSharedWord64(
+    address: number,
+    length: number,
+    offset: number,
+    order: number,
+    scratch: Uint32Array,
+  ): number;
+  writeSharedWord64(
+    address: number,
+    length: number,
+    offset: number,
+    order: number,
+    lo: number,
+    hi: number,
+  ): number;
+  compareExchangeSharedWord64(
+    address: number,
+    length: number,
+    offset: number,
+    expectedLo: number,
+    expectedHi: number,
+    replacementLo: number,
+    replacementHi: number,
+    scratch: Uint32Array,
+  ): number;
+}
+/** Independent optional capability. Availability on another host object never
+ * grants this authority; the embedding passes it explicitly to create/attach. */
+export interface NativeSharedAtomicMemoryHost {
+  compareExchangeSharedUnsigned(
+    address: number,
+    length: number,
+    offset: number,
+    width: number,
+    expected: number,
+    replacement: number,
+  ): number;
+}
+/** Requires its own explicit unsigned-CAS native binding. The base seven-leaf
+ * factory and default project permissions are unchanged. */
+export function nativeSharedAtomicMemoryHost(): NativeSharedAtomicMemoryHost {
+  return {
+    compareExchangeSharedUnsigned: (
+      address,
+      length,
+      offset,
+      width,
+      expected,
+      replacement,
+    ): number =>
+      compareExchangeSharedUnsigned(
+        address,
+        length,
+        offset,
+        width,
+        expected,
+        replacement,
+      ),
+  };
+}
+/** Selecting this host does not authorize its leaves. The embedding must declare
+ * their runtime modules and all seven bindings in its native program request. */
+export function nativeSharedMemoryHost(): NativeSharedMemoryHost {
+  return {
+    mapMemory: (length): number => mapMemory(length),
+    unmapMemory: (address, length): number => unmapMemory(address, length),
+    readSharedUnsigned: (address, length, offset, width, order): number =>
+      readSharedUnsigned(address, length, offset, width, order),
+    writeSharedUnsigned: (
+      address,
+      length,
+      offset,
+      width,
+      value,
+      order,
+    ): number =>
+      writeSharedUnsigned(address, length, offset, width, value, order),
+    readSharedWord64: (address, length, offset, order, scratch): number =>
+      readSharedWord64(address, length, offset, order, scratch),
+    writeSharedWord64: (address, length, offset, order, lo, hi): number =>
+      writeSharedWord64(address, length, offset, order, lo, hi),
+    compareExchangeSharedWord64: (
+      address,
+      length,
+      offset,
+      expectedLo,
+      expectedHi,
+      replacementLo,
+      replacementHi,
+      scratch,
+    ): number =>
+      compareExchangeSharedWord64(
+        address,
+        length,
+        offset,
+        expectedLo,
+        expectedHi,
+        replacementLo,
+        replacementHi,
+        scratch,
+      ),
+  };
+}
+export interface NativeSharedBlockPolicy {
+  readonly pageSize: number;
+  readonly maxBlocks: number;
+  /** Payload reservation budget, including page rounding and zero-length pages.
+   * The separately bounded registry mapping is not charged to this budget. */
+  readonly maxReservedBytes: number;
+}
+/** Trusted embedding capability for an already owned live mapping. Never accept
+ * invented addresses or expose this capability as a Script object property. */
+export interface NativeSharedBlockRegistry {
+  readonly base: number;
+  readonly byteLength: number;
+  readonly engineId: number;
+}
+interface BlockLocation {
+  readonly offset: number;
+  readonly base: number;
+  readonly maximum: number;
+  readonly growable: boolean;
+}
+const PART = 4294967296;
+function integer(value: number): boolean {
+  return (
+    Number.isInteger(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER
+  );
+}
+function orderCode(order: SharedOrder): number {
+  return order === "unordered" ? 0 : order === "seq-cst" ? 1 : -1;
+}
+function numberFromScratch(scratch: Uint32Array): number {
+  const lo = scratch[0],
+    hi = scratch[1];
+  if (lo === undefined || hi === undefined || hi > 0x1fffff)
+    throw "NATIVE_SHARED_METADATA_INVARIANT";
+  // Only bounded metadata is numeric. Arbitrary payloads never use this helper.
+  return hi * PART + lo;
+}
+function readNumber(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  offset: number,
+  scratch: Uint32Array,
+  order: number = 1,
+): number {
+  if (
+    host.readSharedWord64(
+      registry.base,
+      registry.byteLength,
+      offset,
+      order,
+      scratch,
+    ) !== 0
+  )
+    throw "NATIVE_SHARED_METADATA_READ";
+  return numberFromScratch(scratch);
+}
+function writeNumber(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  offset: number,
+  value: number,
+): void {
+  if (
+    !integer(value) ||
+    host.writeSharedWord64(
+      registry.base,
+      registry.byteLength,
+      offset,
+      1,
+      value % PART,
+      Math.floor(value / PART),
+    ) !== 0
+  )
+    throw "NATIVE_SHARED_METADATA_WRITE";
+}
+function compareNumber(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  offset: number,
+  expected: number,
+  replacement: number,
+  scratch: Uint32Array,
+): number {
+  if (
+    host.compareExchangeSharedWord64(
+      registry.base,
+      registry.byteLength,
+      offset,
+      expected % PART,
+      Math.floor(expected / PART),
+      replacement % PART,
+      Math.floor(replacement / PART),
+      scratch,
+    ) !== 0
+  )
+    throw "NATIVE_SHARED_METADATA_COMPARE";
+  return numberFromScratch(scratch);
+}
+function roundReservation(length: number, page: number): number {
+  return Math.ceil(Math.max(1, length) / page) * page;
+}
+function ownedWindow(base: number, length: number, page: number): boolean {
+  return (
+    integer(base) && base > 0 && base % page === 0 && integer(base + length)
+  );
+}
+function rollback(
+  host: NativeSharedMemoryHost,
+  base: number,
+  length: number,
+): void {
+  if (host.unmapMemory(base, length) !== 0)
+    throw "NATIVE_SHARED_ROLLBACK_FAILED";
+}
+export function createNativeSharedBlockService(
+  host: NativeSharedMemoryHost,
+  policy: NativeSharedBlockPolicy,
+  atomicHost?: NativeSharedAtomicMemoryHost,
+): SharedResult<NativeSharedBlockService> {
+  const page = policy.pageSize,
+    count = policy.maxBlocks,
+    limit = policy.maxReservedBytes;
+  if (
+    !integer(page) ||
+    page < 8 ||
+    page > 0x40000000 ||
+    (page & (page - 1)) !== 0 ||
+    !integer(count) ||
+    count < 1 ||
+    !integer(limit)
+  )
+    return { ok: false, error: "invalid-length" };
+  const extent = roundReservation(
+    sharedRegistryHeaderBytes + count * sharedBlockDescriptorBytes,
+    page,
+  );
+  if (!integer(extent)) return { ok: false, error: "invalid-length" };
+  const base = host.mapMemory(extent);
+  if (base <= 0) return { ok: false, error: "allocation-limit" };
+  if (!ownedWindow(base, extent, page)) {
+    rollback(host, base, extent);
+    return { ok: false, error: "allocation-limit" };
+  }
+  const registry = { base, byteLength: extent, engineId: base };
+  writeNumber(host, registry, sharedRegistryEngineOffset, base);
+  writeNumber(host, registry, sharedRegistryBlockLimitOffset, count);
+  writeNumber(host, registry, sharedRegistryReservationLimitOffset, limit);
+  writeNumber(host, registry, sharedRegistryPageSizeOffset, page);
+  // Zeroed mapping already holds count/quota/lock = 0. Publish the header last.
+  writeNumber(host, registry, sharedRegistryMagicOffset, sharedRegistryMagic);
+  return { ok: true, value: sharedFacade(host, registry, atomicHost) };
+}
+export function attachNativeSharedBlockService(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  atomicHost?: NativeSharedAtomicMemoryHost,
+): SharedResult<NativeSharedBlockService> {
+  // The caller proves this capability came from an owned live registry mapping.
+  if (
+    !integer(registry.base) ||
+    registry.base <= 0 ||
+    registry.base % 8 !== 0 ||
+    !integer(registry.byteLength) ||
+    registry.byteLength < sharedRegistryHeaderBytes
+  )
+    return { ok: false, error: "invalid-handle" };
+  const scratch = new Uint32Array(2);
+  if (
+    readNumber(host, registry, sharedRegistryMagicOffset, scratch) !==
+      sharedRegistryMagic ||
+    readNumber(host, registry, sharedRegistryEngineOffset, scratch) !==
+      registry.engineId ||
+    registry.engineId !== registry.base
+  )
+    return { ok: false, error: "invalid-handle" };
+  return { ok: true, value: sharedFacade(host, registry, atomicHost) };
+}
+/** Moving managed facade; all mutable authority is scalar native registry data.
+ * Successful mappings are retained through engine lifetime. There is deliberately
+ * no finalizer/destroy API: shutdown must first exclude every agent/operation. */
+export interface NativeSharedBlockService extends SharedBlockService {
+  readonly registry: NativeSharedBlockRegistry;
+}
+function sharedFacade(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  atomicHost: NativeSharedAtomicMemoryHost | undefined,
+): NativeSharedBlockService {
+  function location(
+    handle: number,
+    scratch: Uint32Array,
+  ): BlockLocation | undefined {
+    if (!integer(handle) || handle === 0) return undefined;
+    const count = readNumber(
+      host,
+      registry,
+      sharedRegistryPublishedCountOffset,
+      scratch,
+    );
+    if (handle > count) return undefined;
+    const offset =
+      sharedRegistryHeaderBytes + (handle - 1) * sharedBlockDescriptorBytes;
+    if (
+      readNumber(host, registry, offset + sharedBlockStateOffset, scratch) !==
+      sharedBlockPublished
+    )
+      return undefined;
+    return {
+      offset,
+      base: readNumber(
+        host,
+        registry,
+        offset + sharedBlockAddressOffset,
+        scratch,
+      ),
+      maximum: readNumber(
+        host,
+        registry,
+        offset + sharedBlockMaximumOffset,
+        scratch,
+      ),
+      growable:
+        readNumber(
+          host,
+          registry,
+          offset + sharedBlockGrowableOffset,
+          scratch,
+        ) === 1,
+    };
+  }
+  function create(
+    initial: number,
+    maximum: number,
+    growable: boolean,
+  ): SharedResult<SharedBlockDescriptor> {
+    if (
+      !integer(initial) ||
+      !integer(maximum) ||
+      initial > maximum ||
+      (!growable && initial !== maximum)
+    )
+      return { ok: false, error: "invalid-length" };
+    const scratch = new Uint32Array(2);
+    // No managed allocation or callbacks while holding the publication lock.
+    // Native CAS owns quota/publication authority, never a managed Map/counter.
+    while (
+      compareNumber(host, registry, sharedRegistryLockOffset, 0, 1, scratch) !==
+      0
+    ) {}
+    const count = readNumber(
+        host,
+        registry,
+        sharedRegistryPublishedCountOffset,
+        scratch,
+      ),
+      reserved = readNumber(
+        host,
+        registry,
+        sharedRegistryReservedBytesOffset,
+        scratch,
+      ),
+      limit = readNumber(
+        host,
+        registry,
+        sharedRegistryReservationLimitOffset,
+        scratch,
+      ),
+      blocks = readNumber(
+        host,
+        registry,
+        sharedRegistryBlockLimitOffset,
+        scratch,
+      ),
+      page = readNumber(host, registry, sharedRegistryPageSizeOffset, scratch),
+      reservation = roundReservation(maximum, page);
+    if (
+      count >= blocks ||
+      !integer(reservation) ||
+      reservation > limit - reserved
+    ) {
+      writeNumber(host, registry, sharedRegistryLockOffset, 0);
+      return { ok: false, error: "allocation-limit" };
+    }
+    const base = host.mapMemory(reservation);
+    if (base <= 0) {
+      writeNumber(host, registry, sharedRegistryLockOffset, 0);
+      return { ok: false, error: "allocation-limit" };
+    }
+    if (!ownedWindow(base, reservation, page)) {
+      rollback(host, base, reservation);
+      writeNumber(host, registry, sharedRegistryLockOffset, 0);
+      return { ok: false, error: "allocation-limit" };
+    }
+    const offset =
+      sharedRegistryHeaderBytes + count * sharedBlockDescriptorBytes;
+    writeNumber(host, registry, offset + sharedBlockAddressOffset, base);
+    writeNumber(
+      host,
+      registry,
+      offset + sharedBlockReservationOffset,
+      reservation,
+    );
+    writeNumber(host, registry, offset + sharedBlockMaximumOffset, maximum);
+    writeNumber(host, registry, offset + sharedBlockLengthOffset, initial);
+    writeNumber(
+      host,
+      registry,
+      offset + sharedBlockGrowableOffset,
+      growable ? 1 : 0,
+    );
+    writeNumber(
+      host,
+      registry,
+      offset + sharedBlockStateOffset,
+      sharedBlockPublished,
+    );
+    writeNumber(
+      host,
+      registry,
+      sharedRegistryReservedBytesOffset,
+      reserved + reservation,
+    );
+    writeNumber(host, registry, sharedRegistryPublishedCountOffset, count + 1);
+    writeNumber(host, registry, sharedRegistryLockOffset, 0);
+    return {
+      ok: true,
+      value: {
+        handle: count + 1,
+        blockId: count + 1,
+        maxByteLength: maximum,
+        growable,
+      },
+    };
+  }
+  function describe(handle: number): SharedResult<SharedBlockDescriptor> {
+    const block = location(handle, new Uint32Array(2));
+    return block === undefined
+      ? { ok: false, error: "invalid-handle" }
+      : {
+          ok: true,
+          value: {
+            handle,
+            blockId: handle,
+            maxByteLength: block.maximum,
+            growable: block.growable,
+          },
+        };
+  }
+  function length(handle: number, order: SharedOrder): SharedResult<number> {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const code = orderCode(order);
+    if (code < 0) return { ok: false, error: "invalid-order" };
+    return {
+      ok: true,
+      value: readNumber(
+        host,
+        registry,
+        block.offset + sharedBlockLengthOffset,
+        scratch,
+        code,
+      ),
+    };
+  }
+  function grow(handle: number, target: number): SharedStatus {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return "invalid-handle";
+    if (!block.growable) return "fixed-length";
+    if (!integer(target) || target > block.maximum) return "invalid-length";
+    let current = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+    );
+    for (;;) {
+      if (target < current) return "invalid-length";
+      const observed = compareNumber(
+        host,
+        registry,
+        block.offset + sharedBlockLengthOffset,
+        current,
+        target,
+        scratch,
+      );
+      if (observed === current) return "none";
+      current = observed;
+    }
+  }
+  function readUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    order: SharedOrder,
+  ): SharedResult<number> {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const status = access(offset, width, order, false);
+    if (status !== "none") return { ok: false, error: status };
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+      orderCode(order),
+    );
+    const value = host.readSharedUnsigned(
+      block.base,
+      length,
+      offset,
+      width,
+      orderCode(order),
+    );
+    return value < 0
+      ? { ok: false, error: "invalid-range" }
+      : { ok: true, value };
+  }
+  function writeUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    value: number,
+    order: SharedOrder,
+  ): SharedStatus {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return "invalid-handle";
+    const status = access(offset, width, order, false);
+    if (status !== "none") return status;
+    if (
+      !integer(value) ||
+      value > (width === 1 ? 255 : width === 2 ? 65535 : 4294967295)
+    )
+      return "invalid-value";
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+      orderCode(order),
+    );
+    return host.writeSharedUnsigned(
+      block.base,
+      length,
+      offset,
+      width,
+      value,
+      orderCode(order),
+    ) === 0
+      ? "none"
+      : "invalid-range";
+  }
+  function readWord64(
+    handle: number,
+    offset: number,
+    order: SharedOrder,
+    output: Uint32Array,
+  ): SharedStatus {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return "invalid-handle";
+    const status = access(offset, 8, order, true);
+    if (status !== "none") return status;
+    if (output.length < 2) return "invalid-value";
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+      orderCode(order),
+    );
+    return host.readSharedWord64(
+      block.base,
+      length,
+      offset,
+      orderCode(order),
+      output,
+    ) === 0
+      ? "none"
+      : "invalid-range";
+  }
+  function writeWord64(
+    handle: number,
+    offset: number,
+    order: SharedOrder,
+    lo: number,
+    hi: number,
+  ): SharedStatus {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return "invalid-handle";
+    const status = access(offset, 8, order, true);
+    if (status !== "none") return status;
+    if (!integer(lo) || !integer(hi) || lo > 0xffffffff || hi > 0xffffffff)
+      return "invalid-value";
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+      orderCode(order),
+    );
+    return host.writeSharedWord64(
+      block.base,
+      length,
+      offset,
+      orderCode(order),
+      lo,
+      hi,
+    ) === 0
+      ? "none"
+      : "invalid-range";
+  }
+  function compareExchangeUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    expected: number,
+    replacement: number,
+  ): SharedResult<number> {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const status = access(offset, width, "seq-cst", false);
+    if (status !== "none") return { ok: false, error: status };
+    const maximum = width === 1 ? 255 : width === 2 ? 65535 : 4294967295;
+    if (
+      !integer(expected) ||
+      expected > maximum ||
+      !integer(replacement) ||
+      replacement > maximum
+    )
+      return { ok: false, error: "invalid-value" };
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+    );
+    const atomic = atomicHost;
+    if (atomic === undefined) throw "NATIVE_SHARED_ATOMIC_AUTHORITY";
+    const value = atomic.compareExchangeSharedUnsigned(
+      block.base,
+      length,
+      offset,
+      width,
+      expected,
+      replacement,
+    );
+    return value < 0
+      ? { ok: false, error: "invalid-range" }
+      : { ok: true, value };
+  }
+  function compareExchangeWord64(
+    handle: number,
+    offset: number,
+    expectedLo: number,
+    expectedHi: number,
+    replacementLo: number,
+    replacementHi: number,
+    output: Uint32Array,
+  ): SharedStatus {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return "invalid-handle";
+    const status = access(offset, 8, "seq-cst", true);
+    if (status !== "none") return status;
+    if (
+      output.length < 2 ||
+      !integer(expectedLo) ||
+      expectedLo > 0xffffffff ||
+      !integer(expectedHi) ||
+      expectedHi > 0xffffffff ||
+      !integer(replacementLo) ||
+      replacementLo > 0xffffffff ||
+      !integer(replacementHi) ||
+      replacementHi > 0xffffffff
+    )
+      return "invalid-value";
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+    );
+    return host.compareExchangeSharedWord64(
+      block.base,
+      length,
+      offset,
+      expectedLo,
+      expectedHi,
+      replacementLo,
+      replacementHi,
+      output,
+    ) === 0
+      ? "none"
+      : "invalid-range";
+  }
+  const atomics: SharedBlockAtomics | undefined =
+    atomicHost === undefined
+      ? undefined
+      : {
+          compareExchangeUnsigned: (
+            handle,
+            offset,
+            width,
+            expected,
+            replacement,
+          ): SharedResult<number> =>
+            compareExchangeUnsigned(
+              handle,
+              offset,
+              width,
+              expected,
+              replacement,
+            ),
+          compareExchangeWord64: (
+            handle,
+            offset,
+            expectedLo,
+            expectedHi,
+            replacementLo,
+            replacementHi,
+            output,
+          ): SharedStatus =>
+            compareExchangeWord64(
+              handle,
+              offset,
+              expectedLo,
+              expectedHi,
+              replacementLo,
+              replacementHi,
+              output,
+            ),
+        };
+  return {
+    engineId: registry.engineId,
+    registry,
+    atomics,
+    create: (initial, maximum, growable): SharedResult<SharedBlockDescriptor> =>
+      create(initial, maximum, growable),
+    describe: (handle): SharedResult<SharedBlockDescriptor> => describe(handle),
+    length: (handle, order): SharedResult<number> => length(handle, order),
+    grow: (handle, target): SharedStatus => grow(handle, target),
+    readUnsigned: (handle, offset, width, order): SharedResult<number> =>
+      readUnsigned(handle, offset, width, order),
+    writeUnsigned: (handle, offset, width, value, order): SharedStatus =>
+      writeUnsigned(handle, offset, width, value, order),
+    readWord64: (handle, offset, order, output): SharedStatus =>
+      readWord64(handle, offset, order, output),
+    writeWord64: (handle, offset, order, lo, hi): SharedStatus =>
+      writeWord64(handle, offset, order, lo, hi),
+  };
+}
+function access(
+  offset: number,
+  width: number,
+  order: SharedOrder,
+  word: boolean,
+): SharedStatus {
+  if (orderCode(order) < 0) return "invalid-order";
+  if (word ? width !== 8 : width !== 1 && width !== 2 && width !== 4)
+    return "invalid-width";
+  if (!integer(offset)) return "invalid-range";
+  return offset % width === 0 ? "none" : "unaligned";
+}

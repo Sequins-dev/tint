@@ -1,0 +1,29 @@
+{
+  "kind": "direct-eval-site-view-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1604547c92b3cda39d112aea86022122d5da27521c19405ea358cd29f59d745a",
+    "files": 551
+  },
+  "nativeReport": "docs/results/native-direct-eval-site-v2.json",
+  "workspaceGate": {
+    "tests": 4060,
+    "log": ".tint-bootstrap/direct-eval-site-workspace-check-v1.log"
+  },
+  "fixtureFollowupChecks": [
+    ".tint-bootstrap/direct-eval-site-focused-v2.log",
+    ".tint-bootstrap/direct-eval-site-host-types-v2.log"
+  ],
+  "scope": [
+    "typed DirectEvalSite and linked DirectEvalCatch records",
+    "compiler-bound exact record view",
+    "unrelated records and primitive rejection",
+    "ScriptRecord.hostDefined carrier survives 32 MiB allocation churn"
+  ],
+  "pending": [
+    "DE2 call-site plumbing",
+    "Test262 capture-gated view retention",
+    "DE3 eval context parsing and binding",
+    "DE4 direct string eval execution"
+  ]
+}

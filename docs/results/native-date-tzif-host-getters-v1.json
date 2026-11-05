@@ -1,0 +1,120 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "ff75839508a525ebce313676fc4cc2b91dbabdda9c4972d10c7c7c293deb456a",
+      "files": 424
+    },
+    "imageSha256": "c0d7415c4f914fedf0f52c3c1ae4f028d3f34c3aa51b7fbf6d5244404cf67ead",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(0),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1970,0,1,4,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "d806765f791072ecfb7e5d6b7de024c33d4dca329e74b44e28dfe722245707b5"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(946684800000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2000,0,1,6,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "bdcb6133a79e12897b0fb30c34f445b60da69cc5327d7fc95ce4a9c84a3e2a14"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(1735689600000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2025,0,1,3,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "fbad702ba0e734e509be5806950761245923546dde690d0c5f43a8f976f51fe2"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Date(1720000000000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,6,3,3,17,46,40,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "5109eb621afa2328e7853c6c12de139e65d78648adc7e43968ffffb03bda3767"
+      },
+      {
+        "index": 4,
+        "source": "const d=new Date(1710053999000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,2,10,0,14,59,59,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "317772b17df416bc6ed784c90769e66abce274046bc59d11ae700c27e309c134"
+      },
+      {
+        "index": 5,
+        "source": "const d=new Date(1710054000000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,2,10,0,15,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "156fd4a2f1f4b65a37d53c2c311a7d07559f1f1f320b2255a59aa397a8fc3860"
+      },
+      {
+        "index": 6,
+        "source": "const d=new Date(-1),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1970,0,1,4,7,59,59,999,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "70bea639b0f69acb3d3e6f6cab0d306359a39d9946a1a48ce7198fd53b8b1818"
+      },
+      {
+        "index": 7,
+        "source": "if(!Number.isNaN(new Date(NaN).getTimezoneOffset()))throw 1;let caught=false;try{Date.prototype.getHours.call(new Proxy(new Date(0),{}));}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;",
+        "sha256": "f0ee53766cd531c92fa0d0179ac14ec119fd9411bbad91f625a090c82a9a2c9a"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

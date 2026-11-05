@@ -1,0 +1,39 @@
+{
+  "kind": "node-reference-diagnostic",
+  "conformance": false,
+  "node": "v24.12.0",
+  "specification": "https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-date.prototype.setutcseconds",
+  "cases": [
+    {
+      "case": "valid receiver changes to NaN during second conversion",
+      "actual": {
+        "result": "NaN",
+        "stored": "NaN"
+      },
+      "expected": {
+        "result": 1000,
+        "stored": 1000
+      },
+      "pinnedTest": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-valid.js"
+    },
+    {
+      "case": "invalid receiver changes to zero during second conversion",
+      "actual": {
+        "result": "1000",
+        "stored": "1000"
+      },
+      "expected": {
+        "result": "NaN",
+        "stored": 0
+      },
+      "pinnedTest": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-invalid.js"
+    },
+    {
+      "case": "negative year UTC string round trip",
+      "source": "Fri, 01 Jan -0001 00:00:00 GMT",
+      "actual": "NaN",
+      "expected": -62198755200000
+    }
+  ],
+  "scope": "Reference discrepancies only; native results and complete selections are recorded separately."
+}

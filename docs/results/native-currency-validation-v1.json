@@ -1,0 +1,29 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T03:18:52.779506+00:00",
+  "scope": "Standard-notation currency symbol, narrowSymbol and code formatting, accounting signs, exact currency digits, parts/ranges and option coercion",
+  "sourceSnapshot": {
+    "sha256": "75c9a10e4ee75a708def2956716296565e984ed613d5cd2724d0410f85ec00ca",
+    "files": 490
+  },
+  "fixtures": {
+    "passed": 6,
+    "total": 6,
+    "reports": [
+      "native-currency-case-0-v1.json",
+      "native-currency-case-1-v1.json",
+      "native-currency-case-2-v1.json",
+      "native-currency-case-3-v1.json",
+      "native-currency-case-4-v1.json",
+      "native-currency-case-5-v1.json"
+    ]
+  },
+  "workspaceChecks": {
+    "tests": 3391,
+    "passed": 3391,
+    "typeChecks": "passed",
+    "boundaries": "passed",
+    "format": "passed"
+  },
+  "limitations": "Bespoke native regressions do not count as Test262 passes. Currency names and nonstandard notations remain unsupported. Frozen full-family rerun queued separately. Arabic/Persian data-dependent differences against Node retained in external differential probe; pinned CLDR49 patterns are preserved."
+}

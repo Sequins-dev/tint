@@ -1,0 +1,22 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-9oTB7Q/decimal-quantities",
+  "sourceSnapshot": {
+    "sha256": "68d00fdb6b96d6e7a486e42a9ef6f081ba340cd54c18fdedc33b2a9b0969c938",
+    "files": 467
+  },
+  "imageSha256": "7b2de942aac1a9349e6098f48a5ed10fdd0ebe5acfdea0a3a8f6099f1bea3929",
+  "fixture": "tools/verify-hosted-decimal-quantities.ts",
+  "initial": {
+    "state": 5,
+    "pid": 25277
+  },
+  "outcome": {
+    "state": 10,
+    "exitStatus": 42
+  },
+  "success": true,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-9oTB7Q/decimal-quantities\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-9oTB7Q/decimal-quantities' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(180)\\nport_socket.bind(\\\"/tmp/tint-decimal-core-snmrcR/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-decimal-core-snmrcR/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-decimal-core-snmrcR/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-9oTB7Q/decimal-quantities\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-decimal-core-snmrcR/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(180)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-decimal-core-snmrcR/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-decimal-core-snmrcR/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n26\n(lldb) continue\nProcess 25277 resuming\nProcess 25277 exited with status = 42 (0x0000002a)\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-decimal-core-snmrcR/outcome.json\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus()})); lldb.debugger.HandleCommand('bt 15') if p.GetState()!=lldb.eStateExited else None\n31\n",
+  "stderr": ""
+}

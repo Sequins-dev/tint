@@ -1,0 +1,36 @@
+{
+  "kind": "native-syntax-validation-incomplete",
+  "conformance": false,
+  "testSourcesExecuted": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": ".",
+  "variants": 103264,
+  "observed": 101939,
+  "counts": {
+    "accepted": 93247,
+    "negative-rejected": 8692
+  },
+  "mismatchesBeforeFault": 0,
+  "nativeFault": {
+    "index": 101939,
+    "case": {
+      "path": "staging/sm/String/string-upper-lower-mapping.js",
+      "sha256": "9a4ddd91a0916bb7b02d96ae8368bf51047b835b8eb04a192f3714b598945ede",
+      "variant": "sloppy",
+      "negative": false
+    },
+    "signal": "EXC_BREAKPOINT",
+    "site": "ts-syntax parser string expression construction",
+    "cause": "under investigation"
+  },
+  "resources": {
+    "managedBytes": 268435456,
+    "allocationCapacity": 4194304,
+    "stackBytes": 268435456
+  },
+  "unobserved": 1325,
+  "log": {
+    "path": ".tint-bootstrap/native-parser-full-v2/native.log",
+    "sha256": "7d199261e72c97696f53e639aa4bfb5565b51995a9302b82446eca6e22ef3912"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "sourceReport": "docs/results/test262-iterator-native-v1.json",
+  "scope": "Classification of original non-passes; totals unchanged. result-is-iterator uses wellKnownIntrinsicObjects.js dynamic Function construction.",
+  "categories": {
+    "unsupported-dynamic-Function-construction": {
+      "count": 6,
+      "observations": [
+        {
+          "path": "built-ins/Iterator/proto-from-ctor-realm.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/proto-from-ctor-realm.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zip/result-is-iterator.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zip/result-is-iterator.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-JSON.stringify-harness-dependency": {
+      "count": 12,
+      "observations": [
+        {
+          "path": "built-ins/Iterator/zip/basic-longest.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zip/basic-longest.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zip/basic-shortest.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zip/basic-shortest.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zip/basic-strict.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zip/basic-strict.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-longest.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-longest.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-shortest.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-shortest.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-strict.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Iterator/zipKeyed/basic-strict.js",
+          "variant": "strict"
+        }
+      ]
+    }
+  }
+}

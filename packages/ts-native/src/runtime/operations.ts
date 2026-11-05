@@ -1,0 +1,63 @@
+export const listOperations: readonly string[] = [
+  "create",
+  "read",
+  "write",
+  "push",
+  "length",
+  "has",
+  "delete",
+  "resize",
+];
+export const setOperations: readonly string[] = [
+  "create",
+  "has",
+  "add",
+  "delete",
+  "clear",
+  "size",
+  "iterator.create",
+  "iterator.advance",
+  "iterator.read",
+  "clone",
+];
+export const mapOperations: readonly string[] = [
+  "create",
+  "get",
+  "has",
+  "set",
+  "delete",
+  "clear",
+  "size",
+  "iterator.create",
+  "iterator.advance",
+  "iterator.key",
+  "iterator.value",
+];
+
+export const primitiveOperations: readonly string[] = [
+  "fromNull",
+  "isNullish",
+  "fromUndefined",
+  "fromNumber",
+  "fromBoolean",
+  "fromString",
+  "fromOptionalNumber",
+  "fromOptionalString",
+  "fromOptionalBoolean",
+  "fromOptionalBox",
+  "readNumber",
+  "readBoolean",
+  "readString",
+  "readOptionalNumber",
+  "readOptionalString",
+  "readOptionalBoolean",
+  "kindOf",
+  "truthy",
+  "strictEqual",
+  "canonicalKey",
+  "canonicalOptionalNumber",
+];
+export const numberTextOperations: readonly string[] = [
+  "toString",
+  "fromString",
+];

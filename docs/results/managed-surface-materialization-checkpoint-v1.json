@@ -1,0 +1,32 @@
+{
+  "kind": "managed-surface-materialization-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "64d76cc9594e7d3db3ebe9b2799b7bb418a275954fd3adaace200c0af4697a9f",
+    "files": 527
+  },
+  "selfBuild": "docs/results/bootstrap-managed-surface-materialization-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-surface-materialization-compiler-v1.json",
+    "docs/results/native-managed-surface-materialization-runtime-v1.json"
+  ],
+  "workspaceTests": 3789,
+  "bytes": 65843874,
+  "sha256": "8a6d69309b54af5b206d67e966b73d7dc2ce731e39ee469d5ca33d1cd0d0dab1",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-surface-materialization-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-surface-materialization-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "AOT layout and signature agreement before pruning",
+    "Managed publication and general eval/Function"
+  ]
+}

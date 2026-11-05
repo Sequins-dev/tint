@@ -1,0 +1,10 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-hosted-byte-storage.ts",
+  "fixtureSha256": "0368e4d69de234fceac21fecd9c35628019e910e4da37a086acd67f3f320cdd1",
+  "nativeExitStatus": 42,
+  "scope": "Byte-storage lifecycle and overlap-safe checked copying.",
+  "log": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-byte-storage-alcumQ/byte-storage\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-byte-storage-alcumQ/byte-storage' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 99979 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-byte-storage-alcumQ/byte-storage' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 99979 resuming\nProcess 99979 exited with status = 42 (0x0000002a)\n(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\n"
+}

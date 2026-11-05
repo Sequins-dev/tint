@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v2",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/RegExp/property-escapes/generated/ASCII.js",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 2,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/ASCII.js",
+      "sha256": "ab1a25a18c096b3adb5d58d1e0dd57154f1e87f20d415888712e8953e049c7c1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-unicode-property-escapes"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X6csrk/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X6csrk/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 37192 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X6csrk/test' (arm64)\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X6csrk/pid\",'w').write(str(p.GetProcessID()))\n5\n(lldb) continue\nProcess 37192 resuming\nProcess 37192 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x104db6490)\n    frame #0: 0x0000000104db6490 test`\n->  0x104db6490: brk    #0x3\n    0x104db6494: ldr    x9, [sp, #0x10]\n    0x104db6498: adr    x16, 0x104db6498\n    0x104db649c: mov    x17, #0x9d60              ; =40288\n"
+      },
+      "status": "crash",
+      "elapsedMs": 9205.701375
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/ASCII.js",
+      "sha256": "ab1a25a18c096b3adb5d58d1e0dd57154f1e87f20d415888712e8953e049c7c1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-unicode-property-escapes"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-p8XmVL/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-p8XmVL/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 37266 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-p8XmVL/test' (arm64)\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-p8XmVL/pid\",'w').write(str(p.GetProcessID()))\n5\n(lldb) continue\nProcess 37266 resuming\nProcess 37266 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x10245a490)\n    frame #0: 0x000000010245a490 test`\n->  0x10245a490: brk    #0x3\n    0x10245a494: ldr    x9, [sp, #0x10]\n    0x10245a498: adr    x16, 0x10245a498\n    0x10245a49c: mov    x17, #0x9d94              ; =40340\n"
+      },
+      "status": "crash",
+      "elapsedMs": 8505.963334
+    }
+  ]
+}

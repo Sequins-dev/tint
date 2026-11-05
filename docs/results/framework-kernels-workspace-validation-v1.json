@@ -1,0 +1,65 @@
+{
+  "kind": "framework-migration-workspace-validation",
+  "schemaVersion": 1,
+  "scope": "foundation generic kernels packaging migration",
+  "sourceIdentity": {
+    "sha256": "49c9d453308322cd63662365c0315d37722b559d1a832a44da94eacc447b9d71",
+    "files": 492,
+    "importGrants": 423,
+    "packages": 80
+  },
+  "implementationParity": [
+    {
+      "from": ".tint-bootstrap/source-framework-source-selfbuild-v1/packages/word-buffer/src/index.ts",
+      "to": "packages/foundation/src/binary/word-buffer.ts",
+      "byteIdentical": true,
+      "sha256": "6201509e675df38a91391e045f6d6e7f02c2064a7ee7fe038b7d112d58063ee1"
+    },
+    {
+      "from": ".tint-bootstrap/source-framework-source-selfbuild-v1/packages/dataflow/src/index.ts",
+      "to": "packages/foundation/src/graph/dataflow.ts",
+      "byteIdentical": true,
+      "sha256": "a7501af589b87439aec49bea5cafba244e31fcf9c6e3a4a90909cbe688fc0872"
+    },
+    {
+      "from": ".tint-bootstrap/source-framework-source-selfbuild-v1/packages/bit-vector/src/index.ts",
+      "to": "packages/foundation/src/collections/bit-vector.ts",
+      "byteIdentical": true,
+      "sha256": "c1c556a088b07e9bdfe22682eea1a1c0d9a800d6cee8d3c778f1913e19c7a161"
+    }
+  ],
+  "checks": [
+    {
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-build-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-testtypes-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-alltests-v1.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types *.json pnpm-workspace.yaml",
+      "exitCode": 0,
+      "log": "/tmp/tint-kernels-formatcheck-v1.log"
+    }
+  ],
+  "nativeExecution": "not performed by this agent; parent owns serialized native validation",
+  "testSummary": "\u2139 tests 3459\n\u2139 suites 0\n\u2139 pass 3459\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 16192.86375"
+}

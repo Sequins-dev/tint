@@ -1,0 +1,186 @@
+import { partialDateFrom } from "./temporal-partial-date-conversion.ts";
+import {
+  epochDayFromGregorian,
+  daysInGregorianMonth,
+  type GregorianDate,
+} from "@tint/foundation/chrono/gregorian-calendar";
+import { formatISODate } from "@tint/foundation/chrono/iso-date-time";
+import {
+  createObject,
+  createConstructorObject,
+  type OrdinaryObject,
+  type ObjectHooks,
+} from "./operations.ts";
+import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import { temporalInteger, requireISOCalendar } from "./temporal-coercion.ts";
+import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
+import { temporalStringOption } from "./temporal-options.ts";
+import {
+  builtinProperty,
+  builtinFunction,
+  builtinFunctionMetadata,
+} from "./intrinsics.ts";
+import { constructorPrototype } from "./functions.ts";
+import { viewObjectValue } from "./values.ts";
+import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
+
+/** Partial-date slots retain the reference ISO components, independently of exposed fields. */
+export function installTemporalPartialDates(
+  temporal: OrdinaryObject<ScriptPropertyKey, unknown>,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): void {
+  for (const yearMonth of [true, false]) {
+    if (yearMonth === undefined) throw "TEMPORAL_PARTIAL_KIND_INVARIANT";
+    const name = yearMonth ? "PlainYearMonth" : "PlainMonthDay";
+    const prototype = yearMonth
+      ? realm.temporalPlainYearMonthPrototype
+      : realm.temporalPlainMonthDayPrototype;
+    function extract(receiver: unknown): GregorianDate {
+      const object = viewObjectValue(receiver, realm.objectPrototype);
+      const date =
+        object === undefined
+          ? undefined
+          : yearMonth
+            ? object.internalTemporalPlainYearMonth
+            : object.internalTemporalPlainMonthDay;
+      if (date === undefined) throw createRuntimeError(realm, "type");
+      return date;
+    }
+    const constructor = createConstructorObject<ScriptPropertyKey, unknown>(
+      realm.functionPrototype,
+      (receiver, args): unknown => {
+        throw createRuntimeError(realm, "type");
+      },
+      (args, target): unknown => {
+        const first = temporalInteger(args[0], realm, hooks);
+        const second = temporalInteger(args[1], realm, hooks);
+        requireISOCalendar(args[2], realm);
+        const reference =
+          args[3] === undefined
+            ? yearMonth
+              ? 1
+              : 1972
+            : temporalInteger(args[3], realm, hooks);
+        const year = yearMonth ? first : reference;
+        const month = yearMonth ? second : first;
+        const day = yearMonth ? reference : second;
+        const epoch = epochDayFromGregorian(year, month, day);
+        if (
+          yearMonth
+            ? day < 1 ||
+              day > daysInGregorianMonth(year, month) ||
+              month < 1 ||
+              month > 12 ||
+              year < -271821 ||
+              year > 275760 ||
+              (year === -271821 && month < 4) ||
+              (year === 275760 && month > 9)
+            : epoch === undefined || epoch < -100000001 || epoch > 100000000
+        )
+          throw createRuntimeError(realm, "range");
+        const object = createObject<ScriptPropertyKey, unknown>(
+          constructorPrototype(
+            target,
+            yearMonth
+              ? "temporal-plain-year-month"
+              : "temporal-plain-month-day",
+            realm,
+            hooks,
+          ),
+        );
+        const date: GregorianDate = { year, month, day };
+        if (yearMonth) object.internalTemporalPlainYearMonth = date;
+        else object.internalTemporalPlainMonthDay = date;
+        object.internalTemporalCalendar = "iso8601";
+        return object;
+      },
+    );
+    builtinProperty(
+      constructor,
+      "from",
+      builtinFunction(
+        realm.functionPrototype,
+        "from",
+        1,
+        (receiver, args): unknown => {
+          const data = partialDateFrom(
+            args[0],
+            args[1],
+            yearMonth,
+            realm,
+            hooks,
+          );
+          const object = createObject<ScriptPropertyKey, unknown>(prototype);
+          if (yearMonth) object.internalTemporalPlainYearMonth = data;
+          else object.internalTemporalPlainMonthDay = data;
+          object.internalTemporalCalendar = "iso8601";
+          return object;
+        },
+        hooks,
+      ),
+      true,
+      true,
+      hooks,
+    );
+    builtinFunctionMetadata(constructor, name, 2, hooks);
+    builtinProperty(constructor, "prototype", prototype, false, false, hooks);
+    builtinProperty(prototype, "constructor", constructor, true, true, hooks);
+    builtinProperty(
+      prototype,
+      wellKnownSymbol(realm.symbolRegistry, "toStringTag"),
+      "Temporal." + name,
+      false,
+      true,
+      hooks,
+    );
+    installISOCalendarAccessors(
+      prototype,
+      realm,
+      hooks,
+      extract,
+      yearMonth ? "year-month" : "month-day",
+    );
+    for (const method of ["toString", "toJSON", "valueOf"]) {
+      if (method === undefined) throw "TEMPORAL_PARTIAL_METHOD_INVARIANT";
+      builtinProperty(
+        prototype,
+        method,
+        builtinFunction(
+          realm.functionPrototype,
+          method,
+          0,
+          (receiver, args): unknown => {
+            if (method === "valueOf") throw createRuntimeError(realm, "type");
+            const date = extract(receiver);
+            const display =
+              method === "toString"
+                ? temporalStringOption(
+                    args[0],
+                    "calendarName",
+                    "auto",
+                    ["auto", "always", "never", "critical"],
+                    realm,
+                    hooks,
+                  )
+                : "auto";
+            const full = formatISODate(date);
+            if (display === "always" || display === "critical")
+              return (
+                full +
+                (display === "critical" ? "[!u-ca=iso8601]" : "[u-ca=iso8601]")
+              );
+            return yearMonth
+              ? full.slice(0, full.length - 3)
+              : full.slice(full.length - 5);
+          },
+          hooks,
+        ),
+        true,
+        true,
+        hooks,
+      );
+    }
+    builtinProperty(temporal, name, constructor, true, true, hooks);
+  }
+}

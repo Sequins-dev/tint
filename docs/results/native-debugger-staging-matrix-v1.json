@@ -1,0 +1,48 @@
+{
+  "kind": "debugger-staging-diagnostic",
+  "conformance": false,
+  "observations": [
+    {
+      "method": "copy",
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw",
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/test",
+      "sha256": "bc4920c5c07e645c499e3123adba5035b74dfa557a5efb95d59cec06e8a8a575",
+      "data": {
+        "initial.json": "{\"state\": 0, \"pid\": 0}",
+        "debugserver.log": "",
+        "debugserver-pid": "27695"
+      },
+      "status": 1,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/test' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(10)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(10)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-vBnRpw/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n22\n1\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+      "stderr": "error: Command requires a current process.\n"
+    },
+    {
+      "method": "write-executable",
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK",
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/test",
+      "sha256": "bc4920c5c07e645c499e3123adba5035b74dfa557a5efb95d59cec06e8a8a575",
+      "data": {
+        "initial.json": "{\"state\": 0, \"pid\": 0}",
+        "debugserver.log": "",
+        "debugserver-pid": "27727"
+      },
+      "status": 1,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/test' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(10)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(10)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-GKkZaK/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n22\n1\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+      "stderr": "error: Command requires a current process.\n"
+    },
+    {
+      "method": "write-then-chmod",
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4",
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/test",
+      "sha256": "bc4920c5c07e645c499e3123adba5035b74dfa557a5efb95d59cec06e8a8a575",
+      "data": {
+        "initial.json": "{\"state\": 0, \"pid\": 0}",
+        "debugserver.log": "",
+        "debugserver-pid": "27833"
+      },
+      "status": 1,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/test' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(10)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(10)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-staging-6OvZo4/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n22\n1\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+      "stderr": "error: Command requires a current process.\n"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "69d238ee686e17fc7829738c4e86ebdb04c26f9361b8598f276a2ffb306bd5a6",
+      "files": 446
+    },
+    "imageSha256": "e2e8c84ef37e62c81eaaaf6c25ad394eafdb72ecc1ed40a37099cd80099ceb55",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const other=$262.createRealm().global;const target=other.Function(\"return this;\");target.prototype=null;const f=Reflect.construct(Function,[\"return this;\"],target);if(Object.getPrototypeOf(f)!==other.Function.prototype||f()!==globalThis)throw 1;",
+        "sha256": "551d822a524fb1cc1277fbb00ac4550abc959cf11db7127b499e987eb051c38e"
+      },
+      {
+        "index": 1,
+        "source": "const other=$262.createRealm().global;const f=other.Function(\"return this;\");if(f()!==other||f.call(null)!==other||f.call(undefined)!==other)throw 1;const strict=other.Function(\"'use strict';return this;\");if(strict.call(globalThis)!==globalThis||strict()!==undefined)throw 2;",
+        "sha256": "b73ffd42bf0333151c880758dbb1dc6225e1a890fec81aaf0c10afed60cf9714"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-set-identities.ts",
+  "fixtureSha256": "b0af7131ed3fe0fc8070cb140de708688ced8b18db6b89ad8a878608f806bd08",
+  "imageSha256": "e09942564b6251e3e5ed98b493a47f5fe350da6355de04b955b0866805f8bb3e",
+  "cases": 1,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-2bBgFc/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-2bBgFc/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+      }
+    }
+  ]
+}

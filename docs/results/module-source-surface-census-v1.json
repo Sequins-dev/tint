@@ -1,0 +1,22 @@
+{
+  "kind": "module-source-surface-census",
+  "records": 191,
+  "signatures": 167,
+  "anchors": 89,
+  "collectionKeys": 47,
+  "providers": 49,
+  "slots": 421,
+  "checkedFunctions": 6637,
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "08c97ee7853f91e4626031e25f4afa684d558e032aa3943a003a41a4d3e9ce08",
+    "files": 562
+  },
+  "previous": "docs/results/module-loading-surface-census-v1.json",
+  "notes": [
+    "Removed unused GraphLoadingState promise hooks, reducing reachable contracts",
+    "ModuleRecord.executionFault changes its physical layout; existing exact layout and ABI checks pass",
+    "Managed vocabulary stays at 128 entries"
+  ],
+  "validation": ".tint-bootstrap/module-source-surface-census-v1.log"
+}

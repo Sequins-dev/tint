@@ -1,0 +1,357 @@
+{
+  "kind": "native-script-root-host-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "lowering": "docs/results/native-script-root-lowering-v1.json",
+  "compilerGate": "docs/results/bootstrap-dynamic-import-v1.json",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "Script in a gated mixed batch",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-0-v1.json"
+    },
+    {
+      "selectedCase": 1,
+      "name": "cyclic modules and hoisted functions",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-1-v1.json"
+    },
+    {
+      "selectedCase": 2,
+      "name": "resolution fails before either module body",
+      "expected": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "report": "docs/results/native-script-root-host-case-2-v1.json"
+    },
+    {
+      "selectedCase": 3,
+      "name": "runtime errors retain the runtime phase",
+      "expected": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "report": "docs/results/native-script-root-host-case-3-v1.json"
+    },
+    {
+      "selectedCase": 4,
+      "name": "loader miss is sticky unsupported",
+      "expected": {
+        "kind": "unsupported"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-script-root-host-case-4-v1.json"
+    },
+    {
+      "selectedCase": 5,
+      "name": "module jobs reach the shared async checkpoint",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-5-v1.json"
+    },
+    {
+      "selectedCase": 6,
+      "name": "harness errors retain the harness phase",
+      "expected": {
+        "kind": "error",
+        "phase": "harness",
+        "type": "RangeError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "harness",
+        "type": "RangeError",
+        "message": "native harness threw"
+      },
+      "report": "docs/results/native-script-root-host-case-6-v1.json"
+    },
+    {
+      "selectedCase": 7,
+      "name": "native fixture parse error precedes module evaluation",
+      "expected": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError"
+      },
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "report": "docs/results/native-script-root-host-case-7-v1.json"
+    },
+    {
+      "selectedCase": 8,
+      "name": "native acceptance without a compiled fixture stays unsupported",
+      "expected": {
+        "kind": "unsupported"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-script-root-host-case-8-v1.json"
+    },
+    {
+      "selectedCase": 9,
+      "name": "invalid source decoding stays unsupported",
+      "expected": {
+        "kind": "unsupported"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-script-root-host-case-9-v1.json"
+    },
+    {
+      "selectedCase": 10,
+      "name": "an unknown verdict is a host invariant",
+      "expected": {
+        "kind": "crash",
+        "detail": "native module host invariant"
+      },
+      "outcome": {
+        "kind": "crash",
+        "detail": "native module host invariant"
+      },
+      "report": "docs/results/native-script-root-host-case-10-v1.json"
+    },
+    {
+      "selectedCase": 11,
+      "name": "module import.meta identity and ordinary properties",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-11-v1.json"
+    },
+    {
+      "selectedCase": 12,
+      "name": "dynamic import loads and returns the namespace",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-12-v1.json"
+    },
+    {
+      "selectedCase": 13,
+      "name": "repeated dynamic imports share namespace and one evaluation",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-13-v1.json"
+    },
+    {
+      "selectedCase": 14,
+      "name": "dynamic import invalid options reject without loading",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-14-v1.json"
+    },
+    {
+      "selectedCase": 15,
+      "name": "dynamic specifier coercion rejects with original value",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-15-v1.json"
+    },
+    {
+      "selectedCase": 16,
+      "name": "module dynamic self-import resolves its existing namespace",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-16-v1.json"
+    },
+    {
+      "selectedCase": 17,
+      "name": "Script-root namespace import",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-17-v1.json"
+    },
+    {
+      "selectedCase": 18,
+      "name": "Script-root repeated imports share namespace and evaluation",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-18-v1.json"
+    },
+    {
+      "selectedCase": 19,
+      "name": "Script-root literal missing sibling rejects TypeError",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-19-v1.json"
+    },
+    {
+      "selectedCase": 20,
+      "name": "Script-root empty table accepts an empty specifier promise",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-20-v1.json"
+    },
+    {
+      "selectedCase": 21,
+      "name": "Script-root empty specifier rejects TypeError",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-21-v1.json"
+    },
+    {
+      "selectedCase": 22,
+      "name": "Script-root undiscovered computed sibling stays unsupported",
+      "expected": {
+        "kind": "unsupported"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-script-root-host-case-22-v1.json"
+    },
+    {
+      "selectedCase": 23,
+      "name": "Script-root self import runs a separate module once",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-23-v1.json"
+    },
+    {
+      "selectedCase": 24,
+      "name": "Script-root repeated evaluation errors preserve identity",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-24-v1.json"
+    },
+    {
+      "selectedCase": 25,
+      "name": "Script-root fixture linking errors reject SyntaxError",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-25-v1.json"
+    },
+    {
+      "selectedCase": 26,
+      "name": "Script-root sloppy with does not use the module grammar",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-26-v1.json"
+    },
+    {
+      "selectedCase": 27,
+      "name": "Script-root invalid fixture uses the native syntax verdict",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-27-v1.json"
+    },
+    {
+      "selectedCase": 28,
+      "name": "Script-root imports from promise jobs preserve the referrer",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-script-root-host-case-28-v1.json"
+    }
+  ]
+}

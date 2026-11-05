@@ -1,0 +1,7 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  String.raw`if(!Object.is(Math.hypot(),0)||!Object.is(Math.hypot(-0,-0),0)||Math.hypot(3,4)!==5||Math.hypot(-3,-4)!==5||Math.hypot(-7)!==7)throw 1;if(Math.hypot(NaN,Infinity)!==Infinity||Math.hypot(-Infinity,NaN)!==Infinity||!Number.isNaN(Math.hypot(NaN,1)))throw 2;`,
+  String.raw`for(const scale of [1e-200,1e200])if(Math.abs(Math.hypot(3*scale,4*scale)/(5*scale)-1)>4*Number.EPSILON)throw 1;if(Math.hypot(Number.MIN_VALUE)!==Number.MIN_VALUE||Math.hypot(Number.MAX_VALUE,Number.MIN_VALUE)!==Number.MAX_VALUE)throw 2;`,
+  String.raw`let log="";const a={valueOf(){log+="a";return NaN;}},b={valueOf(){log+="b";return Infinity;}},c={valueOf(){log+="c";return 3;}};if(Math.hypot(a,b,c)!==Infinity||log!=="abc")throw 1;const marker={};let caught;try{Math.hypot(Infinity,{valueOf(){throw marker;}});}catch(e){caught=e;}if(caught!==marker)throw 2;for(const value of [1n,Symbol()]){let error=false;try{Math.hypot(Infinity,value);}catch(e){error=e instanceof TypeError;}if(!error)throw 3;}`,
+  String.raw`if(Math.hypot("3",true,null,[])!==Math.sqrt(10)||!Number.isNaN(Math.hypot(undefined)))throw 1;const d=Object.getOwnPropertyDescriptor(Math,"hypot");if(d.enumerable||!d.writable||!d.configurable||Math.hypot.length!==2||Math.hypot.name!=="hypot")throw 2;let caught=false;try{new Math.hypot();}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;`,
+]);

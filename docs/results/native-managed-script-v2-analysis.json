@@ -1,0 +1,23 @@
+{
+  "kind": "native-managed-script-failure-analysis",
+  "conformance": false,
+  "observation": "native-managed-script-v2.json",
+  "diagnostics": [
+    "native-managed-script-allocation-diagnostic-v2.json",
+    "native-managed-script-allocation-diagnostic-v3.json"
+  ],
+  "finding": "The larger pointer-fixup workspace passes collection. Compilation later exhausts the 32MiB semispace with live data; collection commits but leaves only 16 bytes for a 144-byte allocation.",
+  "evidence": {
+    "collectorFailure": 2,
+    "liveBytesAfterCollection": 33554416,
+    "semispaceBytes": 33554432,
+    "requestedBytes": 144
+  },
+  "diagnosticCorrection": "VM regions can coalesce or split mappings; v2 region-base inference did not locate the root header. v3 reads the startup-preserved x20 control mapping and validates the borrowed array header before decoding roots.",
+  "nextExperiment": {
+    "managedBytes": 268435456,
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384
+  },
+  "scope": "Resource-sizing experiment; no collector semantic change and no conformance passes claimed."
+}

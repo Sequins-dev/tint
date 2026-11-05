@@ -1,0 +1,22 @@
+{
+  "kind": "frozen-node-toolchain",
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-await-chains-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-await-chains-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-await-chains-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-json-await-chains-v1/source-snapshot.json",
+    "sha256": "da55b0ca9631659f0248ee8ff90a398a30594f8ff494396e640e2484125a8e5e"
+  },
+  "runIdentity": "920c27f7ccd38cb27959edcfff68dc7db188949b7d5bece06e8ff33857d91911",
+  "workspaceGate": {
+    "tests": 4384,
+    "log": ".tint-bootstrap/await-chain-workspace-check-v1.log"
+  },
+  "nativeGate": "pending JSON host and await-chain native execution gates",
+  "compilerGate": "pending; native self-build must wait for JSON host and await-chain acceptance",
+  "scope": "Protects the tested source and host image while the prior frozen compiler uses the serial native lane. Capturing/building stage1 is not acceptance."
+}

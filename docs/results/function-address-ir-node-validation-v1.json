@@ -1,0 +1,23 @@
+{
+  "kind": "node-only-stage-validation",
+  "nativeExecution": false,
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "713d1431a0ad717dba6065d61b11dc9c51484ba7d8e70f9760468270b58f40eb",
+    "files": 533
+  },
+  "workspaceTests": 3829,
+  "gate": ".tint-bootstrap/function-address-workspace-check-v2.log",
+  "gateSha256": "bae7874f284bb0e45dae1b6b82b48fb0297e28a89c982cccd39a3327244b2b8e",
+  "defaultOutputComparison": "docs/results/function-address-default-output-node-v2.json",
+  "focusedAnalysisTests": ".tint-bootstrap/function-address-analysis-tests-v3.log",
+  "nativeFixtureBuild": ".tint-bootstrap/function-address-native-fixture-build-v2.log",
+  "pendingNativeReport": "docs/results/native-function-address-ir-compiler-v1.json",
+  "remaining": [
+    "Compiler-authorized address lowering bindings",
+    "Native function-address emission",
+    "Managed imported-call emission and linker preflight",
+    "Directory v3 integration",
+    "Current-source native self-build fixed point"
+  ]
+}

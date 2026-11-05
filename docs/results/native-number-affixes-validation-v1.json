@@ -1,0 +1,23 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T03:10:30.326238+00:00",
+  "scope": "Percent and percent-unit formatting, decimal ranges, legacy NumberFormat construction",
+  "sourceSnapshot": {
+    "sha256": "a860219c5342be80efe3bea704341c90065c8607db4ff5036f16e119b2e0372e",
+    "files": 487
+  },
+  "nativeFixtures": {
+    "passed": 6,
+    "total": 6,
+    "reports": [
+      "native-number-affixes-case-0-v1.json",
+      "native-number-affixes-case-1-v1.json",
+      "native-number-affixes-case-2-v1.json",
+      "native-number-affixes-case-3-v1.json",
+      "native-number-affixes-case-4-v1.json",
+      "native-number-affixes-case-5-v1.json"
+    ]
+  },
+  "workspaceGates": "number-affixes-workspace-gates-v1.json",
+  "limitations": "Bespoke native regressions, not Test262 conformance. Complete NumberFormat selection is recorded separately."
+}

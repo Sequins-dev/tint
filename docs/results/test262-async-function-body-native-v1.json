@@ -1,0 +1,1178 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v9-direct-eval",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "5c5932ba36cd78079b692375d1a4f848d86c410da03de53d31119e4085d75570",
+    "files": 552
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-async-function-body-v2/source-snapshot.json",
+  "frozenToolchainSha256": "2e7135fc75e014775aeb75d6caaa22cb5559e8e3c9cf63bf4670527ba7f4f149",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 36,
+        "kind": "execution",
+        "compileMs": 132114.81512500002,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/AsyncFunction",
+  "totals": {
+    "total": 36,
+    "passed": 34,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9444444444444444
+  },
+  "observations": [
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-construct.js",
+      "sha256": "05d58bcd1a04544754f589990620fa1193d754b3b5e50d27953d897f0b3d9ca2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152129.36520899998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-construct.js",
+      "sha256": "05d58bcd1a04544754f589990620fa1193d754b3b5e50d27953d897f0b3d9ca2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152396.061083,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-is-extensible.js",
+      "sha256": "283b56473dff99815e60b49067514bf105a1d498d3f38c8b645b15e76641b446",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152640.572459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-is-extensible.js",
+      "sha256": "283b56473dff99815e60b49067514bf105a1d498d3f38c8b645b15e76641b446",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152884.556375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-is-subclass.js",
+      "sha256": "8007dcefff45bfca251ae938d14dba82056bae9118e19f94223746652b37afe0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153126.924916,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-is-subclass.js",
+      "sha256": "8007dcefff45bfca251ae938d14dba82056bae9118e19f94223746652b37afe0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153367.15354200001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-length.js",
+      "sha256": "ecef31387bb3670e4c220ad178a52c9bf50cb2c0dbed485e7ee673df0c48fa54",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153610.135333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-length.js",
+      "sha256": "ecef31387bb3670e4c220ad178a52c9bf50cb2c0dbed485e7ee673df0c48fa54",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153850.933333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-name.js",
+      "sha256": "372fc951f6481893243919a13c5c6216858307d4f2e830c5a404989f64754caf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154093.474834,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-name.js",
+      "sha256": "372fc951f6481893243919a13c5c6216858307d4f2e830c5a404989f64754caf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154333.155084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-prototype.js",
+      "sha256": "d6ea8f2ffbe00b457e6f5cf007781fd817c8ec33471fae617358c0c95a29ae41",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154572.769542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction-prototype.js",
+      "sha256": "d6ea8f2ffbe00b457e6f5cf007781fd817c8ec33471fae617358c0c95a29ae41",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154808.518583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction.js",
+      "sha256": "42c96e1047994485fa89dc8f2399b6ab38f1a40af9a23d1ae03f91d890a849c0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155047.278375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunction.js",
+      "sha256": "42c96e1047994485fa89dc8f2399b6ab38f1a40af9a23d1ae03f91d890a849c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155288.094667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-is-extensible.js",
+      "sha256": "94e20fedc60a25e56ae399302dfaee860daa90b05a49f9586f1ed29c223d7e07",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155530.75141599998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-is-extensible.js",
+      "sha256": "94e20fedc60a25e56ae399302dfaee860daa90b05a49f9586f1ed29c223d7e07",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155771.341333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-is-not-callable.js",
+      "sha256": "87769aced828a326bbf35591039229af4fcaf0c299a4f5238cbbe6fe1fe19bcc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156011.687416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-is-not-callable.js",
+      "sha256": "87769aced828a326bbf35591039229af4fcaf0c299a4f5238cbbe6fe1fe19bcc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156252.540292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-prototype.js",
+      "sha256": "e8a91ff6b2fbb1ba99c8a24bc60cee85063f6d2515741bf6fa25a7b77a0b66c3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156492.466875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-prototype.js",
+      "sha256": "e8a91ff6b2fbb1ba99c8a24bc60cee85063f6d2515741bf6fa25a7b77a0b66c3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156734.778667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-to-string.js",
+      "sha256": "9c0dc99aba790d92aae4a7e42ab4c76b46c95202c37357b29bc704970a31c766",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156998.201084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/AsyncFunctionPrototype-to-string.js",
+      "sha256": "9c0dc99aba790d92aae4a7e42ab4c76b46c95202c37357b29bc704970a31c766",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157227.591709,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-construct-throws.js",
+      "sha256": "161800399dce7892436558c37e5c0e9ea4356d7247f0e3ad0bb1040768ecaea5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157465.789583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-construct-throws.js",
+      "sha256": "161800399dce7892436558c37e5c0e9ea4356d7247f0e3ad0bb1040768ecaea5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157706.236958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-has-name.js",
+      "sha256": "3d532c06e9ac6d4255abf29d9a52af4b509b442ffcc9653aacf2087b543c5b88",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157946.455875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-has-name.js",
+      "sha256": "3d532c06e9ac6d4255abf29d9a52af4b509b442ffcc9653aacf2087b543c5b88",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158187.214667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-length.js",
+      "sha256": "af7831912dd7205ad3422e27b13448a86d4305638309be4b27ec0b3c803d30ea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158420.547333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-length.js",
+      "sha256": "af7831912dd7205ad3422e27b13448a86d4305638309be4b27ec0b3c803d30ea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158660.97708299998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-prototype-property.js",
+      "sha256": "d47e3b6732c974a07e1e6588abc8df98cba07de982e00b38178870b56840d686",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158903.791916,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/instance-prototype-property.js",
+      "sha256": "d47e3b6732c974a07e1e6588abc8df98cba07de982e00b38178870b56840d686",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159141.49133299998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js",
+          "wellKnownIntrinsicObjects.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        },
+        {
+          "name": "wellKnownIntrinsicObjects.js",
+          "sha256": "bf52f7cca33e62937a9f800b67f6c9d4e4a0bc5819115223f6782f8cb84536a4"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: )\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-fPzaBo/test\\\",\\\"30\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-n22bsM/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 19471 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c9bc9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c9bc9c0 <+0>:  mov    x0, sp\n    0x10c9bc9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c9bc9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c9bc9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=19471)>         Process::ShouldBroadcastEvent (0xc72c06440) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=19471)>         Process::HandlePrivateEvent (pid = 19471) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=19471)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=19471)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=19471)>         Process::ShouldBroadcastEvent (0xc72c06440) Restarting process from state: stopped\n<lldb.process.internal-state(pid=19471)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=19471)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=19471)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=19471)>         Process::ShouldBroadcastEvent (0xc72c06440) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=19471)>         Process::HandlePrivateEvent (pid = 19471) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=19471)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=19471)>         Process::ShouldBroadcastEvent (0xc72c064e0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=19471)>         Process::HandlePrivateEvent (pid = 19471) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=19471)>         timeout = <infinite>, event_sp)...\n\nRemote packets: itForResponse () got packet: T05thread:556aee;threads:556aee;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:7007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:a36a13abe0020000;17:480435f401000000;18:0000000000000000;19:40ab2b6d01000000;1a:a0b32b6d01000000;1b:1800000000000000;1c:98e4dce302000000;1d:f0aa2b6d01000000;1e:ac74818701000000;1f:b0a92b6d01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16d2baaf0=c0ab2b6d01000000807c818701000000;memory:0x16d2babc0=c0b52b6d010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 19471) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=19471)>         <  22> send packet: $pd6;thread:556aee;#fd\n<lldb.process.internal-state(pid=19471)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=19471)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=19471)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=19471)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=19471)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 19471) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 19471) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+      },
+      "status": "timeout",
+      "elapsedMs": 459170.928291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js",
+          "wellKnownIntrinsicObjects.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        },
+        {
+          "name": "wellKnownIntrinsicObjects.js",
+          "sha256": "bf52f7cca33e62937a9f800b67f6c9d4e4a0bc5819115223f6782f8cb84536a4"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: )\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-fPzaBo/test\\\",\\\"31\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xpVXXk/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 23283 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010e7509c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10e7509c0 <+0>:  mov    x0, sp\n    0x10e7509c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10e7509c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10e7509cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=23283)>         Process::ShouldBroadcastEvent (0x75cc06440) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=23283)>         Process::HandlePrivateEvent (pid = 23283) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=23283)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=23283)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=23283)>         Process::ShouldBroadcastEvent (0x75cc06440) Restarting process from state: stopped\n<lldb.process.internal-state(pid=23283)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=23283)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=23283)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=23283)>         Process::ShouldBroadcastEvent (0x75cc06440) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=23283)>         Process::HandlePrivateEvent (pid = 23283) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=23283)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=23283)>         Process::ShouldBroadcastEvent (0x75cc064e0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=23283)>         Process::HandlePrivateEvent (pid = 23283) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=23283)>         timeout = <infinite>, event_sp)...\n\nRemote packets: itForResponse () got packet: T05thread:558e20;threads:558e20;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:7007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:17307458e2020000;17:480435f401000000;18:0000000000000000;19:406b526b01000000;1a:a073526b01000000;1b:1800000000000000;1c:98e4dce302000000;1d:f06a526b01000000;1e:ac74818701000000;1f:b069526b01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16b526af0=c06b526b01000000807c818701000000;memory:0x16b526bc0=c075526b010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 23283) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=23283)>         <  22> send packet: $pd6;thread:558e20;#9b\n<lldb.process.internal-state(pid=23283)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=23283)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=23283)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=23283)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=23283)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 23283) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 23283) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+      },
+      "status": "timeout",
+      "elapsedMs": 759193.937417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-not-a-global.js",
+      "sha256": "7d0d18a0ea93d8249f0e57beb39dc3587c2260f0656cdbb1842928aa016a863b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 759501.656833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-not-a-global.js",
+      "sha256": "7d0d18a0ea93d8249f0e57beb39dc3587c2260f0656cdbb1842928aa016a863b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 759740.8890000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/proto-from-ctor-realm.js",
+      "sha256": "7711cd23e143c1fcb67694df92a48a5910877a25e70e578db9d132d804bc843b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 783895.86025,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncFunction/proto-from-ctor-realm.js",
+      "sha256": "7711cd23e143c1fcb67694df92a48a5910877a25e70e578db9d132d804bc843b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 808011.4970409999,
+      "batch": 0
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v9-direct-eval",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-script-dynamic-import-v1/source-snapshot.json",
+  "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 112896.853459,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/call/tco-non-eval-global.js",
+  "totals": {
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 1,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/expressions/call/tco-non-eval-global.js",
+      "sha256": "f94189f89e34ede682bb5745abb28cb8dd75b60e1d5011037bfbc49b737d1cce",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [
+          "tail-call-optimization"
+        ],
+        "includes": [
+          "tcoHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "tcoHelper.js",
+          "sha256": "a533b07378e41044c98199e250e1c78a28610a783ad0814cb467e9ea2f5de8fa"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: \nLLDB stdout: rver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gsVbTm/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ynBHoX/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gsVbTm/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gsVbTm/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gsVbTm/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gsVbTm/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 83129 resuming\nProcess 83129 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=2, address=0x132ff3be0)\n       frame #0: 0x000000010980c4a0 test`\n->  0x10980c4a0: str    x0, [sp, #0x20]\n    0x10980c4a4: str    x3, [sp, #0x28]\n    0x10980c4a8: str    xzr, [sp, #0x40]\n    0x10980c4ac: str    xzr, [sp, #0x48]\nTarget 0: (test) stopped.\n\nDebugserver: \nConnection: Process 83129 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010dd4c9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10dd4c9c0 <+0>:  mov    x0, sp\n    0x10dd4c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10dd4c9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10dd4c9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: Process::HandlePrivateEvent (pid = 83129) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=83129)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 13\n<lldb.process.internal-state(pid=83129)>         Process::ShouldBroadcastEvent (0xa90ffc6e0) => new state: stopped, last broadcast state: stopped - YES\n<lldb.process.internal-state(pid=83129)>         Process::HandlePrivateEvent (pid = 83129) broadcasting new state stopped (old state stopped) to hijacked\n<lldb.process.internal-state(pid=83129)>         timeout = <infinite>, event_sp)...\n (plugin = gdb-remote, state = stopped, restarted = 0)\n (plugin = gdb-remote, state = stopped) -- unlocking run lock\n timeout = <infinite>, event_sp) => stopped\n (plugin = gdb-remote, state = detached)\n Process::ControlPrivateStateThread (signal = 4)\n Sending control event of type: 4.\n<lldb.process.internal-state(pid=83129)>         Process::ShouldBroadcastEvent (0xa90ffc640) => new state: detached, last broadcast state: detached - YES\n<lldb.process.internal-state(pid=83129)>         Process::HandlePrivateEvent (pid = 83129) broadcasting new state detached (old state detached) to public\n<lldb.process.internal-state(pid=83129)>         Process::RunPrivateStateThread (arg = 0xa93213000, pid = 83129) about to exit with internal state detached...\n<lldb.process.internal-state(pid=83129)>         Process::RunPrivateStateThread (arg = 0xa93213000, pid = 83129) thread exiting...\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 14\n Went to stop the private state thread, but it was already invalid.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: t\":8394943232}]#00\n <  18> send packet: $x10980c400,200#2f\n < 520> read packet: $ebbb40fdecbf40fdedc340fdeec740fdff430691fd7bc1a8c0035fd61f08007140000054000020d4ea1740f9e90b40f9eb0f40f9490900f94b0d00f9400100b9ea1340f9e91b40f9490100f9e8af40fde9b340fdeab740fdebbb40fdecbf40fdedc340fdeec740fdff430691fd7bc1a8c0035fd6fd7bbfa9fd030091ff8331d1e80f06fde91306fdea1706fdeb1b06fdec1f06fded2306fdee2706fdef2b06fde01300f9e31700f9ff2300f9ff2700f9ff2f00f9ff3b00f9ff4b00f9ff6700f9ff6b00f9ff6f00f9ff7300f9ff7700f9ff7b00f9ff7f00f9ff8300f9fff300f9fff700f9fffb00f9ffff00f9ff0301f9ff0701f9ff1f01f9ff2301f9ff2701f9ff2b01f9ff2f01f9ff8301f9ff9301f9ff9701f9ff9b01f9ff9f01f9ffa301f9ffa701f9ffcb01f9ffd301f9ffd701f9ffdb01f9ffdf01f9ffe301f9ffff01f9ff0702f9ff1302f9ff1702f9ff1b02f9ff1f02f9ff2302f9ff3b02f9ff4702f9ff5302f9ff5702f9ff5b02f9ff5f02f9ff6302f9ff8702f9ff8f02f9ffbf02f9ffc302f9ffc702f9ffd302f9ffe302f9ff0703f9ff0f03f9ff1303f9ff1703f9ff1b03f9ff1f03f9ff3b03f9ff3f03f9ff4b03f9ff5f03f9ff6303f9ff6703f9ff6b03f9ff6f03f9ff7303f9ff9303f9ff9703f9ffa303f9ffb703f9ffbb03f9ffbf03f9ffc303f9ffc703f9ffe303f9ffe703f9fff303f9ff0704f9ff0b04f9#00\n <  81> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"z0,1878152cc,4\",\"z0,28d60c9f0,4\"]}]#0f\n <  28> read packet: ${\"results\":[\"OK\",\"OK\"]}]#00\n ProcessGDBRemote::DoDetach(keep_stopped: 0)\n <   5> send packet: $D#44\n <   6> read packet: $OK#00\n ProcessGDBRemote::DoDetach() detach packet sent successfully\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 83129) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 83129) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 83129) thread exiting...\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 114634.430125,
+      "batch": 0
+    }
+  ]
+}

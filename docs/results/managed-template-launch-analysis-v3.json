@@ -1,0 +1,30 @@
+{
+  "kind": "native-managed-template-controlled-recheck-analysis",
+  "conformance": false,
+  "priorObservations": [
+    "docs/results/native-managed-templates-case-0-v1.json",
+    "docs/results/native-managed-templates-case-0-v2.json",
+    "docs/results/managed-template-local-stdio-diagnostic-v1.json"
+  ],
+  "startupControl": {
+    "report": "docs/results/managed-template-selector-startup-diagnostic-v1.json",
+    "selectedCase": 10,
+    "expectedRawExitStatus": 99,
+    "outcome": {
+      "kind": "crash",
+      "detail": "unexpected native exit status 99"
+    },
+    "elapsedMs": 378.34629199999836,
+    "meaning": "The same large artifact reaches its native selector without running any Script or in-image compilation."
+  },
+  "workingExecution": {
+    "report": "docs/results/native-managed-templates-case-0-v3.json",
+    "outcome": {
+      "kind": "completed"
+    },
+    "elapsedMs": 32133.809,
+    "meaning": "In-image compilation, publication, invocation and repeated returned-callback template identity passed for this case."
+  },
+  "protocol": "Run the already-published, hash-verified artifact through the direct debugserver protocol established by the selector-only control. No compiler/runtime source changed between these attempts.",
+  "limits": "A transient launch failure is consistent with these controls, but its root cause and the launch/execution timing split of the first timeout remain unknown. Prior failed observations remain retained. This is not complete native acceptance or Test262 conformance."
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "tzif-zone-native-build",
+    "sourceSnapshot": {
+      "sha256": "e90128746676ce06a87af46a1143a89b3f7021caa13176cfbe07d8445c684f05",
+      "files": 423
+    },
+    "fixtures": [
+      {
+        "name": "America/New_York",
+        "bytes": 3552,
+        "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95"
+      },
+      {
+        "name": "Australia/Lord_Howe",
+        "bytes": 1846,
+        "sha256": "a323c5433991a963eb497b7da4d1d09848bf3ef5f5d64d9c9649f388e4bab9df"
+      },
+      {
+        "name": "Pacific/Apia",
+        "bytes": 598,
+        "sha256": "33740ab29ef943b1f55f769e13ff59a90962f5a12434209072d650e6c10abb4d"
+      }
+    ]
+  },
+  "imageSha256": "10ca49b9863740dac3bf1acf7cb92689ad92abf1913c19fd19e0eb7a8cce6fdb",
+  "outcome": {
+    "kind": "completed"
+  }
+}

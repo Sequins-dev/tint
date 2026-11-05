@@ -1,0 +1,28 @@
+{
+  "kind": "native-timeout-triage",
+  "conformance": false,
+  "run": "docs/results/test262-async-function-body-native-v1.json",
+  "observations": [
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "elapsedMs": 459170.928291
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "strict",
+      "status": "timeout",
+      "elapsedMs": 759193.937417
+    }
+  ],
+  "harness": {
+    "path": ".tint-bootstrap/test262/harness/wellKnownIntrinsicObjects.js",
+    "sha256": "bf52f7cca33e62937a9f800b67f6c9d4e4a0bc5819115223f6782f8cb84536a4",
+    "sourceEntries": 87,
+    "roughComplexExpressions": 18,
+    "behavior": "Eager forEach constructs and calls new Function for every intrinsic source; failures are caught and the loop continues."
+  },
+  "inference": "Repeated managed body compilation may exceed containment. The active lookup and exact cause were not observed; no timing or semantic diagnosis is established.",
+  "policy": "Keep the original timeouts in the denominator; no retry or resource increase. Compiler performance investigation is deferred by user."
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "native-fixture-build-attempt",
+  "sourceSnapshot": {
+    "sha256": "00972031956d2234bdcc6688d6611f5a98e800b79b27b4808a0af6b0b25884cf",
+    "files": 494
+  },
+  "nativeExecuted": false,
+  "fixtures": ["native-managed-imports", "native-managed-invocation"],
+  "stage": "check",
+  "diagnostic": "packages/scalar-aarch64/src/index.ts:197459:197648: object does not match its context",
+  "cause": "Imported nativeSignatureVersion inferred as number, while NativeSignatureDescriptor.version requires literal1. Shared ABI constant needs its exact literal wire-version annotation. No runtime/algorithm change.",
+  "logs": [
+    "/tmp/tint-abi-function-managed-imports-build-v1.log",
+    "/tmp/tint-abi-function-managed-invocation-build-v1.log",
+    "/tmp/tint-abi-function-full-node-v1.log"
+  ],
+  "correctivePlan": "Annotate exported version as literal1, retain failed snapshot, rerun against a new source identity/report."
+}

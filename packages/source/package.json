@@ -1,0 +1,24 @@
+{
+  "name": "@tint/source",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "import": "./dist/text.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "import": "./dist/catalog.js"
+    },
+    "./resolver": {
+      "types": "./dist/resolver.d.ts",
+      "import": "./dist/resolver.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {}
+}

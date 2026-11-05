@@ -1,0 +1,22 @@
+{
+  "kind": "native-engine-regression-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "08df6850cbb6e16524efd14474fdd4af35c2967cd54b5d5cbe1b8133f495720c",
+    "files": 506
+  },
+  "passed": 8,
+  "total": 8,
+  "reports": [
+    "framework-receiver-write-native-v1-0.json",
+    "framework-receiver-write-native-v1-1.json",
+    "framework-receiver-write-native-v1-2.json",
+    "framework-receiver-write-native-v1-3.json",
+    "framework-receiver-write-native-v1-4.json",
+    "framework-receiver-write-native-v1-5.json",
+    "framework-receiver-write-native-v1-6.json",
+    "framework-receiver-write-native-v1-7.json"
+  ],
+  "launch": "lldb-local-stdio",
+  "scope": "receiver-write through the production typed engine and restructured native pipeline; bespoke regressions, not Test262 conformance"
+}

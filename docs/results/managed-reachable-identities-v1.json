@@ -1,0 +1,18 @@
+{
+  "kind": "managed-reachable-identity-regressions",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "dc8de7cb4be2776183b3f584dc6baddc63df5c22fe8be2ec5952e6cbcf517343",
+    "files": 519
+  },
+  "nativeFixtures": [
+    "docs/results/native-managed-reachable-compiler-v1.json",
+    "docs/results/native-managed-reachable-runtime-v1.json"
+  ],
+  "workspaceTests": 3744,
+  "testLog": ".tint-bootstrap/managed-reachable-workspace-tests-v2.log",
+  "formatLog": ".tint-bootstrap/managed-reachable-final-format-v1.log",
+  "previousSelfBuild": "docs/results/managed-reflector-checkpoint-v1.json",
+  "selfBuildMatchesThisSource": false,
+  "scope": "Typed reflector generation for all reachable reified record and function aliases, native compiler execution, AOT metadata inspection, recursive records and callbacks. This does not select semantic groups automatically or execute a general managed entry."
+}

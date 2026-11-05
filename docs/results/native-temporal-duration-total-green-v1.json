@@ -1,0 +1,84 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "17d6fba31317f49d19519fa6647133cdb0c1b15de3d2107c9b4393c35b7edaab",
+      "files": 410
+    },
+    "imageSha256": "b6fde1021e7a9961f705a0c88c25c553608c62619f1498078d91299aa57758db",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Temporal.Duration(0,0,0,1,12);if(d.total(\"hour\")!==36||d.total(\"day\")!==1.5||d.negated().total(\"day\")!==-1.5)throw 1;const x=new Temporal.Duration(0,0,0,0,0,0,0,0,0,9007199254740993);if(x.total(\"nanosecond\")!==9007199254740992)throw 2;",
+        "sha256": "86ffa9379ce1c697b74eff4abd8c19db8384ccac659ffc7492f7ae3616bbf90f"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.Duration(1);if(a.total({unit:\"day\",relativeTo:\"2020-01-01\"})!==366||a.total({unit:\"day\",relativeTo:\"2021-01-01\"})!==365)throw 1;const b=new Temporal.Duration(0,0,0,45);if(b.total({unit:\"month\",relativeTo:\"2019-01-01\"})!==1.5)throw 2;",
+        "sha256": "580bde60798433fc865fca1225a864becaa5ca13968f69749ba24db3530ed56e"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const d=new Temporal.Duration(0,0,0,0,1);const bag={get calendar(){log+=\"c\";return \"iso8601\";},get day(){log+=\"d\";return 1;},get hour(){log+=\"h\";return 5;},get microsecond(){log+=\"u\";return 0;},get millisecond(){log+=\"l\";return 0;},get minute(){log+=\"i\";return 30;},get month(){log+=\"m\";return 1;},get monthCode(){log+=\"M\";return \"M01\";},get nanosecond(){log+=\"n\";return 0;},get offset(){log+=\"o\";return \"+05:30\";},get second(){log+=\"s\";return 0;},get timeZone(){log+=\"z\";return \"+05:30\";},get year(){log+=\"y\";return 1970;}};if(d.total({get relativeTo(){log+=\"r\";return bag;},get unit(){log+=\"U\";return \"minute\";}})!==60||log!==\"rcdhulimMnoszyU\")throw 1;",
+        "sha256": "46744d5b196bde276b5f76531c8e9a81e9755846dfc2f01b70a37d10e14d6744"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Temporal.Duration(0,0,0,0,1);const date=new Temporal.PlainDateTime(2020,2,29,23,59);Object.defineProperty(date,\"year\",{get(){throw 1;}});if(d.total({unit:\"hour\",relativeTo:date})!==1)throw 2;const z=new Temporal.ZonedDateTime(0n,\"UTC\");Object.defineProperty(z,\"epochNanoseconds\",{get(){throw 3;}});if(d.total({unit:\"minute\",relativeTo:z})!==60)throw 4;",
+        "sha256": "1b9870b430b255c711f516d0ef17a0b3e9a98dce407f850e182d7561c8beb487"
+      },
+      {
+        "index": 4,
+        "source": "const d=new Temporal.Duration(1);let ok=false;try{d.total(\"day\");}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;ok=false;try{d.total({unit:\"day\",relativeTo:\"2020-01-01T00:00Z\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;const t=new Temporal.Duration(0,0,0,0,0,0,0,0,1,500);if(t.total({unit:\"microsecond\",relativeTo:new Temporal.ZonedDateTime(0n,\"UTC\")})!==1.5)throw 3;",
+        "sha256": "c68942eb1dbe5d19cf805ce3470ccbdb551341e1e8e0d2a3c6d8afa1fc0f1b46"
+      }
+    ]
+  },
+  "cases": 5,
+  "completed": 5,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

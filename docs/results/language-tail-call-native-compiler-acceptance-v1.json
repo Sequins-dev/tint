@@ -1,0 +1,24 @@
+{
+  "kind": "language-tail-call-native-compiler-acceptance",
+  "accepted": true,
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4334,
+    "log": ".tint-bootstrap/tail-lowering-workspace-check-v2.log"
+  },
+  "aotNative": "docs/results/tail-lowering-native-validation-v1.json",
+  "inImageNative": "docs/results/tail-in-image-native-validation-v1.json",
+  "selfBuild": "docs/results/bootstrap-language-tail-calls-v2.json",
+  "artifactChecks": "docs/results/language-tail-calls-selfbuild-artifact-validation-v2.json",
+  "retainedPreEntryFailure": "docs/results/bootstrap-language-tail-calls-v1.json",
+  "launchControl": "docs/results/language-tail-calls-launch-control-v1.json",
+  "callSelectionStatus": "running; original 165/171 with six post-entry faults remains the latest complete conformance report",
+  "remainingTailPaths": [
+    "Proxy trap forwarding",
+    "raw class constructor callbacks"
+  ]
+}

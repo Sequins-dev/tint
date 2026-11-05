@@ -1,0 +1,39 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-date-arithmetic.ts",
+  "fixtureSha256": "ad5f64d3b7233fa9137750a71bfe7dac5dcd14f1f676223da89243c5e3bd520b",
+  "imageSha256": "614451b044d49bf73e8057a00de38982668e3cc6b047b464280f8f105ba13eb0",
+  "cases": 3,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

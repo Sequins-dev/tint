@@ -1,0 +1,9 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const o={};let n=19;const get=function(){return n;},set=function(v){n=v;};if(o.__defineGetter__("x",get)!==undefined||o.__defineSetter__("x",set)!==undefined)throw 1;const d=Object.getOwnPropertyDescriptor(o,"x");if(d.get!==get||d.set!==set||!d.enumerable||!d.configurable||o.x!==19)throw 2;o.x=23;if(n!==23||o.__lookupGetter__("x")!==get||o.__lookupSetter__("x")!==set)throw 3;`,
+  `const s=Symbol(),p={};const get=()=>42;p.__defineGetter__(s,get);const o=Object.create(p);if(o.__lookupGetter__(s)!==get)throw 1;Object.defineProperty(o,s,{value:19});if(o.__lookupGetter__(s)!==undefined||o.__lookupSetter__(s)!==undefined)throw 2;`,
+  `let conversions=0;const key={toString(){conversions++;return "x";}};let caught=false;try{({}).__defineGetter__(key,undefined);}catch(e){caught=e instanceof TypeError;}if(!caught||conversions!==0)throw 1;try{Object.prototype.__lookupGetter__.call(null,key);}catch(e){if(!(e instanceof TypeError))throw 2;}if(conversions!==0)throw 3;`,
+  `let order="";const p={get x(){return 42;}};const proxy=new Proxy({}, {getOwnPropertyDescriptor(t,k){order+="d";return undefined;},getPrototypeOf(){order+="p";return p;}});if(Object.prototype.__lookupGetter__.call(proxy,"x")!==Object.getOwnPropertyDescriptor(p,"x").get||order!=="dp")throw 1;`,
+  `const marker={};const p=new Proxy({}, {defineProperty(t,k,d){if(k!=="x"||typeof d.get!=="function"||!d.enumerable||!d.configurable)throw 1;throw marker;}});let caught;try{Object.prototype.__defineGetter__.call(p,"x",()=>19);}catch(e){caught=e;}if(caught!==marker)throw 2;`,
+  `const o={};Object.preventExtensions(o);let caught=false;try{o.__defineGetter__("x",()=>19);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;const getter=()=>23;Object.prototype.__defineGetter__.call(1,"x",getter);if(Object.prototype.__lookupGetter__.call(1,"x")!==undefined)throw 2;`,
+]);

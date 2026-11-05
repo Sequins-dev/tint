@@ -1,0 +1,15 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-j8wnMd/decimal-number-parts",
+  "sourceSnapshot": {
+    "sha256": "cf2ba712f3e44bae4bc9596d7524303214ed5d839d38a6e5032acdf8b8c1a465",
+    "files": 479
+  },
+  "imageSha256": "12d8a0e1388384908356b045d39f5f75099475b294ae522c620d629a372010a5",
+  "fixture": "tools/verify-hosted-decimal-number-parts.ts",
+  "success": false,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-j8wnMd/decimal-number-parts\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-j8wnMd/decimal-number-parts' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(180)\\nport_socket.bind(\\\"/tmp/tint-number-parts-7yRMGH/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-number-parts-7yRMGH/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-number-parts-7yRMGH/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-j8wnMd/decimal-number-parts\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-number-parts-7yRMGH/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(180)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-number-parts-7yRMGH/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n",
+  "stderr": "",
+  "error": "spawnSync /usr/bin/lldb ETIMEDOUT"
+}

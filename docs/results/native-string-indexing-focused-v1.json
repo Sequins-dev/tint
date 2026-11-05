@@ -1,0 +1,13 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-string-indexing.ts",
+  "fixtureSha256": "1cb204c39b7b0723907180ee19cc61f495d86136a290939df27c90a293336ad0",
+  "runner": "tools/native-script-fixture.ts",
+  "runnerSha256": "6b3b36c30fa028d45b59d11ae44f74e03dcba486d3c46ac6a096645ad133bd52",
+  "cases": 4,
+  "passed": 4,
+  "nativeValidation": "Isolated LLDB-controlled native processes, expected exit 42; Node reference sources also completed.",
+  "scope": "String padStart/padEnd, at/codePointAt, UTF-16 surrogate boundaries, coercion order, early returns and size limits."
+}

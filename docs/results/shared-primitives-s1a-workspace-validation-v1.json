@@ -1,0 +1,141 @@
+{
+  "scope": "Fixture capability root-cause fix only. S1a native correctness remains pending root execution of corrected artifact.",
+  "sourceSnapshot": {
+    "sha256": "aa0108f950822cdebd2e6a12fe8d45ead137d3324027f2e52dcd0da45bc55086",
+    "files": 497
+  },
+  "packages": 62,
+  "nodeTests": 3530,
+  "diagnosis": {
+    "initialFailure": "docs/results/shared-primitives-s1a-native-v1.json",
+    "entryControl": "docs/results/shared-primitives-s1a-entry-control-v1.json",
+    "stageProbe": "docs/results/shared-primitives-s1a-stages-v1.json",
+    "observed": "Entry-control passes 42; stage probe prints 90,00,99 and exits 68, explicitly identifying HOST_UNAVAILABLE before mapMemory completed.",
+    "rootCause": "Fixture declared five shared primitive bindings but omitted normal mapMemory/unmapMemory bindings; project defaults do not authorize those operations. The original native exit 70 was the uncaught sentinel, not an atomic or initialization-budget failure.",
+    "fix": "Add fixture-only memory-map/memory-unmap grants and native-memory runtime retaining exactly mapMemory/unmapMemory. Keep shared runtime retention scoped to its own five exports. Apply same capability closure to diagnostic builder."
+  },
+  "changedFiles": [
+    {
+      "path": "tools/build-shared-primitives-fixture.ts",
+      "sha256": "f8e1baf9a89c00e8529a811ff3fc36d019ed0e9c2133dacaf3a2ecb15e96f136"
+    },
+    {
+      "path": "tools/build-shared-primitives-diagnostic.ts",
+      "sha256": "c49a3d3b1234f21d68f28deea3e5de69fd4f5aea8f3d1d1631a8ca8732bde14e"
+    },
+    {
+      "path": "tools/shared-primitives.test.ts",
+      "sha256": "b0e7a2a917e94a53f4cf1d94e0fe0c4cb64ef639d1584af07e7341fd2c39ebe4"
+    }
+  ],
+  "regression": {
+    "description": "Parse actual fixture imports, dependencies, host binding table and declared runtime table; each imported trusted leaf requires an explicit corresponding fixture binding and owning runtime declaration.",
+    "red": {
+      "path": ".tint-bootstrap/shared-primitives-s1a-capability-regression-red-v1.log",
+      "sha256": "136ffa85ca6e9b046a1697a68379cb2011f3e3dbeec1e1c3fd06093a41dfcbbd"
+    },
+    "redFailure": "mapMemory needs an explicit fixture host binding",
+    "green": {
+      "path": ".tint-bootstrap/shared-primitives-s1a-capability-regression-green-v1.log",
+      "sha256": "5a0c02bab94696b09165a8ce0f89edaa2c2242bdfae342bc0cd56e790461f6ea"
+    }
+  },
+  "checks": [
+    {
+      "result": "workspace build",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-build-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "result": "test types",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-test-types-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "result": "host types",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-host-types-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "result": "full Node suite: 3530 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-full-node-v1.log",
+        "sha256": "cfc3c6d2889e2f5edbd25edb94c35b70fd3d9fb85beabe930fc842f909474623"
+      }
+    },
+    {
+      "result": "dependency boundaries: 62 packages",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-boundaries-v1.log",
+        "sha256": "aeee0ef51f1102cd3c9c53a24827f9c86cffe1f54e1e3697aa01e18fcd97d026"
+      }
+    },
+    {
+      "result": "formatting",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-capability-format-check-v1.log",
+        "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+      }
+    },
+    {
+      "result": "corrected fixture build only",
+      "log": {
+        "path": ".tint-bootstrap/shared-primitives-s1a-fixture-authorized-build-v1.log",
+        "sha256": "2928751c06a9ea97b5f2a4846be3a05eb4167931ba4eec966f9f7dee1acd2e27"
+      }
+    }
+  ],
+  "artifact": {
+    "kind": "shared-primitives-s1a-authorized-fixture",
+    "artifact": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-primitives-s1a-authorized-v1-HyVtRi/shared-primitives-s1a-authorized-v1",
+    "sourceSnapshot": {
+      "sha256": "aa0108f950822cdebd2e6a12fe8d45ead137d3324027f2e52dcd0da45bc55086",
+      "files": 497
+    },
+    "expectedExit": 42,
+    "expectedExitStatus": 42,
+    "builtOnly": true,
+    "imageSha256": "7cafd0886a2df6de854247551ef458a3bbc824c94dbabd6ec0bfb7cec9209e79",
+    "sha256": "7cafd0886a2df6de854247551ef458a3bbc824c94dbabd6ec0bfb7cec9209e79",
+    "fixtureSource": "tools/build-shared-primitives-fixture.ts",
+    "fixtureSha256": "f8e1baf9a89c00e8529a811ff3fc36d019ed0e9c2133dacaf3a2ecb15e96f136",
+    "source": "\nimport { mapMemory, unmapMemory } from 'memory';\nimport { readSharedUnsigned, writeSharedUnsigned, readSharedWord64, writeSharedWord64, compareExchangeSharedWord64 } from 'shared';\nexport function run(): number {\n  const address = mapMemory(128);\n  if (address <= 0) return 1;\n  const scratch = new Uint32Array(2);\n  const short = new Uint32Array(1);\n  for (let order = 0; order < 2; order++) {\n    if (writeSharedUnsigned(address, 128, 0, 1, 255, order) !== 0) return 2;\n    if (readSharedUnsigned(address, 128, 0, 1, order) !== 255) return 3;\n    if (writeSharedUnsigned(address, 128, 2, 2, 65535, order) !== 0) return 4;\n    if (readSharedUnsigned(address, 128, 2, 2, order) !== 65535) return 5;\n    if (writeSharedUnsigned(address, 128, 4, 4, 4294967295, order) !== 0) return 6;\n    if (readSharedUnsigned(address, 128, 4, 4, order) !== 4294967295) return 7;\n    if (writeSharedWord64(address, 128, 8, order, 4294967295, 4294967295) !== 0) return 8;\n    if (readSharedWord64(address, 128, 8, order, scratch) !== 0) return 9;\n    if (scratch[0] !== 4294967295 || scratch[1] !== 4294967295) return 10;\n  }\n  if (compareExchangeSharedWord64(address, 128, 8, 0, 0, 1, 2147483648, scratch) !== 0) return 11;\n  if (scratch[0] !== 4294967295 || scratch[1] !== 4294967295) return 12;\n  if (readSharedWord64(address, 128, 8, 1, scratch) !== 0 || scratch[0] !== 4294967295 || scratch[1] !== 4294967295) return 13;\n  if (compareExchangeSharedWord64(address, 128, 8, 4294967295, 4294967295, 1, 2147483648, scratch) !== 0) return 14;\n  if (scratch[0] !== 4294967295 || scratch[1] !== 4294967295) return 15;\n  if (readSharedWord64(address, 128, 8, 1, scratch) !== 0 || scratch[0] !== 1 || scratch[1] !== 2147483648) return 16;\n  if (compareExchangeSharedWord64(address, 128, 8, 1, 2147483648, 1, 2147483648, scratch) !== 0) return 17;\n  if (readSharedWord64(address, 128, 8, 1, short) !== -1) return 18;\n  if (writeSharedUnsigned(address, 128, 1, 4, 123, 0) !== -1) return 19;\n  if (readSharedUnsigned(address, 128, 128, 1, 0) !== -1) return 20;\n  if (writeSharedUnsigned(address, 128, 0, 3, 123, 0) !== -1) return 21;\n  if (writeSharedWord64(address, 128, 0, 0, 4294967296, 0) !== -1) return 22;\n  if (readSharedUnsigned(address, 128, 0, 1, 2) !== -1) return 23;\n  if (readSharedUnsigned(address, 128, 0.5, 1, 0) !== -1) return 24;\n  if (readSharedUnsigned(address, 128, -1, 1, 0) !== -1) return 25;\n  if (readSharedUnsigned(address, 128, 0 / 0, 1, 0) !== -1) return 26;\n  if (readSharedWord64(address, 128, 1, 0, scratch) !== -1) return 27;\n  if (readSharedUnsigned(0, 128, 0, 1, 0) !== -1) return 28;\n  if (readSharedWord64(address, 128, 8, 1, scratch) !== 0 || scratch[0] !== 1 || scratch[1] !== 2147483648) return 29;\n  if (unmapMemory(address, 128) !== 0) return 30;\n  return 42;\n}\n",
+    "runtimeEntry": "initializeCopyingRuntime",
+    "fixtureOnlyCapabilities": [
+      "native-memory:mapMemory:memory-map",
+      "native-memory:unmapMemory:memory-unmap",
+      "shared-primitives:readSharedUnsigned:shared-read-unsigned",
+      "shared-primitives:writeSharedUnsigned:shared-write-unsigned",
+      "shared-primitives:readSharedWord64:shared-read-word64",
+      "shared-primitives:writeSharedWord64:shared-write-word64",
+      "shared-primitives:compareExchangeSharedWord64:shared-compare-exchange-word64"
+    ],
+    "correction": "Add only missing explicit fixture map/unmap host bindings and owning runtime declaration. No portable/primitive/runtime/startup-policy changes.",
+    "priorObservations": [
+      "docs/results/shared-primitives-s1a-native-v1.json",
+      "docs/results/shared-primitives-s1a-entry-control-v1.json",
+      "docs/results/shared-primitives-s1a-stages-v1.json"
+    ],
+    "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-primitives-s1a-authorized-v1-HyVtRi/shared-primitives-s1a-authorized-v1.build.json",
+    "metadataSha256": "ec50a2b40591e020f4aabad33f693a47349b4268683be4445dc869208c968e8c"
+  },
+  "nativeExecution": {
+    "executedByChild": false,
+    "owner": "root",
+    "expectedExit": 42,
+    "pending": true
+  },
+  "preserved": [
+    "All portable compiler/runtime/primitive source bytes and source identity unchanged",
+    "Original failed artifact and native/diagnostic reports retained",
+    "Copying runtime and memory capacities unchanged",
+    "No default compiler/Script capability expansion",
+    "No S1b registry/service/SAB API work"
+  ]
+}

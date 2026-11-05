@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/static-init-invalid-arguments.js",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/static-init-invalid-arguments.js",
+      "sha256": "ccec0ff2dcf75f16bfb547528263a61be6bdd267dd47a70b9dfe52d8160242e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class-static-block"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":554,\"end\":568,\"code\":\"EARLY_ERROR\",\"message\":\"arguments is not allowed in class initializers\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.1317090000000007
+    },
+    {
+      "path": "language/statements/class/static-init-invalid-arguments.js",
+      "sha256": "ccec0ff2dcf75f16bfb547528263a61be6bdd267dd47a70b9dfe52d8160242e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class-static-block"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":568,\"end\":582,\"code\":\"EARLY_ERROR\",\"message\":\"arguments is not allowed in class initializers\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.30383299999999736
+    }
+  ]
+}

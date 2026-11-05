@@ -1,0 +1,11 @@
+{
+  "kind": "native-regression-fixture-analysis",
+  "conformance": false,
+  "observation": "docs/results/native-record-identity-runtime-v2.json",
+  "exitStatus": 2,
+  "signalFaultObserved": false,
+  "diagnosis": "The facade requests the readonly Box layout, but the fixture inferred a mutable value field for its object literal. Exact descriptor reflection rejects that distinct physical layout. The inferred and declared property mutability was confirmed by the checked type graph.",
+  "correction": "Annotate the live object with its imported Box contract and split descriptor and identity assertions. Corrected native execution passes without a portable implementation change.",
+  "correctedObservation": "docs/results/native-record-identity-runtime-v3.json",
+  "probe": ".tint-bootstrap/probe-record-identity-layout-mutability-v1.mjs"
+}

@@ -1,0 +1,36 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-conversion-order.ts",
+  "fixtureSha256": "72285076d84cfc719005e12fbf3604987d5c5112bc225ab5e460a27082cf9e06",
+  "imageSha256": "0f6a18ed40503bfc6229a4e970bec34b1c445fadaa6c1e6b698ae22552412ba2",
+  "cases": 3,
+  "passed": 1,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "RangeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "kind": "json-module-runtime-implementation-checkpoint",
+  "conformance": false,
+  "nativeGates": [
+    {
+      "report": "docs/results/native-synthetic-modules-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-json-modules-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "nodeTests": {
+    "synthetic": 6,
+    "json": 4,
+    "focusedHostRegression": "64/64 before the final proposal-boundary assertion"
+  },
+  "scope": "Synthetic module linking/evaluation and JSON parsing/default exports have bespoke native evidence. Full static/dynamic JSON host integration is being validated. No Test262 passes are claimed by this checkpoint.",
+  "pending": [
+    "Complete workspace gates after host integration",
+    "Native JSON Test262-host fixture",
+    "Combined frozen self-build and stage-image comparison",
+    "Complete unchanged language import-attribute and JSON selections"
+  ],
+  "retainedBuildFailures": [
+    ".tint-bootstrap/modules-json-host-native-build-v1.log",
+    ".tint-bootstrap/modules-json-host-native-build-v2.log"
+  ]
+}

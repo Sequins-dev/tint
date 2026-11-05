@@ -1,0 +1,34 @@
+{
+  "kind": "managed-global-access-workspace-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "packages": 49,
+  "nodeTests": {
+    "passed": 3651,
+    "failed": 0,
+    "log": ".tint-bootstrap/managed-access-final-node-v1.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "native": "native-managed-global-access-validation-v1.json",
+  "rootRegressions": [
+    "native-managed-global-access-root-diagnostic-v2-0.json",
+    "native-managed-global-access-root-diagnostic-v2-1.json",
+    "native-managed-global-access-root-diagnostic-v2-2.json",
+    "native-managed-global-access-root-diagnostic-v2-3.json",
+    "native-managed-global-access-root-diagnostic-v2-4.json",
+    "native-managed-global-access-root-diagnostic-v2-5.json",
+    "native-managed-global-access-root-diagnostic-v2-6.json",
+    "native-managed-global-access-root-diagnostic-v2-7.json",
+    "native-managed-global-access-root-diagnostic-v2-8.json"
+  ],
+  "selfHosting": "bootstrap-managed-global-access-v1.json",
+  "scope": "Managed global/property access implementation and indexed typed facades before js-engine ownership migration. Native feature regressions and self-hosting pass; complete Function-family conformance rerun remains separate."
+}

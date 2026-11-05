@@ -1,0 +1,645 @@
+{
+  "kind": "unmeasured-native-group-static-scan",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "inventory": "docs/results/test262-native-group-inventory-v74.json",
+  "suiteVariants": 103264,
+  "whollyUnmeasuredFamilies": 55,
+  "whollyUnmeasuredVariants": 7155,
+  "unrecordedWithinPartialFamilies": 65923,
+  "limitations": "Source text signals and feature tags overlap and do not prove dependency execution or forecast passes. Completed reports across frozen historical sources are an evidence footprint, not current conformance.",
+  "groups": [
+    {
+      "group": "staging/sm",
+      "variants": 2631,
+      "files": 1406,
+      "features": {
+        "Atomics": 4,
+        "SharedArrayBuffer": 2,
+        "Temporal": 2,
+        "Error.isError": 2,
+        "iterator-helpers": 348,
+        "Symbol.iterator": 14,
+        "IsHTMLDDA": 14,
+        "Symbol": 30,
+        "json-parse-with-source": 2,
+        "class": 3,
+        "class-fields-private": 1,
+        "class-fields-public": 1,
+        "nonextensible-applies-to-private": 1,
+        "Float16Array": 4,
+        "Float32Array": 2,
+        "Float64Array": 2,
+        "TypedArray": 2,
+        "symbols-as-weakmap-keys": 2,
+        "host-gc-required": 28
+      },
+      "textSignals": {
+        "eval": 360,
+        "dynamicFunction": 86,
+        "dateTimeFormat": 6,
+        "collator": 6,
+        "dynamicImport": 1,
+        "gc": 28
+      }
+    },
+    {
+      "group": "language/identifiers",
+      "variants": 535,
+      "files": 268,
+      "features": {
+        "class": 120,
+        "class-fields-private": 120,
+        "numeric-separator-literal": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/DateTimeFormat",
+      "variants": 490,
+      "files": 245,
+      "features": {
+        "canonical-tz": 8,
+        "Array.prototype.includes": 12,
+        "Intl.Era-monthcode": 14,
+        "Intl.DateTimeFormat-datetimestyle": 20,
+        "Intl.DateTimeFormat-dayPeriod": 24,
+        "Intl.DateTimeFormat-fractionalSecondDigits": 20,
+        "Intl.DateTimeFormat-extend-timezonename": 4,
+        "intl-normative-optional": 6,
+        "cross-realm": 2,
+        "Reflect": 2,
+        "Symbol": 14,
+        "Reflect.construct": 12,
+        "Temporal": 130,
+        "Intl.DateTimeFormat-formatRange": 74,
+        "Symbol.toStringTag": 8
+      },
+      "textSignals": {
+        "dateTimeFormat": 490,
+        "dynamicFunction": 2,
+        "collator": 2
+      }
+    },
+    {
+      "group": "annexB/language/eval-code",
+      "variants": 470,
+      "files": 469,
+      "features": {},
+      "textSignals": {
+        "eval": 310
+      }
+    },
+    {
+      "group": "harness [direct files]",
+      "variants": 232,
+      "files": 116,
+      "features": {
+        "async-functions": 6,
+        "BigInt": 4,
+        "Symbol": 20,
+        "generators": 2,
+        "Reflect.construct": 2,
+        "TypedArray": 6
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/DurationFormat",
+      "variants": 220,
+      "files": 110,
+      "features": {
+        "Intl.DurationFormat": 218,
+        "Reflect.construct": 4,
+        "Temporal": 12,
+        "Symbol.toStringTag": 4
+      },
+      "textSignals": {
+        "dateTimeFormat": 2
+      }
+    },
+    {
+      "group": "language/types",
+      "variants": 211,
+      "files": 113,
+      "features": {
+        "cross-realm": 4,
+        "Symbol": 8,
+        "Proxy": 4
+      },
+      "textSignals": {
+        "eval": 13
+      }
+    },
+    {
+      "group": "language/asi",
+      "variants": 204,
+      "files": 102,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/NativeErrors",
+      "variants": 188,
+      "files": 94,
+      "features": {
+        "Reflect.construct": 12,
+        "cross-realm": 12,
+        "Reflect": 12,
+        "Symbol": 14,
+        "error-cause": 2
+      },
+      "textSignals": {
+        "dynamicFunction": 12
+      }
+    },
+    {
+      "group": "language/statementList",
+      "variants": 160,
+      "files": 80,
+      "features": {
+        "arrow-function": 48,
+        "class": 40
+      },
+      "textSignals": {
+        "eval": 80
+      }
+    },
+    {
+      "group": "intl402/Segmenter",
+      "variants": 158,
+      "files": 79,
+      "features": {
+        "Intl.Segmenter": 158,
+        "Array.prototype.includes": 2,
+        "BigInt": 2,
+        "Symbol": 8,
+        "cross-realm": 4,
+        "Reflect": 8,
+        "Proxy": 2,
+        "Symbol.toStringTag": 4
+      },
+      "textSignals": {
+        "dynamicFunction": 8
+      }
+    },
+    {
+      "group": "language/import",
+      "variants": 135,
+      "files": 129,
+      "features": {
+        "import-attributes": 23,
+        "json-modules": 13,
+        "globalThis": 1,
+        "dynamic-import": 2,
+        "import-text": 5,
+        "immutable-arraybuffer": 5,
+        "import-bytes": 5,
+        "import-defer": 109,
+        "top-level-await": 8,
+        "promise-with-resolvers": 1,
+        "nonextensible-applies-to-private": 1
+      },
+      "textSignals": {
+        "dynamicImport": 5
+      }
+    },
+    {
+      "group": "language/white-space",
+      "variants": 134,
+      "files": 67,
+      "features": {
+        "u180e": 4
+      },
+      "textSignals": {
+        "eval": 32
+      }
+    },
+    {
+      "group": "intl402/Collator",
+      "variants": 130,
+      "files": 65,
+      "features": {
+        "cross-realm": 2,
+        "Reflect": 2,
+        "Symbol": 2,
+        "Reflect.construct": 8,
+        "Symbol.toStringTag": 8
+      },
+      "textSignals": {
+        "collator": 130,
+        "dynamicFunction": 2,
+        "dateTimeFormat": 2
+      }
+    },
+    {
+      "group": "built-ins/ShadowRealm",
+      "variants": 124,
+      "files": 64,
+      "features": {
+        "ShadowRealm": 124,
+        "Reflect.construct": 6,
+        "Symbol.toStringTag": 2,
+        "Array.prototype.includes": 2,
+        "cross-realm": 6,
+        "Reflect": 6
+      },
+      "textSignals": {
+        "eval": 2
+      }
+    },
+    {
+      "group": "intl402/DisplayNames",
+      "variants": 114,
+      "files": 57,
+      "features": {
+        "Intl.DisplayNames": 92,
+        "Reflect": 8,
+        "Proxy": 2,
+        "Symbol": 16,
+        "BigInt": 4,
+        "Intl.DisplayNames-v2": 22,
+        "cross-realm": 2,
+        "Symbol.toStringTag": 2
+      },
+      "textSignals": {
+        "dynamicFunction": 6,
+        "dateTimeFormat": 2
+      }
+    },
+    {
+      "group": "staging/explicit-resource-management",
+      "variants": 105,
+      "files": 53,
+      "features": {
+        "cross-realm": 2,
+        "explicit-resource-management": 105,
+        "globalThis": 4
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/future-reserved-words",
+      "variants": 85,
+      "files": 55,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "language/line-terminators",
+      "variants": 82,
+      "files": 41,
+      "features": {},
+      "textSignals": {
+        "eval": 18
+      }
+    },
+    {
+      "group": "built-ins/AsyncFromSyncIteratorPrototype",
+      "variants": 76,
+      "files": 38,
+      "features": {
+        "async-iteration": 76
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/directive-prologue",
+      "variants": 62,
+      "files": 62,
+      "features": {},
+      "textSignals": {
+        "eval": 10,
+        "dynamicFunction": 4
+      }
+    },
+    {
+      "group": "built-ins/global",
+      "variants": 56,
+      "files": 29,
+      "features": {
+        "globalThis": 4
+      },
+      "textSignals": {
+        "eval": 16
+      }
+    },
+    {
+      "group": "language/reserved-words",
+      "variants": 53,
+      "files": 27,
+      "features": {},
+      "textSignals": {
+        "dynamicImport": 2
+      }
+    },
+    {
+      "group": "language/keywords",
+      "variants": 50,
+      "files": 25,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "intl402 [direct files]",
+      "variants": 44,
+      "files": 22,
+      "features": {
+        "Array.prototype.includes": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/String",
+      "variants": 38,
+      "files": 19,
+      "features": {
+        "Reflect.construct": 2
+      },
+      "textSignals": {
+        "collator": 20
+      }
+    },
+    {
+      "group": "built-ins/isFinite",
+      "variants": 30,
+      "files": 15,
+      "features": {
+        "Reflect.construct": 2,
+        "arrow-function": 2,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 12
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/isNaN",
+      "variants": 30,
+      "files": 15,
+      "features": {
+        "Reflect.construct": 2,
+        "arrow-function": 2,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 12
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/ThrowTypeError",
+      "variants": 28,
+      "files": 14,
+      "features": {
+        "cross-realm": 2
+      },
+      "textSignals": {
+        "dynamicFunction": 2
+      }
+    },
+    {
+      "group": "built-ins/AsyncIteratorPrototype",
+      "variants": 26,
+      "files": 13,
+      "features": {
+        "explicit-resource-management": 18,
+        "Symbol.asyncIterator": 8,
+        "async-iteration": 8
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/Date",
+      "variants": 24,
+      "files": 12,
+      "features": {
+        "Reflect.construct": 6
+      },
+      "textSignals": {
+        "dateTimeFormat": 8
+      }
+    },
+    {
+      "group": "built-ins/MapIteratorPrototype",
+      "variants": 22,
+      "files": 11,
+      "features": {
+        "Symbol.iterator": 18,
+        "Symbol.toStringTag": 2,
+        "Symbol": 8
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/SetIteratorPrototype",
+      "variants": 22,
+      "files": 11,
+      "features": {
+        "Symbol.toStringTag": 2,
+        "Symbol.iterator": 18,
+        "Symbol": 8
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/identifier-resolution",
+      "variants": 22,
+      "files": 14,
+      "features": {
+        "class-static-block": 2,
+        "Symbol.unscopables": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/punctuators",
+      "variants": 22,
+      "files": 11,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "annexB/language/literals",
+      "variants": 16,
+      "files": 8,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "staging/built-ins",
+      "variants": 16,
+      "files": 8,
+      "features": {
+        "SharedArrayBuffer": 6,
+        "ArrayBuffer": 6,
+        "resizable-arraybuffer": 6,
+        "RegExp.escape": 2,
+        "regexp-duplicate-named-groups": 6
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/StringIteratorPrototype",
+      "variants": 14,
+      "files": 7,
+      "features": {
+        "Symbol.iterator": 14,
+        "Symbol.toStringTag": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "staging/decorators",
+      "variants": 14,
+      "files": 7,
+      "features": {
+        "decorators": 14
+      },
+      "textSignals": {
+        "eval": 4
+      }
+    },
+    {
+      "group": "built-ins/undefined",
+      "variants": 12,
+      "files": 8,
+      "features": {},
+      "textSignals": {
+        "eval": 2
+      }
+    },
+    {
+      "group": "built-ins/Infinity",
+      "variants": 10,
+      "files": 6,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/NaN",
+      "variants": 10,
+      "files": 6,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "built-ins/AbstractModuleSource",
+      "variants": 8,
+      "files": 8,
+      "features": {
+        "source-phase-imports": 8
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "staging [direct files]",
+      "variants": 8,
+      "files": 4,
+      "features": {
+        "set-methods": 8
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "staging/set-methods",
+      "variants": 6,
+      "files": 3,
+      "features": {
+        "set-methods": 6
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/Array",
+      "variants": 4,
+      "files": 2,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/FallbackSymbol",
+      "variants": 4,
+      "files": 2,
+      "features": {
+        "intl-normative-optional": 4
+      },
+      "textSignals": {
+        "dateTimeFormat": 4
+      }
+    },
+    {
+      "group": "staging/source-phase-imports",
+      "variants": 4,
+      "files": 2,
+      "features": {
+        "source-phase-imports": 4,
+        "source-phase-imports-module-source": 2
+      },
+      "textSignals": {
+        "dynamicImport": 2
+      }
+    },
+    {
+      "group": "staging/Temporal",
+      "variants": 4,
+      "files": 2,
+      "features": {
+        "Temporal": 4
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/export",
+      "variants": 3,
+      "files": 3,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "annexB/built-ins/TypedArrayConstructors",
+      "variants": 2,
+      "files": 1,
+      "features": {
+        "Symbol.iterator": 2,
+        "TypedArray": 2,
+        "IsHTMLDDA": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "intl402/TypedArray",
+      "variants": 2,
+      "files": 1,
+      "features": {
+        "TypedArray": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "language/source-text",
+      "variants": 2,
+      "files": 1,
+      "features": {},
+      "textSignals": {}
+    },
+    {
+      "group": "staging/Uint8Array",
+      "variants": 2,
+      "files": 1,
+      "features": {
+        "uint8array-base64": 2,
+        "TypedArray": 2
+      },
+      "textSignals": {}
+    },
+    {
+      "group": "staging/top-level-await",
+      "variants": 1,
+      "files": 1,
+      "features": {
+        "top-level-await": 1
+      },
+      "textSignals": {
+        "dynamicImport": 1
+      }
+    }
+  ]
+}

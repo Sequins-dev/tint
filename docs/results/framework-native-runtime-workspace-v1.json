@@ -1,0 +1,31 @@
+{
+  "kind": "framework-native-runtime-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "2064e252a6fe06f2a070218636f237ae67365df8172b04d6af41370f39072b88",
+    "files": 509
+  },
+  "packages": 22,
+  "nodeTests": {
+    "passed": 3676,
+    "failed": 0,
+    "log": ".tint-bootstrap/native-runtime-full-node-v2.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "parity": "framework-native-runtime-parity-v1.json",
+  "preserved": {
+    "sourceBodies": 508,
+    "movedImplementations": 24,
+    "movedTests": 18,
+    "runtimeHelperNamespaces": true,
+    "smokeBytes": true
+  },
+  "hostBoundary": "Filesystem declarations moved to public trusted intrinsic entry; OS error policy remains in platform facade",
+  "nativeSelfBuild": "Not yet measured on this snapshot; previous launch failure retained in bootstrap-js-runtime-launch-v1.json"
+}

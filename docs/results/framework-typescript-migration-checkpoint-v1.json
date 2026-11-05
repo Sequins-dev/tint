@@ -1,0 +1,43 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T11:38:30.673633+00:00",
+  "slice": "M4 TypeScript frontend, SourceModule model and loader",
+  "beforeSource": {
+    "sha256": "49c9d453308322cd63662365c0315d37722b559d1a832a44da94eacc447b9d71",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "59626d24be3157c89b07bc8cefee983144d95b510f3ba94f7a8bf82d8653c2e2",
+    "files": 493
+  },
+  "packages": 75,
+  "workspaceGates": {
+    "tests": 3464,
+    "passed": 3464,
+    "types": "passed build/tests/host",
+    "boundaries": "75 packages",
+    "formatting": "passed",
+    "evidence": [
+      "framework-typescript-workspace-validation-v1.json",
+      "source-module-contract-workspace-validation-v1.json",
+      "typescript-modules-workspace-validation-v1.json"
+    ]
+  },
+  "contract": "No frontend-to-linker edge; unchanged SourceModule shape moved into data-only model before loader consolidation. Compiler/checker behavior unchanged.",
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-modules-after-v1/manifest.json"
+  },
+  "hostParserRegression": "framework-typescript-parser-regression-v1.json",
+  "nativeIntermediateRegressions": [
+    "framework-typescript-native-class-contracts-v1.json",
+    "framework-typescript-native-module-bindings-v1.json",
+    "framework-typescript-native-checker-v1.json"
+  ],
+  "selfbuild": "bootstrap-framework-modules-v1.json",
+  "selfbuildBytes": 60727458,
+  "selfbuildByteIdentical": true,
+  "limitations": "Ownership/dependency consolidation only; native-prepared checker pipeline and native-shaped vocabulary remain for later semantic separation. No TS-to-JS emitter or new Test262 behavior coverage."
+}

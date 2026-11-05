@@ -1,0 +1,31 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-zoned-date-time.ts",
+  "fixtureSha256": "d2a26cad66920a53a8f3562dae815772a1b26835772d054913d53f36b02575dd",
+  "imageSha256": "c6980dcfa32f50365063f6f0a649dc00cd83131cc1c63669dc8b4b9a7ddb608e",
+  "cases": 3,
+  "passed": 2,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

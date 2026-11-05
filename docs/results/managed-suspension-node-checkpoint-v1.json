@@ -1,0 +1,22 @@
+{
+  "kind": "managed-suspension-node-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "cbdc9ed32ac36d74a37676fb3c84333d7f2417777fe7b7842d1174e48cf204bb",
+    "files": 552
+  },
+  "workspaceTests": 4116,
+  "workspaceLog": ".tint-bootstrap/managed-suspension-workspace-check-v3.log",
+  "red": ".tint-bootstrap/managed-suspension-red-v1.log",
+  "focusedGreen": ".tint-bootstrap/managed-suspension-green-v1.log",
+  "driverGreen": ".tint-bootstrap/managed-suspension-driver-green-v1.log",
+  "varianceGate": "unchanged; rejection tests pass",
+  "surface": "unchanged: 128 vocabulary, 183 records, 166 signatures, 41 runtimes",
+  "loweringHashes": "two suspension corpus hashes changed; six other corpus hashes and direct-eval hash unchanged",
+  "nativeStatus": "seven-case managed suspension image built; existing AOT control images building",
+  "remaining": [
+    "native suspension and control fixtures",
+    "frozen self-build",
+    "general AsyncFunction body lowering and promise dispatch"
+  ]
+}

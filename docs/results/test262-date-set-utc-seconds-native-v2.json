@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "a2c963b36d011350d7ef20fe344433f75731e02abb176125560c5a89a46f5a06",
+    "files": 416
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 18,
+        "kind": "execution",
+        "compileMs": 2123.1533339999996,
+        "outcome": "unsupported"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/Date/prototype/setUTCSeconds",
+  "totals": {
+    "total": 18,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 18,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/arg-coercion-order.js",
+      "sha256": "d5f2f7718ba33a48cbf8550b9f70042e53780991e2d33bd0d24a728f6068dee9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2197.701333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/arg-coercion-order.js",
+      "sha256": "d5f2f7718ba33a48cbf8550b9f70042e53780991e2d33bd0d24a728f6068dee9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2189.437167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-invalid.js",
+      "sha256": "e1592c2a40636339248e9cd62b5242d2c93fae6010f6395f2a0401e3b4cf92af",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2184.864208,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-invalid.js",
+      "sha256": "e1592c2a40636339248e9cd62b5242d2c93fae6010f6395f2a0401e3b4cf92af",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2180.693792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-valid.js",
+      "sha256": "0cb572a97f8d63c00f200fc4477dcd2cbc0cfb6c5b0cf1d17eb004f6a94ae893",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2178.509,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/date-value-read-before-tonumber-when-date-is-valid.js",
+      "sha256": "0cb572a97f8d63c00f200fc4477dcd2cbc0cfb6c5b0cf1d17eb004f6a94ae893",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2176.032583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/length.js",
+      "sha256": "2fedfb7d350a6b7c2700b908addeb0f283e10b49fcc70881c83a097890d89942",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2171.992542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/length.js",
+      "sha256": "2fedfb7d350a6b7c2700b908addeb0f283e10b49fcc70881c83a097890d89942",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2163.56775,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/name.js",
+      "sha256": "a648304ea66b080b608156b841c0e45bd04533515ce62a759673810f854283b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2157.4568750000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/name.js",
+      "sha256": "a648304ea66b080b608156b841c0e45bd04533515ce62a759673810f854283b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2148.783125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/not-a-constructor.js",
+      "sha256": "b1cb692b3ba140c1f31b6c56648c8bf9db8ea34486a57f9953780497282187a2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2144.343041,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/not-a-constructor.js",
+      "sha256": "b1cb692b3ba140c1f31b6c56648c8bf9db8ea34486a57f9953780497282187a2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2142.8568750000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/prop-desc.js",
+      "sha256": "061d80acc7ee5c78ec04122ba11d39bd69644016574f308e5e0ff40f43f994db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2135.819708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/prop-desc.js",
+      "sha256": "061d80acc7ee5c78ec04122ba11d39bd69644016574f308e5e0ff40f43f994db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2132.4458329999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/this-value-valid-date-ms.js",
+      "sha256": "7137a03627342b2adec72a17d802725b30893954f991f1e2206ad33b107c0e26",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2129.403167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/this-value-valid-date-ms.js",
+      "sha256": "7137a03627342b2adec72a17d802725b30893954f991f1e2206ad33b107c0e26",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2128.240333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/this-value-valid-date-sec.js",
+      "sha256": "5748faebd10e375c147e7a40cb47ef686bd0cd016b648d761c632e9f24ef7b34",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2126.792667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Date/prototype/setUTCSeconds/this-value-valid-date-sec.js",
+      "sha256": "5748faebd10e375c147e7a40cb47ef686bd0cd016b648d761c632e9f24ef7b34",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"check\",\"message\":\"packages/ordinary-object/src/primitive-intrinsics.ts:1957:2006: default parameters currently require primitive, object, collection or supported array types\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2125.629125,
+      "batch": 0
+    }
+  ]
+}

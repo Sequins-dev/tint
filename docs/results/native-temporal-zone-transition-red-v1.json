@@ -1,0 +1,61 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "934b5e0061e43ff0093aa7683d9314980f54bb7e0fa41ffdada3ae66d1045a3e",
+      "files": 432
+    },
+    "imageSha256": "3910e0a91854ca036c3debb0fb40b745fe94a2b400511961a9d56fa53b52ece4",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const zone of [\"UTC\",\"+05:30\",\"-02:00\"]){const z=new Temporal.ZonedDateTime(0n,zone);for(const direction of [\"next\",\"previous\"]){if(z.getTimeZoneTransition(direction)!==null||z.getTimeZoneTransition({direction})!==null)throw 1;}for(const value of [undefined,null,1,true,{},Object.create(null)]){let caught=false;try{z.getTimeZoneTransition(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}for(const value of [\"\",{direction:\"\"},{direction:1}]){let caught=false;try{z.getTimeZoneTransition(value);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 3;}}",
+        "sha256": "2719ea95d689ab4f502e81849e624999aa84a2b547175b9525ff3c348ba64767"
+      },
+      {
+        "index": 1,
+        "source": "const a=Temporal.ZonedDateTime.from(\"2024-07-01T00:00[America/New_York]\");const next=a.getTimeZoneTransition(\"next\"),prev=a.getTimeZoneTransition(\"previous\");if(next.epochNanoseconds!==1730613600000000000n||prev.epochNanoseconds!==1710054000000000000n)throw 1;if(prev.getTimeZoneTransition(\"next\").epochNanoseconds!==next.epochNanoseconds)throw 2;if(new Temporal.ZonedDateTime(prev.epochNanoseconds+1n,\"America/New_York\").getTimeZoneTransition(\"previous\").epochNanoseconds!==prev.epochNanoseconds)throw 3;",
+        "sha256": "a203e20fd0de37cdcb44d37e8731d7fcb079510afe7cd83e5acc4d208db330c8"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-GZe7cr/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-GZe7cr/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry -- 0\n\nDebugserver: \nConnection: "
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-GZe7cr/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-GZe7cr/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry -- 1\n\nDebugserver: \nConnection: "
+      }
+    }
+  ]
+}

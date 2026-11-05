@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "lldb-local-stdio",
+    "debuggerStdio": "debugger-managed",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants and source/harness identities verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "annexB/built-ins/Object",
+  "sourceSnapshot": {
+    "sha256": "438d7748be1da9064d98fbb2f8d8640c1fa73bd9adf4ac43c73469d06d12e0f4",
+    "files": 506
+  },
+  "sourceSnapshotFile": ".tint-bootstrap/node-toolchain-native-behavior-v9-collations-v1/source-snapshot.json",
+  "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 1048576,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/test262-full-suite-native-v9.jsonl",
+    "journalSha256": "c79cd754a89d5f68f6de90c7cc5a94c8b2a8d3c639a9d24cdf7b23d50e47cf7f",
+    "journalBytes": 114900,
+    "observedVariants": 192
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 47759.711583,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "annexB/built-ins/Object/is/emulates-undefined.js",
+      "sha256": "cf0bb6210ef22927e966d8a1c62692438a4066772eb779d1e2dba42d7fb75257",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "IsHTMLDDA"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 193353.998583,
+      "batch": 0
+    },
+    {
+      "path": "annexB/built-ins/Object/is/emulates-undefined.js",
+      "sha256": "cf0bb6210ef22927e966d8a1c62692438a4066772eb779d1e2dba42d7fb75257",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "IsHTMLDDA"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 195596.642708,
+      "batch": 0
+    }
+  ]
+}

@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/assignment/destructuring",
+  "totals": {
+    "total": 15,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 11,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.26666666666666666
+  },
+  "observations": [
+    {
+      "path": "language/expressions/assignment/destructuring/default-expr-throws-iterator-return-get-throws.js",
+      "sha256": "993f8ce98826a56402bede063bad891fc25915d91a42cb560c9e6d6d5a549423",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1427,\"end\":1435,\"position\":{\"line\":54,\"column\":22}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 10.477792000000022
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/default-expr-throws-iterator-return-get-throws.js",
+      "sha256": "993f8ce98826a56402bede063bad891fc25915d91a42cb560c9e6d6d5a549423",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1441,\"end\":1449,\"position\":{\"line\":55,\"column\":22}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.146792000000005
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/default-expr-throws-iterator-return-is-not-callable.js",
+      "sha256": "cfe8e2dd98fb1b7129bea91ce11fc921e0aece3e52383769e4bccbd6137c1469",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"bigint-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"invalid or unsupported numeric suffix\",\"start\":1306,\"end\":1307,\"position\":{\"line\":39,\"column\":31}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.060292000000004
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/default-expr-throws-iterator-return-is-not-callable.js",
+      "sha256": "cfe8e2dd98fb1b7129bea91ce11fc921e0aece3e52383769e4bccbd6137c1469",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"bigint-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"invalid or unsupported numeric suffix\",\"start\":1320,\"end\":1321,\"position\":{\"line\":40,\"column\":31}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.444375000000008
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/iterator-destructuring-property-reference-target-evaluation-order.js",
+      "sha256": "7c1c0c18ff337cc30318cb7cb12dbd6d63e8bfb2cddea54ac77aed0cc65c2bbf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1977,\"end\":1983,\"position\":{\"line\":73,\"column\":28}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.4944169999999986
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/iterator-destructuring-property-reference-target-evaluation-order.js",
+      "sha256": "7c1c0c18ff337cc30318cb7cb12dbd6d63e8bfb2cddea54ac77aed0cc65c2bbf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol.iterator"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1991,\"end\":1997,\"position\":{\"line\":74,\"column\":28}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.5301660000000084
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/keyed-destructuring-property-reference-target-evaluation-order-with-bindings.js",
+      "sha256": "71b83c3a9b80eda101a3e6f3b75b2168d7da7b5dfca6868e227d961f3d36601d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [
+          "Proxy"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"statement form not implemented\",\"start\":1740,\"end\":1744,\"position\":{\"line\":74,\"column\":1}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.551249999999982
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/keyed-destructuring-property-reference-target-evaluation-order.js",
+      "sha256": "cce2bf12e70f0ae3e97e97ba27f56c7ea24bdfc0c9a9598b8c63144060e742a3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6096.726291
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/keyed-destructuring-property-reference-target-evaluation-order.js",
+      "sha256": "cce2bf12e70f0ae3e97e97ba27f56c7ea24bdfc0c9a9598b8c63144060e742a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4103.091167
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/obj-prop-__proto__dup.js",
+      "sha256": "1bb757400c3d13f85d8bf8a2600908008aff7d65cbe96acad517958be4ecc586",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3977.28025
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/obj-prop-__proto__dup.js",
+      "sha256": "1bb757400c3d13f85d8bf8a2600908008aff7d65cbe96acad517958be4ecc586",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4078.8462500000005
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/target-assign-throws-iterator-return-get-throws.js",
+      "sha256": "8be00fcea7103c72239df78dae5ac38a4ef1b03b37450a61bb5f277f086602d7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1427,\"end\":1435,\"position\":{\"line\":55,\"column\":17}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.9915000000000873
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/target-assign-throws-iterator-return-get-throws.js",
+      "sha256": "8be00fcea7103c72239df78dae5ac38a4ef1b03b37450a61bb5f277f086602d7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid assignment target\",\"start\":1441,\"end\":1449,\"position\":{\"line\":56,\"column\":17}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.037916999997833
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/target-assign-throws-iterator-return-is-not-callable.js",
+      "sha256": "16cbdde629e77b7d9df1e8c417ecddac534b6b71cbb2beec2b0c9f8ff86309e0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"bigint-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"invalid or unsupported numeric suffix\",\"start\":1320,\"end\":1321,\"position\":{\"line\":41,\"column\":31}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.7908750000024156
+    },
+    {
+      "path": "language/expressions/assignment/destructuring/target-assign-throws-iterator-return-is-not-callable.js",
+      "sha256": "16cbdde629e77b7d9df1e8c417ecddac534b6b71cbb2beec2b0c9f8ff86309e0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"bigint-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"invalid or unsupported numeric suffix\",\"start\":1334,\"end\":1335,\"position\":{\"line\":42,\"column\":31}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.671583000003011
+    }
+  ]
+}

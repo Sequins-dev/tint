@@ -1,0 +1,21 @@
+{
+  "kind": "language-legacy-caller-probe",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "inheritedRestrictedAccessor": true,
+  "ownCaller": false,
+  "result": "TypeError from Function.prototype restricted accessor",
+  "historicalCases": [
+    "language/arguments-object/10.6-13-a-2.js",
+    "language/arguments-object/10.6-13-a-3.js"
+  ],
+  "classification": "Optional legacy caller extension is not implemented; current full arguments selection is queued and must retain its actual outcomes.",
+  "specification": [
+    "https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-addrestrictedfunctionproperties",
+    "https://tc39.es/ecma262/multipage/error-handling-and-language-extensions.html#sec-forbidden-extensions"
+  ]
+}

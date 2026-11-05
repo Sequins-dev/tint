@@ -1,0 +1,28 @@
+{
+  "kind": "framework-bench-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "b64c08af0eca8c3742be97984f5ee0e7adcb3b4dc070988f8ff311b4f00a7494",
+    "files": 503
+  },
+  "packages": 15,
+  "nodeTests": {
+    "passed": 3651,
+    "failed": 0,
+    "log": ".tint-bootstrap/bench-full-node-v1.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "unchangedAcrossConsolidation": true
+  },
+  "scope": "Framework ownership or explicit host-policy checkpoint; no native conformance percentage claim.",
+  "nativeSelfBuild": "Latest verified fixed point remains bootstrap-managed-global-access-v1.json. New-source attempts and pre-entry observations are separate."
+}

@@ -1,0 +1,13 @@
+{
+  "kind": "native-fixture-configuration-analysis",
+  "observation": "docs/results/native-managed-witness-factory-compiler-v1.json",
+  "observed": "Fixture exited explicitly with 48 when nested compileArm64Program returned failure; no signal fault was observed.",
+  "nodeReference": {
+    "matchingRequest": true,
+    "stage": "runtime",
+    "message": "missing runtime helper: sparse-list:createList"
+  },
+  "correction": "Supply the actual SparseList source and its existing runtime namespace for unknown[] signature representation, without changing portable implementation.",
+  "validatedBy": "docs/results/native-managed-witness-factory-compiler-v2.json",
+  "scope": "Node reproducer plus successful corrected native fixture; the failed native fixture did not emit its compiler diagnostic text."
+}

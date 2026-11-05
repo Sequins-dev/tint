@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 2,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v18-managed-dynamic-import",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true
+  },
+  "scope": "Exactly four unchanged previously unsupported JSON-enumeration and errored-async-cycle Script variants, selected by the retained baseline. Each uses the original harness and variant policy in a fresh native process. One compiled batch is reused. No whole-directory or whole-suite claim.",
+  "variantPolicy": "The exact path/variant inputs listed in this report; strictness and harnesses preserved, no source edits.",
+  "sourceSnapshot": {
+    "sha256": "1d06070d45015519f71c3888200353cf3626288ec47f5d95f88d3ce11ccf75c4",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-dynamic-import-v1/source-snapshot.json",
+  "frozenToolchainSha256": "fabcb1002048d0f7eee0eb968fe53e7508c310bee95d5d7a714117d0e2df2875",
+  "resumption": {
+    "restoredVariants": 0
+  },
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/dynamic-import [JSON and async cycle subset]",
+  "rootSelection": "language/expressions/dynamic-import",
+  "requestedVariants": 4,
+  "complete": true,
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": [
+    {
+      "id": 0,
+      "variants": 4,
+      "compileMs": 136032.47287499998,
+      "outcome": "compiled",
+      "kind": "execution"
+    }
+  ],
+  "observations": [
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "sha256": "d41403f828a98f68800f7224bd595ff3c0cdafce04d9b3748d56dc0cfb15cf9f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "json-modules",
+          "Symbol",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5160.785333000007,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "sha256": "d41403f828a98f68800f7224bd595ff3c0cdafce04d9b3748d56dc0cfb15cf9f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "json-modules",
+          "Symbol",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1925.4141660000023,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+      "sha256": "f88cc90a6755753ff88bcff5312d4322eed5cf23b4407fcdbf7e80b591c51d33",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "top-level-await",
+          "dynamic-import"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js",
+          "sha256": "9ececceed2f87cb4b633f86c1bbcb1728f19ccf3e3a2a73dd079e817af36b045"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-b_FIXTURE.js",
+          "sha256": "d1d9542bfa9fe11b766da08371b5ed3af3aaee79a7b2be15f43e2fc74833631d"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-c_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-main_FIXTURE.js",
+          "sha256": "dc3e5a297676f3e9bc9d4b72dfaaf2490d6564e3bb2c9a805f0cf21593679279"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-x_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 241.22595799999544,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+      "sha256": "f88cc90a6755753ff88bcff5312d4322eed5cf23b4407fcdbf7e80b591c51d33",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "top-level-await",
+          "dynamic-import"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js",
+          "sha256": "9ececceed2f87cb4b633f86c1bbcb1728f19ccf3e3a2a73dd079e817af36b045"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-b_FIXTURE.js",
+          "sha256": "d1d9542bfa9fe11b766da08371b5ed3af3aaee79a7b2be15f43e2fc74833631d"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-c_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-main_FIXTURE.js",
+          "sha256": "dc3e5a297676f3e9bc9d4b72dfaaf2490d6564e3bb2c9a805f0cf21593679279"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-x_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 242.30383299998357,
+      "batch": 0
+    }
+  ],
+  "totals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "timingPolicy": "Per-variant native execution elapsedMs; compilation is recorded separately.",
+  "imageSha256": "34890dab618a282d63f6729e5a10ebe761c0c4c64f307e254482a7d1ded75c46",
+  "baseline": "docs/results/test262-script-dynamic-import-directory-v1.json",
+  "overlap": "These variants overlap the retained 1900-variant directory report; the totals must not be added or merged."
+}

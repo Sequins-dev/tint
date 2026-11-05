@@ -1,0 +1,11 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-methods.ts",
+  "fixtureSha256": "b36ed98d800ad1128eba507d6f931831d04e7f19c1363cdaea042b7787055822",
+  "cases": 32,
+  "passed": 32,
+  "nativeValidation": "Isolated LLDB-controlled native processes, expected exit 42; Node reference sources also completed.",
+  "scope": "Adds concat holes, spreadability, species, ordering, overflow and partial failure to the previous Array regression cases."
+}

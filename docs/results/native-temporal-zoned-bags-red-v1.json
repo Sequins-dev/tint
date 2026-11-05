@@ -1,0 +1,33 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "fixture": "tools/verify-test262-native-temporal-zoned-from.ts",
+  "fixtureSha256": "ca7a3168244ab4297429623f7c1c99d77f9073e8a13c05f1a0db22aff8ec4d71",
+  "imageSha256": "03caa8603b4a29ff31a018879172c897d09e65baa4b2a56d3b6e86f346517599",
+  "phase": "red",
+  "cases": 3,
+  "completed": 0,
+  "observations": [
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

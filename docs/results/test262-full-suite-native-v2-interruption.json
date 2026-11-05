@@ -1,0 +1,29 @@
+{
+  "kind": "interrupted-native-baseline",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "fd02b84820ad768872c8289727e3c8133c0a72cd715bb881024210e2177b9db1",
+    "files": 401
+  },
+  "journal": "docs/results/test262-full-suite-native-v2.jsonl",
+  "observed": 1449,
+  "counts": {
+    "crash": 36,
+    "fail": 108,
+    "unsupported": 655,
+    "pass": 647,
+    "timeout": 3
+  },
+  "variants": 103264,
+  "notObserved": 101815,
+  "interruptedAt": "2026-11-01T23:47:29.523270+00:00",
+  "activeChild": false,
+  "reason": "Stopped during compiler work after isolating debugger permission on development images. The next baseline will use Tint-produced XML/DER get-task-allow entitlements. All original outcomes remain unchanged. Diagnostic pauses mean this run is not timing evidence.",
+  "evidence": [
+    "docs/results/native-debugger-entitled-cold-v1.json",
+    "docs/results/native-temporal-date-with-own-signature-v2.json",
+    "docs/results/native-temporal-date-time-with-own-signature-v2.json",
+    "docs/results/native-labelled-functions-own-signature-v2.json"
+  ]
+}

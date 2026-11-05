@@ -1,0 +1,37 @@
+{
+  "kind": "direct-eval-entry-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "a933de824b21745d545e30d0e1076a31592a2fa25d4dc1760121a20dc3d836cc",
+    "files": 552
+  },
+  "nativeReport": "docs/results/native-direct-eval-entry-v2.json",
+  "workspaceGate": {
+    "tests": 4083,
+    "log": ".tint-bootstrap/direct-eval-entry-workspace-check-v1.log"
+  },
+  "scope": [
+    "caller-site view before the catchable body",
+    "fresh eval lexical scope over caller environments",
+    "sloppy variable target and strict variable isolation",
+    "caller this/new.target/effective Script identity",
+    "inherited catch chain with nested-function reset",
+    "closure retention after 32 MiB allocation churn",
+    "enclosing-this capture corrected independently of eval-call receiver"
+  ],
+  "surface": {
+    "entries": 126,
+    "instantiated": 40,
+    "helpers": 104,
+    "genericHelpers": 29,
+    "exportedTypes": 22,
+    "recordClasses": 182,
+    "signatureClasses": 164,
+    "runtimeProviders": 41
+  },
+  "notEnabled": "direct string eval through the intrinsic; evaluator service and host routing are next",
+  "deferred": [
+    "class/private/super capabilities",
+    "compiler reuse and complete-suite measurement"
+  ]
+}

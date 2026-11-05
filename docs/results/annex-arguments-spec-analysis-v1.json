@@ -1,0 +1,19 @@
+{
+  "kind": "annex-binding-test-discrepancy-analysis",
+  "conformance": false,
+  "native": "test262-annexb-function-code-native-v1.json",
+  "reference": "test262-annex-arguments-node-reference-v1.json",
+  "referenceTotals": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "specification": "https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-functiondeclarationinstantiation",
+  "explanation": "The pinned older test expects an implicit arguments object to prevent the Annex B block-function copy. The current FunctionDeclarationInstantiation step 32 checks formal paramNames, not paramBindings (which also contains the implicit arguments binding). It skips allocating an additional arguments var but still performs the assignment. Node v24.12.0 and Tint both fail this older expectation. Preserve the failure and current-spec runtime behavior.",
+  "implementation": "Exploratory change reverted; compiler and lowering sources restored byte-for-byte against the frozen v9 snapshot."
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "native-lowering-compatibility-cleanup",
+  "sourceSnapshot": {
+    "sha256": "f7e532c38f092726a66d5d70dda369861d7fbdcc547ad500c9bff3bfd02e3281",
+    "files": 507
+  },
+  "packages": 49,
+  "nodeTests": {
+    "passed": 3652,
+    "failed": 0,
+    "log": ".tint-bootstrap/js-engine-cleanup-full-node-v1.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "pureMove": "framework-js-engine-lowering-workspace-v1.json",
+  "changes": [
+    "immutable captured statement view retains declared variant facts across helper calls",
+    "assert dense switch-child and import-name lists",
+    "deduplicate named runtime-import construction"
+  ],
+  "nativeBuild": ".tint-bootstrap/js-engine-lowering-native-build-v6.log",
+  "nativeObservation": "js-engine-lowering-native-v1.json",
+  "remaining": "Native execution hit the runtime-fixture stack guard at a 156432-byte recursive statement frame; larger compiler-workload stack observation is separate. No native-lowering behavior pass claimed by this report."
+}

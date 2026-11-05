@@ -1,0 +1,59 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "89beb26dd6e29d2c3017697e8f3f10a15f929b9f6fb2cda7b83347c7958dcfd5",
+    "files": 502
+  },
+  "packages": 62,
+  "nodeTests": 3557,
+  "checks": [
+    {
+      "path": ".tint-bootstrap/shared-buffer-combined-full-node-v4.log",
+      "sha256": "a0dafb011e99327f16076c67f270f9812c74ad559502f3811df235ef4712e05f"
+    },
+    {
+      "path": ".tint-bootstrap/shared-host-types-v2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".tint-bootstrap/shared-buffer-combined-host-types-v3.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".tint-bootstrap/shared-buffer-combined-build-v2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".tint-bootstrap/shared-buffer-combined-boundaries-v2.log",
+      "sha256": "aeee0ef51f1102cd3c9c53a24827f9c86cffe1f54e1e3697aa01e18fcd97d026"
+    },
+    {
+      "path": ".tint-bootstrap/shared-buffer-combined-format-check-v3.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "nativeProofs": [
+    "docs/results/shared-block-service-s1b-native-v2.json",
+    "docs/results/shared-array-buffer-api-native-v1.json"
+  ],
+  "nativeProofScope": "Independent native reports retain their exact source identities. The final fixed-shared-view extensibility correction is Node-verified; updated full-family native reruns are pending.",
+  "capabilities": {
+    "disposal": true,
+    "asyncDisposal": true,
+    "sharedBuffers": true
+  },
+  "features": [
+    "Bounded scalar native shared registry, rollback, stable aliases, seq-cst CAS growth",
+    "Explicit SAB constructor, brand, grow and species/slice semantics",
+    "Shared DataView byte access and whole-width typed-array element/bulk access",
+    "Exact 64-bit BigInt transport without Number payload conversion",
+    "Shared byte-codec partial writes before syntax error",
+    "Captured public export capability resolution, independent of private runtime file paths"
+  ],
+  "limitations": [
+    "Engine-lifetime bounded mapping retention; no early reclaim or destroy API",
+    "No Atomics, workers or multi-agent memory-model correctness claim",
+    "Bespoke/native compiler regressions are separate from unchanged Test262 conformance"
+  ]
+}

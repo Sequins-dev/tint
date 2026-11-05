@@ -1,0 +1,752 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v17-import-resolution",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. JSON is parsed natively at load and exposes one default export; type attributes are checked before cached records are used. Unresolved bare specifiers reject their import promises with TypeError. Source modules support top-level await and direct eval. Text/bytes, source/defer phases, undiscovered relative specifiers and runtime compilation of loaded modules remain unsupported. Native fixture syntax and early-error checks remain lazy at load.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-import-resolution-v1/source-snapshot.json",
+  "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 10451.873083000013
+    }
+  ],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 12,
+        "kind": "execution",
+        "compileMs": 137374.115542,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/import/import-attributes",
+  "totals": {
+    "total": 17,
+    "passed": 12,
+    "failed": 0,
+    "unsupported": 5,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.7058823529411765
+  },
+  "observations": [
+    {
+      "path": "language/import/import-attributes/json-extensibility-array.js",
+      "sha256": "a707cb9b8ee5b45fe7dd530ac26d03e67f63f2dcf2a83821755df75b6239ae5c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-array_FIXTURE.json",
+          "sha256": "7c6a31d917c4f678d1c8c2f6664c5ebf50d7ac39e1f54695ea8587db136e7eed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149509.944125,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-object.js",
+      "sha256": "35b63bf54524489f30ee4a8d73f1b2027585fb876a5e8515a0fbd19cd9c9239c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-object_FIXTURE.json",
+          "sha256": "a6209ad2ecb55c703632d0a6b1facbea5a1779fd043f54d412eb47d2d5f270be"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149745.908208,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-idempotency.js",
+      "sha256": "77d171afb82f0820ac23ce6f0c4def3406810b4c3593a9aedac7760df727f6a6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules",
+          "globalThis",
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-idempotency-indirect_FIXTURE.js",
+          "sha256": "24b2e19556cb3a7640ed518828adabaf1ef317b0329b5e22bbcb83a52689405c"
+        },
+        {
+          "name": "json-idempotency_FIXTURE.json",
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149985.13370799998,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-invalid.js",
+      "sha256": "721e75c25d4839b55206c70b09d12fbd7e6f37d36081f1c982a11e4aebfa3e76",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-invalid_FIXTURE.json",
+          "sha256": "cd72b1b46f968fc3e93412136284f6f4eefa91447416516c8bcb9fc82e0f4f8d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 150226.60741700002,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-named-bindings.js",
+      "sha256": "f6725a7d6e92ff06fd725a05fb8402bc9952f29357a344660378b37fa556a1dd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-named-bindings_FIXTURE.json",
+          "sha256": "eb641a4fb18ce5b1e69d96eb1decb081acf74ae6eb14b71b0c83eb409f383b1b"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 150470.825375,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-array.js",
+      "sha256": "34727f5bc8ff7f21672ce0335b6646d683a92b004d5fc5dfa81ae0a7a9fde887",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-array_FIXTURE.json",
+          "sha256": "7c6a31d917c4f678d1c8c2f6664c5ebf50d7ac39e1f54695ea8587db136e7eed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150711.269125,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-boolean.js",
+      "sha256": "0ca437d46a6f70f03e6737c6241b11303b8d819e6a4a0f5ae5b44851ec6f713d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-boolean_FIXTURE.json",
+          "sha256": "a17fcf0a2f50e2d495e4f90ce263410edc183add6c62699a2facbccf60410f74"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150953.75079199998,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-null.js",
+      "sha256": "2ccfcb9f33ffcee8b5b6958412c48f7865a6facfd961cd9a04a33711f1cc96fd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-null_FIXTURE.json",
+          "sha256": "38e0b9de817f645c4bec37c0d4a3e58baecccb040f5718dc069a72c7385a0bed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151197.194959,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-number.js",
+      "sha256": "58c7e439efa6cb9866427432bdb525499d2707252269a6b67c80f3ee89443aa8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-number_FIXTURE.json",
+          "sha256": "724cafce5ac230ffc5e45d410760885c0ab27443d16cd797c7c0c60d3ef3a083"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151441.131083,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-object.js",
+      "sha256": "708dac6ac04aa408dd5eea287a4ac238f5ca5fc531df6aa6a84eabfbc64c104b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-object_FIXTURE.json",
+          "sha256": "a6209ad2ecb55c703632d0a6b1facbea5a1779fd043f54d412eb47d2d5f270be"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151690.853959,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-value-string.js",
+      "sha256": "b095e9d39d9c66b5863dbb39dab40524b6b13a1a087f188ce058dbf1e637c6d7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-string_FIXTURE.json",
+          "sha256": "0bfb6ac69d76e504babb3f43f38131f5e25efe039fd0a038c95b5b3994a582dd"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151929.94975000003,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-via-namespace.js",
+      "sha256": "bdf3caa007eb5147cccc7323ad3e9bdc1366c3b2a7e8b781aea1b9b726da008e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-via-namespace_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152172.880708,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/text-empty.js",
+      "sha256": "c73d71cf20672c142acd54bf50ee402456c391535966cee3f48f60bee042d36d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      },
+      "status": "unsupported",
+      "elapsedMs": 152173.08033300002
+    },
+    {
+      "path": "language/import/import-attributes/text-javascript.js",
+      "sha256": "bf3937c139014e441b5c9d143baa8b51ec0dde6a2c2f16c407eb66112cd97b41",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.3188329999975394
+    },
+    {
+      "path": "language/import/import-attributes/text-self.js",
+      "sha256": "ce190f0ba63c080f0129b889a4a87d9308e71d9e9bd4c5cec285a331d5b7a16f",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.484334000007948
+    },
+    {
+      "path": "language/import/import-attributes/text-string.js",
+      "sha256": "69dee9bbd3613fa8dba26e5224ddc2529c17575a566741c21a43c8265402a9d6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.3696249999920838
+    },
+    {
+      "path": "language/import/import-attributes/text-via-namespace.js",
+      "sha256": "b131a7decfee45a3082905bc79c7e3d185e419fac6e932f0b6c5c150a3815284",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.0507090000028256
+    }
+  ]
+}

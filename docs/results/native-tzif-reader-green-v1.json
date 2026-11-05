@@ -1,0 +1,23 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "tzif-native-build",
+    "sourceSnapshot": {
+      "sha256": "8f985ed26f4d97dfe2e166a83c65ae61e1a0838b6dfeac760ba08faa8929b196",
+      "files": 418
+    },
+    "fixture": {
+      "path": "/usr/share/zoneinfo/America/New_York",
+      "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95",
+      "bytes": 3552
+    },
+    "transitions": 236,
+    "types": 6,
+    "footer": "EST5EDT,M3.2.0,M11.1.0"
+  },
+  "imageSha256": "40d9eb67bd48f5f3648a1d953dee16029a87d0b919d4382c1fdfc5a238eacd0c",
+  "outcome": {
+    "kind": "completed"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "native-host-policy-regression",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "4126859a4a6d1062aa15aa2944c782b2cff3d598d48e6c3358305b10c20e6179",
+    "files": 505
+  },
+  "rows": [
+    {
+      "index": 0,
+      "canSuspend": true,
+      "report": "docs/results/native-agent-policy-allowed-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "canSuspend": false,
+      "report": "docs/results/native-agent-policy-disallowed-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

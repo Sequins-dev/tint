@@ -1,0 +1,12 @@
+{
+  "report": "test262-error-brand-native-v1.json",
+  "unsupportedDependency": "Function constructor runtime source compilation",
+  "paths": [
+    "built-ins/Error/isError/non-error-objects-other-realm.js"
+  ],
+  "variants": [
+    "sloppy",
+    "strict"
+  ],
+  "evidence": "The unchanged source calls new other.Function('') before its remaining assertions. Function construction explicitly rejects unsupported execution in function-intrinsics.ts."
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "framework-native-runtime-parity",
+  "conformance": false,
+  "before": {
+    "sha256": "e520e01b1b1c79da2ae0f2a848e2e2eabe2371fe7794e699059ceda2012bd725",
+    "files": 509
+  },
+  "after": {
+    "sha256": "2064e252a6fe06f2a070218636f237ae67365df8172b04d6af41370f39072b88",
+    "files": 509
+  },
+  "packages": {
+    "before": 33,
+    "after": 22
+  },
+  "preservedNonGeneratedSourceBodies": 508,
+  "movedSources": 24,
+  "movedTests": 18,
+  "rebasedOutputManifests": 0,
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "byteIdentical": true
+  },
+  "scope": "Native-runtime ownership/import rebinding only, including splitting trusted filesystem declarations out of the platform facade. Runtime helper namespaces remain unchanged. Native self-build and conformance remain separate."
+}

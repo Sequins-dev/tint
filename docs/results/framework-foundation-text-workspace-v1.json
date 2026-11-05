@@ -1,0 +1,302 @@
+{
+  "schema": "tint-foundation-text-consolidation-validation-v1",
+  "scope": "Pure ownership/import/provider-path migration. No implementation algorithm, host permission, runtime helper namespace, immutable report, frozen snapshot, Test262 dashboard or ordinary-object Atomics source changes.",
+  "baseline": {
+    "sourceSnapshot": {
+      "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+      "files": 505
+    },
+    "packages": 57,
+    "owners": [
+      "text-scanner",
+      "string-builder",
+      "text-encoding",
+      "base-encoding",
+      "json-syntax"
+    ],
+    "implementationFiles": 12,
+    "testFiles": 9
+  },
+  "current": {
+    "packages": 52,
+    "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+    "files": 505,
+    "nodeTests": 3613,
+    "explicitImportGrants": 432
+  },
+  "removedOwners": [
+    "text-scanner",
+    "string-builder",
+    "text-encoding",
+    "base-encoding",
+    "json-syntax"
+  ],
+  "publicEntries": [
+    "@tint/foundation/text/text-scanner",
+    "@tint/foundation/text/string-builder",
+    "@tint/foundation/text/text-encoding",
+    "@tint/foundation/text/base-encoding",
+    "@tint/foundation/text/json-syntax"
+  ],
+  "changedContracts": [
+    "Five superseded package roots removed; five explicit foundation text exports replace them, with no aliases, wildcard exports or text/root barrel.",
+    "Package dependencies and TypeScript references now target @tint/foundation; workspace contracts, offline lockfile, package links and generated source catalog updated.",
+    "Foundation now includes the existing type-only standard TextEncoder/TextDecoder declarations previously included by text-encoding.",
+    "Preserved README contracts, scanner notice and license under packages/foundation/docs/text; explicit fixture-local aliases retain text-encoding/string-builder IDs and transitive graphs."
+  ],
+  "unchangedContracts": {
+    "allFivePublicExportNameSets": true,
+    "runtimeProvidersEqualAfterExactPathRebind": true,
+    "hostBindingsEqualAfterExactPathRebind": true,
+    "projectRootsEqualAfterExactPathRebind": true,
+    "textRuntimeNamespace": "text-encoding",
+    "capturedNativeCapabilitiesEqual": true
+  },
+  "parity": {
+    "movedImplementations": 12,
+    "movedTests": 9,
+    "allBodiesEqual": true,
+    "details": ".tint-bootstrap/foundation-text-parity-v1.json",
+    "wholePortableSourceBodies": {
+      "identical": 504,
+      "excluded": "generated compiler catalog",
+      "details": ".tint-bootstrap/foundation-text-workspace-body-parity-v1.json"
+    },
+    "method": "Pinned TypeScript parses declarations in order; remove import declarations, normalize reexport module strings; ordered scanner tokens ignore trivia and trailing commas only"
+  },
+  "gates": [
+    {
+      "name": "TDD ownership contracts red",
+      "result": "expected obsolete-owner/path/import failures",
+      "log": ".tint-bootstrap/foundation-text-red-v1.log"
+    },
+    {
+      "name": "production TypeScript build",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-text-build-v2.log"
+    },
+    {
+      "name": "test TypeScript checks",
+      "result": "passed after root corrected baseline test constructor typing",
+      "log": ".tint-bootstrap/foundation-text-test-types-v2.log"
+    },
+    {
+      "name": "host TypeScript checks",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-text-host-types-v1.log"
+    },
+    {
+      "name": "full Node suite including self-host source checks",
+      "result": "3613 passed,0 failed",
+      "log": ".tint-bootstrap/foundation-text-full-node-v2.log"
+    },
+    {
+      "name": "boundaries",
+      "result": "passed,52 acyclic portable packages",
+      "log": ".tint-bootstrap/foundation-text-boundaries-v1.log"
+    },
+    {
+      "name": "workspace formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/foundation-text-workspace-format-v2.log"
+    },
+    {
+      "name": "catalog",
+      "result": "505 source files,432 explicit import grants",
+      "log": ".tint-bootstrap/foundation-text-catalog-v2.log"
+    },
+    {
+      "name": "baseline/final smoke Node AOT builds",
+      "result": "byte-identical,1321778 bytes,SHA2562b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+      "details": ".tint-bootstrap/foundation-text-artifacts-v1.json"
+    },
+    {
+      "name": "public exports/provider/host/capability parity",
+      "result": "passed",
+      "details": ".tint-bootstrap/foundation-text-capability-parity-v1.json"
+    },
+    {
+      "name": "new immutable frozen-source contracts",
+      "result": "passed,52 packages/five narrow entries/obsolete owners absent",
+      "details": ".tint-bootstrap/foundation-text-frozen-contract-v1.json"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "log": ".tint-bootstrap/foundation-text-catalog-v1.log",
+      "diagnosis": "Catalog generation initially ran against stale compiled TypeScript lexer importing removed text-scanner. Build completed first, generation v2 then passed. No compatibility alias added."
+    },
+    {
+      "log": ".tint-bootstrap/foundation-text-test-types-v1.log",
+      "diagnosis": "Atomics test constructor-union overload errors at616/642; the file was byte-identical to captured pre-migration baseline. Root corrected owned test to iterate concrete genuine-SAB typed-array instances; final test types/full suite passed."
+    }
+  ],
+  "frozenSourceContract": {
+    "directory": ".tint-bootstrap/node-toolchain-foundation-text-after-v1",
+    "packages": 52,
+    "entries": {
+      "@tint/foundation/text/text-scanner": "./src/text/text-scanner.ts",
+      "@tint/foundation/text/string-builder": "./src/text/string-builder.ts",
+      "@tint/foundation/text/text-encoding": "./src/text/text-encoding/index.ts",
+      "@tint/foundation/text/base-encoding": "./src/text/base-encoding/index.ts",
+      "@tint/foundation/text/json-syntax": "./src/text/json-syntax.ts"
+    },
+    "obsoleteOwnersAbsent": true,
+    "capabilities": {
+      "disposal": true,
+      "asyncDisposal": true,
+      "sharedBuffers": true,
+      "atomics": true,
+      "spinHint": "packages/native-process/src/spin-hint.ts",
+      "sharedAtomics": true
+    },
+    "textEncodingGraph": [
+      "packages/foundation/src/text/text-encoding/index.ts",
+      "packages/foundation/src/text/text-encoding/legacy-uri.ts",
+      "packages/foundation/src/text/text-encoding/uri.ts",
+      "packages/foundation/src/text/text-encoding/well-formed.ts",
+      "packages/foundation/src/text/string-builder.ts"
+    ]
+  },
+  "artifacts": {
+    "sourceSnapshot": {
+      "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+      "files": 505
+    },
+    "frozen": {
+      "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-text-after-v1",
+      "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-text-after-v1/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-text-after-v1/toolchain.json",
+      "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-text-after-v1/source-snapshot.json",
+      "sha256": "b82067389260cd4f5cde09067c7a5fa4a261ad4427889cd457b52479ca415689"
+    },
+    "artifacts": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-foundation-text-v1-jVBdxX/foundation-text-v1",
+        "sourceSnapshot": {
+          "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+          "files": 505
+        },
+        "fixture": "tools/build-foundation-text-fixture.ts",
+        "fixtureSha256": "f7af53d0b97c4eb41de9119ddde1b69c01474dfaf55489f3dcfb6edc56c1f6b3",
+        "imageSha256": "ff035d5cc2dfdd7704950fbd2b712b84773ee811e2933fb1527ed47160bb29a6",
+        "expectedExitStatus": 42,
+        "buildOnly": true,
+        "debugSymbols": true,
+        "sourceBeforeAfterEqual": true
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-hex-codec-neDbQT/hex-codec",
+        "sourceSnapshot": {
+          "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+          "files": 505
+        },
+        "fixture": "tools/verify-native-hex.ts",
+        "fixtureSha256": "9d6930615579d77429c5cd124b4369a4cfd65a23697e53209e359886130660ed",
+        "imageSha256": "cfaf43680ad7997890c94e8f50876e0476985bb89609b10da7601013140feaf6",
+        "expectedExitStatus": 42,
+        "buildOnly": true,
+        "debugSymbols": true,
+        "sourceBeforeAfterEqual": true
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-base64-codec-KZzqUm/base64-codec",
+        "sourceSnapshot": {
+          "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+          "files": 505
+        },
+        "fixture": "tools/verify-native-base64.ts",
+        "fixtureSha256": "4c0d3f93301a58424999ad565ab3af6840c60d584590e25892029482c8d2fca7",
+        "imageSha256": "88d10ea87aeb94f32b2f44113345e6e18d5256b3e04cea3f0bab92b80168be72",
+        "expectedExitStatus": 42,
+        "buildOnly": true,
+        "debugSymbols": true,
+        "sourceBeforeAfterEqual": true
+      }
+    ],
+    "smoke": {
+      "before": {
+        "kind": "framework-migration-smoke",
+        "sourceSnapshot": {
+          "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+          "files": 505
+        },
+        "toolchain": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-foundation-text-before-v1",
+        "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-text-smoke-before-v1/smoke",
+        "expectedExitStatus": 42,
+        "bytes": 1321778,
+        "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+        "policy": {
+          "debugSymbols": false,
+          "allowDebugger": true,
+          "runtimeEntry": "initializeCopyingRuntime",
+          "denseReferenceLists": false,
+          "managedBytes": 16777216,
+          "allocationCapacity": 1048576,
+          "rootCapacity": 65536,
+          "stackBytes": 1048576
+        },
+        "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+      },
+      "after": {
+        "kind": "framework-migration-smoke",
+        "sourceSnapshot": {
+          "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+          "files": 505
+        },
+        "toolchain": "live-workspace",
+        "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-text-smoke-after-v1/smoke",
+        "expectedExitStatus": 42,
+        "bytes": 1321778,
+        "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+        "policy": {
+          "debugSymbols": false,
+          "allowDebugger": true,
+          "runtimeEntry": "initializeCopyingRuntime",
+          "denseReferenceLists": false,
+          "managedBytes": 16777216,
+          "allocationCapacity": 1048576,
+          "rootCapacity": 65536,
+          "stackBytes": 1048576
+        },
+        "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+      },
+      "byteIdentical": true
+    }
+  },
+  "limits": [
+    "This agent launched no native process. Root executed the three bespoke fixtures and supplied the linked immutable native reports.",
+    "The new text-migration source has a successful Node bootstrap; its native self-build remains pending. The prior proven986817 checkpoint remains authoritative.",
+    "Bespoke regression fixtures and byte-identical smoke are separate from Test262 conformance."
+  ],
+  "nativeValidation": {
+    "report": "docs/results/foundation-text-native-validation-v1.json",
+    "result": "three bespoke algorithm/hex/base64 fixtures completed at expected exit42 under parent-owned LLDB-local runs",
+    "sourceSnapshot": {
+      "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+      "files": 505
+    }
+  },
+  "nativeSelfBuild": {
+    "latestProven": {
+      "report": "docs/results/bootstrap-atomics-rmw-v1.json",
+      "sourceSnapshot": {
+        "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+        "files": 505
+      },
+      "packages": 57,
+      "byteIdenticalStages": true,
+      "nativeExitStatus": 0
+    },
+    "textSource": {
+      "status": "pending native execution; Node bootstrap only has succeeded",
+      "sourceSnapshot": {
+        "sha256": "eeb61734a05ea962d18a89cdf4a1bbcfb81e9bd182bee47edaea75c93bfc2ce0",
+        "files": 505
+      },
+      "snapshot": ".tint-bootstrap/source-foundation-text-v1",
+      "stage1": ".tint-bootstrap/stage1-foundation-text-v1",
+      "bytes": 61370034
+    }
+  }
+}

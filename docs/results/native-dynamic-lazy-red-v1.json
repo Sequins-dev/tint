@@ -1,0 +1,105 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "mode": "debugserver-connected",
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "2ff1d8b058a09e05ba598b123fe554053bde4be8c4c0af8bb5724a9eafb926a7",
+      "files": 446
+    },
+    "imageSha256": "9a8d3b11b5d8e1f9083068d9ce45065ac2c96694d2b78082606a063833a0f443",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const cases=[[[],0],[[\"a\",\"a\"],2],[[\"{x=1}\",\"[y]\"],2],[[\"a\",\"b=1\",\"c\"],1],[[\"a\",\"...rest\"],1]];for(const [parameters,length] of cases){const f=Function(...parameters,\"missingGlobal;\");if(f.length!==length||f.name!==\"anonymous\"||typeof f!==\"function\")throw 1;}if(Function(\"return 42;\")()!==42)throw 2;",
+        "sha256": "c7fb4f52bcd4e62dadc8efd39e0c81ed05a5c9da966248460c27b60c5b73393c"
+      },
+      {
+        "index": 1,
+        "source": "const AsyncFunction=(async function(){}).constructor;const f=AsyncFunction(\"a\",\"b=1\",\"await missingGlobal;\");if(f.length!==1||f.name!==\"anonymous\"||f.hasOwnProperty(\"prototype\"))throw 1;",
+        "sha256": "7ace6d2d6380c2874e89c911ae2c5624f29eee68a3ed6c67771133769d4e0295"
+      },
+      {
+        "index": 2,
+        "source": "const GeneratorFunction=(function*(){}).constructor;const f=GeneratorFunction(\"x\",\"yield x;\");if(f.length!==1||f.name!==\"anonymous\"||!f.hasOwnProperty(\"prototype\"))throw 1;const g=f(42),returned=g.return(19);if(!returned.done||returned.value!==19)throw 2;const value={};let caught;try{f(42).throw(value);}catch(e){caught=e;}if(caught!==value)throw 3;",
+        "sha256": "cc21a6b07da9c96ae8497449f42cab2e1352e264f0b2be633a3a46d30fd248ce"
+      },
+      {
+        "index": 3,
+        "source": "const GeneratorFunction=(function*(){}).constructor;const f=GeneratorFunction(\"x\",\"return x;\");for(const x of [42,null,{},Symbol()]){const result=f(x).next();if(!result.done||result.value!==x)throw 1;}const g=Function(\"x\",\"return x;\");if(g(19)!==19||g(23)!==23)throw 2;",
+        "sha256": "076ec175b765b23c125422640cdebca9ad62b8dbc90a58bb6edb06960768fb40"
+      },
+      {
+        "index": 4,
+        "source": "let reads=0;const target=new Proxy(function(){},{get(t,k,r){if(k===\"prototype\"){reads++;return null;}return Reflect.get(t,k,r);}});let caught=false;try{Reflect.construct(Function,[\"a\",\"let a;\"],target);}catch(e){caught=e instanceof SyntaxError;}if(!caught||reads!==0)throw 1;const f=Reflect.construct(Function,[\"missingGlobal;\"],target);if(reads!==1||Object.getPrototypeOf(f)!==Function.prototype)throw 2;",
+        "sha256": "9bd73d0faa162b86b7d392020650c50aa25b33aa66479a98077817f3c006e149"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 3,
+      "expected": "completed",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

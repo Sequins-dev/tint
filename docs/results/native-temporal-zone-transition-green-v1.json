@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cc7a3b66a80b4e1b5c44128420a0ec616bfd3eca92b33fed86ecee1684df138c",
+      "files": 433
+    },
+    "imageSha256": "3b19bbfba50c1d8c0edc99ccb54db6accc1b67cb2f3ec3d269e6e988a6a6240a",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const zone of [\"UTC\",\"+05:30\",\"-02:00\"]){const z=new Temporal.ZonedDateTime(0n,zone);for(const direction of [\"next\",\"previous\"]){if(z.getTimeZoneTransition(direction)!==null||z.getTimeZoneTransition({direction})!==null)throw 1;}for(const value of [undefined,null,1,true,{},Object.create(null)]){let caught=false;try{z.getTimeZoneTransition(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}for(const value of [\"\",{direction:\"\"},{direction:1}]){let caught=false;try{z.getTimeZoneTransition(value);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 3;}}",
+        "sha256": "2719ea95d689ab4f502e81849e624999aa84a2b547175b9525ff3c348ba64767"
+      },
+      {
+        "index": 1,
+        "source": "const a=Temporal.ZonedDateTime.from(\"2024-07-01T00:00[America/New_York]\");const next=a.getTimeZoneTransition(\"next\"),prev=a.getTimeZoneTransition(\"previous\");if(next.epochNanoseconds!==1730613600000000000n||prev.epochNanoseconds!==1710054000000000000n)throw 1;if(prev.getTimeZoneTransition(\"next\").epochNanoseconds!==next.epochNanoseconds)throw 2;if(new Temporal.ZonedDateTime(prev.epochNanoseconds+1n,\"America/New_York\").getTimeZoneTransition(\"previous\").epochNanoseconds!==prev.epochNanoseconds)throw 3;",
+        "sha256": "a203e20fd0de37cdcb44d37e8731d7fcb079510afe7cd83e5acc4d208db330c8"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

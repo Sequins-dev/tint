@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-selection-summary",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "scope": "Disjoint focused selections only; not a full-directory or whole-suite estimate. Original reports retain capture-time scope text.",
+  "totals": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "reports": [
+    {
+      "report": "test262-for-await-async-ticks-native-v1.json",
+      "sha256": "dc5e65f456b2d6fc5bca0a00ef7019103e0e8a3d77dd9681605e7c88b0e88acf",
+      "selection": "language/statements/for-await-of/ticks-with-async-iter-resolved-promise-and-constructor-lookup.js"
+    },
+    {
+      "report": "test262-for-await-sync-ticks-native-v1.json",
+      "sha256": "8ec601731cbf6b73c70bc5ccd0d2564c2adc62531a683c7163619d13b9f48e0b",
+      "selection": "language/statements/for-await-of/ticks-with-sync-iter-resolved-promise-and-constructor-lookup.js"
+    },
+    {
+      "report": "test262-for-await-sync-abrupt-native-v1.json",
+      "sha256": "d07ce4f73d2a72438c53a54e1370359a11cebf56726e5f01856496bd102a5f0a",
+      "selection": "language/statements/for-await-of/async-from-sync-iterator-continuation-abrupt-completion-get-constructor.js"
+    },
+    {
+      "report": "test262-for-await-close-throw-native-v1.json",
+      "sha256": "ed14a52d7116f01d411792b53629b27783e18d4bd83028e9a87401c47037c2bf",
+      "selection": "language/statements/for-await-of/iterator-close-throw-get-method-abrupt.js"
+    },
+    {
+      "report": "test262-for-await-close-noncallable-native-v1.json",
+      "sha256": "3c40b016edb85321219149de41aa606741769df376b7b47023845d7e06441f35",
+      "selection": "language/statements/for-await-of/iterator-close-non-throw-get-method-non-callable.js"
+    }
+  ]
+}

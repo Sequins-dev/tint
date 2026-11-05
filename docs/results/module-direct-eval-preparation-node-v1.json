@@ -1,0 +1,65 @@
+{
+  "kind": "module-direct-eval-preparation-checkpoint",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "901ec69a234b3ddd94d1e5149ee7f59378fef76987569d3073b22f355e71473e",
+    "files": 566
+  },
+  "scope": "Three unchanged module Test262 variants now prepare; this is not conformance evidence.",
+  "specification": [
+    "https://tc39.es/ecma262/multipage/global-object.html#sec-performeval",
+    "https://tc39.es/ecma262/multipage/ecmascript-language-scripts-and-modules.html#sec-source-text-module-record-execute-module"
+  ],
+  "rows": [
+    {
+      "selection": "language/eval-code/direct/export.js",
+      "variant": "module",
+      "sha256": "648a257196bc895409842b12191cc0a8d9e10d28e66886afb89059412761caca",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": []
+    },
+    {
+      "selection": "language/eval-code/direct/import.js",
+      "variant": "module",
+      "sha256": "28c29caa8c8649579790526b511323df04837efad886d2f9d0ea75140dc5fa89",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": []
+    },
+    {
+      "selection": "language/expressions/import.meta/not-accessible-from-direct-eval.js",
+      "variant": "module",
+      "sha256": "211f92e37e1c87e80e68a289b00efa9f4e8369e5bd8ecb6df799d744009b0a43",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": []
+    }
+  ]
+}

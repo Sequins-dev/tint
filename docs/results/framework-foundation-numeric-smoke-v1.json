@@ -1,0 +1,50 @@
+{
+  "before": {
+    "kind": "framework-migration-smoke",
+    "sourceSnapshot": {
+      "sha256": "aef6324af9b6450d9dd9f53cf7bd8d289595093d7fdbaf7150b7b59bfa413dc6",
+      "files": 502
+    },
+    "toolchain": "live-workspace",
+    "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-numeric-smoke-before-v1/smoke",
+    "expectedExitStatus": 42,
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "policy": {
+      "debugSymbols": false,
+      "allowDebugger": true,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "denseReferenceLists": false,
+      "managedBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 65536,
+      "stackBytes": 1048576
+    },
+    "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+  },
+  "after": {
+    "kind": "framework-migration-smoke",
+    "sourceSnapshot": {
+      "sha256": "336bce6e31c9bb8fc369341395b5aac4717272e3bb69e35123d255cb84f68be7",
+      "files": 502
+    },
+    "toolchain": "live-workspace",
+    "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-numeric-smoke-after-v1/smoke",
+    "expectedExitStatus": 42,
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "policy": {
+      "debugSymbols": false,
+      "allowDebugger": true,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "denseReferenceLists": false,
+      "managedBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 65536,
+      "stackBytes": 1048576
+    },
+    "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+  },
+  "sourceStableDuringAfterBuild": true,
+  "byteIdentical": true
+}

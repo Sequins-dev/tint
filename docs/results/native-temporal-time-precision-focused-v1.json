@@ -1,0 +1,32 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-time-precision.ts",
+  "fixtureSha256": "2376ff87ecc699e715a45dbd4faa27f30a960c234e9efbe051ce52907bf9e4a0",
+  "imageSha256": "4243167c4d81f7533ce0f6cead62c9e74a4f91dbeba5d458036866621c5bc1ac",
+  "cases": 3,
+  "passed": 1,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"0\",\"pid\":0}"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"0\",\"pid\":0}"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

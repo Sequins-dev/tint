@@ -1,0 +1,159 @@
+{
+  "kind": "framework-prototype-retirement",
+  "conformance": false,
+  "before": {
+    "sha256": "1805901d2aeb551e4ddb13263cf3458acdd3dfbdc217a883ceac2a4cf5e594a1",
+    "files": 509
+  },
+  "after": {
+    "sha256": "93f49857fbc332b8adf62e2e4d011af641c3cb11b63786f011d2fc28fa3058b6",
+    "files": 503
+  },
+  "packages": {
+    "before": 20,
+    "after": 16
+  },
+  "preservedNonGeneratedSourceBytes": 502,
+  "removedSources": [
+    "packages/trace-plan/src/walk.ts",
+    "packages/trace-plan/src/model.ts",
+    "packages/trace-plan/src/index.ts",
+    "packages/gc-tracing/src/index.ts",
+    "packages/closure-tracing/src/index.ts",
+    "packages/value-layout/src/index.ts"
+  ],
+  "retiredTests": [
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "only active variants and initialized array elements are traced"
+    },
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "invalid tags, counts, extents and exhausted budgets return no partial references"
+    },
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "descriptor verification rejects bad ranges, strides, dependencies and cycles"
+    },
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "catalog owns descriptors and evaluates deep plans without recursive traversal"
+    },
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "fixed repeats, nullable references and read failures respect declared storage"
+    },
+    {
+      "file": "packages/trace-plan/test/trace.test.ts",
+      "name": "duplicate tag cases and inline variable extents fail descriptor validation"
+    },
+    {
+      "file": "packages/trace-plan/test/walk.test.ts",
+      "name": "bounded walker visits only initialized active reference offsets in scan order"
+    },
+    {
+      "file": "packages/trace-plan/test/walk.test.ts",
+      "name": "walker rejects insufficient workspace, malformed arrays, tags and reads"
+    },
+    {
+      "file": "packages/trace-plan/test/walk.test.ts",
+      "name": "walker handles deep descriptors without recursive or growing traversal storage"
+    },
+    {
+      "file": "packages/trace-plan/test/walk.test.ts",
+      "name": "walker resumes siblings after repeated inline children and reuses workspace after exceptions"
+    },
+    {
+      "file": "packages/gc-tracing/test/collection.test.ts",
+      "name": "complete marks retain reachable cycles and reclaim unreachable cycles with exact accounting"
+    },
+    {
+      "file": "packages/gc-tracing/test/collection.test.ts",
+      "name": "failed marks produce no sweep list and cannot poison later collections"
+    },
+    {
+      "file": "packages/gc-tracing/test/collection.test.ts",
+      "name": "root stack enforces instance identity and LIFO lifetime"
+    },
+    {
+      "file": "packages/gc-tracing/test/collection.test.ts",
+      "name": "long graphs are marked iteratively and foreign or unreadable edges abort marking"
+    },
+    {
+      "file": "packages/closure-tracing/test/tracing.test.ts",
+      "name": "uninitialized cells skip stale pointers, initialized cells expose references"
+    },
+    {
+      "file": "packages/closure-tracing/test/tracing.test.ts",
+      "name": "missing, duplicate, mismatched and trailing payload descriptors fail closed"
+    },
+    {
+      "file": "packages/closure-tracing/test/tracing.test.ts",
+      "name": "initialization guards compose with tagged reference payloads"
+    },
+    {
+      "file": "packages/closure-tracing/test/tracing.test.ts",
+      "name": "variable-sized payloads and generated descriptor name collisions are rejected"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "unknown values trace their actual category, never arbitrary payload bits"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "unknown record fields compose category tracing with property presence"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "recursive records use managed references and tag-dependent precise traces"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "scalar words never become roots and layout failures stay explicit"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "record offsets and reference widths follow the target and snapshot the source shape"
+    },
+    {
+      "file": "packages/value-layout/test/layout.test.ts",
+      "name": "optional fields distinguish absence from present undefined and trace only present values"
+    },
+    {
+      "file": "tools/closure-tracing.test.ts",
+      "name": "recursive environment/capture cycles remain live only while rooted"
+    },
+    {
+      "file": "tools/managed-tracing.test.ts",
+      "name": "target layouts compose with byte-backed roots, initialized arrays and backing replacement"
+    },
+    {
+      "file": "tools/region-collection.test.ts",
+      "name": "successful tracing reclaims and reuses blocks; failed tracing preserves every allocation"
+    },
+    {
+      "file": "tools/value-storage.test.ts",
+      "name": "the actual word64 type graph has concrete value and managed record layouts"
+    },
+    {
+      "file": "tools/value-storage.test.ts",
+      "name": "generated object and closure traces compose with cycle collection"
+    },
+    {
+      "file": "tools/value-storage.test.ts",
+      "name": "general roots retain object cycles only while the category carries a reference"
+    }
+  ],
+  "replacement": "tools/production-descriptor-contract.test.ts",
+  "productionTests": {
+    "passed": 3650,
+    "failed": 0,
+    "log": ".tint-bootstrap/prototype-retirement-full-node-v1.log"
+  },
+  "smoke": {
+    "byteIdentical": true,
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044"
+  },
+  "scope": "Unused prototype retirement; no production algorithm or Test262 population change."
+}

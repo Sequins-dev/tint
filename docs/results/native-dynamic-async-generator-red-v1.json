@@ -1,0 +1,80 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "mode": "debugserver-connected",
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "4205fdffe5fb1f636e78b8d29c05509197cc6d0deace54cecf48756a7a90538c",
+      "files": 446
+    },
+    "imageSha256": "29110a47664559c13b6390ac1aed0025ae6d39e75a5db7104c76fcca919717b4",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor;for(const args of [[\"await 1;\"],[\"x\",\"yield x;\"],[\"{x}\",\"y=1\",\"...rest\",\"yield missingGlobal;\"]]){const f=AsyncGeneratorFunction(...args);if(f.name!==\"anonymous\"||Object.getPrototypeOf(f)!==AsyncGeneratorFunction.prototype||!f.hasOwnProperty(\"prototype\"))throw 1;}if(AsyncGeneratorFunction(\"{x}\",\"y=1\",\"yield 1;\").length!==1)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "13cdbef4a6fd8403783512525b449f1834693159fdf983bf675c5ee5103bbad4"
+      },
+      {
+        "index": 1,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"value\",\"yield value;\");let count=0;const input={then(resolve){count++;resolve(42);}},g=f(19);if(g[Symbol.asyncIterator]()!==g||count!==0)throw 1;const pending=g.return(input);if(count!==0)throw 2;const result=await pending;if(result.value!==42||!result.done||count!==1)throw 3;const next=await g.next();if(next.value!==undefined||!next.done)throw 4;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "a016dc1d429a4e8d5118174a2cb02bf7fbfbe3e6b7961cedd61255925e3c498f"
+      },
+      {
+        "index": 2,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"yield missingGlobal;\");const marker={};let caught;try{await f().throw(marker);}catch(e){caught=e;}if(caught!==marker)throw 1;let construct=false;try{new f();}catch(e){construct=e instanceof TypeError;}if(!construct)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "84a9eb593632d38cb440055a69e86d7f1cfdbb3523d6721c5fa8030aba5bb326"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

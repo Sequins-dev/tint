@@ -1,0 +1,71 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "754cb8497fe19c070277245a957e84a29611379ce3bf972853e4d1b5c8e19c22",
+      "files": 417
+    },
+    "imageSha256": "0a26a82885f899544611bc229475d8d9e3523f8f8e07f5e183b14ee88b3a7e67",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(0);if(!d.toString().startsWith(\"Thu Jan 01 1970 08:00:00 GMT+0800\")||d.toDateString()!==\"Thu Jan 01 1970\"||!d.toTimeString().startsWith(\"08:00:00 GMT+0800\"))throw 1;if(Date.parse(d.toString())!==0||new Date(d.toString()).getTime()!==0)throw 2;",
+        "sha256": "73cfdf5320e10105a333467999d83718053a4510202441474c6f994a8dcb823e"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(946684800000);if(!d.toString().startsWith(\"Sat Jan 01 2000 08:00:00 GMT+0800\")||d.toDateString()!==\"Sat Jan 01 2000\"||!d.toTimeString().startsWith(\"08:00:00 GMT+0800\"))throw 1;if(Date.parse(d.toString())!==946684800000||new Date(d.toString()).getTime()!==946684800000)throw 2;",
+        "sha256": "8aef15dfc619d4162742b9f6663a0dd2e51672106508ca939ec8d647938fb226"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(1720000000000);if(!d.toString().startsWith(\"Wed Jul 03 2024 17:46:40 GMT+0800\")||d.toDateString()!==\"Wed Jul 03 2024\"||!d.toTimeString().startsWith(\"17:46:40 GMT+0800\"))throw 1;if(Date.parse(d.toString())!==1720000000000||new Date(d.toString()).getTime()!==1720000000000)throw 2;",
+        "sha256": "81a9376a99cee5c44fb356f603f393121b8a194315b2c26978cf02871bcf652e"
+      },
+      {
+        "index": 3,
+        "source": "const before=Date.now(),text=Date({toString(){throw 1;}}),after=Date.now();if(typeof text!==\"string\")throw 2;const t=Date.parse(text);if(t<Math.floor(before/1000)*1000||t>after)throw 3;if(new Date(NaN).toDateString()!==\"Invalid Date\"||new Date(NaN).toTimeString()!==\"Invalid Date\")throw 4;",
+        "sha256": "43d28c81e29b3008897004ee73ac82cef50e7cb799e542b25c6db895f743a783"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

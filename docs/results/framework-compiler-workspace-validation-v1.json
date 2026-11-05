@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "scope": "Compiler orchestration ownership merge with captured old/new compiler role support",
+  "prerequisiteEvidence": "/tmp/tint-captured-compiler-roles-validation-v1.json",
+  "sourceIdentity": {
+    "sha256": "4db3d0740f70e252c747759a084ea1078772343ce364d08f17a384af8762cc9a",
+    "files": 494,
+    "importGrants": 368,
+    "packages": 66
+  },
+  "publicEntries": [
+    "@tint/compiler/native",
+    "@tint/compiler/build",
+    "@tint/compiler/project",
+    "@tint/compiler/catalog",
+    "@tint/compiler/cli"
+  ],
+  "movedSources": 7,
+  "movedTestFiles": 6,
+  "newTests": 7,
+  "checks": [
+    {
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-build-v2.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-testtypes-v2.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test tools/compiler-framework.test.ts packages/compiler/test/*.test.ts tools/captured-compiler-roles.test.ts tools/frozen-source-exports.test.ts tools/frozen-graph-loader.test.ts tools/frozen-node-toolchain.test.ts tools/selfhost-linked.test.ts tools/compiler-project.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-focused-v1.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-alltests-v2.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types *.json pnpm-workspace.yaml",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-formatcheck-v2.log"
+    },
+    {
+      "command": "node --test captured/frozen compiler role regressions after source-only support",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-roles-focused-v5.log"
+    }
+  ],
+  "testSummary": "\u2139 tests 3482\n\u2139 suites 0\n\u2139 pass 3482\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 17474.19275",
+  "implementationParity": {
+    "baseline": ".tint-bootstrap/node-toolchain-framework-image-v1",
+    "nongeneratedFiles": 6,
+    "equalAfterOnlyImportAndEntryRebindingAndFormatting": true,
+    "details": "/tmp/tint-compiler-implementation-parity-v1.json",
+    "catalog": "regenerated from exact public exports and new source/module ownership"
+  },
+  "frozenFormatSupport": {
+    "historicalTestsPreserved": true,
+    "catalogLocations": [
+      "packages/compiler-cli/src/catalog.ts",
+      "packages/compiler/src/catalog.ts"
+    ],
+    "roleSelection": "exact captured public exports; rejects missing/ambiguous/escaping roles",
+    "sourceOnlyNewFormat": "five exact owned native/build/project/catalog/cli source files; rejects missing roles",
+    "finalFocusedTests": 10
+  },
+  "nativeProjectEntry": {
+    "entry": "packages/compiler/src/cli.ts",
+    "start": "main"
+  },
+  "providerNamespacesAndHostBindings": "unchanged",
+  "nativeExecution": "not performed by this agent; parent owns serialized frozen native proof",
+  "retainedDocs": [
+    "packages/compiler/native.md",
+    "packages/compiler/build.md",
+    "packages/compiler/cli.md"
+  ],
+  "historicalOldSpecifierExceptions": [
+    "tools/captured-compiler-roles.ts",
+    "tools/captured-compiler-roles.test.ts",
+    "tools/frozen-source-exports.ts",
+    "tools/frozen-source-exports.test.ts",
+    "tools/frozen-graph-loader.test.ts"
+  ],
+  "retainedFailedChecks": [
+    "/tmp/tint-compiler-roles-red-v1.log",
+    "/tmp/tint-compiler-entrygraph-red-v1.log",
+    "/tmp/tint-compiler-source-only-red-v1.log",
+    "/tmp/tint-compiler-build-v1.log"
+  ]
+}

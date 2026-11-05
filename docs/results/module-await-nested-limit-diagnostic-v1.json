@@ -1,0 +1,16 @@
+{
+  "kind": "native-generated-module-rewrite-limit-diagnostic",
+  "original": "docs/results/native-module-await-nested-rewrite-v1.json",
+  "controlledChange": "Catch only around the new await-program lowering loop; exit 99 identifies the rewrite limit, exit 100 another throw. Diagnostic only, never acceptance.",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "dc12f3382a0fda2bb54c6d1c4a22da16cfc533f9f3886b88c08594372eda78fb",
+    "files": 566
+  },
+  "pausedRunner": 79368,
+  "report": "docs/results/native-module-await-nested-limit-diagnostic-v1.json",
+  "outcome": {
+    "kind": "crash",
+    "detail": "unexpected native exit status 70"
+  }
+}

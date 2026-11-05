@@ -1,0 +1,48 @@
+{
+  "kind": "managed-import-adapter-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "e02bf7468be8787369503bff1f7ebf1854a0bd7402ddabe03953f27ca600cd74",
+    "files": 520
+  },
+  "selfBuild": "docs/results/bootstrap-managed-entry-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-entry-adapter-runtime-v2.json",
+    "docs/results/native-managed-entry-adapter-compiler-v2.json"
+  ],
+  "bytes": 63194786,
+  "sha256": "91215c7ff7750db38a531b39e5e4c241627ba529d6cc26d833077052220681f3",
+  "byteIdentical": true,
+  "workspaceTests": 3746,
+  "gateLogs": [
+    {
+      "path": ".tint-bootstrap/managed-entry-final-workspace-tests-v2.log",
+      "sha256": "b8aea91d7bc78743ac2580c7d6042aa40f624ef7ac8fe5b53cb06f52cd8ab4c0"
+    },
+    {
+      "path": ".tint-bootstrap/managed-entry-frame-green-v1.log",
+      "sha256": "ca622d91d70eeede9d1d133063fea9bea4444d56f1999381e9e1c0ebe9320b45"
+    },
+    {
+      "path": ".tint-bootstrap/managed-entry-final-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-entry-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-entry-dwarf-v1.log"
+    }
+  },
+  "previousCheckpoint": "docs/results/managed-reflector-checkpoint-v1.json",
+  "remaining": [
+    "Two independently live contexts/heaps",
+    "Automatic AOT helper retention and semantic membership",
+    "Physical identity directory and serialization",
+    "General managed entry and eval/Function execution"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "native-launch-diagnostic",
+  "hypothesis": "The fixture runner staging copy causes the observed pre-entry debugger failures.",
+  "priorObservation": "native-set-identities-focused-v1.json",
+  "imageSha256": "e09942564b6251e3e5ed98b493a47f5fe350da6355de04b955b0866805f8bb3e",
+  "launch": "Retained compiler output directly under LLDB, case 0; no staging copy.",
+  "outcome": "pre-entry-lldb-attach-failure",
+  "conclusion": "Removing the staging copy did not resolve the failure; no semantic result obtained.",
+  "log": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-j1DHjm/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-j1DHjm/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\nerror: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n"
+}

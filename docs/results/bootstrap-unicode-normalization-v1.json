@@ -1,0 +1,38 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "c7a560da7a2d52d94b8d899852e2fdc6203e508460b00bbb4aa8667bf95b6fa2",
+    "files": 507
+  },
+  "packages": 49,
+  "snapshot": ".tint-bootstrap/source-unicode-normalization-v1",
+  "stage1": ".tint-bootstrap/stage1-unicode-normalization-v1",
+  "stage2": ".tint-bootstrap/stage2-unicode-normalization-v1",
+  "bytes": 61617746,
+  "sha256": "5ae1596b09091ae4419dfb494f1cf569ac474554994a4bb217a59bdc9ed9a8f1",
+  "nativeExitStatus": 0,
+  "initialStopVerified": true,
+  "byteIdentical": true,
+  "elapsedMs": 523230,
+  "launch": "lldb-local",
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 1792127,
+      "__debug_line": 15772008
+    },
+    "stage2": {
+      "__debug_info": 1792127,
+      "__debug_line": 15772008
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "log": ".tint-bootstrap/unicode-normalization-selfbuild-native-v1.log",
+  "scope": "Frozen 49-package/507-source snapshot verifies foundation Unicode ownership and native normalization alongside the existing compiler and runtime composition. This is self-hosting correctness evidence, not Test262 conformance."
+}

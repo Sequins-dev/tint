@@ -1,0 +1,23 @@
+{
+  "kind": "native-validation-queue-supersession",
+  "conformance": false,
+  "retired": [
+    {
+      "pid": 38229,
+      "command": "node .tint-bootstrap/run-fixture-binding-verdict-native-v1.mjs",
+      "children": 0,
+      "reason": "Waiting controller superseded; no inferior active"
+    },
+    {
+      "pid": 67743,
+      "command": "node .tint-bootstrap/run-fixture-binding-verdict-selections-v2.mjs",
+      "children": 0,
+      "reason": "Waiting controller superseded; no inferior active"
+    }
+  ],
+  "oldFixtureCases": 31,
+  "newFixtureCases": 43,
+  "first31InputsAndExpectationsByteEquivalent": true,
+  "validatedBy": "docs/results/module-await-assignment-native-validation-v1.json",
+  "pendingConformance": "16 unchanged fixture-binding variants will use the new frozen toolchain after foundational checkpoints; no conformance result inferred from fixtures"
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "native-controller-failure-analysis",
+  "conformance": false,
+  "failedController": ".tint-bootstrap/run-module-resolution-validation-v2.mjs",
+  "log": ".tint-bootstrap/module-resolution-native-controller-v2.log",
+  "reason": "The prerequisite recorder reserves an empty report before execution. Existence did not imply the outcome was written, so the consumer parsed an empty file.",
+  "nativeExecutionStarted": false,
+  "nativeObservationsDiscarded": false,
+  "replacement": ".tint-bootstrap/run-module-resolution-validation-v3.mjs",
+  "correction": "Wait for a parseable outcome, preserving producer failures."
+}

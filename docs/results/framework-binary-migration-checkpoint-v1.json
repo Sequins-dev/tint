@@ -1,0 +1,46 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T10:13:52.101353+00:00",
+  "slice": "M0 explicit exports and M1 foundation binary consolidation",
+  "beforeSource": {
+    "sha256": "7f8b12a5703eef464f018ccbf076cf3906df476c00a4adef3833c931e237f348",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "78a3bf38adaa1c3fcf7a3c20e48f9fa2de293dde0cf2a71c4d923f4fafc983f9",
+    "files": 492
+  },
+  "packages": {
+    "before": 94,
+    "after": 92
+  },
+  "publicEntrypoints": [
+    "@tint/foundation/binary/word64",
+    "@tint/foundation/binary/bytes",
+    "@tint/foundation/binary/sha256"
+  ],
+  "workspaceGates": {
+    "tests": 3450,
+    "passed": 3450,
+    "types": "passed: build, tests, host",
+    "boundaries": "92 portable packages",
+    "formatting": "passed",
+    "logs": "/tmp/tint-foundation-*-v1.log"
+  },
+  "smoke": {
+    "baseline": ".tint-bootstrap/framework-binary-baseline-v1/manifest.json",
+    "after": ".tint-bootstrap/framework-binary-after-v1/manifest.json",
+    "byteIdentical": true,
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f"
+  },
+  "nativeReports": [
+    "framework-binary-native-smoke-v1.json",
+    "framework-binary-native-algorithms-v1.json",
+    "framework-binary-native-signing-v1.json"
+  ],
+  "selfbuild": "bootstrap-framework-binary-v1.json",
+  "selfbuildBytes": 60314146,
+  "selfbuildByteIdentical": true,
+  "limitations": "This is architecture/migration evidence, not new Test262 conformance. Public entrypoint and resolver policy changed deliberately; binary algorithms were moved without implementation changes."
+}

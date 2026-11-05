@@ -1,0 +1,72 @@
+{
+  "kind": "native-host-build-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+    "files": 562
+  },
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-module-host-5AY052/module-host",
+  "imageSha256": "62a7f7c7ad27cbc338de54c793e0991f037dd21a67f534dcc4ad41b977dcb3ac",
+  "bytes": 149203583,
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-module-host-5AY052/cases.json",
+  "cases": [
+    {
+      "index": 0,
+      "name": "Script in a gated mixed batch",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "name": "cyclic modules and hoisted functions",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "name": "resolution fails before either module body",
+      "expected": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError"
+      }
+    },
+    {
+      "index": 3,
+      "name": "runtime errors retain the runtime phase",
+      "expected": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError"
+      }
+    },
+    {
+      "index": 4,
+      "name": "loader miss is sticky unsupported",
+      "expected": {
+        "kind": "unsupported"
+      }
+    },
+    {
+      "index": 5,
+      "name": "module jobs reach the shared async checkpoint",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "name": "harness errors retain the harness phase",
+      "expected": {
+        "kind": "error",
+        "phase": "harness",
+        "type": "RangeError"
+      }
+    }
+  ],
+  "executed": false,
+  "execution": "queued serially after docs/results/bootstrap-module-source-v1.json",
+  "controller": ".tint-bootstrap/run-module-host-native-validation-v1.mjs"
+}

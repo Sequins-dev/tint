@@ -1,0 +1,29 @@
+{
+  "kind": "reference-runtime-comparison",
+  "engine": {
+    "name": "Node.js",
+    "version": "v24.12.0"
+  },
+  "conformance": false,
+  "specification": "https://262.ecma-international.org/16.0/#sec-add-entries-from-iterable",
+  "observations": [
+    {
+      "throwingStep": "next",
+      "expectedCloseCount": 0,
+      "observedCloseCount": 1,
+      "propagatedValue": 42
+    },
+    {
+      "throwingStep": "done",
+      "expectedCloseCount": 0,
+      "observedCloseCount": 1,
+      "propagatedValue": 42
+    },
+    {
+      "throwingStep": "value",
+      "expectedCloseCount": 0,
+      "observedCloseCount": 1,
+      "propagatedValue": 42
+    }
+  ]
+}

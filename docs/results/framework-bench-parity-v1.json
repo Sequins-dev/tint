@@ -1,0 +1,26 @@
+{
+  "kind": "framework-bench-parity",
+  "conformance": false,
+  "before": {
+    "sha256": "93f49857fbc332b8adf62e2e4d011af641c3cb11b63786f011d2fc28fa3058b6",
+    "files": 503
+  },
+  "after": {
+    "sha256": "b64c08af0eca8c3742be97984f5ee0e7adcb3b4dc070988f8ff311b4f00a7494",
+    "files": 503
+  },
+  "packages": {
+    "before": 16,
+    "after": 15
+  },
+  "preservedNonGeneratedSourceBodies": 502,
+  "movedSources": 2,
+  "movedTests": 2,
+  "rebasedOutputManifests": 0,
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "byteIdentical": true
+  },
+  "scope": "bench ownership/import rebinding only. Algorithms, emitted code and native authority unchanged. Native self-build and conformance remain separate."
+}

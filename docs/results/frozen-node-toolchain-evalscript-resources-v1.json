@@ -1,0 +1,48 @@
+{
+  "kind": "frozen-node-toolchain",
+  "sourceSnapshot": {
+    "sha256": "55e4007cec59e63ba7763705d27afce4f0b42f6ae562ff53d78165485597713c",
+    "files": 549
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-evalscript-resources-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-evalscript-resources-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-evalscript-resources-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-evalscript-resources-v1/source-snapshot.json",
+    "sha256": "d5c19233ff6794b929fccfeb69ad812f7b1296ca781a865e1487d3691d859ce8"
+  },
+  "derivedFrom": ".tint-bootstrap/node-toolchain-evalscript-baseline-v1",
+  "change": "Five nativeTestResources literals only",
+  "changedFiles": [
+    "tools/test262-native.ts"
+  ],
+  "resources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "native-runtime-helper-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "1d06070d45015519f71c3888200353cf3626288ec47f5d95f88d3ce11ccf75c4",
+    "files": 568
+  },
+  "workspace": {
+    "tests": 4389,
+    "log": ".tint-bootstrap/managed-import-workspace-check-v4.log"
+  },
+  "native": "docs/results/managed-dynamic-import-native-validation-v2.json",
+  "surfaceCensus": "docs/results/managed-import-surface-census-node-v1.json",
+  "frozenTools": "docs/results/frozen-node-toolchain-managed-dynamic-import-v1.json",
+  "compilerGraph": "docs/results/managed-import-bootstrap-graph-node-v1.json",
+  "compilerReuse": "The complete 220-module bootstrap compiler graph and linked syntax are unchanged from the accepted byte-identical native compiler self-build. No compiler rebuild is needed for these JS entry and helper-table changes.",
+  "finalToolingAgreement": {
+    "imagesByteIdentical": true,
+    "builds": [
+      ".tint-bootstrap/managed-import-native-build-v1.log",
+      ".tint-bootstrap/managed-import-native-build-v2.log"
+    ],
+    "adapterInvariant": "The final capture invariant was tested red then green and covered by the final complete workspace run."
+  },
+  "conformanceStatus": "Two unchanged eval-import variants running; no whole-directory or whole-suite pass claim."
+}

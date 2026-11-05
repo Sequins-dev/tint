@@ -1,0 +1,104 @@
+{
+  "kind": "bespoke-native-fixture-inputs",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "imageSha256": "2d585588b0a024564838a7bde788b1995b2f3a18f71e3d66410989e184a31aaf",
+  "fixtureSha256": "f0796587ecbe6360cf82117c5a2eaa6293973486d8e2ce2af8b10774052a83c1",
+  "cases": [
+    {
+      "name": "repeated function calls retain one frozen template object",
+      "source": "const f=eval(\"(function(){function tag(s){return s;}return ()=>tag`x`;})()\");const a=f();if(f()!==a||!Object.isFrozen(a)||!Object.isFrozen(a.raw))throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "fresh eval parses sharing a referrer keep distinct sites",
+      "source": "const source=\"(function(){function tag(s){return s;}return tag`same`;})()\";const a=eval(source),b=eval(source);if(a===b||a.raw===b.raw)throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "equal text at distinct sites never merges identity",
+      "source": "const r=eval(\"(function(){function tag(s){return s;}return [tag`same`,tag`same`];})()\");if(r[0]===r[1])throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "Function caches its own sites and separates function objects",
+      "source": "const body=\"function tag(s){return s;}return tag`x`;\";const F=Function(body),G=Function(body);if(F()!==F()||F()===G())throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "undefined cooked segments and exact raw text survive compilation",
+      "source": "const r=eval(\"(function(){function tag(s){return s;}return tag`\\\\unicode`;})()\");if(r[0]!==undefined||r.raw[0]!==\"\\\\unicode\")throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "tag getter and substitutions preserve source order",
+      "source": "globalThis.__tagLog=\"\";const value=eval(\"(function(){const o={get tag(){__tagLog+=\\\"g\\\";return (s,x)=>{__tagLog+=\\\"t\\\";return x;}}};return o.tag`x${(__tagLog+=\\\"s\\\",42)}`;})()\");if(value!==42||__tagLog!==\"gst\")throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "constructed bodies create template arrays in their own realm",
+      "source": "const other=$262.createRealm().global;const F=other.Function(\"function tag(s){return s;}return tag`x`;\");if(Object.getPrototypeOf(F())!==other.Array.prototype||F()!==F())throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "returned JIT callbacks retain sites across allocation churn",
+      "source": "const f=eval(\"(function(){function tag(s){return s;}return ()=>tag`root`;})()\");const a=f();for(let i=0;i<100000;i++){const garbage=[i,i,i,i,i,i,i,i];if(garbage[0]!==i)throw 1;}if(f()!==a)throw 2;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "template identity survives suspension and continuation loops",
+      "source": "eval(\"(async function(){function tag(s){return s;}const values=[];for(let i=0;i<2;i++){await 0;values.push(tag`same`);}return values[0]===values[1];})()\").then(value=>{if(!value)throw 1;print(\"Test262:AsyncTestComplete\");});",
+      "files": {},
+      "asynchronous": true,
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "a genuine missing-tag error is catchable without poisoning evaluation",
+      "source": "let caught=false;try{$262.evalScript(\"missing`x`\")}catch(error){caught=error instanceof ReferenceError;}if(!caught||$262.evalScript(\"42\")!==42)throw 1;",
+      "files": {},
+      "asynchronous": false,
+      "expected": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "relatedObservation": "native-managed-templates-case-8-v3.json",
+  "retention": "Original inputs, including the async body that exceeded the unchanged 256 KiB code budget."
+}

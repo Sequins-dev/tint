@@ -1,0 +1,11 @@
+{
+  "kind": "validation-record-correction",
+  "corrects": "atomics-rmw-workspace-v2.json",
+  "scope": "Test-type gate only. Node test passes, native regression outcomes and self-build identities remain unchanged.",
+  "originalObservation": ".tint-bootstrap/atomics-tests-types-review-v1.log",
+  "cause": "The modular reference test constructed a union of overloaded typed-array constructors. Pinned TypeScript rejected SharedArrayBuffer through the intersected overload signatures. The shell sequence continued to later passing commands, so its final exit code did not establish the test-type gate.",
+  "fix": "Iterate concrete typed-array instances instead of a constructor union. All reference arrays still use genuine SharedArrayBuffer. No production algorithm changed.",
+  "correctedTestTypes": { "exitStatus": 0, "log": ".tint-bootstrap/atomics-tests-types-review-v2.log" },
+  "focusedTests": { "passed": 22, "failed": 0, "log": ".tint-bootstrap/atomics-rmw-review-regressions-v2.log" },
+  "workspaceContext": "The text ownership migration proceeded after the original Node run. Its separate report owns the final combined workspace gates. Native Test262 continues using its frozen pre-migration source/toolchain."
+}

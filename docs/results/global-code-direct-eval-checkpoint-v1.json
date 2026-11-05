@@ -1,0 +1,29 @@
+{
+  "kind": "native-test262-selection-checkpoint",
+  "report": "docs/results/test262-global-code-direct-eval-native-v1.json",
+  "sourceSnapshot": {
+    "sha256": "5d1967574760292ac65d6c7ef1cd8ae1a1d5266b2b3193cc0fd694825066cef8",
+    "files": 552
+  },
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": "language/global-code",
+  "totals": {
+    "total": 75,
+    "passed": 74,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9866666666666667
+  },
+  "remaining": [
+    {
+      "path": "language/global-code/yield-strict.js",
+      "variant": "strict",
+      "status": "timeout",
+      "classification": "timeout before confirmed stopped-at-entry"
+    }
+  ],
+  "note": "Complete frozen selection; retain timeout in denominator. No current whole-suite percentage inferred."
+}

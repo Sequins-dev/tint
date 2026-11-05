@@ -1,0 +1,27 @@
+{
+  "kind": "interrupted-native-selection",
+  "completed": false,
+  "selection": "built-ins/Function",
+  "report": "docs/results/test262-function-family-native-v2.json",
+  "journal": "docs/results/test262-function-family-native-v2.jsonl",
+  "journalSha256": "de82f7b260ef78821d82b94f6248ca662d4e44ad86bcde00ee2144759d712cc7",
+  "observations": 208,
+  "counts": {
+    "pass": 112,
+    "unsupported": 77,
+    "fail": 15,
+    "timeout": 4
+  },
+  "reason": "Replaced the older zero-formal normal-function implementation with the expanded frozen constructor frontend and explicit live coercion boundaries. Prefix observations are retained and are not full-family totals.",
+  "quietObservations": [
+    {
+      "pid": 20940,
+      "ppid": 20938,
+      "stat": "R",
+      "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-dynamic-execution-v1/tools/test262-native-run.ts .tint-bootstrap/test262 built-ins/Function 16"
+    }
+  ],
+  "racingLaunches": [],
+  "baselineLeaseTransferredFrom": 20938,
+  "to": 93508
+}

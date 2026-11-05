@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-11-03T21:30:47.492Z",
+  "containmentTimeoutMs": 120000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-frame-callback-CYJaOX/managed-frame-callback",
+  "fixture": ".tint-bootstrap/local-signature-frame-fixture-v1.ts",
+  "fixtureSha256": "06c864e3a07d7ca0b5b8acac5ce869ef4deb0d6f72e87c9cf0152f2a13d028ac",
+  "imageSha256": "5f551b7c345630f0131130c14b8d17a3d73d84a6c27307172f6cea8b2f4e8145",
+  "sourceSnapshot": {
+    "sha256": "5489ec23d083b0a5d14cf2fc125e216eebccb261eec17f862f9eb553d229b048",
+    "files": 506
+  },
+  "debuggerLaunch": "lldb-local-stdio",
+  "debuggerStdio": "debugger-managed",
+  "debuggerTracing": false,
+  "elapsedMs": 30277.967167,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-frame-callback-CYJaOX/managed-frame-callback\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-frame-callback-CYJaOX/managed-frame-callback' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

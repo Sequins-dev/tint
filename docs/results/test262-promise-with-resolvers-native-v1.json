@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, agents, async syntax, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/Promise/withResolvers",
+  "totals": {
+    "total": 12,
+    "passed": 10,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.8333333333333334
+  },
+  "observations": [
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-ctor.js",
+      "sha256": "9b300e14b4ec7698294757126a71b8126c9815c420522930781e273041801b4f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers",
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5640.132375
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-ctor.js",
+      "sha256": "9b300e14b4ec7698294757126a71b8126c9815c420522930781e273041801b4f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers",
+          "class"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4856.118167
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-non-ctor.js",
+      "sha256": "6bddd01251652b3aedc93a8dda8272f017577e00d8c898ef84c75d99d7bdae36",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4551.323250000001
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-non-ctor.js",
+      "sha256": "6bddd01251652b3aedc93a8dda8272f017577e00d8c898ef84c75d99d7bdae36",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 5902.227916
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-non-object.js",
+      "sha256": "ac8c6e4498379ba800306ced5224a67bd048318cb550deddcde41e83a2dba58c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4744.745542000001
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/ctx-non-object.js",
+      "sha256": "ac8c6e4498379ba800306ced5224a67bd048318cb550deddcde41e83a2dba58c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4397.611291000001
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/promise.js",
+      "sha256": "8d183c5be617915955e6b322d58567e2a2dab0c0db30faef429d6efe2d2623a0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4269.526957999999
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/promise.js",
+      "sha256": "8d183c5be617915955e6b322d58567e2a2dab0c0db30faef429d6efe2d2623a0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4246.772709000004
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/resolvers.js",
+      "sha256": "b538537ee0d5d9ad474c264d65576eaad9fb4769f5a54f33ccc6ed893ffc5c15",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4250.412458999999
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/resolvers.js",
+      "sha256": "b538537ee0d5d9ad474c264d65576eaad9fb4769f5a54f33ccc6ed893ffc5c15",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4326.174208000004
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/result.js",
+      "sha256": "85d0e26f667f83b162f3f69439b76f35c8ca9412b92fd24efdb234424f04acbb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6780.981208000005
+    },
+    {
+      "path": "built-ins/Promise/withResolvers/result.js",
+      "sha256": "85d0e26f667f83b162f3f69439b76f35c8ca9412b92fd24efdb234424f04acbb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "promise-with-resolvers"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6639.183042000004
+    }
+  ]
+}

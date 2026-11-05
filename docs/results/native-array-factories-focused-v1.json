@@ -1,0 +1,12 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-factories.ts",
+  "fixtureSha256": "af7d06bd321170bbc489b5fd5375671d0e91669f5d4efaa3c0f2bddc1747a7bb",
+  "cases": 6,
+  "passed": 6,
+  "nodeReference": "All fixture sources completed in isolated Node vm contexts.",
+  "nativeValidation": "Fresh LLDB-controlled native process per case, stopped at entry and verified exit 42.",
+  "scope": "Array.of/from constructor dispatch, iterable and array-like paths, mapper calls, constructor ordering, holes and IteratorClose boundaries. Not full conformance coverage."
+}

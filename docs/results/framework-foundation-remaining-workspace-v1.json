@@ -1,0 +1,32 @@
+{
+  "kind": "framework-foundation-remaining-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "11c6ee73df2b3d8726399ffb4bb8360cb77995f6bc219132c01ee0a7f5ce5732",
+    "files": 509
+  },
+  "packages": 41,
+  "nodeTests": {
+    "passed": 3674,
+    "failed": 0,
+    "log": ".tint-bootstrap/foundation-remaining-full-node-v3.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "parity": "framework-foundation-remaining-parity-v2.json",
+  "nativeCompilation": [
+    "gregorian-calendar",
+    "regexp-engine"
+  ],
+  "bootstrap": {
+    "stage1": ".tint-bootstrap/stage1-foundation-remaining-v1",
+    "bytes": 61585970,
+    "stage2": "pending"
+  },
+  "scope": "Pure ownership/import migration after the separately frozen typed-engine feature baseline. Algorithm execution and native fixed point remain pending."
+}

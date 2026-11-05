@@ -1,0 +1,24 @@
+{
+  "kind": "node-script-evaluator-checkpoint",
+  "conformance": false,
+  "nativeExecution": false,
+  "sourceSnapshot": {
+    "sha256": "9dd8a7de93d6e532569961b9601482236d81873486d0914deebaf12e950ac70f",
+    "files": 548
+  },
+  "unitTests": {
+    "passed": 25,
+    "log": ".tint-bootstrap/script-evaluator-green-v2.log"
+  },
+  "workspace": {
+    "passed": 3929,
+    "log": ".tint-bootstrap/script-evaluator-workspace-check-v2.log"
+  },
+  "nativeProfile": {
+    "entry": "packages/js-engine/src/script-evaluation.ts",
+    "stage": "checked",
+    "report": ".tint-bootstrap/script-evaluator-native-profile-v1.json",
+    "execution": false
+  },
+  "scope": "Injected-host evaluator tests and portable source checking. Production native compilation/publication and Test262 evalScript wiring remain pending."
+}

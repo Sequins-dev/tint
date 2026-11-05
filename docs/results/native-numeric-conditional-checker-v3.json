@@ -1,0 +1,17 @@
+{
+  "kind": "bespoke-native-regression",
+  "fixture": "tools/verify-hosted-checker.ts",
+  "fixtureSha256": "d4b4fdc501ffebeb56b0be70881e783792bef37d753f4a858f3b79c2cb0df0d0",
+  "imageSha256": "a8430953843d16a1aea37d63be5bd9e5e713b31fac606eb5ebdee2ed5e7c0e00",
+  "entryStopAssertionPassed": true,
+  "exitStatus": 42,
+  "expectedExitStatus": 42,
+  "passed": true,
+  "scope": "Native type graph validation, numeric conditional joins including literal-union preservation, allocator source parsing/interface resolution/closure checking.",
+  "conformance": false,
+  "priorEvidence": [
+    "native-numeric-conditional-checker-v1.json",
+    "native-numeric-conditional-checker-analysis-v1.json",
+    "native-numeric-conditional-checker-diagnostic-v2.json"
+  ]
+}

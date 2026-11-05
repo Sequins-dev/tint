@@ -1,0 +1,40 @@
+{
+  "kind": "managed-domain-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "e3a7aed4fe82ed4819e3b584078010071bbef987ad3878114c08216b523fe1b2",
+    "files": 516
+  },
+  "selfBuild": "docs/results/bootstrap-managed-domain-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-domain-v1.json",
+    "docs/results/native-code-storage-domain-v1.json",
+    "docs/results/native-dynamic-domain-v1.json",
+    "docs/results/native-domain-functions-0-v2.json",
+    "docs/results/native-domain-functions-1-v2.json",
+    "docs/results/native-domain-functions-2-v2.json"
+  ],
+  "byteIdentical": true,
+  "bytes": 62604338,
+  "sha256": "19d61cb3182657f502a78065e0e97b1f601ee17e4046b9be54f2b8e1ded5f8f9",
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-domain-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-domain-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Two independently live heap/context isolation proof",
+    "General managed helper surfaces and runtime compilation"
+  ],
+  "excludedLaterSourceFixtures": [
+    "docs/results/native-script-completion-identity-0-v1.json",
+    "docs/results/native-script-completion-identity-1-v1.json",
+    "docs/results/native-script-completion-identity-2-v1.json",
+    "docs/results/native-managed-surface-types-v1.json"
+  ]
+}

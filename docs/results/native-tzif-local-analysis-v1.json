@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "3aa9d71475e0c9191eb0104b62a0f74aeb62d1331aa4970ddaee49dd373e8406",
+      "files": 432
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/temporal-zone-local-v1-sources.json",
+    "imageSha256": "274e14e3ebd1a04616b6f2718723937030269de60d9c27413da3b4ba48bd00ca",
+    "fixtureTool": "tools/verify-hosted-tzif-zone.ts",
+    "fixtureToolSha256": "75585f038d9e7902d08771b5cb59250d9aa2d1b09db5e43d7c271f92e7499ee0",
+    "data": {
+      "kind": "tzif-zone-native-build",
+      "sourceSnapshot": {
+        "sha256": "3aa9d71475e0c9191eb0104b62a0f74aeb62d1331aa4970ddaee49dd373e8406",
+        "files": 432
+      },
+      "fixtures": [
+        {
+          "name": "America/New_York",
+          "bytes": 3552,
+          "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95"
+        },
+        {
+          "name": "Australia/Lord_Howe",
+          "bytes": 1846,
+          "sha256": "a323c5433991a963eb497b7da4d1d09848bf3ef5f5d64d9c9649f388e4bab9df"
+        },
+        {
+          "name": "Pacific/Apia",
+          "bytes": 598,
+          "sha256": "33740ab29ef943b1f55f769e13ff59a90962f5a12434209072d650e6c10abb4d"
+        }
+      ]
+    },
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "NY overlap candidates and gap metadata, future rules, Lord Howe and Apia resolution"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bjva1M/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bjva1M/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lUg6jE/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lUg6jE/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lUg6jE/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bjva1M/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lUg6jE/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lUg6jE/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: "
+      }
+    }
+  ]
+}

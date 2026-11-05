@@ -1,0 +1,8 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const a=[1,,3];const b=a.toReversed();if(b.join(',')!=='3,,1'||!(1 in b)||a[0]!==1||1 in a)throw 1;const c=a.with(-1,9);if(c.join(',')!=='1,,9'||!(1 in c)||a[2]!==3)throw 2;for(const i of [-4,3,Infinity,-Infinity]){let caught=false;try{a.with(i,4);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 3;}`,
+  `let log='';const o={length:3,get 0(){log+='a';return 1;},get 1(){log+='b';return 2;},get 2(){log+='c';return 3;}};if(Array.prototype.toReversed.call(o).join(',')!=='3,2,1'||log!=='cba')throw 1;log='';if(Array.prototype.with.call(o,1,9).join(',')!=='1,9,3'||log!=='ac')throw 2;`,
+  `const a=[1,,3,4];const b=a.toSpliced(1,2,7,8,9);if(b.join(',')!=='1,7,8,9,4'||a.length!==4||1 in a)throw 1;const c=a.toSpliced();if(c.length!==4||!(1 in c))throw 2;if(a.toSpliced(1).join(',')!=='1'||a.toSpliced(1,undefined,9).length!==5)throw 3;`,
+  `let log='';const o={get length(){log+='l';return 3;},get 0(){log+='a';return 1;},get 1(){throw 1;},get 2(){log+='c';return 3;}},s={valueOf(){log+='s';return 1;}},d={valueOf(){log+='d';return 1;}};if(Array.prototype.toSpliced.call(o,s,d,9).join(',')!=='1,9,3'||log!=='lsdac')throw 2;`,
+  `const a=[1,2,3];Object.defineProperty(a,'constructor',{get(){throw 1;}});for(const b of [a.toReversed(),a.with(0,9),a.toSpliced(0,1)]){if(!Array.isArray(b)||Object.getPrototypeOf(b)!==Array.prototype)throw 2;}const o={length:4294967296,get 0(){throw 3;}};for(const name of ['toReversed','with','toSpliced']){let caught=false;try{Array.prototype[name].call(o,0,0);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 4;}`,
+]);

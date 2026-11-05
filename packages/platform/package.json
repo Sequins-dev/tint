@@ -1,0 +1,35 @@
+{
+  "name": "@tint/platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./io/sync": {
+      "types": "./dist/io/sync.d.ts",
+      "import": "./dist/io/sync.js"
+    },
+    "./files/service": {
+      "types": "./dist/files/service.d.ts",
+      "import": "./dist/files/service.js"
+    },
+    "./files/system": {
+      "types": "./dist/files/system.d.ts",
+      "import": "./dist/files/system.js"
+    },
+    "./darwin/fs": {
+      "types": "./dist/darwin/fs.d.ts",
+      "import": "./dist/darwin/fs.js"
+    },
+    "./darwin/host-abi": {
+      "types": "./dist/darwin/host-abi.d.ts",
+      "import": "./dist/darwin/host-abi.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/native-runtime": "workspace:*",
+    "@tint/abi": "workspace:*"
+  }
+}

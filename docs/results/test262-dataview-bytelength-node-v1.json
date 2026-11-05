@@ -1,0 +1,740 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Node.js",
+    "version": "v24.12.0",
+    "v8": "13.6.233.17-node.37",
+    "adapter": "script-async-v2"
+  },
+  "scope": "Selected variants only; unsupported capabilities remain in the denominator. Not a Tint conformance result.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/DataView/prototype/byteLength",
+  "totals": {
+    "total": 26,
+    "passed": 20,
+    "failed": 6,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.7692307692307693
+  },
+  "observations": [
+    {
+      "path": "built-ins/DataView/prototype/byteLength/detached-buffer.js",
+      "sha256": "2dd85bd2c2552ef61db4ac7bfc1034364889a691d9c47cc794a0b2592c8f19df",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/detached-buffer.js",
+      "sha256": "2dd85bd2c2552ef61db4ac7bfc1034364889a691d9c47cc794a0b2592c8f19df",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "detachArrayBuffer.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/invoked-as-accessor.js",
+      "sha256": "de792a46b56e53ad484f5591a3b581cb8b1dbfda5adf76022a711e1852af848e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/invoked-as-accessor.js",
+      "sha256": "de792a46b56e53ad484f5591a3b581cb8b1dbfda5adf76022a711e1852af848e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/invoked-as-func.js",
+      "sha256": "bbd5b705bf5d71742653c8d1cc1e3e27726499e2edcd24e260428eb533a293df",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/invoked-as-func.js",
+      "sha256": "bbd5b705bf5d71742653c8d1cc1e3e27726499e2edcd24e260428eb533a293df",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/length.js",
+      "sha256": "c74b8787ce58417e7f99b22e5afc5fc4018052def74c3c604482edaa51dc9849",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/length.js",
+      "sha256": "c74b8787ce58417e7f99b22e5afc5fc4018052def74c3c604482edaa51dc9849",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/name.js",
+      "sha256": "4b2c48c0da63aa4977fbb4bfaaded7310a1f827d089798de8570222324c6ad5e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/name.js",
+      "sha256": "4b2c48c0da63aa4977fbb4bfaaded7310a1f827d089798de8570222324c6ad5e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/prop-desc.js",
+      "sha256": "4fc4959e04c0ba8d5857bfda8ee9a93851bad5ed7ac300b0ed995234e26b2721",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/prop-desc.js",
+      "sha256": "4fc4959e04c0ba8d5857bfda8ee9a93851bad5ed7ac300b0ed995234e26b2721",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/resizable-array-buffer-auto.js",
+      "sha256": "be469d6b6eac8ff0daaa90ac46f4d1dacab3754e681f04fb2efc5f5ea2556d5e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/resizable-array-buffer-auto.js",
+      "sha256": "be469d6b6eac8ff0daaa90ac46f4d1dacab3754e681f04fb2efc5f5ea2556d5e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/resizable-array-buffer-fixed.js",
+      "sha256": "bb7ead0be6c3383adff3185977a396d6698284c06964337d06a7310165ed729f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/resizable-array-buffer-fixed.js",
+      "sha256": "bb7ead0be6c3383adff3185977a396d6698284c06964337d06a7310165ed729f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "TypeError: Cannot perform get DataView.prototype.byteLength on a detached ArrayBuffer"
+      },
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/return-bytelength-sab.js",
+      "sha256": "e879bedf8a9ff6dbd87c91c41f5487581b4401628f4c21c0e313abc63c65aa3f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "SharedArrayBuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/return-bytelength-sab.js",
+      "sha256": "e879bedf8a9ff6dbd87c91c41f5487581b4401628f4c21c0e313abc63c65aa3f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "SharedArrayBuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/return-bytelength.js",
+      "sha256": "63b6bd2501822ea5748438b37a1c85b738ccdb5aa55adad361902aed197151be",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/return-bytelength.js",
+      "sha256": "63b6bd2501822ea5748438b37a1c85b738ccdb5aa55adad361902aed197151be",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-has-no-dataview-internal-sab.js",
+      "sha256": "ab6ea993f03220f47984a60137f0ce5346f0852a593ce38177f8ad17968a2f72",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "SharedArrayBuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-has-no-dataview-internal-sab.js",
+      "sha256": "ab6ea993f03220f47984a60137f0ce5346f0852a593ce38177f8ad17968a2f72",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "SharedArrayBuffer"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-has-no-dataview-internal.js",
+      "sha256": "5a5985a30c8a569401f819cc08a149fb1823170c209017467f39ad386a47c6d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Int8Array"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-has-no-dataview-internal.js",
+      "sha256": "5a5985a30c8a569401f819cc08a149fb1823170c209017467f39ad386a47c6d1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Int8Array"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-is-not-object.js",
+      "sha256": "2e3d7e8e89c46e0db1281b30303962a0cffa6f1727b7d68ea44f6c3623c78533",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/DataView/prototype/byteLength/this-is-not-object.js",
+      "sha256": "2e3d7e8e89c46e0db1281b30303962a0cffa6f1727b7d68ea44f6c3623c78533",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-S2Z4PQ/signature-0-constructed",
+  "observation": {
+    "state": 5,
+    "stop": "EXC_BREAKPOINT (code=1, subcode=0x104e96400)",
+    "registers": {
+      "x0": "0x0000000000000001",
+      "x1": "0x000000016af7c440",
+      "x8": "0x0000000000000000",
+      "x9": "0x0000000000000000",
+      "x10": "0x000000016af78fd0",
+      "x11": "0x0000000000000000",
+      "x29": "0x000000016af792f0",
+      "sp": "0x000000016af78fd0",
+      "pc": "0x0000000104e96400"
+    },
+    "stack": "010000000000000000000000000000000000000000000000000000000000000000c4f76a010000000093f76a010000003093f76a01000000fc17ec040100000090cdf76a01000000000000000000000000000000000044400000000000001040000000000000564000000000000000000000000000000000000000000000f041",
+    "frames": [
+      "frame #0: 0x0000000104e96400 signature-0-constructed`",
+      "frame #1: 0x0000000104ea83dc signature-0-constructed`",
+      "frame #2: 0x0000000104eaf2c8 signature-0-constructed`",
+      "frame #3: 0x0000000104eb3440 signature-0-constructed`",
+      "frame #4: 0x0000000104e875a8 signature-0-constructed`",
+      "frame #5: 0x0000000104e81124 signature-0-constructed`"
+    ]
+  },
+  "status": 0,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-S2Z4PQ/signature-0-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-S2Z4PQ/signature-0-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-signature-probe-8ALsmQ/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-signature-probe-8ALsmQ/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-signature-probe-8ALsmQ/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-S2Z4PQ/signature-0-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-signature-probe-8ALsmQ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-signature-probe-8ALsmQ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-signature-probe-8ALsmQ/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n3\n(lldb) continue\nProcess 307 resuming\nProcess 307 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x104e96400)\n       frame #0: 0x0000000104e96400 signature-0-constructed`\n->  0x104e96400: brk    #0x3\n    0x104e96404: ldr    x9, [sp, #0x10]\n    0x104e96408: adr    x16, 0x104e96408\n    0x104e9640c: mov    x17, #0x8dbc              ; =36284 \nTarget 0: (signature-0-constructed) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nt=p.GetSelectedThread()\\nf=t.GetFrameAtIndex(0)\\ne=lldb.SBError()\\nsp=f.FindRegister('sp').GetValueAsUnsigned()\\npc=f.GetPC()\\nraw=p.ReadMemory(sp,128,e)\\nregisters={n:f.FindRegister(n).GetValue() for n in ['x0','x1','x8','x9','x10','x11','x29','sp','pc']}\\nopen(\\\"/tmp/tint-signature-probe-8ALsmQ/probe.json\\\",'w').write(json.dumps({'state':p.GetState(),'stop':t.GetStopDescription(1024),'registers':registers,'stack':raw.hex() if raw else None,'frames':[str(t.GetFrameAtIndex(i)) for i in range(min(8,t.GetNumFrames()))]}))\\nlldb.debugger.HandleCommand('disassemble --start-address '+str(pc-48)+' --count 26')\\np.Kill()\\nassert p.GetState()==lldb.eStateExited\")\n    0x104e963d0: brk    #0x3\n    0x104e963d4: mov    x2, #0x0                  ; =0 \n    0x104e963d8: mov    x3, sp\n    0x104e963dc: mov    x9, #0x30                 ; =48 \n    0x104e963e0: ucvtf  d0, w9\n    0x104e963e4: blr    x16\n    0x104e963e8: cmp    w0, #0x1\n    0x104e963ec: b.eq   0x104e963f4\n    0x104e963f0: b      0x104e964d8\n    0x104e963f4: ldr    x9, [sp, #0x18]\n    0x104e963f8: cmp    x9, #0x1\n    0x104e963fc: b.eq   0x104e96404\n->  0x104e96400: brk    #0x3\n    0x104e96404: ldr    x9, [sp, #0x10]\n    0x104e96408: adr    x16, 0x104e96408\n    0x104e9640c: mov    x17, #0x8dbc              ; =36284 \n    0x104e96410: movk   x17, #0x2, lsl #16\n    0x104e96414: add    x16, x16, x17\n    0x104e96418: blr    x16\n    0x104e9641c: ucvtf  d0, w9\n    0x104e96420: ldr    d1, [sp, #0x10]\n    0x104e96424: fcmp   d0, d1\n    0x104e96428: b.eq   0x104e96430\n    0x104e9642c: brk    #0x3\n    0x104e96430: ubfx   w10, w9, #0, #4\n    0x104e96434: cbz    w10, 0x104e9643c\nProcess 307 exited with status = 9 (0x00000009) killed\n",
+  "stderr": ""
+}

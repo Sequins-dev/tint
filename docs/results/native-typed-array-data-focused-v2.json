@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-hosted-typed-array-data.ts",
+  "fixtureSha256": "094b292f15ed886bd468dbed6385d67b46aeacbbf64fffb9bb27ae1386f3007e",
+  "cases": 1,
+  "passed": 1,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "previousObservation": "native-typed-array-data-focused-v1.json",
+  "change": "Fixture now supplies the required native record-view bindings."
+}

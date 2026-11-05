@@ -1,0 +1,13 @@
+{
+  "kind": "debugger-direct-launch-diagnostic",
+  "conformance": false,
+  "launch": "debugserver-posix-spawn",
+  "directory": "/tmp/tint-direct-diag-9B6XxZ",
+  "status": 0,
+  "outcome": {
+    "state": 10,
+    "exitStatus": 42
+  },
+  "stdout": "(lldb) target create \"/tmp/tint-direct-diag-9B6XxZ/test\"\nCurrent executable set to '/tmp/tint-direct-diag-9B6XxZ/test' (arm64).\n(lldb) gdb-remote 127.0.0.1:61765\nProcess 3222 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000101a0c9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x101a0c9c0 <+0>:  mov    x0, sp\n    0x101a0c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x101a0c9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x101a0c9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n(lldb) script assert lldb.debugger.GetSelectedTarget().GetProcess().GetState() == lldb.eStateStopped\n(lldb) script open(\"/tmp/tint-direct-diag-9B6XxZ/pid\",'w').write(str(lldb.debugger.GetSelectedTarget().GetProcess().GetProcessID()))\n4\n(lldb) continue\nProcess 3222 resuming\nProcess 3222 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-direct-diag-9B6XxZ/outcome.json\",'w').write(json.dumps({'state':s,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n31\n",
+  "stderr": ""
+}

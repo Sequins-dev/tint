@@ -1,0 +1,25 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "/tmp/tint-probe-zoned-boundaries-v1.ts",
+  "fixtureSha256": "3a3be6410acc41be18dfef4b15495c01c906cd844d74ce059d40daca8dcff741",
+  "imageSha256": "1dd6693ed48f9805a9dc3cfa49519b9110ab8bb3f0c58babb0bfb34067ed93a5",
+  "cases": 2,
+  "passed": 1,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "0b07a92e3ea4f08370cb0a2cc043543cdc8c7393a9501a6c61f8cd916d29b912",
+      "files": 413
+    },
+    "imageSha256": "ffbe9b58963d6fe5ed94e68c4c16c560dd2435fdbde157a4013008756f4e1003",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "Array.fromAsync([Promise.resolve(19),23],async(v,i)=>v+i).then(a=>{if(a.length!==2||a[0]!==19||a[1]!==24)throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:\"+(e&&e.name?e.name:\"Test262Error\")+\":\"+String(e)));",
+        "sha256": "8a1e7215d00b9bdd07b77f148e4beefdbf7120a2daeb28bc2334e6a85b033e0c"
+      },
+      {
+        "index": 1,
+        "source": "const value=Promise.resolve(19);let i=0;const source={[Symbol.asyncIterator](){return this;},next(){return Promise.resolve(i++===0?{done:false,value}:{done:true});}};Array.fromAsync(source).then(a=>{if(a.length!==1||a[0]!==value)throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:\"+(e&&e.name?e.name:\"Test262Error\")+\":\"+String(e)));",
+        "sha256": "c3f9ff7b5fc87bc3f08584a15600facd9ab6d774e6a1bbb196d2583ba630f061"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const source={get length(){log+=\"L\";return 2;},get 0(){log+=\"0\";return Promise.resolve(19);},get 1(){log+=\"1\";return 23;}};Array.fromAsync(source,(v,i)=>{log+=\"M\";return Promise.resolve(v+i);}).then(a=>{if(a[0]!==19||a[1]!==24||log!==\"L0M1M\")throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:\"+(e&&e.name?e.name:\"Test262Error\")+\":\"+String(e)));",
+        "sha256": "0723f184925a7a4aaafc50b24380a0c540c7065ebf0574e6a03958d7c85f936f"
+      },
+      {
+        "index": 3,
+        "source": "const marker={};let closed=false;const source={[Symbol.asyncIterator](){return this;},next(){return Promise.resolve({done:false,value:19});},return(){closed=true;return Promise.resolve({done:true});}};Array.fromAsync(source,()=>Promise.reject(marker)).then(()=>{throw 1;},e=>{if(e!==marker||!closed)throw 2;}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:\"+(e&&e.name?e.name:\"Test262Error\")+\":\"+String(e)));",
+        "sha256": "78b7394ae805f6f86be17e26c05bb098655f432f4d1368c4451c8a03d8916da6"
+      },
+      {
+        "index": 4,
+        "source": "const marker={};let closed=false;const source={[Symbol.asyncIterator](){return this;},next(){throw marker;},return(){closed=true;return {done:true};}};Array.fromAsync(source).then(()=>{throw 1;},e=>{if(e!==marker||closed)throw 2;}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:\"+(e&&e.name?e.name:\"Test262Error\")+\":\"+String(e)));",
+        "sha256": "5ccdf286f4e2e2e3412851905c81257f3cbed86c3987f449b30f849e7f5b7440"
+      }
+    ]
+  },
+  "cases": 5,
+  "completed": 5,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

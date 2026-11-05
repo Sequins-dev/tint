@@ -1,0 +1,67 @@
+{
+  "name": "@tint/js-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./objects": {
+      "types": "./dist/objects/index.d.ts",
+      "import": "./dist/objects/index.js"
+    },
+    "./descriptors": {
+      "types": "./dist/descriptors/index.d.ts",
+      "import": "./dist/descriptors/index.js"
+    },
+    "./environments/records": {
+      "types": "./dist/environments/records/index.d.ts",
+      "import": "./dist/environments/records/index.js"
+    },
+    "./environments/global": {
+      "types": "./dist/environments/global/index.d.ts",
+      "import": "./dist/environments/global/index.js"
+    },
+    "./iterators": {
+      "types": "./dist/iterators/index.d.ts",
+      "import": "./dist/iterators/index.js"
+    },
+    "./jobs": {
+      "types": "./dist/jobs/index.d.ts",
+      "import": "./dist/jobs/index.js"
+    },
+    "./promises": {
+      "types": "./dist/promises/index.d.ts",
+      "import": "./dist/promises/index.js"
+    },
+    "./disposal": {
+      "types": "./dist/disposal/index.d.ts",
+      "import": "./dist/disposal/index.js"
+    },
+    "./bytes": {
+      "types": "./dist/bytes/index.d.ts",
+      "import": "./dist/bytes/index.js"
+    },
+    "./bytes/shared": {
+      "types": "./dist/bytes/shared.d.ts",
+      "import": "./dist/bytes/shared.js"
+    },
+    "./modules": {
+      "types": "./dist/modules/index.d.ts",
+      "import": "./dist/modules/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE-CLDR.txt",
+    "number-range-data-manifest.json",
+    "number-affix-data-manifest.json",
+    "plural-rules-data-manifest.json",
+    "currency-symbol-data-manifest.json",
+    "list-format-data-manifest.json",
+    "plural-compact-data-manifest.json",
+    "LICENSE-UNICODE.txt",
+    "number-format-data-manifest.json"
+  ],
+  "dependencies": {
+    "@tint/foundation": "workspace:*"
+  }
+}

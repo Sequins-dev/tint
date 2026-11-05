@@ -1,0 +1,30 @@
+{
+  "kind": "direct-eval-class-node-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "5ac58a8e9569b05526ad867a21777ae651e9ac8ee863971da6c90f5460b63bb6",
+    "files": 552
+  },
+  "workspaceTests": 4107,
+  "workspaceLog": ".tint-bootstrap/direct-eval-class-workspace-check-v2.log",
+  "red": ".tint-bootstrap/direct-eval-class-red-v1.log",
+  "focusedGreen": ".tint-bootstrap/direct-eval-class-green-v2.log",
+  "nativeEntryBuild": ".tint-bootstrap/direct-eval-class-entry-native-build-v1.log",
+  "nativeHostBuild": ".tint-bootstrap/direct-eval-class-native-build-v1.log",
+  "nativeStatus": "built; queued serially behind DE4 frozen self-build at conformance pause handshake",
+  "expectedCases": {
+    "completed": 26,
+    "unsupported": 2
+  },
+  "limitations": [
+    "private-name eval remains unsupported",
+    "native capability execution and current self-host byte identity not yet established"
+  ],
+  "directory": {
+    "vocabulary": 126,
+    "records": 182,
+    "signatures": 165,
+    "runtimes": 41
+  },
+  "planCorrection": "Private scopes exist for classes without private names; reject only when a scope contains names."
+}

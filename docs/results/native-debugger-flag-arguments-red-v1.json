@@ -1,0 +1,13 @@
+{
+  "kind": "debugger-argument-diagnostic",
+  "conformance": false,
+  "initial": {
+    "state": 0,
+    "pid": 0
+  },
+  "expectedExitStatus": 42,
+  "status": 1,
+  "stdout": "(lldb) target create \"/bin/sh\"\nCurrent executable set to '/bin/sh' (arm64e).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(10)\\nport_socket.bind(\\\"/tmp/tint-debugger-flags-XY05TA/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-debugger-flags-XY05TA/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-debugger-flags-XY05TA/port\\\",\\\"127.0.0.1:0\\\",\\\"/bin/sh\\\",\\\"-c\\\",\\\"exit 42\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-debugger-flags-XY05TA/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(10)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nlldb.debugger.HandleCommand('gdb-remote 127.0.0.1:' + str(port))\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-debugger-flags-XY05TA/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); open(\"/tmp/tint-debugger-flags-XY05TA/pid\",'w').write(str(p.GetProcessID())); assert p.GetState()==lldb.eStateStopped\n22\n1\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+  "stderr": "error: Command requires a current process.\n",
+  "debugserver": "debugserver: unrecognized option `-c'\n"
+}

@@ -1,0 +1,59 @@
+{
+  "kind": "date-test-discrepancy-analysis",
+  "conformance": false,
+  "zone": "Asia/Manila",
+  "referenceVersion": "v24.12.0",
+  "reference": "test262-date-iso-node-reference-v1.json",
+  "native": "test262-date-family-native-v8.json",
+  "matchingFailingVariants": [
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-10.js",
+      "variant": "sloppy"
+    },
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-10.js",
+      "variant": "strict"
+    },
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-8.js",
+      "variant": "sloppy"
+    },
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-8.js",
+      "variant": "strict"
+    },
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-9.js",
+      "variant": "sloppy"
+    },
+    {
+      "path": "built-ins/Date/prototype/toISOString/15.9.5.43-0-9.js",
+      "variant": "strict"
+    }
+  ],
+  "cases": [
+    {
+      "ms": -1,
+      "minute": 0,
+      "value": -8639999942632001,
+      "historicalTimezoneOffsetMinutes": 956,
+      "iso": "-271821-04-20T15:56:07.999Z"
+    },
+    {
+      "ms": 0,
+      "minute": 0,
+      "value": -8639999942632000,
+      "historicalTimezoneOffsetMinutes": 956,
+      "iso": "-271821-04-20T15:56:08.000Z"
+    },
+    {
+      "ms": 1,
+      "minute": 0,
+      "value": -8639999942631999,
+      "historicalTimezoneOffsetMinutes": 956,
+      "iso": "-271821-04-20T15:56:08.001Z"
+    }
+  ],
+  "explanation": "These three files infer an extreme past local date boundary from the UTC offset at 1970. Asia/Manila changed across the date line before 1845, so the historical offset differs in sign. All six variants also fail in the Node reference. Preserve the native failures and historical-zone semantics; do not change the runtime to force their assumption.",
+  "specification": "https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-localtime"
+}

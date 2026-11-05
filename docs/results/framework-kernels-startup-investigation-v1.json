@@ -1,0 +1,12 @@
+{
+  "kind": "native-startup-investigation",
+  "attempt": "bootstrap-framework-kernels-v1-attempt.json",
+  "observation": "No initial LLDB process: state0/pid0; no debugger connection log or remote packets. The native child remained suspended during launch. No compiler execution/fault established.",
+  "sameEnvironmentControl": "Source-framework self-build succeeded immediately before this attempt, with identical launch machinery.",
+  "additionalObservation": "The byte-identical source smoke image subsequently also stalled before entry. Its debugserver sample waits for inferior events; captured Sophos logs repeatedly show com.sophos.xpc.broker lookup failure. Correlation does not establish causation.",
+  "evidence": {
+    "sourceSmokeDebugserverSample": "/tmp/tint-source-smoke-debugserver-stall-v1.sample",
+    "sophosLogs": "/tmp/tint-kernels-preentry-sophos-v1.log"
+  },
+  "action": "Previously authorized TERM of scanning extension PID84126 requested through macOS administrator authentication. No security configuration change. No automatic compiler retry or failure replacement."
+}

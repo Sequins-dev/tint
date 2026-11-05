@@ -1,0 +1,35 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T11:29:07.309038+00:00",
+  "slice": "M3 generic foundation kernels",
+  "beforeSource": {
+    "sha256": "ef410a7c06d72ef7699717a8b74f2376f2967b659fd8ee7914f56695a5dffd31",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "49c9d453308322cd63662365c0315d37722b559d1a832a44da94eacc447b9d71",
+    "files": 492
+  },
+  "packages": 80,
+  "workspaceGates": {
+    "tests": 3459,
+    "passed": 3459,
+    "types": "passed build/tests/host",
+    "boundaries": "80 packages",
+    "formatting": "passed",
+    "evidence": "framework-kernels-workspace-validation-v1.json"
+  },
+  "implementationPreservation": "All three moved implementation files are byte-identical.",
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-kernels-after-v1/manifest.json"
+  },
+  "selfbuild": "bootstrap-framework-kernels-startup-v2.json",
+  "selfbuildBytes": 60691250,
+  "selfbuildByteIdentical": true,
+  "priorStartupFailure": "bootstrap-framework-kernels-v1-attempt.json",
+  "startupInvestigation": "framework-kernels-startup-investigation-v1.json",
+  "limitations": "Architecture evidence, not additional Test262 behavior coverage."
+}

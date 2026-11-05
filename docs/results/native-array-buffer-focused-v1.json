@@ -1,0 +1,43 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-array-buffers.ts",
+  "fixtureSha256": "12fcfbd96777da49a76f0fd58f268226f790b5badb80e7ed3226aab44ebbf44b",
+  "cases": 5,
+  "passed": 5,
+  "scope": "ArrayBuffer construction/options/order, getters and receiver validation, resize/failure preservation, transfer and transferToFixedLength, constructor prototypes and isView false cases. DataView and TypedArray objects are not implemented yet.",
+  "nativeValidation": "Fresh LLDB-controlled native process per case, expected completion exit 42; Node reference cases also passed.",
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

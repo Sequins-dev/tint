@@ -1,0 +1,57 @@
+{
+  "kind": "native-launch-diagnostic",
+  "conformance": false,
+  "launcher": "lldb-local",
+  "hypothesis": "A debugger-managed connection established before launch may avoid the direct debugserver launch-event stall.",
+  "priorObservation": null,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "3aa9d71475e0c9191eb0104b62a0f74aeb62d1331aa4970ddaee49dd373e8406",
+      "files": 432
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/temporal-zone-local-v1-sources.json",
+    "imageSha256": "7b0f1519acbc2a6da54fa0debba996dd16ad12560dfd6b9ffe90d434db897729",
+    "fixtureTool": "tools/verify-hosted-named-time-zones.ts",
+    "fixtureToolSha256": "0bed7a109e32bf54d43c82befb1b0af7eac98ef78f84b2d2fea6737907059468",
+    "data": {
+      "data": [
+        {
+          "path": "/usr/share/zoneinfo/tzdata.zi",
+          "sha256": "5914dfd1cecfaefd5e692426cbda59429105c59f16e87fa2754c8eff3ccdefa2"
+        },
+        {
+          "path": "/usr/share/zoneinfo/America/New_York",
+          "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95"
+        },
+        {
+          "path": "/usr/share/zoneinfo/Africa/Abidjan",
+          "sha256": "d2efac4e5f23d88c95d72c1db42807170f52f43dd98a205af5a92a91b9f2d997"
+        }
+      ]
+    },
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "Named local disambiguation, exact fractions, minute offset matching, start-of-day and model queries"
+      }
+    ]
+  },
+  "elapsedMs": 872.0022500000001,
+  "initial": {
+    "state": "stopped",
+    "pid": 55378
+  },
+  "outcome": {
+    "state": "exited",
+    "exitStatus": 42
+  },
+  "passed": true,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-named-time-zones-OMWVRH/named-time-zones\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-named-time-zones-OMWVRH/named-time-zones' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry\nProcess 55378 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-named-time-zones-OMWVRH/named-time-zones' (arm64)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-local-launch-diagnostic-em0USB/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n34\n(lldb) continue\nProcess 55378 resuming\nProcess 55378 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-local-launch-diagnostic-em0USB/outcome.json\",'w').write(json.dumps({'state':'exited' if s==lldb.eStateExited else str(s),'exitStatus':p.GetExitStatus()})); lldb.debugger.HandleCommand('bt 15') if s!=lldb.eStateExited else None; p.Kill() if s!=lldb.eStateExited else None\n37\n",
+  "stderr": ""
+}

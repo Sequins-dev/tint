@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-compiler-fixed-point",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1a302ac3269a7654f57f647b4a23c72abf9e290bf188eb23f4ef127779e3179a",
+    "files": 537
+  },
+  "selfBuild": "docs/results/bootstrap-runtime-layout-connected-v2.json",
+  "bytes": 68670194,
+  "sha256": "80a87378d743561cc1bea4c821488e3ff6780f2edd31f9a38212bc99fdac5ae9",
+  "byteIdentical": true,
+  "smokeCompile": "docs/results/bootstrap-runtime-layout-smoke-v1.json",
+  "smokeExecution": "docs/results/native-runtime-layout-smoke-v1.json",
+  "smokeBytes": 2132578,
+  "smokeSha256": "393072a7f2c3149973ed8a78d7b2c15f8348c2d3eaa5fe561d6bc5e5954aab7c",
+  "smokeSourcePolicy": "Frozen537-file catalog with CLI replaced by return42; one unreachable newer input is included for the current Node bootstrap catalog. Native compiler reads its own537-file catalog.",
+  "verification": {
+    "signature": ".tint-bootstrap/runtime-layout-stage2-signature-v2.log",
+    "dwarf": ".tint-bootstrap/runtime-layout-stage2-dwarf-v2.log",
+    "nonemptySections": ".tint-bootstrap/runtime-layout-stage2-debug-sections-v2.log",
+    "debugInfoBytes": 2080632,
+    "debugLineBytes": 17752414
+  },
+  "failedPreentryObservation": "docs/results/bootstrap-runtime-layout-v1.json",
+  "doesNotCover": [
+    "Later B8 optional-witness/member ABI-representative changes",
+    "Later normalization and runtime export planning additions",
+    "Directory v3 integration",
+    "Whole-suite Test262 behavior coverage"
+  ]
+}

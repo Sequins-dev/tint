@@ -1,0 +1,10 @@
+{
+  "report": "test262-string-upper-native-v1.json",
+  "unsupportedDependency": "eval runtime source compilation",
+  "path": "built-ins/String/prototype/toUpperCase/S15.5.4.18_A1_T3.js",
+  "variants": [
+    "sloppy",
+    "strict"
+  ],
+  "evidence": "The unchanged source calls eval on a string literal before invoking the casing method. No source rewriting is applied."
+}

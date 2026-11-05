@@ -1,0 +1,12 @@
+{
+  "kind": "build-failure-diagnosis",
+  "conformance": false,
+  "observations": [
+    ".tint-bootstrap/atomics-rmw-observation-build-v1.log",
+    ".tint-bootstrap/atomics-rmw-widths-observation-build-v1.log"
+  ],
+  "cause": "Strict-native list iteration uses listReadType, which includes undefined for sparse/missing elements. The registration and narrow-width fixture passed an iteration value to a nonoptional parameter without narrowing it. This is not evidence of a compiler union-inference defect.",
+  "source": "packages/typescript/src/checker/closures.ts:listReadType and for-of",
+  "resolution": "Use an explicitly typed registration/check helper called with the known intrinsic names. No type assertion or semantic bypass was introduced.",
+  "clarifies": "atomics-rmw-workspace-v1.json"
+}

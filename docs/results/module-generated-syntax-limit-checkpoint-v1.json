@@ -1,0 +1,18 @@
+{
+  "kind": "native-module-profile-boundary-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "782887277750378120ba765ce6ccec0380cb33d0ddeeebafffead933b5283c24",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4362,
+    "log": ".tint-bootstrap/module-generated-syntax-limit-workspace-check-v2.log"
+  },
+  "native": "docs/results/module-generated-syntax-limit-native-validation-v1.json",
+  "preparation": "docs/results/language-preparation-inventory-node-v3.json",
+  "decision": "docs/results/module-generated-syntax-limit-admission-decision-v1.json",
+  "buildResourcePreflight": "docs/results/generational-workspace-preflight-node-v1.json",
+  "behavior": "The existing rewriter/checker nesting budget is unchanged. Lowering converts only the known rewrite-budget signal to LIMIT. Roots and fixtures become unsupported individually; unrelated modules keep preparing.",
+  "compilerGate": "Pending next combined frozen self-build. Current complete conformance reruns use the earlier accepted frozen module-await/assignment snapshot."
+}

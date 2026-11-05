@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-11-03T17:55:37.271Z",
+  "containmentTimeoutMs": 60000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/managed-access-old-invocation-v5/native-managed-invocation",
+  "fixture": ".tint-bootstrap/managed-access-old-invocation-v5/build.json",
+  "fixtureSha256": "58397581bb37fd56d1469e966b68a3c23cd7d035210ce9041509a34606ae5426",
+  "imageSha256": "77e57edd034b246e4d1e52bf88ded883fa0a3be6df4e8aa9e155e262bfb7f456",
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "debuggerLaunch": "lldb-local",
+  "debuggerTracing": false,
+  "elapsedMs": 30241.710334,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/managed-access-old-invocation-v5/native-managed-invocation\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/managed-access-old-invocation-v5/native-managed-invocation' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

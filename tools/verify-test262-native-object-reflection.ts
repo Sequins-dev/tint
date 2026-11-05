@@ -1,0 +1,10 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const s=Symbol(),target={};const result=Object.assign(target,null,undefined,{a:19,[s]:23},{a:42});if(result!==target||target.a!==42||target[s]!==23)throw 1;const boxed=Object.assign(19,{x:23});if(boxed.valueOf()!==19||boxed.x!==23)throw 2;`,
+  `let order="";const target={set a(v){order+="s"+v;}};const source={get a(){order+="g";return 19;},b:23};Object.assign(target,source);if(order!=="gs19"||target.b!==23)throw 1;`,
+  `const target={};Object.defineProperty(target,"b",{value:1,writable:false});let caught=false;try{Object.assign(target,{a:19,b:23,c:42});}catch(e){caught=e instanceof TypeError;}if(!caught||target.a!==19||target.b!==1||Object.hasOwn(target,"c"))throw 1;`,
+  `const source={get a(){delete this.b;Object.defineProperty(this,"c",{enumerable:false});this.d=42;return 19;},b:23,c:7};const target=Object.assign({},source);if(Object.keys(target).join()!=="a"||target.a!==19)throw 1;`,
+  `const s=Symbol(),o=Object.create({inherited:1});o[s]=23;Object.defineProperty(o,"x",{value:undefined});if(!Object.hasOwn(o,"x")||!Object.hasOwn(o,s)||Object.hasOwn(o,"inherited")||!Object.hasOwn("abc",1))throw 1;let calls=0;let caught=false;try{Object.hasOwn(null,{toString(){calls++;return "x";}});}catch(e){caught=e instanceof TypeError;}if(!caught||calls!==0)throw 2;`,
+  `const s=Symbol(),getter=function(){throw 1;},o={a:19,[s]:23};Object.defineProperty(o,"x",{get:getter,enumerable:false,configurable:true});const d=Object.getOwnPropertyDescriptors(o);if(d.a.value!==19||!d.a.writable||d[s].value!==23||d.x.get!==getter||d.x.enumerable||!d.x.configurable)throw 2;if(Object.getPrototypeOf(d)!==Object.prototype)throw 3;`,
+  `let order="";const p=new Proxy({a:19,b:23},{ownKeys(){order+="k";return ["b","a"];},getOwnPropertyDescriptor(t,k){order+=k;if(k==="b"){delete t.a;}return Object.getOwnPropertyDescriptor(t,k);},get(){throw 1;}});const d=Object.getOwnPropertyDescriptors(p);if(order!=="kba"||d.b.value!==23||Object.hasOwn(d,"a"))throw 2;`,
+]);

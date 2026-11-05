@@ -1,0 +1,23 @@
+{
+  "kind": "eval-parser-binding-context-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "bc9f16fa0d1e675c3bc78c988a22e531145d92ac0d8bc3bd9809f5af3308874a",
+    "files": 552
+  },
+  "nativeReport": "docs/results/native-eval-context-v1.json",
+  "workspaceGate": {
+    "tests": 4078,
+    "log": ".tint-bootstrap/eval-context-workspace-check-v2.log"
+  },
+  "scope": [
+    "Script grammar with caller new.target/super capabilities",
+    "inherited strictness",
+    "private-name binding context",
+    "field-initializer arguments restriction",
+    "Annex B second-pass context preservation",
+    "empty-context compatibility with existing Script APIs"
+  ],
+  "notEnabled": "direct string eval",
+  "selfBuild": "deferred; prior frozen self-build reports remain separate"
+}

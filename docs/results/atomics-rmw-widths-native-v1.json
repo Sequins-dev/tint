@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-11-03T15:42:42.000Z",
+  "containmentTimeoutMs": 60000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-atomics-rmw-widths-v1-jrcV2T/atomics-rmw-widths-v1",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-atomics-rmw-widths-v1-jrcV2T/atomics-rmw-widths-v1.build.json",
+  "fixtureSha256": "30aa4bb11d95153aba1a09f910146631c6384733d10bbb0535e2060980c8a5cf",
+  "imageSha256": "f9eee0067c2e983061a294bcd98168a77a54783b32d903d75a18554ef525f571",
+  "sourceSnapshot": {
+    "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+    "files": 505
+  },
+  "debuggerLaunch": "lldb-local",
+  "debuggerTracing": false,
+  "elapsedMs": 30454.766125,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-atomics-rmw-widths-v1-jrcV2T/atomics-rmw-widths-v1\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-atomics-rmw-widths-v1-jrcV2T/atomics-rmw-widths-v1' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

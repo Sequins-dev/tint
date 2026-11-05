@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-11-03T18:02:59.031Z",
+  "containmentTimeoutMs": 60000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-T72Ylk/test",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-T72Ylk/fixture.json",
+  "fixtureSha256": "b3c38c4dd0f1034d6eb59c69aeff1cbc7bd0f5eabeb6677a28fc79a23fb75d7e",
+  "imageSha256": "3348bd2a291e9cca76847093514f5b2f53b682b2d5376b2e5af17468c1968798",
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "debuggerLaunch": "debugserver-connected",
+  "debuggerTracing": false,
+  "selectedCase": 0,
+  "elapsedMs": 50355.866666,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6B1qt1/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"0\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-T72Ylk/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6B1qt1/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6B1qt1/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6B1qt1/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+  }
+}

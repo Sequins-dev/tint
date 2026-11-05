@@ -1,0 +1,1586 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "e953d4aa2f773599430c3143e99fd143924dc9f82c4f0b403f604881e81d0e82",
+    "files": 449
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-permanent-literals-v1/source-snapshot.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 1048576,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 46,
+        "kind": "execution",
+        "compileMs": 40884.965083,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/AsyncGeneratorFunction",
+  "totals": {
+    "total": 46,
+    "passed": 36,
+    "failed": 0,
+    "unsupported": 9,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 1,
+    "passFraction": 0.782608695652174
+  },
+  "observations": [
+    {
+      "path": "built-ins/AsyncGeneratorFunction/extensibility.js",
+      "sha256": "57f4ada04858775fa7a421b7a2917d0833360982439c7f83bb24640f5d99e264",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42350.470125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/extensibility.js",
+      "sha256": "57f4ada04858775fa7a421b7a2917d0833360982439c7f83bb24640f5d99e264",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42652.916917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/has-instance.js",
+      "sha256": "7d0a2d536b91f821332392fa7b5112fade01604cd1c6936abac5b11a6a421027",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 42952.946042,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/has-instance.js",
+      "sha256": "7d0a2d536b91f821332392fa7b5112fade01604cd1c6936abac5b11a6a421027",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 43249.39675,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-await-expr-in-param.js",
+      "sha256": "0a0d24739f3e58da73bab468ad2f7fc91fcbbf3dbfcc6a3486472adb99272e24",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 43609.729958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-await-expr-in-param.js",
+      "sha256": "0a0d24739f3e58da73bab468ad2f7fc91fcbbf3dbfcc6a3486472adb99272e24",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 43954.139749999995,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-construct-throws.js",
+      "sha256": "f6c5fc9eaa518a88f432e0bbf08fd03dd5d8b07f75cbf45c9ddd0853170139c1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 44327.865792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-construct-throws.js",
+      "sha256": "f6c5fc9eaa518a88f432e0bbf08fd03dd5d8b07f75cbf45c9ddd0853170139c1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 44689.437416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-length.js",
+      "sha256": "9497f960d342a32e13fdfb0e11a23ec81beb15c0275ac899c0fcf671a3c0eef9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 45052.7025,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-length.js",
+      "sha256": "9497f960d342a32e13fdfb0e11a23ec81beb15c0275ac899c0fcf671a3c0eef9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 45398.003333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-name.js",
+      "sha256": "00af88d1569a3c805880aac172d74c14d136efe223e8d3863b22c23cf6e36d67",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 45706.80725,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-name.js",
+      "sha256": "00af88d1569a3c805880aac172d74c14d136efe223e8d3863b22c23cf6e36d67",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 45997.610625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-prototype.js",
+      "sha256": "3bf5c4b3fd196fdaf543b1e7cdeda8eb58330a36c0fc38325d8bf21ca0e8cf1b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 46327.203917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-prototype.js",
+      "sha256": "3bf5c4b3fd196fdaf543b1e7cdeda8eb58330a36c0fc38325d8bf21ca0e8cf1b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 46882.193042,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-yield-expr-in-param.js",
+      "sha256": "7cce9fece5a8f0a99baa33582607800adb561d3168fe5d6c35419cd4757fe7dd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49313.618792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/instance-yield-expr-in-param.js",
+      "sha256": "7cce9fece5a8f0a99baa33582607800adb561d3168fe5d6c35419cd4757fe7dd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49807.542708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-constructor-no-arguments.js",
+      "sha256": "a37cb1696eb9bb69c60ab105edcdf5fb732848f3603822f0238b4a8d85b11c29",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 50266.678417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-constructor-no-arguments.js",
+      "sha256": "a37cb1696eb9bb69c60ab105edcdf5fb732848f3603822f0238b4a8d85b11c29",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 50680.681708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-multiple-arguments.js",
+      "sha256": "b2af758dbe176b42f26c6235a967edb0e74f02f5518fefc351c134ed9ab9428c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 51081.33575,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-multiple-arguments.js",
+      "sha256": "b2af758dbe176b42f26c6235a967edb0e74f02f5518fefc351c134ed9ab9428c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 51454.44,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-no-arguments.js",
+      "sha256": "77cfd3a20f5b4b21f104f5ebf92795b46d08d95dee74b9b6df5fa070f7487606",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 51832.705500000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-no-arguments.js",
+      "sha256": "77cfd3a20f5b4b21f104f5ebf92795b46d08d95dee74b9b6df5fa070f7487606",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 52206.601667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-single-argument.js",
+      "sha256": "54d74652e790f17d002ce16223b651913225bcbb56189ec18e74ac9207551cc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 52589.81975,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/invoked-as-function-single-argument.js",
+      "sha256": "54d74652e790f17d002ce16223b651913225bcbb56189ec18e74ac9207551cc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jABJuZ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"23\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-cKT7gh/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jABJuZ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jABJuZ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jABJuZ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state:  (plugin = gdb-remote, state = connected)\n (plugin = gdb-remote, state = stopped, restarted = 0)\n Process::ControlPrivateStateThread (signal = 4)\n Sending control event of type: 4.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x740dab000, pid = 0) thread starting...\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x740dab000, pid = 0) got a control event: 4\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=0)>             Process::ShouldBroadcastEvent (0x7404f6940) => new state: connected, last broadcast state: connected - YES\n<lldb.process.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\nlldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)\n (plugin = gdb-remote status = 9 (0x00000009), description=\"killed\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 1\n<lldb.process.internal-state(pid=0)>             Process::ShouldBroadcastEvent (0x7404f6940) => new state: exited, last broadcast state: exited - YES\n<lldb.process.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state exited (old state exited) to public\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x740dab000, pid = 0) about to exit with internal state exited...\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x740dab000, pid = 0) thread exiting...\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: ntTypes=aarch64-mask,aarch64-bas;memory-tagging+;MultiMemRead+;jMultiBreakpoint+;#00\n <  26> send packet: $QThreadSuffixSupported#e4\n <   6> read packet: $OK#00\n <  27> send packet: $QListThreadsInStopReply#21\n <   6> read packet: $OK#00\n <  13> send packet: $qHostInfo#9b\n < 204> read packet: $cputype:16777228;cpusubtype:2;addressing_bits:47;ostype:macosx;watchpoint_exceptions_received:before;vendor:apple;os_version:26.6.2;maccatalyst_version:26.6;endian:little;ptrsize:8;vm-page-size:16384;#00\n <  10> send packet: $vCont?#49\n <  17> read packet: $vCont;c;C;s;S#00\n <  27> send packet: $qVAttachOrWaitSupported#38\n <   6> read packet: $OK#00\n <  23> send packet: $QEnableErrorStrings#8c\n <   6> read packet: $OK#00\n ProcessGDBRemote::StartAsyncThread ()\n <  16> send packet: $qProcessInfo#dc\n <   7> read packet: $E68#00\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread starting...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) listener.WaitForEvent (NULL, event_sp)...\n <   6> send packet: $qC#b4\n <   7> read packet: $QC0#00\n <  16> send packet: $qfThreadInfo#bb\n <   6> read packet: $OK#00\n ProcessGDBRemote::DoConnectRemote pid 0: normalizing target architecture initial triple: arm64-apple-macosx14.0.0 (GetTarget().GetArchitecture().IsValid() true, m_gdb_comm.GetHostArchitecture().IsValid(): true)\n ProcessGDBRemote::DoConnectRemote pid 0: normalized target architecture triple: arm64-apple-macosx14.0.0\n ProcessGDBRemote::DoDestroy()\n <   5> send packet: $k#6b\n <   7> read packet: $X09#00\n Reaped pid: 0, status: 0.\n\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread exiting...\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 52910.707292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js",
+          "wellKnownIntrinsicObjects.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        },
+        {
+          "name": "wellKnownIntrinsicObjects.js",
+          "sha256": "bf52f7cca33e62937a9f800b67f6c9d4e4a0bc5819115223f6782f8cb84536a4"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 53349.153417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js",
+          "wellKnownIntrinsicObjects.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        },
+        {
+          "name": "wellKnownIntrinsicObjects.js",
+          "sha256": "bf52f7cca33e62937a9f800b67f6c9d4e4a0bc5819115223f6782f8cb84536a4"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 53766.624917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/length.js",
+      "sha256": "975db94bf70c83eb8e256a3c8ac37d59778af4e8334100ef161add01ffe236cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 54155.855583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/length.js",
+      "sha256": "975db94bf70c83eb8e256a3c8ac37d59778af4e8334100ef161add01ffe236cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 54542.38525,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/name.js",
+      "sha256": "39b204d268d068106237ea5032722fa6c475c5cf425ca3f0b65639674419f719",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 54949.640584,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/name.js",
+      "sha256": "39b204d268d068106237ea5032722fa6c475c5cf425ca3f0b65639674419f719",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 55337.974833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/proto-from-ctor-realm-prototype.js",
+      "sha256": "e6683f728f47509694a48337919d8a52d96b3f3b0c500381d8f604990fbd75fa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 55722.911292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/proto-from-ctor-realm-prototype.js",
+      "sha256": "e6683f728f47509694a48337919d8a52d96b3f3b0c500381d8f604990fbd75fa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 56120.205333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/proto-from-ctor-realm.js",
+      "sha256": "9dc0ac477cd076a9e7c469528e3c1e028f1dc806496323c807c04dda82a3d2d7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 56513.339125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/proto-from-ctor-realm.js",
+      "sha256": "9dc0ac477cd076a9e7c469528e3c1e028f1dc806496323c807c04dda82a3d2d7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 56905.594915999995,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/Symbol.toStringTag.js",
+      "sha256": "70e4add9fe659fc8b71efa7821ddb1be36c61dd51b7e396b25268266034473b7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 57312.338333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/Symbol.toStringTag.js",
+      "sha256": "70e4add9fe659fc8b71efa7821ddb1be36c61dd51b7e396b25268266034473b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 57725.460208000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/constructor.js",
+      "sha256": "a14088464149ba70584616f825b9e958b2c9a95ac54efb502bcb4dcaf6750b7e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58144.439375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/constructor.js",
+      "sha256": "a14088464149ba70584616f825b9e958b2c9a95ac54efb502bcb4dcaf6750b7e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58560.018583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/extensibility.js",
+      "sha256": "74f02c8e603773ab403ba017610d2045f932a7441ce45f3917731dd10c29bc6e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58962.86875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/extensibility.js",
+      "sha256": "74f02c8e603773ab403ba017610d2045f932a7441ce45f3917731dd10c29bc6e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 59377.207125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/not-callable.js",
+      "sha256": "09cab3858fa52f22c55ff50e4874fe82c6b2156aef7e1a0a40213ec5379e82ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 59790.079875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/not-callable.js",
+      "sha256": "09cab3858fa52f22c55ff50e4874fe82c6b2156aef7e1a0a40213ec5379e82ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 60209.611166999995,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/prop-desc.js",
+      "sha256": "7f2a8b4bd767a9e983da00601506e6db40b226ec0f543ea7d1056dfc33e45840",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 60624.173375000006,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/prop-desc.js",
+      "sha256": "7f2a8b4bd767a9e983da00601506e6db40b226ec0f543ea7d1056dfc33e45840",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61041.049915999996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/prototype.js",
+      "sha256": "ce12d650b2c1b27a09389f327aaad7c6cd3c0b55d68d5530b733dad22c4c7376",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61446.749792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/prototype/prototype.js",
+      "sha256": "ce12d650b2c1b27a09389f327aaad7c6cd3c0b55d68d5530b733dad22c4c7376",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61852.035542,
+      "batch": 0
+    }
+  ]
+}

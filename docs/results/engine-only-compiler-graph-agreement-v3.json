@@ -1,0 +1,40 @@
+{
+  "kind": "source-graph-agreement",
+  "conformance": false,
+  "previousSource": {
+    "sha256": "42be685a1a923d1db3aa083c29ae83472d3feae563819f9720248bf2945c1e60",
+    "files": 552
+  },
+  "currentSource": {
+    "sha256": "47244c879657692572f8c9d80a6a940793f7682d233736a6c742022f5cafde24",
+    "files": 552
+  },
+  "bootstrapRoots": [
+    "packages/compiler/src/cli.ts",
+    "packages/native-runtime/src/index.ts",
+    "packages/native-runtime/src/allocators/region/index.ts",
+    "packages/foundation/src/collections/number-list.ts",
+    "packages/foundation/src/collections/linked-map.ts",
+    "packages/foundation/src/collections/sparse-list.ts",
+    "packages/foundation/src/collections/linked-set.ts",
+    "packages/native-runtime/src/values/index.ts",
+    "packages/foundation/src/numeric/number-text/index.ts",
+    "packages/foundation/src/collections/indexed-sort.ts",
+    "packages/foundation/src/collections/list-sort.ts",
+    "packages/foundation/src/text/text-encoding/index.ts",
+    "packages/native-runtime/src/intrinsics/fs.ts",
+    "packages/native-runtime/src/intrinsics/process.ts"
+  ],
+  "bootstrapModules": 220,
+  "compilerModulesUnchanged": true,
+  "differences": [
+    "packages/js-engine/src/dynamic-function.ts",
+    "packages/js-engine/src/lowering/generators.ts",
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-runtime/src/objects/async-functions.ts",
+    "packages/js-runtime/src/objects/generators.ts",
+    "packages/js-runtime/src/objects/index.ts"
+  ],
+  "compilerGate": "docs/results/eval-private-selfhost-checkpoint-v1.json",
+  "acceptance": "Use the native binder fixed point plus native engine fixtures; the complete standalone bootstrap graph is byte-for-byte unchanged."
+}

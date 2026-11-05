@@ -1,0 +1,32 @@
+{
+  "kind": "managed-selections-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "4c2564bbffebc10937b8533ee33b4b06775faab2e4439dbf9b4b5a4806ea2a67",
+    "files": 524
+  },
+  "selfBuild": "docs/results/bootstrap-managed-selections-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-selections-compiler-v1.json",
+    "docs/results/native-managed-selections-runtime-v1.json"
+  ],
+  "workspaceTests": 3767,
+  "bytes": 64115842,
+  "sha256": "3af8446533f12e6551de3ff1d559ef1ce4c8e04ec72bebba30b5159cfcfe98ad",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-selections-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-selections-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "Canonical contracts, physical layouts and digest",
+    "Managed publication and general eval/Function"
+  ]
+}

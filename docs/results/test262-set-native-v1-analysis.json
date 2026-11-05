@@ -1,0 +1,162 @@
+{
+  "sourceReport": "docs/results/test262-set-native-v1.json",
+  "scope": "Classification of recorded non-passes; original totals unchanged.",
+  "categories": {
+    "pre-entry-lldb-attach-failure": {
+      "count": 16,
+      "observations": [
+        {
+          "path": "built-ins/Set/Symbol.species/length.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/add/this-not-object-throw-undefined.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/add/this-not-object-throw-undefined.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/add/will-not-add-duplicate-entry-initial-iterable.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/add/will-not-add-duplicate-entry-initial-iterable.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/difference/require-internal-slot.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/forEach/does-not-have-setdata-internal-slot-array.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/isDisjointFrom/isDisjointFrom.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/isDisjointFrom/isDisjointFrom.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/isDisjointFrom/keys-is-callable.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/isSubsetOf/set-like-class-mutation.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/isSubsetOf/set-like-class-mutation.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/isSubsetOf/set-like-class-order.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/isSubsetOf/set-like-class-order.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/union/add-not-called.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/union/add-not-called.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "unsupported-dynamic-function-construction": {
+      "count": 2,
+      "observations": [
+        {
+          "path": "built-ins/Set/proto-from-ctor-realm.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/proto-from-ctor-realm.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-weakset-receiver-fixture": {
+      "count": 14,
+      "observations": [
+        {
+          "path": "built-ins/Set/prototype/add/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/add/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/clear/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/clear/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/delete/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/delete/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/entries/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/entries/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/forEach/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/forEach/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/has/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/has/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Set/prototype/values/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/prototype/values/does-not-have-setdata-internal-slot-weakset.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-weakmap-weakref-weakset-fixture": {
+      "count": 2,
+      "observations": [
+        {
+          "path": "built-ins/Set/valid-values.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Set/valid-values.js",
+          "variant": "strict"
+        }
+      ]
+    }
+  }
+}

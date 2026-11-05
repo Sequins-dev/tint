@@ -1,0 +1,35 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-date-time-precision.ts",
+  "fixtureSha256": "2ee4602818d3c8993cb39e159b7996e6dcfbb3e0b8a6d404fa18c42d08a4d378",
+  "imageSha256": "054014170c366f13fbcfb10d9ac9c6ec065364c115dbad4ffbb92cde24b50ff7",
+  "cases": 3,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

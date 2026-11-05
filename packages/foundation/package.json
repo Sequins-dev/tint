@@ -1,0 +1,156 @@
+{
+  "name": "@tint/foundation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./binary/word64": {
+      "types": "./dist/binary/word64.d.ts",
+      "import": "./dist/binary/word64.js"
+    },
+    "./binary/bytes": {
+      "types": "./dist/binary/bytes.d.ts",
+      "import": "./dist/binary/bytes.js"
+    },
+    "./binary/sha256": {
+      "types": "./dist/binary/sha256.d.ts",
+      "import": "./dist/binary/sha256.js"
+    },
+    "./collections/key-index": {
+      "types": "./dist/collections/key-index.d.ts",
+      "import": "./dist/collections/key-index.js"
+    },
+    "./collections/linked-map": {
+      "types": "./dist/collections/linked-map.d.ts",
+      "import": "./dist/collections/linked-map.js"
+    },
+    "./collections/linked-set": {
+      "types": "./dist/collections/linked-set.d.ts",
+      "import": "./dist/collections/linked-set.js"
+    },
+    "./collections/sparse-list": {
+      "types": "./dist/collections/sparse-list.d.ts",
+      "import": "./dist/collections/sparse-list.js"
+    },
+    "./collections/number-list": {
+      "types": "./dist/collections/number-list.d.ts",
+      "import": "./dist/collections/number-list.js"
+    },
+    "./collections/indexed-sort": {
+      "types": "./dist/collections/indexed-sort.d.ts",
+      "import": "./dist/collections/indexed-sort.js"
+    },
+    "./collections/list-sort": {
+      "types": "./dist/collections/list-sort.d.ts",
+      "import": "./dist/collections/list-sort.js"
+    },
+    "./binary/word-buffer": {
+      "types": "./dist/binary/word-buffer.d.ts",
+      "import": "./dist/binary/word-buffer.js"
+    },
+    "./graph/dataflow": {
+      "types": "./dist/graph/dataflow.d.ts",
+      "import": "./dist/graph/dataflow.js"
+    },
+    "./collections/bit-vector": {
+      "types": "./dist/collections/bit-vector.d.ts",
+      "import": "./dist/collections/bit-vector.js"
+    },
+    "./numeric/big-integer": {
+      "types": "./dist/numeric/big-integer.d.ts",
+      "import": "./dist/numeric/big-integer.js"
+    },
+    "./numeric/number-text": {
+      "types": "./dist/numeric/number-text/index.d.ts",
+      "import": "./dist/numeric/number-text/index.js"
+    },
+    "./numeric/exact-sum": {
+      "types": "./dist/numeric/exact-sum.d.ts",
+      "import": "./dist/numeric/exact-sum.js"
+    },
+    "./numeric/binary64-trigonometry": {
+      "types": "./dist/numeric/binary64-trigonometry/index.d.ts",
+      "import": "./dist/numeric/binary64-trigonometry/index.js"
+    },
+    "./numeric/integer-rounding": {
+      "types": "./dist/numeric/integer-rounding.d.ts",
+      "import": "./dist/numeric/integer-rounding.js"
+    },
+    "./text/text-scanner": {
+      "types": "./dist/text/text-scanner.d.ts",
+      "import": "./dist/text/text-scanner.js"
+    },
+    "./text/string-builder": {
+      "types": "./dist/text/string-builder.d.ts",
+      "import": "./dist/text/string-builder.js"
+    },
+    "./text/text-encoding": {
+      "types": "./dist/text/text-encoding/index.d.ts",
+      "import": "./dist/text/text-encoding/index.js"
+    },
+    "./text/base-encoding": {
+      "types": "./dist/text/base-encoding/index.d.ts",
+      "import": "./dist/text/base-encoding/index.js"
+    },
+    "./text/json-syntax": {
+      "types": "./dist/text/json-syntax.d.ts",
+      "import": "./dist/text/json-syntax.js"
+    },
+    "./unicode/identifiers": {
+      "types": "./dist/unicode/identifiers/index.d.ts",
+      "import": "./dist/unicode/identifiers/index.js"
+    },
+    "./unicode/properties": {
+      "types": "./dist/unicode/properties/index.d.ts",
+      "import": "./dist/unicode/properties/index.js"
+    },
+    "./unicode/casing": {
+      "types": "./dist/unicode/casing/index.d.ts",
+      "import": "./dist/unicode/casing/index.js"
+    },
+    "./unicode/normalization": {
+      "types": "./dist/unicode/normalization/index.d.ts",
+      "import": "./dist/unicode/normalization/index.js"
+    },
+    "./layout": {
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout/index.js"
+    },
+    "./regexp/syntax": {
+      "types": "./dist/regexp/syntax/index.d.ts",
+      "import": "./dist/regexp/syntax/index.js"
+    },
+    "./regexp/engine": {
+      "types": "./dist/regexp/engine/index.d.ts",
+      "import": "./dist/regexp/engine/index.js"
+    },
+    "./chrono/gregorian-calendar": {
+      "types": "./dist/chrono/gregorian-calendar/index.d.ts",
+      "import": "./dist/chrono/gregorian-calendar/index.js"
+    },
+    "./chrono/iso-date-time": {
+      "types": "./dist/chrono/iso-date-time/index.d.ts",
+      "import": "./dist/chrono/iso-date-time/index.js"
+    },
+    "./chrono/temporal-duration": {
+      "types": "./dist/chrono/temporal-duration/index.d.ts",
+      "import": "./dist/chrono/temporal-duration/index.js"
+    },
+    "./chrono/tzif": {
+      "types": "./dist/chrono/tzif/index.d.ts",
+      "import": "./dist/chrono/tzif/index.js"
+    },
+    "./chrono/time-zone-identifiers": {
+      "types": "./dist/chrono/time-zone-identifiers/index.d.ts",
+      "import": "./dist/chrono/time-zone-identifiers/index.js"
+    },
+    "./modules": {
+      "types": "./dist/modules.d.ts",
+      "import": "./dist/modules.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {}
+}

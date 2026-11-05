@@ -1,0 +1,40 @@
+{
+  "owner": {
+    "pid": 304,
+    "ppid": 2485,
+    "state": "Ss",
+    "command": "node /tmp/tint-connected-launch-experiment-v1.mjs"
+  },
+  "debugger": {
+    "pid": 1282,
+    "ppid": 304,
+    "state": "S",
+    "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb --no-lldbinit --batch -o settings set target.disable-aslr false -o script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"2\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-zaRK6S/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\") -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped -o continue -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/outcome.json\",'w').write(json.dumps({'state':'exited' if s==lldb.eStateExited else str(s),'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-zaRK6S/test"
+  },
+  "server": {
+    "pid": 1283,
+    "ppid": 1282,
+    "state": "S",
+    "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver --kill-on-error --no-stdio --unix-socket /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZuNazk/port -- 127.0.0.1:0"
+  },
+  "files": {
+    "debugserver-pid": "1283",
+    "connection.log": "absent",
+    "launch.log": "absent",
+    "initial.json": "absent"
+  },
+  "samples": [
+    {
+      "name": "server",
+      "path": "/tmp/tint-connected-stall-v1-server.txt",
+      "status": 0,
+      "stderr": "Sampling process 1283 for 1 second with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 1283 written to file /tmp/tint-connected-stall-v1-server.txt\n"
+    },
+    {
+      "name": "debugger",
+      "path": "/tmp/tint-connected-stall-v1-debugger.txt",
+      "status": 0,
+      "stderr": "Sampling process 1282 for 1 second with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 1282 written to file /tmp/tint-connected-stall-v1-debugger.txt\n"
+    }
+  ]
+}

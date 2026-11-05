@@ -1,0 +1,34 @@
+{
+  "name": "@tint/ir",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./scalar": {
+      "types": "./dist/scalar/index.d.ts",
+      "import": "./dist/scalar/index.js"
+    },
+    "./semantic": {
+      "types": "./dist/semantic/index.d.ts",
+      "import": "./dist/semantic/index.js"
+    },
+    "./optimization": {
+      "types": "./dist/optimization/index.d.ts",
+      "import": "./dist/optimization/index.js"
+    },
+    "./optimization/slots": {
+      "types": "./dist/optimization/slots.d.ts",
+      "import": "./dist/optimization/slots.js"
+    },
+    "./optimization/reference-lists": {
+      "types": "./dist/optimization/reference-lists.d.ts",
+      "import": "./dist/optimization/reference-lists.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/foundation": "workspace:*"
+  }
+}

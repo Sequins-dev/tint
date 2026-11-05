@@ -1,0 +1,78 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "43ec7783445b37bb77337ad662d2d76df58f03ef5f43341cc2ce43e301127061",
+      "files": 446
+    },
+    "imageSha256": "225e062a42a2b446d041849b4e02b74d6c00124b899d0d836013cd2241983927",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const f=Function(\"value\",\"return !value;\");if(f(0n)!==true)throw 1;",
+        "sha256": "b97c70003228c971835a4431cc7c096c416f396049363160d02d9dfda18c9ce7"
+      },
+      {
+        "index": 1,
+        "source": "const f=Function(\"value\",\"if(value)return true;return false;\");if(f(0n)!==false)throw 1;",
+        "sha256": "d99dc1087966fa7bc02af62b580b0a97149e81d231417ca43c187fca7c164108"
+      },
+      {
+        "index": 2,
+        "source": "const same=Function(\"value\",\"return value===value;\"),isNull=Function(\"value\",\"if(value===null)return true;return false;\"),notNull=Function(\"value\",\"return !(value===null);\");for(const value of [0n,1n,Symbol(),{},function(){},null,undefined,NaN,42]){if(same(value)!==(value===value)||isNull(value)!==(value===null)||notNull(value)!==(value!==null))throw 1;}",
+        "sha256": "357903049b5188fbafaa3631eaf0c0fa3f54db837fe84ddd6b93c8d61670a503"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "expected": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "expected": "completed",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

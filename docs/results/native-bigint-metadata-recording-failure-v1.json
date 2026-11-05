@@ -1,0 +1,11 @@
+{
+  "kind": "bespoke-native-recording-failure",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-bigint-metadata-rGzd3B/bigint-metadata",
+  "imageSha256": "804913aa1c78bdbf01aadd2f11177ffc48c136f44bc570a0c3347ed53dee2441",
+  "fixture": "tools/verify-hosted-bigint-metadata.ts",
+  "error": "Recorder read nonexistent tools/verify-native-bigint-metadata.ts after native execution and before persisting the outcome. The outcome is unknown and cannot establish a pass.",
+  "observation": "unknown",
+  "recorder": "/tmp/tint-bigint-metadata-validation-v1.mjs",
+  "correction": "Read and hash all metadata before executing native code; preserve the outcome before cleanup."
+}

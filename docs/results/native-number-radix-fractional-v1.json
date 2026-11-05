@@ -1,0 +1,20 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-number-radix.ts",
+  "fixtureSha256": "c583db0b583ca965922ec12a3e668a239e79bdeee4093d00ca04c87aab21377d",
+  "imageSha256": "93ea0073695cc0f7cefcaa07edfe557ec8adf5f12991510525c5f3f941688cee",
+  "cases": 1,
+  "passed": 1,
+  "observations": [
+    {
+      "name": "number-radix",
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "captureNote": "Native execution completed; original report write failed with EEXIST. Recorded from the retained execution log without repeating execution."
+}

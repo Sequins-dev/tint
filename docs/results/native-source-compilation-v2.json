@@ -1,0 +1,29 @@
+{
+  "kind": "native-code-publication-validation",
+  "conformance": false,
+  "build": {
+    "kind": "native-code-publication-fixture",
+    "sourceSnapshot": {
+      "sha256": "a7bce35319aac2e99c85754a1dee66932c6b20509373b954b867b970de741f8e",
+      "files": 444
+    },
+    "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-source-v2/native-code",
+    "expectedExitStatus": 42,
+    "source": "import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,unmapMemory} from \"memory\";\nimport {writeInstruction,type Instruction} from \"assembler\";\nimport {createSourceText} from \"source-text\";\nimport {parseModule} from \"syntax\";\nimport {checkModule} from \"checker\";\nimport {lowerModule} from \"lowering\";\nimport {emitModule} from \"backend\";\nfunction compiled(value:number):{bytes:Uint8Array;offset:number} {\n const bytes=new TextEncoder().encode(\"export function run():number{let sum=0;for(let i=0;i<6;i++){sum+=i;}return sum+\"+(value-15)+\";}\");\n const source=createSourceText(bytes,bytes.length);if(!source.ok)throw \"SOURCE_FAILED\";\n const parsed=parseModule(source.value);if(!parsed.ok)throw \"PARSE_FAILED\";\n const checked=checkModule(parsed.value);if(!checked.ok)throw \"CHECK_FAILED\";\n const lowered=lowerModule(checked.value);if(!lowered.ok)throw \"LOWERING_FAILED\";\n const native=emitModule(lowered.value);if(!native.ok)throw \"EMISSION_FAILED\";\n // Initial publication accepts only relocation-free, unmanaged numeric code.\n if(native.value.records.length!==0||native.value.roots.length!==0||native.value.imports.length!==0||native.value.helpers.length!==0||native.value.cellHelpers.length!==0||native.value.strings.length!==0)throw \"UNLINKED_RUNTIME_DEPENDENCY\";\n const entry=native.value.functions[0];if(entry===undefined||entry.signature.parameters.length!==0)throw \"ENTRY_ABI\";\n return {bytes:native.value.code,offset:entry.offset};\n}\nfunction code(value:number):Uint8Array {\n const instructions:Instruction[]=[{op:\"movz\",width:64,rd:9,immediate:value,shift:0},{op:\"str\",width:64,rt:9,rn:3,offset:16},{op:\"scvtf-d-x\",rd:0,rn:9},{op:\"str-d\",rt:0,rn:3,offset:16},{op:\"movz\",width:32,rd:0,immediate:1,shift:0},{op:\"str\",width:32,rt:0,rn:3,offset:0},{op:\"ret\",rn:30}];\n const bytes=new Uint8Array(instructions.length*4);\n for(let i=0;i<instructions.length;i++){const instruction=instructions[i];if(instruction===undefined)throw \"INSTRUCTION_INVARIANT\";if(!writeInstruction(bytes,i*4,instruction).ok)throw \"ENCODING_FAILED\";}\n return bytes;\n}\nexport function run():number {\n const size=16384,address=mapExecutableMemory(size);if(address<=0)return 1;\n const first=code(42);if(writeExecutableMemory(address,size,0,first)!==0)return 2;\n if(callExecutableNumber(address)!==42)return 3;\n if(writeExecutableMemory(address,size,size,first)===0)return 4;\n const second=code(43);if(writeExecutableMemory(address,size,64,second)!==0)return 5;\n if(callExecutableNumber(address+64)!==43||callExecutableNumber(address)!==42)return 6;\n if(writeExecutableMemory(address,size,0,second)!==0||callExecutableNumber(address)!==43)return 7;\n const generated=compiled(42);if(generated.bytes.length>size)return 8;\n if(writeExecutableMemory(address,size,0,generated.bytes)!==0)return 9;\n if(callExecutableNumber(address+generated.offset)!==42)return 10;\n if(unmapMemory(address,size)!==0)return 11;\n return 42;\n}",
+    "scope": "A native Tint program generates AArch64 instructions using Tint's assembler, publishes executable memory, invokes numeric entries and republishes code. It also parses, checks, lowers and emits a numeric TypeScript function inside native Tint. General managed modules and eval scope semantics are not implemented by this fixture."
+  },
+  "initial": {
+    "state": "stopped",
+    "pid": 25886
+  },
+  "outcome": {
+    "state": "exited",
+    "exitStatus": 42,
+    "description": null
+  },
+  "elapsedMs": 938.189167,
+  "quietCheckpoint": {
+    "pid": 9481,
+    "state": "between-variants"
+  }
+}

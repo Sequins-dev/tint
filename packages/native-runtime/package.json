@@ -1,0 +1,83 @@
+{
+  "name": "@tint/native-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tracing": {
+      "types": "./dist/tracing/index.d.ts",
+      "import": "./dist/tracing/index.js"
+    },
+    "./heap": {
+      "types": "./dist/heap/index.d.ts",
+      "import": "./dist/heap/index.js"
+    },
+    "./allocators/region": {
+      "types": "./dist/allocators/region/index.d.ts",
+      "import": "./dist/allocators/region/index.js"
+    },
+    "./allocators/linear": {
+      "types": "./dist/allocators/linear/index.d.ts",
+      "import": "./dist/allocators/linear/index.js"
+    },
+    "./graph": {
+      "types": "./dist/graph/index.d.ts",
+      "import": "./dist/graph/index.js"
+    },
+    "./relocation": {
+      "types": "./dist/relocation/index.d.ts",
+      "import": "./dist/relocation/index.js"
+    },
+    "./values": {
+      "types": "./dist/values/index.d.ts",
+      "import": "./dist/values/index.js"
+    },
+    "./intrinsics/memory": {
+      "types": "./dist/intrinsics/memory.d.ts",
+      "import": "./dist/intrinsics/memory.js"
+    },
+    "./intrinsics/shared-atomics": {
+      "types": "./dist/intrinsics/shared-atomics.d.ts",
+      "import": "./dist/intrinsics/shared-atomics.js"
+    },
+    "./shared-blocks": {
+      "types": "./dist/shared-blocks.d.ts",
+      "import": "./dist/shared-blocks.js"
+    },
+    "./intrinsics/clock": {
+      "types": "./dist/intrinsics/clock.d.ts",
+      "import": "./dist/intrinsics/clock.js"
+    },
+    "./intrinsics/random": {
+      "types": "./dist/intrinsics/random.d.ts",
+      "import": "./dist/intrinsics/random.js"
+    },
+    "./intrinsics/process": {
+      "types": "./dist/intrinsics/process.d.ts",
+      "import": "./dist/intrinsics/process.js"
+    },
+    "./intrinsics/spin-hint": {
+      "types": "./dist/intrinsics/spin-hint.d.ts",
+      "import": "./dist/intrinsics/spin-hint.js"
+    },
+    "./intrinsics/fs": {
+      "types": "./dist/intrinsics/fs.d.ts",
+      "import": "./dist/intrinsics/fs.js"
+    },
+    "./intrinsics/weak": {
+      "types": "./dist/intrinsics/weak.d.ts",
+      "import": "./dist/intrinsics/weak.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/abi": "workspace:*",
+    "@tint/js-runtime": "workspace:*"
+  }
+}

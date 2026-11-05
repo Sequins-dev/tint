@@ -1,0 +1,18 @@
+{
+  "kind": "bespoke-native-debugger-protocol-experiment",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-immutable-views-IWljXS/immutable-views",
+  "imageSha256": "b9e0271341d024bc89e7cee386e0728e948d67cf13962945f135a2348a61f4af",
+  "sourceSnapshot": {
+    "sha256": "8ba3fe76ca6b9c9d6465c75a79cee72705ea915b5e5f97385543d973efc424cf",
+    "files": 456
+  },
+  "launch": "standard CLI on original image, default stdio",
+  "relatedReports": [
+    "docs/results/native-immutable-views-green-v1.json",
+    "docs/results/native-immutable-views-green-launch-argument-v1.json"
+  ],
+  "status": 1,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-immutable-views-IWljXS/immutable-views\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-immutable-views-IWljXS/immutable-views' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n",
+  "stderr": "error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n"
+}

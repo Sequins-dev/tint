@@ -1,0 +1,9 @@
+{
+  "kind": "native-lifetime-fixture-analysis",
+  "conformance": false,
+  "initial": "docs/results/native-weak-lifetimes-v1.json",
+  "diagnostic": "docs/results/native-weak-lifetimes-count-v1.json",
+  "diagnosticInferiorExit": 20,
+  "observedDirectoryCount": 0,
+  "interpretation": "The probe deliberately returns 20 + directory length. The runner maps exit 20 to the recorded empty-type harness error. Both registries were collectible after their last use, so an exact length of one was not a valid assertion without retaining the control registry. All preceding kept-target, cleanup and orphan-collection assertions passed. The corrected fixture references the control registry after the last collection and checkpoint, establishing the intended lifetime."
+}

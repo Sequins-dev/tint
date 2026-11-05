@@ -1,0 +1,175 @@
+import {
+  hasBinding,
+  getBindingValue,
+  setMutableBinding,
+  deleteBinding,
+  type DeclarativeEnvironment,
+  type BindingResult,
+  type BindingError,
+} from "../records/index.ts";
+import { setProperty } from "../../objects/index.ts";
+import {
+  hasGlobalBinding,
+  getGlobalBinding,
+  setGlobalBinding,
+  deleteGlobalBinding,
+  type GlobalEnvironment,
+} from "./record.ts";
+
+import {
+  hasObjectBinding,
+  getObjectBinding,
+  setObjectBinding,
+  deleteObjectBinding,
+  type ObjectEnvironment,
+} from "./object.ts";
+
+/** A chain of declarative and object scopes ending in one global environment. */
+export interface EnvironmentScope<Key, Value> {
+  readonly global: GlobalEnvironment<Key, Value>;
+  readonly object: ObjectEnvironment<Key, Value> | undefined;
+  readonly declarative: DeclarativeEnvironment<Value> | undefined;
+  readonly outer: EnvironmentScope<Key, Value> | undefined;
+}
+/** Resolution precedes RHS evaluation. Keep this record rather than resolving
+ * the name again after user code has run. Undefined scope means unresolvable. */
+export interface BindingReference<Key, Value> {
+  readonly global: GlobalEnvironment<Key, Value>;
+  readonly scope: EnvironmentScope<Key, Value> | undefined;
+  readonly name: string;
+  readonly strict: boolean;
+}
+export function createGlobalScope<Key, Value>(
+  global: GlobalEnvironment<Key, Value>,
+): EnvironmentScope<Key, Value> {
+  return {
+    global,
+    declarative: undefined,
+    object: undefined,
+    outer: undefined,
+  };
+}
+export function createDeclarativeScope<Key, Value>(
+  outer: EnvironmentScope<Key, Value>,
+  declarative: DeclarativeEnvironment<Value>,
+): EnvironmentScope<Key, Value> {
+  return { global: outer.global, declarative, object: undefined, outer };
+}
+export function createObjectScope<Key, Value>(
+  outer: EnvironmentScope<Key, Value>,
+  object: ObjectEnvironment<Key, Value>,
+): EnvironmentScope<Key, Value> {
+  return { global: outer.global, declarative: undefined, object, outer };
+}
+export function getBindingThisValue<Key, Value>(
+  reference: BindingReference<Key, Value>,
+): Value {
+  const scope = reference.scope;
+  if (scope !== undefined) {
+    const object = scope.object;
+    if (object !== undefined && object.withEnvironment)
+      return object.objectValue;
+  }
+  return reference.global.hooks.undefinedValue;
+}
+export function resolveBinding<Key, Value>(
+  start: EnvironmentScope<Key, Value>,
+  name: string,
+  strict: boolean,
+): BindingReference<Key, Value> {
+  let scope: EnvironmentScope<Key, Value> | undefined = start;
+  while (scope !== undefined) {
+    const record = scope.declarative;
+    if (
+      record === undefined
+        ? scope.object !== undefined
+          ? hasObjectBinding<Key, Value>(scope.object, name)
+          : hasGlobalBinding<Key, Value>(scope.global, name)
+        : hasBinding<Value>(record, name)
+    )
+      break;
+    scope = scope.outer;
+  }
+  return { global: start.global, scope, name, strict };
+}
+export function getBindingReference<Key, Value>(
+  reference: BindingReference<Key, Value>,
+): BindingResult<Value> {
+  const scope = reference.scope;
+  if (scope === undefined)
+    return { error: "reference", value: reference.global.hooks.undefinedValue };
+  if (scope.object !== undefined)
+    return getObjectBinding<Key, Value>(
+      scope.object,
+      reference.name,
+      reference.strict,
+    );
+  const record = scope.declarative;
+  return record === undefined
+    ? getGlobalBinding<Key, Value>(
+        scope.global,
+        reference.name,
+        reference.strict,
+      )
+    : getBindingValue<Value>(record, reference.name);
+}
+export function putBindingReference<Key, Value>(
+  reference: BindingReference<Key, Value>,
+  value: Value,
+): BindingError {
+  const scope = reference.scope;
+  if (scope === undefined) {
+    if (reference.strict) return "reference";
+    // An unresolvable reference writes to the global object, even if RHS
+    // evaluation has since created a same-named global lexical binding.
+    const global = reference.global;
+    setProperty<Key, Value>(
+      global.object,
+      global.keyForName(reference.name),
+      value,
+      { value: global.objectValue, object: global.object },
+      global.hooks,
+    );
+    return "none";
+  }
+  if (scope.object !== undefined)
+    return setObjectBinding<Key, Value>(
+      scope.object,
+      reference.name,
+      value,
+      reference.strict,
+    );
+  const record = scope.declarative;
+  return record === undefined
+    ? setGlobalBinding<Key, Value>(
+        scope.global,
+        reference.name,
+        value,
+        reference.strict,
+      )
+    : setMutableBinding<Value>(record, reference.name, value, reference.strict);
+}
+
+/** typeof exempts an unresolvable reference, but not TDZ or accessor errors. */
+export function getBindingReferenceForTypeof<Key, Value>(
+  reference: BindingReference<Key, Value>,
+): BindingResult<Value> {
+  if (reference.scope === undefined)
+    return { error: "none", value: reference.global.hooks.undefinedValue };
+  return getBindingReference<Key, Value>(reference);
+}
+
+/** Delete the resolved binding without GetValue, including an uninitialized binding.
+ * Strict identifier deletion is an early syntax error, handled before execution. */
+export function deleteBindingReference<Key, Value>(
+  reference: BindingReference<Key, Value>,
+): boolean {
+  const scope = reference.scope;
+  if (scope === undefined) return true;
+  if (scope.object !== undefined)
+    return deleteObjectBinding<Key, Value>(scope.object, reference.name);
+  const record = scope.declarative;
+  return record === undefined
+    ? deleteGlobalBinding<Key, Value>(scope.global, reference.name)
+    : deleteBinding<Value>(record, reference.name);
+}

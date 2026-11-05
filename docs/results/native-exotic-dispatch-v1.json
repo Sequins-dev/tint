@@ -1,0 +1,12 @@
+{
+  "kind": "native-object-dispatch-regression",
+  "conformance": false,
+  "fixture": "tools/verify-hosted-exotic-methods.ts",
+  "fixtureSha256": "9c756b0dd34e6d16df14b71c7ab5f34820c3ddee44aefe2fcaf5cbb6a2bee818",
+  "nativeExitStatus": 42,
+  "ordinaryObjectRegressionExitStatus": 42,
+  "arrayRegressionCases": 32,
+  "arrayRegressionPasses": 32,
+  "workspaceCheck": "passed",
+  "scope": "Generic exotic internal methods, inherited get/has/set, receiver descriptor/definition dispatch, prototype and extensibility dispatch, exact exotic key ordering. Existing ordinary object and array behavior preserved. Proxy itself is subsequent work."
+}

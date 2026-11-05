@@ -1,0 +1,14 @@
+{
+  "kind": "native-regression-analysis",
+  "conformance": false,
+  "observation": "native-managed-jit-signatures-v1.json",
+  "classification": "fixture assertion; not a runtime capability result",
+  "cause": "run returned 10 when the positive direct-only helper produced no imported signatures and no brand; generic Test262 status decoding labels 10 unsupported. That empty import set is valid.",
+  "nodeReproduction": ".tint-bootstrap/probe-jit-private-signatures-v1.test.ts",
+  "expected": {
+    "signatures": [],
+    "brand": "undefined",
+    "privateWitnesses": 1
+  },
+  "fix": "Require brand iff signatures are present. Binder implementation unchanged. A corrected native run uses a new report."
+}

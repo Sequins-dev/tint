@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "kind": "syntax-inventory-summary",
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": ".",
+  "files": 53751,
+  "variants": 103264,
+  "counts": {
+    "accepted": 52465,
+    "rejected": 20684,
+    "unsupported": 24318,
+    "negative-rejected-unverified": 5549,
+    "negative-accepted": 248
+  },
+  "modes": {
+    "sloppy": 52200,
+    "strict": 50191,
+    "raw": 30,
+    "module": 843
+  },
+  "fullInventory": {
+    "path": ".tint-bootstrap/test262-full-syntax-forin-declarations.json",
+    "sha256": "7a81575fb364260eb1d888b2bec3ea13c1d475adf90579f74112023c6030b780"
+  },
+  "positiveSyntaxGaps": [
+    {
+      "diagnostic": "invalid character",
+      "variants": 7074,
+      "samples": [
+        "built-ins/Function/prototype/toString/private-method-class-expression.js",
+        "built-ins/Function/prototype/toString/private-method-class-expression.js",
+        "built-ins/Function/prototype/toString/private-method-class-statement.js"
+      ]
+    },
+    {
+      "diagnostic": "expected identifier",
+      "variants": 6509,
+      "samples": [
+        "annexB/language/function-code/block-decl-func-skip-arguments.js",
+        "annexB/language/function-code/block-decl-func-skip-early-err-try.js",
+        "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-try.js"
+      ]
+    },
+    {
+      "diagnostic": "expected semicolon or supported statement boundary",
+      "variants": 4754,
+      "samples": [
+        "annexB/language/statements/for-await-of/iterator-close-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/statements/for-await-of/iterator-close-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/statements/labeled/function-declaration.js"
+      ]
+    },
+    {
+      "diagnostic": "bigint-literals",
+      "variants": 4288,
+      "samples": [
+        "annexB/built-ins/escape/argument_bigint.js",
+        "annexB/built-ins/escape/argument_bigint.js",
+        "annexB/built-ins/unescape/argument_bigint.js"
+      ]
+    },
+    {
+      "diagnostic": "template-literals",
+      "variants": 4265,
+      "samples": [
+        "annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js",
+        "annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js",
+        "annexB/language/expressions/template-literal/legacy-octal-escape-sequence-non-strict.js"
+      ]
+    },
+    {
+      "diagnostic": "expected supported expression",
+      "variants": 2841,
+      "samples": [
+        "annexB/built-ins/RegExp/legacy-accessors/index/this-not-regexp-constructor.js",
+        "annexB/built-ins/RegExp/legacy-accessors/index/this-not-regexp-constructor.js",
+        "annexB/built-ins/RegExp/legacy-accessors/input/this-not-regexp-constructor.js"
+      ]
+    },
+    {
+      "diagnostic": "expected }",
+      "variants": 2135,
+      "samples": [
+        "annexB/language/expressions/assignment/dstr/object-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignment/dstr/object-pattern-emulates-undefined.js",
+        "built-ins/AggregateError/errors-iterabletolist-failures.js"
+      ]
+    },
+    {
+      "diagnostic": "class async methods are not implemented",
+      "variants": 2092,
+      "samples": [
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression-static.js",
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression-static.js",
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression.js"
+      ]
+    },
+    {
+      "diagnostic": "generator-functions",
+      "variants": 1992,
+      "samples": [
+        "built-ins/Array/from/iter-set-elem-prop-non-writable.js",
+        "built-ins/Array/from/iter-set-elem-prop-non-writable.js",
+        "built-ins/Function/prototype/toString/GeneratorFunction.js"
+      ]
+    },
+    {
+      "diagnostic": "private and generator class elements are not implemented",
+      "variants": 1844,
+      "samples": [
+        "built-ins/Set/prototype/difference/allows-set-like-class.js",
+        "built-ins/Set/prototype/difference/allows-set-like-class.js",
+        "built-ins/Set/prototype/intersection/allows-set-like-class.js"
+      ]
+    },
+    {
+      "diagnostic": "identifier escape must be Unicode",
+      "variants": 1677,
+      "samples": [
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js",
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js",
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-not-capturing.js"
+      ]
+    },
+    {
+      "diagnostic": "expected )",
+      "variants": 1292,
+      "samples": [
+        "built-ins/Array/fromAsync/async-iterable-async-mapped-awaits-once.js",
+        "built-ins/Array/fromAsync/async-iterable-async-mapped-awaits-once.js",
+        "built-ins/Array/fromAsync/async-iterable-input-does-not-await-input.js"
+      ]
+    },
+    {
+      "diagnostic": "computed-property-names",
+      "variants": 1131,
+      "samples": [
+        "annexB/built-ins/escape/to-primitive-err.js",
+        "annexB/built-ins/escape/to-primitive-err.js",
+        "annexB/built-ins/escape/to-primitive-observe.js"
+      ]
+    },
+    {
+      "diagnostic": "statement form not implemented",
+      "variants": 780,
+      "samples": [
+        "built-ins/Promise/all/ctx-ctor.js",
+        "built-ins/Promise/all/ctx-ctor.js",
+        "built-ins/Promise/allSettled/ctx-ctor.js"
+      ]
+    },
+    {
+      "diagnostic": "import declarations require module source",
+      "variants": 519,
+      "samples": [
+        "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+        "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+        "language/expressions/dynamic-import/catch/nested-arrow-import-catch-eval-rqstd-abrupt-typeerror.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ;",
+      "variants": 442,
+      "samples": [
+        "annexB/language/expressions/assignmenttargettype/callexpression-as-for-in-lhs.js",
+        "annexB/language/expressions/assignmenttargettype/callexpression-as-for-of-lhs.js",
+        "annexB/language/statements/for-in/nonstrict-initializer.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid assignment target",
+      "variants": 390,
+      "samples": [
+        "annexB/language/expressions/assignment/dstr/array-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignment/dstr/array-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-compound-assignment.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ]",
+      "variants": 218,
+      "samples": [
+        "intl402/ListFormat/constructor/constructor/locales-valid.js",
+        "intl402/ListFormat/constructor/constructor/locales-valid.js",
+        "intl402/NumberFormat/constructor-compactDisplay-compact.js"
+      ]
+    },
+    {
+      "diagnostic": "function declaration requires a block",
+      "variants": 172,
+      "samples": [
+        "annexB/language/function-code/if-decl-else-decl-a-func-block-scoping.js",
+        "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-no-init.js",
+        "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-update.js"
+      ]
+    },
+    {
+      "diagnostic": "class static blocks are not implemented",
+      "variants": 120,
+      "samples": [
+        "language/expressions/arrow-function/static-init-await-binding.js",
+        "language/expressions/arrow-function/static-init-await-binding.js",
+        "language/expressions/arrow-function/static-init-await-reference.js"
+      ]
+    },
+    {
+      "diagnostic": "prototype-setters",
+      "variants": 110,
+      "samples": [
+        "built-ins/Error/isError/fake-errors.js",
+        "built-ins/Error/isError/fake-errors.js",
+        "built-ins/Error/prototype/stack/getter-error-as-prototype.js"
+      ]
+    },
+    {
+      "diagnostic": "unsupported export form",
+      "variants": 99,
+      "samples": [
+        "language/export/escaped-default.js",
+        "language/expressions/class/elements/class-name-static-initializer-default-export.js",
+        "language/expressions/dynamic-import/eval-export-dflt-cls-anon.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ,",
+      "variants": 87,
+      "samples": [
+        "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+        "language/import/import-defer/deferred-namespace-object/identity.js",
+        "language/import/import-defer/deferred-namespace-object/json-module.js"
+      ]
+    },
+    {
+      "diagnostic": "expected of",
+      "variants": 64,
+      "samples": [
+        "language/statements/for/dstr/const-ary-init-iter-close.js",
+        "language/statements/for/dstr/const-ary-init-iter-close.js",
+        "language/statements/for/dstr/const-ary-init-iter-get-err-array-prototype.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid escaped identifier character",
+      "variants": 50,
+      "samples": [
+        "built-ins/RegExp/S15.10.2.10_A4.1_T1.js",
+        "built-ins/RegExp/S15.10.2.10_A4.1_T1.js",
+        "built-ins/RegExp/named-groups/non-unicode-property-names-valid.js"
+      ]
+    },
+    {
+      "diagnostic": "expected (",
+      "variants": 12,
+      "samples": [
+        "language/module-code/top-level-await/syntax/for-await-await-expr-array-literal.js",
+        "language/module-code/top-level-await/syntax/for-await-await-expr-func-expression.js",
+        "language/module-code/top-level-await/syntax/for-await-await-expr-identifier.js"
+      ]
+    },
+    {
+      "diagnostic": "lexical declaration requires a block",
+      "variants": 10,
+      "samples": [
+        "language/statements/for/let-block-with-newline.js",
+        "language/statements/for/let-identifier-with-newline.js",
+        "language/statements/for-in/let-block-with-newline.js"
+      ]
+    },
+    {
+      "diagnostic": "imports must be top-level",
+      "variants": 8,
+      "samples": [
+        "language/expressions/dynamic-import/catch/nested-arrow-import-catch-eval-script-code-target.js",
+        "language/expressions/dynamic-import/catch/nested-block-import-catch-eval-script-code-target.js",
+        "language/expressions/dynamic-import/catch/nested-do-while-eval-script-code-target.js"
+      ]
+    },
+    {
+      "diagnostic": "legacy numeric escapes are not permitted in modules",
+      "variants": 7,
+      "samples": [
+        "language/expressions/tagged-template/invalid-escape-sequences.js",
+        "language/expressions/tagged-template/invalid-escape-sequences.js",
+        "language/literals/string/legacy-non-octal-escape-sequence-8-non-strict.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid or unsupported numeric suffix",
+      "variants": 6,
+      "samples": [
+        "annexB/built-ins/RegExp/RegExp-control-escape-russian-letter.js",
+        "annexB/built-ins/RegExp/RegExp-control-escape-russian-letter.js",
+        "annexB/built-ins/RegExp/RegExp-invalid-control-escape-character-class.js"
+      ]
+    },
+    {
+      "diagnostic": "star export requires a source module",
+      "variants": 6,
+      "samples": [
+        "language/module-code/eval-rqstd-once.js",
+        "language/module-code/eval-rqstd-order.js",
+        "language/module-code/eval-self-once.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid update target",
+      "variants": 2,
+      "samples": [
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-postfix-update.js",
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-prefix-update.js"
+      ]
+    },
+    {
+      "diagnostic": "unterminated string",
+      "variants": 2,
+      "samples": [
+        "built-ins/RegExp/S15.10.2.7_A4_T1.js",
+        "built-ins/RegExp/S15.10.2.7_A4_T1.js"
+      ]
+    },
+    {
+      "diagnostic": "legacy leading-zero numbers are not supported",
+      "variants": 2,
+      "samples": [
+        "language/literals/numeric/legacy-octal-integer.js",
+        "language/literals/numeric/non-octal-decimal-integer.js"
+      ]
+    },
+    {
+      "diagnostic": "labels are not implemented",
+      "variants": 2,
+      "samples": [
+        "language/module-code/early-undef-break.js",
+        "language/module-code/early-undef-continue.js"
+      ]
+    }
+  ],
+  "note": "For-in declaration heads are now parsed. Assignment heads and other missing forms remain gaps. Syntax acceptance is not runtime conformance; diagnostics report only the first blocker."
+}

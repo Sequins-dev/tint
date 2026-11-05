@@ -1,0 +1,40 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T10:56:38.181813+00:00",
+  "slice": "M3 foundation collection providers",
+  "beforeSource": {
+    "sha256": "4f3ff5d6028e79d587690f2918cf20395b1bf21800db0ebb03b7bae125759636",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "1c9b56fd923a8f12d10df0bb1e8105d2fee146cb110e8346358f84f7e75dc2b0",
+    "files": 492
+  },
+  "packages": 85,
+  "workspaceGates": {
+    "tests": 3458,
+    "passed": 3458,
+    "types": "passed build/tests/host",
+    "boundaries": "85 packages",
+    "formatting": "passed",
+    "log": "/tmp/tint-collections-alltests-v1.log"
+  },
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-collections-after-v1/manifest.json"
+  },
+  "nativeRegressions": [
+    "framework-collections-native-smoke-v1.json",
+    "framework-collections-native-baseline-mixed-v1.json",
+    "framework-collections-native-mixed-v1.json",
+    "framework-collections-native-linking-v1.json"
+  ],
+  "runtimeNamespaceAudit": ".tint-bootstrap/framework-collections-namespace-audit-v1.json",
+  "selfbuild": "bootstrap-framework-collections-v1.json",
+  "selfbuildBytes": 60625106,
+  "selfbuildByteIdentical": true,
+  "contract": "Seven collection providers consolidated under exact foundation subpaths; all 11 runtime namespace labels and registration order preserved, six provider module paths changed. No algorithm changes or compatibility aliases.",
+  "limitations": "Architecture evidence, not additional Test262 coverage."
+}

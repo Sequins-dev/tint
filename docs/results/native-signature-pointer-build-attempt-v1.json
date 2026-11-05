@@ -1,0 +1,9 @@
+{
+  "kind": "native-build-attempt",
+  "nativeExecution": false,
+  "stage": "check",
+  "scope": "local signature pointer compiler slice before native array-loop guards",
+  "sourceSnapshot": null,
+  "provenanceLimitation": "Full source snapshot was not persisted for this failed build. Diagnostic and exact build log retained; successful follow-up uses its own source snapshot.",
+  "log": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"kind\":\"unsupported\",\"reason\":\"native compilation: {\\\"stage\\\":\\\"check\\\",\\\"message\\\":\\\"packages/scalar-aarch64/src/index.ts:182968:182980: invalid property read\\\"}\"}\n    at verifyNativeScriptCases (file:///Users/stephenbelanger/Code/nodejs/tint/tools/native-script-fixture.ts:45:25)\n    at file:///Users/stephenbelanger/Code/nodejs/tint/tools/verify-test262-native-array-locale.ts:2:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: undefined,\n  operator: 'fail',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n"
+}

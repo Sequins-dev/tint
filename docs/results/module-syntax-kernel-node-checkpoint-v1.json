@@ -1,0 +1,25 @@
+{
+  "kind": "generated-native-source-refactor",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+    "files": 562
+  },
+  "generator": "tools/native-syntax-kernel.ts",
+  "compatibility": {
+    "cases": 5,
+    "byteIdentical": true,
+    "baseline": ".tint-bootstrap/native-syntax-generator-baseline-v1.json"
+  },
+  "workspace": {
+    "tests": 4237,
+    "pass": 4237,
+    "fail": 0,
+    "log": ".tint-bootstrap/native-syntax-kernel-workspace-check-v1.log"
+  },
+  "followup": {
+    "tests": ".tint-bootstrap/native-syntax-kernel-tests-v2.log",
+    "types": ".tint-bootstrap/native-syntax-kernel-types-v2.log"
+  },
+  "scope": "Extracted the existing native syntax generator and dependency roles, preserving emitted source. This is not a new native syntax or Test262 pass claim."
+}

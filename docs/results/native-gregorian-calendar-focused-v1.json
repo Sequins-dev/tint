@@ -1,0 +1,14 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "fixture": "tools/verify-hosted-gregorian-calendar.ts",
+  "fixtureSha256": "4809e53f36a77213cdf20265e2906d44d54d10a3a19144615b2b4697dbab9fa0",
+  "source": "packages/gregorian-calendar/src/index.ts",
+  "sourceSha256": "98a5b0b7b889e568d3a92988efaa716d9d802f2ca40fad973aba510e3a4feaa2",
+  "imageSha256": "19ca64508d20a61911c7880e4fcd82cd5db8918edf55d802aefc412705b7edef",
+  "dwarfVerified": true,
+  "scope": "Complete 400-year Gregorian round trips, negative years, epoch, and Date/Temporal calendar boundary days",
+  "outcome": {
+    "kind": "completed"
+  }
+}

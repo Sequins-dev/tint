@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "scope": "Phase B only: shared real-bound module declaration/export metadata; native policy and pipeline ordering remain in native linking",
+  "sourceIdentity": {
+    "sha256": "f683e451944bdd6c2aa8d34a10a7468f26734eeb4e0183494558da1c184abf4d",
+    "files": 494,
+    "packages": 66,
+    "importGrants": 376
+  },
+  "publicEntry": "@tint/typescript/modules/exports",
+  "newPublicContracts": [
+    "ModuleExportNames",
+    "ModuleExportMetadata",
+    "createModuleExportMetadata",
+    "describeModuleExportDeclaration",
+    "describeModuleExports"
+  ],
+  "contracts": {
+    "createModuleExportMetadata": "Seeds actual root-scope non-import bindings from BoundModule with explicit caller value identity maps; excludes nested bindings and imported aliases.",
+    "describeModuleExportDeclaration": "Collects one statement after caller policy checks, mutating caller-owned type/export tables; duplicate type diagnostics occur at this statement boundary.",
+    "describeModuleExports": "Whole-module convenience wrapper using the same primitive, no native policy, execution, flattening or synthetic parser.",
+    "patterns": "Both object and array declaration patterns fail explicitly with the existing unsupported diagnostic; no silent export omission.",
+    "nativeNames": "Same @i:value:binding-id and @i:type:name strings supplied by native linker. Native LinkedExport/LinkedProgram contracts unchanged."
+  },
+  "checks": [
+    {
+      "command": "node tools/generate-compiler-catalog.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-catalog-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-build-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-testtypes-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test packages/typescript/test/modules-export-metadata.test.ts packages/ts-linking/test/link.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-focused-v1.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-full-node-v1.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types '*.json' pnpm-workspace.yaml README.md",
+      "exitCode": 0,
+      "log": "/tmp/tint-export-metadata-format-check-v1.log"
+    }
+  ],
+  "counts": {
+    "newMetadataTests": 6,
+    "newNativeCompetingErrorTest": 1,
+    "focused": 32,
+    "fullWorkspace": 3502,
+    "failed": 0
+  },
+  "observations": [
+    {
+      "kind": "expected-red",
+      "reason": "Shared metadata functions were not exported before implementation; existing native ordering cases already passed and remain unchanged.",
+      "log": "/tmp/tint-export-metadata-red-v1.log"
+    }
+  ],
+  "behaviorComparison": {
+    "report": "/tmp/tint-export-metadata-linker-parity-v1.json",
+    "cases": 26,
+    "result": "Original/current JSON-visible whole LinkResult outcomes identical for13source variants under both default and instance evaluation. Includes classes, type collisions, mutable declarations, invalid initializers, both binding patterns, competing error order and AST/export/range output."
+  },
+  "preserved": [
+    "native import attributes and phased-evaluation limits",
+    "namespace-object export/import limits",
+    "resolver depth256 and work1000000 limits",
+    "class/mutable/initializer/statement native policy order",
+    "real binding with explicit caller globals",
+    "source origin/range construction",
+    "runtime helper identities",
+    "native LinkedExport identity/order"
+  ],
+  "noPhaseC": true,
+  "noCapturedScriptAnalyzer": true,
+  "noCapabilityProbes": true,
+  "pendingNativeValidation": "Root owns same-source smoke comparison and frozen native module/class/source-export proof; no native execution was run by this agent.",
+  "nativeProcessesRun": false
+}

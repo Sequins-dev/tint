@@ -1,0 +1,12 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+
+verifyNativeScriptCases(
+  [
+    `const source=new ArrayBuffer(2,{maxByteLength:4});new Uint8Array(source).set([19,42]);const frozen=source.transferToImmutable(4);if(!source.detached||!frozen.immutable||frozen.resizable||frozen.byteLength!==4||frozen.maxByteLength!==4||String(new Uint8Array(frozen))!=="19,42,0,0")throw 1;for(const method of ["transfer","transferToFixedLength","transferToImmutable","resize"]){try{frozen[method](0);throw 2;}catch(e){if(!(e instanceof TypeError))throw e;}}if(frozen.detached)throw 3;`,
+    `const source=new ArrayBuffer(4,{maxByteLength:8});new Uint8Array(source).set([1,19,42,4]);const frozen=source.sliceToImmutable(1,3);new Uint8Array(source)[1]=99;if(source.detached||!frozen.immutable||String(new Uint8Array(frozen))!=="19,42")throw 1;const second=frozen.sliceToImmutable();if(!second.immutable||second===frozen||String(new Uint8Array(second))!=="19,42")throw 2;const mutable=frozen.slice();if(mutable.immutable)throw 3;new Uint8Array(mutable)[0]=7;if(new Uint8Array(frozen)[0]!==19)throw 4;`,
+    `const source=new ArrayBuffer(8,{maxByteLength:16});const frozen=source.sliceToImmutable({valueOf(){source.resize(2);return 7;}},1);if(frozen.byteLength!==0||!frozen.immutable)throw 1;let caught=false;try{source.sliceToImmutable({valueOf(){source.resize(0);return 0;}},1);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 2;`,
+    `const frozen=new ArrayBuffer(0).transferToImmutable();let order="";for(const name of ["transfer","transferToFixedLength","transferToImmutable"]){try{frozen[name]({valueOf(){order+="v";return -1;}});throw 1;}catch(e){if(!(e instanceof RangeError))throw e;}}if(order!=="vvv")throw 2;try{$262.detachArrayBuffer(frozen);throw 3;}catch(e){if(!(e instanceof TypeError))throw e;}if(frozen.detached)throw 4;`,
+    `const buffer=new ArrayBuffer(8).transferToImmutable();const view=new Uint8Array(buffer);for(const key of ["0","-0","NaN","100"]){let calls=0;const value={valueOf(){calls++;return 42;}};if(Reflect.set(view,key,value)||calls!==0)throw 1;}if(!Object.isFrozen(Object.freeze(view)))throw 2;const empty=new Uint8Array(new ArrayBuffer(0).transferToImmutable());for(const f of [()=>empty.reverse(),()=>empty.sort(),()=>empty.fill(0),()=>empty.copyWithin(0,0),()=>empty.set([]),()=>empty.setFromHex(""),()=>empty.setFromBase64("")]){try{f();throw 3;}catch(e){if(!(e instanceof TypeError))throw e;}}`,
+  ],
+  { nodeReference: false },
+);

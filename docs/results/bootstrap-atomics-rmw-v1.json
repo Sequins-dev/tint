@@ -1,0 +1,38 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+    "files": 505
+  },
+  "packages": 57,
+  "snapshot": ".tint-bootstrap/source-atomics-rmw-v1",
+  "stage1": ".tint-bootstrap/stage1-atomics-rmw-v1",
+  "stage2": ".tint-bootstrap/stage2-atomics-rmw-v1",
+  "bytes": 61303602,
+  "sha256": "2f9d1d31ac52e473c9e500ecf5a2a7f57f93d1c32c00936ef0c76296dbda3329",
+  "nativeExitStatus": 0,
+  "initialStopVerified": true,
+  "byteIdentical": true,
+  "elapsedMs": 544030,
+  "launch": "lldb-local",
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 1791692,
+      "__debug_line": 15739826
+    },
+    "stage2": {
+      "__debug_info": 1791692,
+      "__debug_line": 15739826
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "log": ".tint-bootstrap/atomics-rmw-selfbuild-native-v1.log",
+  "scope": "Frozen 57-package/505-source snapshot verifies numeric foundation consolidation, result-less effectful host calls, shared CAS/facet contracts and non-waiting Atomics implementation. This is self-hosting correctness evidence, not Test262 conformance."
+}

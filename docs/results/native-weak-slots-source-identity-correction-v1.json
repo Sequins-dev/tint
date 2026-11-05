@@ -1,0 +1,12 @@
+{
+  "kind": "native-fixture-metadata-correction",
+  "conformance": false,
+  "report": "docs/results/native-weak-slots-published-diagnostic-v1.json",
+  "correctedSourceSnapshot": {
+    "sha256": "9be2d372fe4229e18123bdd4603a77846d837aed546d52459222ae836186c862",
+    "files": 512
+  },
+  "imageSha256": "b6f93bfbca93215b36f304fcd217ada074c8197dee0f07013ea5270d8d60c81d",
+  "identityEvidence": "docs/results/native-weak-slots-v1.json",
+  "reason": "The diagnostic republished the same immutable image, but its controller captured the later workspace identity after a compiler diagnostic-message change. Use the initial build observation identity for this image; both original observations remain unchanged."
+}

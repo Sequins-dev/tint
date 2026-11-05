@@ -1,0 +1,41 @@
+{
+  "kind": "direct-eval-service-node-checkpoint",
+  "conformance": false,
+  "native": false,
+  "sourceSnapshot": {
+    "sha256": "5d1967574760292ac65d6c7ef1cd8ae1a1d5266b2b3193cc0fd694825066cef8",
+    "files": 552
+  },
+  "workspaceGate": {
+    "tests": 4099,
+    "log": ".tint-bootstrap/direct-eval-service-workspace-check-v2.log"
+  },
+  "scope": [
+    "install-once direct compiler routing after indirect eval",
+    "raw UTF-16 direct-eval service with caller-site carrier",
+    "strictness/new.target parser context",
+    "owning-realm early errors and exact throw identity",
+    "sticky unsupported capabilities before parsing",
+    "shared completion and host fault handling",
+    "managed entry linking and portable pipeline self-checks"
+  ],
+  "surface": {
+    "entries": 126,
+    "instantiated": 40,
+    "helpers": 104,
+    "types": 22,
+    "records": 182,
+    "signatures": 165,
+    "runtimes": 41
+  },
+  "nativeValidation": {
+    "controller": ".tint-bootstrap/run-direct-eval-service-native-v1.mjs",
+    "cases": [
+      7,
+      8
+    ],
+    "report": "docs/results/native-direct-eval-service-validation-v1.json",
+    "state": "in progress"
+  },
+  "hostExposure": "not yet enabled in Test262"
+}

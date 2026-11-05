@@ -1,0 +1,48 @@
+{
+  "name": "@tint/ts-native",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./closure/layout": {
+      "types": "./dist/closure/layout.d.ts",
+      "import": "./dist/closure/layout.js"
+    },
+    "./closure/lowering": {
+      "types": "./dist/closure/lowering/index.d.ts",
+      "import": "./dist/closure/lowering/index.js"
+    },
+    "./closure/class-construction": {
+      "types": "./dist/closure/lowering/class-construction.d.ts",
+      "import": "./dist/closure/lowering/class-construction.js"
+    },
+    "./closure/class-definition": {
+      "types": "./dist/closure/lowering/class-definition.d.ts",
+      "import": "./dist/closure/lowering/class-definition.js"
+    },
+    "./closure/records": {
+      "types": "./dist/closure/lowering/records.d.ts",
+      "import": "./dist/closure/lowering/records.js"
+    },
+    "./scalar": {
+      "types": "./dist/scalar.d.ts",
+      "import": "./dist/scalar.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./modules": {
+      "types": "./dist/modules/index.d.ts",
+      "import": "./dist/modules/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/typescript": "workspace:*",
+    "@tint/foundation": "workspace:*",
+    "@tint/ir": "workspace:*"
+  }
+}

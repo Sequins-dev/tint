@@ -1,0 +1,55 @@
+{
+  "name": "@tint/typescript",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./syntax": {
+      "types": "./dist/syntax/index.d.ts",
+      "import": "./dist/syntax/index.js"
+    },
+    "./binding": {
+      "types": "./dist/binding/index.d.ts",
+      "import": "./dist/binding/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./reify": {
+      "types": "./dist/reify/index.d.ts",
+      "import": "./dist/reify/index.js"
+    },
+    "./checker": {
+      "types": "./dist/checker/index.d.ts",
+      "import": "./dist/checker/index.js"
+    },
+    "./checker/closures": {
+      "types": "./dist/checker/closures.d.ts",
+      "import": "./dist/checker/closures.js"
+    },
+    "./checker/interfaces": {
+      "types": "./dist/checker/interfaces.d.ts",
+      "import": "./dist/checker/interfaces.js"
+    },
+    "./modules/model": {
+      "types": "./dist/modules/model.d.ts",
+      "import": "./dist/modules/model.js"
+    },
+    "./modules": {
+      "types": "./dist/modules/index.d.ts",
+      "import": "./dist/modules/index.js"
+    },
+    "./modules/exports": {
+      "types": "./dist/modules/exports.d.ts",
+      "import": "./dist/modules/exports.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/foundation": "workspace:*",
+    "@tint/source": "workspace:*"
+  }
+}

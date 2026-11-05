@@ -1,0 +1,25 @@
+{
+  "kind": "native-selection-interruption",
+  "selection": "intl402/Temporal/ZonedDateTime/prototype/until",
+  "report": "test262-intl-temporal-zoned-until-prefix-native-v3.json",
+  "journal": "test262-intl-temporal-zoned-until-prefix-native-v3.jsonl",
+  "reason": "Repeated pre-entry LLDB local attach failures; three consecutive retained observations each took 254-318 seconds. Stop owned run for direct-debugserver validation; no semantic outcome inferred.",
+  "ownedProcesses": [
+    {
+      "pid": 81168,
+      "ppid": 72718,
+      "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb --no-lldbinit --batch -o settings set target.disable-aslr false -o process launch --no-stdio --stop-at-entry -- 4 -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-NX5LPM/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-NX5LPM/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped -o continue -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-NX5LPM/outcome.json\",'w').write(json.dumps({'state':'exited' if s==lldb.eStateExited else str(s),'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-xqbRKq/test"
+    },
+    {
+      "pid": 81170,
+      "ppid": 81168,
+      "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver --native-regs --setsid --fd=7"
+    },
+    {
+      "pid": 81169,
+      "ppid": 81170,
+      "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-xqbRKq/test 4"
+    }
+  ],
+  "at": "2026-11-02T14:50:10.685624+00:00"
+}

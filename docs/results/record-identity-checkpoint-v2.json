@@ -1,0 +1,38 @@
+{
+  "kind": "record-identity-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "5899fcf72bed41804b83965a968cb65d3ac546615275e33cdc4ddd3c7dcc547f",
+    "files": 524
+  },
+  "selfBuild": "docs/results/bootstrap-record-identity-v2.json",
+  "nativeFixtures": [
+    "docs/results/native-record-identity-compiler-v2.json",
+    "docs/results/native-record-identity-runtime-v3.json"
+  ],
+  "workspaceTests": 3773,
+  "bytes": 64565250,
+  "sha256": "2cd4aab755d5132de636e1028dae5429b8d6e2bfe4b1a1a5e59cbbf2f576f174",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/record-identity-signature-v2.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/record-identity-dwarf-v2.log"
+    }
+  },
+  "retainedPriorObservations": [
+    "docs/results/native-record-identity-compiler-v1.json",
+    "docs/results/native-record-identity-compiler-v1-analysis.json",
+    "docs/results/native-record-identity-runtime-v2.json",
+    "docs/results/native-record-identity-runtime-v2-analysis.json"
+  ],
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "Canonical contracts, physical layouts and digest",
+    "Managed publication and general eval/Function"
+  ]
+}

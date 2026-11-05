@@ -1,0 +1,232 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:packages/abi
+      '@tint/bench':
+        specifier: workspace:*
+        version: link:packages/bench
+      '@tint/codegen':
+        specifier: workspace:*
+        version: link:packages/codegen
+      '@tint/compiler':
+        specifier: workspace:*
+        version: link:packages/compiler
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:packages/foundation
+      '@tint/image':
+        specifier: workspace:*
+        version: link:packages/image
+      '@tint/ir':
+        specifier: workspace:*
+        version: link:packages/ir
+      '@tint/js-engine':
+        specifier: workspace:*
+        version: link:packages/js-engine
+      '@tint/js-runtime':
+        specifier: workspace:*
+        version: link:packages/js-runtime
+      '@tint/native-runtime':
+        specifier: workspace:*
+        version: link:packages/native-runtime
+      '@tint/platform':
+        specifier: workspace:*
+        version: link:packages/platform
+      '@tint/source':
+        specifier: workspace:*
+        version: link:packages/source
+      '@tint/ts-native':
+        specifier: workspace:*
+        version: link:packages/ts-native
+      '@tint/typescript':
+        specifier: workspace:*
+        version: link:packages/typescript
+      '@types/node':
+        specifier: 24.12.0
+        version: 24.12.0
+      prettier:
+        specifier: 3.9.10
+        version: 3.9.10
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+
+  packages/abi: {}
+
+  packages/bench: {}
+
+  packages/codegen:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+      '@tint/ir':
+        specifier: workspace:*
+        version: link:../ir
+
+  packages/compiler:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/codegen':
+        specifier: workspace:*
+        version: link:../codegen
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+      '@tint/image':
+        specifier: workspace:*
+        version: link:../image
+      '@tint/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@tint/native-runtime':
+        specifier: workspace:*
+        version: link:../native-runtime
+      '@tint/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@tint/source':
+        specifier: workspace:*
+        version: link:../source
+      '@tint/ts-native':
+        specifier: workspace:*
+        version: link:../ts-native
+      '@tint/typescript':
+        specifier: workspace:*
+        version: link:../typescript
+
+  packages/foundation: {}
+
+  packages/image:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+
+  packages/ir:
+    dependencies:
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+
+  packages/js-engine:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@tint/js-runtime':
+        specifier: workspace:*
+        version: link:../js-runtime
+      '@tint/source':
+        specifier: workspace:*
+        version: link:../source
+      '@tint/typescript':
+        specifier: workspace:*
+        version: link:../typescript
+
+  packages/js-runtime:
+    dependencies:
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+
+  packages/native-runtime:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/js-runtime':
+        specifier: workspace:*
+        version: link:../js-runtime
+
+  packages/platform:
+    dependencies:
+      '@tint/abi':
+        specifier: workspace:*
+        version: link:../abi
+      '@tint/native-runtime':
+        specifier: workspace:*
+        version: link:../native-runtime
+
+  packages/source: {}
+
+  packages/ts-native:
+    dependencies:
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+      '@tint/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@tint/typescript':
+        specifier: workspace:*
+        version: link:../typescript
+
+  packages/typescript:
+    dependencies:
+      '@tint/foundation':
+        specifier: workspace:*
+        version: link:../foundation
+      '@tint/source':
+        specifier: workspace:*
+        version: link:../source
+
+packages:
+
+  '@types/node@24.12.0':
+    resolution: {integrity: sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ==}
+
+  prettier@3.9.10:
+    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+    engines: {node: '>=14'}
+    hasBin: true
+
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
+snapshots:
+
+  '@types/node@24.12.0':
+    dependencies:
+      undici-types: 7.16.0
+
+  prettier@3.9.10: {}
+
+  typescript@6.0.3: {}
+
+  undici-types@7.16.0: {}
+
+  yaml@2.9.1: {}

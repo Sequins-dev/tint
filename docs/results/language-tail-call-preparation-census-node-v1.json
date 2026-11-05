@@ -1,0 +1,386 @@
+{
+  "kind": "language-tail-call-preparation-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "variants": 34,
+  "cases": [
+    {
+      "path": "language/expressions/call/tco-call-args.js",
+      "sha256": "a04125ba26381cfe00cdd5cccb4c0b511267742629d19e2dc4c75efbc4deba1c",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/call/tco-member-args.js",
+      "sha256": "f5c5906b1c713cdd22560c7872438fe2c7119011d6a96cf47675ce1ca26a92e0",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/call/tco-non-eval-function-dynamic.js",
+      "sha256": "8d381595908fa414b6aaa027f3386bf922220738e1902b16037f08f836b1c803",
+      "variant": "sloppy",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/call/tco-non-eval-function.js",
+      "sha256": "d87d82ebfe86486a7b96a1fec941feb15f6a106ee21014576d1c8e5829c66e4c",
+      "variant": "sloppy",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/call/tco-non-eval-global.js",
+      "sha256": "f94189f89e34ede682bb5745abb28cb8dd75b60e1d5011037bfbc49b737d1cce",
+      "variant": "sloppy",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/call/tco-non-eval-with.js",
+      "sha256": "d50ebf30dfa315ea5ba57fe555176a0ecbd393fe4515fcaf7ae52e8f256eebec",
+      "variant": "sloppy",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/coalesce/tco-pos-null.js",
+      "sha256": "ec25ce2e585ccff5748b586fd0cb859676af661166df79f49f083b75ab381488",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/coalesce/tco-pos-undefined.js",
+      "sha256": "90a3513b5d172dc2bd1647bfeae90a76a2209b9dd7f83b37c77cc8bf498603db",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/comma/tco-final.js",
+      "sha256": "ad5c41d008c24b433a9be4489e5e9888b3c9a69f27539d6444332be8f03d859b",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/conditional/tco-cond.js",
+      "sha256": "5ca1caa264d3fbef2b1b844f4201a4ac6c2599897f1c853d2a4b218404e2761e",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/conditional/tco-pos.js",
+      "sha256": "4717bece39ece1fa2e056a30c2c3175c4edc552ac66b05cc566c44b0462ecdf2",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/logical-and/tco-right.js",
+      "sha256": "971472283c0153d196ed105ea9d6285795f2032271b79b83b295f962f574fb1c",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/logical-or/tco-right.js",
+      "sha256": "30bf012e2f570d2444fbaac622cc1a09d6bab0ff8bbba7c89cfed61ed492ce5f",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/tagged-template/tco-call.js",
+      "sha256": "43bf6ad98c060a309bbd630e6bb64ff1d07a211513f7e606b7384612380ddf5c",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/tagged-template/tco-member.js",
+      "sha256": "2eb3b051c3cd031040fd7c5d3915601daaefa8e2e779276c04af65b506a655f0",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/expressions/tco-pos.js",
+      "sha256": "3a2458bbe7ba51c959cceaa9f8bb0ed405ff6af49f82d8b33a9169cf2b310d69",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/block/tco-stmt-list.js",
+      "sha256": "c8e39129a3afa082f8e9f9cc02c2589fdb793bc65db8956d63bbde572feacc71",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/block/tco-stmt.js",
+      "sha256": "6e9f597ed517e7f07093ea33bb0a4ab23e0f892560d976a956453da3eb9bca57",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/do-while/tco-body.js",
+      "sha256": "74510b776bd6fb8b2017a27957d59feed042b2e15ca2d7c81a582bd4d49f21f3",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/for/tco-const-body.js",
+      "sha256": "d22fda7260a7363867ddbe0e9b29bb98620de18c32f63b3beec61deb63279dd1",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/for/tco-let-body.js",
+      "sha256": "b1e4a89d645834615917fc924848102f86df46869469c2f1ff261ceef43e965f",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/for/tco-lhs-body.js",
+      "sha256": "758cedf99040ad22c1c378d9b42b5a42e74d8f4b26d457407fefd496fce8ac27",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/for/tco-var-body.js",
+      "sha256": "deff41d9b7dc853eb7fd50e8f0d66cc3d0e6ea2bcfa3ff1034e18bbc949cde5b",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/if/tco-else-body.js",
+      "sha256": "17905990e63fcbfd6f1c21e24d0ec39a198cee81f09d140f5acfcad708fc6f69",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/if/tco-if-body.js",
+      "sha256": "b44f4ea8fe590b288f470ba5fb1ee190ad92f257cc794363576d8af5582212c5",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/labeled/tco.js",
+      "sha256": "4ca51aafb58e6f5cc080dcdd7d454c254d5735940fc26be5ed7a6ae388c6a4fe",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/return/tco.js",
+      "sha256": "3c56e14821e27fc32aad4735ebd29e9015f3904c793fa8dc5cc34c35498f205f",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/switch/tco-case-body-dflt.js",
+      "sha256": "92e9db0365a24bd49f5b92e35e1935a1f8418f8b10a09c1faa4ee424243ab75c",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/switch/tco-case-body.js",
+      "sha256": "13cb16d7a0243f518f26fb6447befdf5667fd7943312b9e8140f1a72301de90a",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/switch/tco-dftl-body.js",
+      "sha256": "9a54b1ef1826ae9fecfef18cd2523ffacc5665bc9dfe6158d52003230bd09076",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/try/tco-catch-finally.js",
+      "sha256": "034586cd465886510da019be9203a3d4311ebbeefd42e9c79d6feea1484ead94",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/try/tco-catch.js",
+      "sha256": "ef970699ded1887477f104fadd5f58fee7abe0400439fce21f5bbdedec166608",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/try/tco-finally.js",
+      "sha256": "232683deafdbe82d70bbbe4785f96654197d9dae51dfcd5373dc909c53ba3583",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    },
+    {
+      "path": "language/statements/while/tco-body.js",
+      "sha256": "bac841d78bdf62d7228a7e2e70f3b129dbf4380767b65ecb4efb131e4a4c4c55",
+      "variant": "strict",
+      "includes": [
+        "tcoHelper.js"
+      ],
+      "prepared": true,
+      "tailFactory": true,
+      "tailTransfer": true
+    }
+  ]
+}

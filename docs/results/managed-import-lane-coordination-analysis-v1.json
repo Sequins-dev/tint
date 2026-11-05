@@ -1,0 +1,9 @@
+{
+  "kind": "native-lane-coordination-analysis",
+  "conformance": false,
+  "nativeObservations": 0,
+  "retained": "docs/results/managed-dynamic-import-native-validation-v1.json",
+  "cause": "The serial selection controller finished one child and began the next while the pause request was pending. The acknowledgement correctly named the new child. An overly strict PID equality check against the earlier child refused the handoff before any native runner was created.",
+  "correction": "Use the acknowledged child PID, then require its live command and parent controller to match the selected owner. Retain the empty failure report; use new reports for native execution.",
+  "nativeFailure": false
+}

@@ -1,0 +1,5752 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "lldb-local",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "2e9878a50c29037346e36b416888b2b94235ff58a627f84fc8583de3a3281e51",
+    "files": 441
+  },
+  "sourceSnapshotFile": ".tint-bootstrap/disposable-stack-v1-sources.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 17424.664792,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 20426.810583000006,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 58,
+        "kind": "execution",
+        "compileMs": 14593.473874999996,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/DisposableStack",
+  "totals": {
+    "total": 186,
+    "passed": 174,
+    "failed": 10,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9354838709677419
+  },
+  "observations": [
+    {
+      "path": "built-ins/DisposableStack/constructor.js",
+      "sha256": "36df0af0a49842a53537a5af399c71f78812ebd7f268e51912f9095fffe255e3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18699.408625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/constructor.js",
+      "sha256": "36df0af0a49842a53537a5af399c71f78812ebd7f268e51912f9095fffe255e3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18956.650542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/instance-extensible.js",
+      "sha256": "49df2eb007457b3821fa1ebf91fd8da398c3ff7f79f906da2612e9d6bfa54492",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19214.142,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/instance-extensible.js",
+      "sha256": "49df2eb007457b3821fa1ebf91fd8da398c3ff7f79f906da2612e9d6bfa54492",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19469.110875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/is-a-constructor.js",
+      "sha256": "76148ee67d54c7cdc2018f20e59c088e0e0f5f76d8178d3f5e9f7e3c8f4f17dd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19726.169875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/is-a-constructor.js",
+      "sha256": "76148ee67d54c7cdc2018f20e59c088e0e0f5f76d8178d3f5e9f7e3c8f4f17dd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19983.738084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/length.js",
+      "sha256": "0f3c19dc762cf370832d30db5db6ba68617e90d56ba01c7daab4a29c29b8995d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20242.279667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/length.js",
+      "sha256": "0f3c19dc762cf370832d30db5db6ba68617e90d56ba01c7daab4a29c29b8995d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20496.428792000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/name.js",
+      "sha256": "b0fc6821d12d57516f2a8af082b681b75179f3da959007c6e6ac654f4c7f32cc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20748.647709,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/name.js",
+      "sha256": "b0fc6821d12d57516f2a8af082b681b75179f3da959007c6e6ac654f4c7f32cc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20999.655625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/newtarget-prototype-is-not-object.js",
+      "sha256": "d0c7048c85d27b4f41e55fd844bb65fb414c9d659b15dc56d5db6e6d98e60642",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21256.028666000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/newtarget-prototype-is-not-object.js",
+      "sha256": "d0c7048c85d27b4f41e55fd844bb65fb414c9d659b15dc56d5db6e6d98e60642",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21514.977833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prop-desc.js",
+      "sha256": "00150e8e470aa627a516a40b45f46f51c6ec6f823517484e308b34d9274155a5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21770.414875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prop-desc.js",
+      "sha256": "00150e8e470aa627a516a40b45f46f51c6ec6f823517484e308b34d9274155a5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22029.291833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/proto-from-ctor-realm.js",
+      "sha256": "400c945a6c05c6c757eb28f0e70c5876e6b0efee34a8c0373197b083edbaf06b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 22287.916459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/proto-from-ctor-realm.js",
+      "sha256": "400c945a6c05c6c757eb28f0e70c5876e6b0efee34a8c0373197b083edbaf06b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "cross-realm",
+          "Reflect",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 22548.421958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/proto.js",
+      "sha256": "7c52867bba3dc4b7023a2f5e6b5df9728bdca8ef698a2ce435aa37bc44976349",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22805.168833999996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/proto.js",
+      "sha256": "7c52867bba3dc4b7023a2f5e6b5df9728bdca8ef698a2ce435aa37bc44976349",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23062.335417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/Symbol.dispose.js",
+      "sha256": "4e082c3ef4c8a7b9d759e7b12cb6632e76834222374a45816fa8359237084ee3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23325.356375000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/Symbol.dispose.js",
+      "sha256": "4e082c3ef4c8a7b9d759e7b12cb6632e76834222374a45816fa8359237084ee3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23587.795625000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/Symbol.toStringTag.js",
+      "sha256": "cd7f2434022c4d5be6853f60f92143d6ff8484b505f110af51d8fdf8c58754fb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Symbol",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23831.981708000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/Symbol.toStringTag.js",
+      "sha256": "cd7f2434022c4d5be6853f60f92143d6ff8484b505f110af51d8fdf8c58754fb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Symbol",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24089.526917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/adds-value-onDispose.js",
+      "sha256": "18c98013a7baa1378773f52d66ace3518592be9a06e87503c0f3f0db0f274b77",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24348.397417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/adds-value-onDispose.js",
+      "sha256": "18c98013a7baa1378773f52d66ace3518592be9a06e87503c0f3f0db0f274b77",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24606.4045,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/allows-any-value.js",
+      "sha256": "ae58668d4fccb10e24698c403f13d83a5da96e8039c9f2ea337626f36d2727f6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24863.868584,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/allows-any-value.js",
+      "sha256": "ae58668d4fccb10e24698c403f13d83a5da96e8039c9f2ea337626f36d2727f6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25121.835166999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/length.js",
+      "sha256": "ab8b3cd1024602b3a3311c152854b3521f9211f3cae4e3ddf6ec9fd7df6cd51b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25381.180333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/length.js",
+      "sha256": "ab8b3cd1024602b3a3311c152854b3521f9211f3cae4e3ddf6ec9fd7df6cd51b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25637.134708999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/name.js",
+      "sha256": "e8a6d2f71695148432c377d50a872c301195dede27671d2ced2b4df9cb1b9f67",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25892.316166999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/name.js",
+      "sha256": "e8a6d2f71695148432c377d50a872c301195dede27671d2ced2b4df9cb1b9f67",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26147.646542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/not-a-constructor.js",
+      "sha256": "96e129ce6d3734da11e209a3d4a27f64f447f5eb02aa168210a1fab10e2989ed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26402.257250000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/not-a-constructor.js",
+      "sha256": "96e129ce6d3734da11e209a3d4a27f64f447f5eb02aa168210a1fab10e2989ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26658.773541,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/prop-desc.js",
+      "sha256": "e561dfde25ceb3d0d03965897bf6edd27ba4c2e5846dd00ddc44eea21024cff2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26917.833125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/prop-desc.js",
+      "sha256": "e561dfde25ceb3d0d03965897bf6edd27ba4c2e5846dd00ddc44eea21024cff2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27175.346,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/puts-value-onDispose-on-top-of-stack.js",
+      "sha256": "0e1e0627d9e285cf41e782dfec6860956ead7a5138112182c13590c802210b98",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27428.898666999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/puts-value-onDispose-on-top-of-stack.js",
+      "sha256": "0e1e0627d9e285cf41e782dfec6860956ead7a5138112182c13590c802210b98",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27687.830707999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/returns-value.js",
+      "sha256": "88757e38ea3b1112a8f7d9a027935331177daa82ad836d96757f875da3ae32a3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27944.467167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/returns-value.js",
+      "sha256": "88757e38ea3b1112a8f7d9a027935331177daa82ad836d96757f875da3ae32a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28204.141166999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ff0de273c62a5878d77102a4d8919979f468fced182c8fb686b856b2fa235b8d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 28462.016708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ff0de273c62a5878d77102a4d8919979f468fced182c8fb686b856b2fa235b8d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 28721.459874999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/this-not-object-throws.js",
+      "sha256": "7c9197cb6e90fb81a076843485f2c23878d951579c6d2a3d9062db02c71cabd3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28980.537542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/this-not-object-throws.js",
+      "sha256": "7c9197cb6e90fb81a076843485f2c23878d951579c6d2a3d9062db02c71cabd3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29238.305167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/throws-if-disposed.js",
+      "sha256": "51788514ccf6132621302cd8c3479171443e74fd031199e744f0cf233a18cf7d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29496.238292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/throws-if-disposed.js",
+      "sha256": "51788514ccf6132621302cd8c3479171443e74fd031199e744f0cf233a18cf7d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29754.784791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/throws-if-onDispose-not-callable.js",
+      "sha256": "f2d09e8b36de402d5937dca0e19f99d95cd91b77b05c6537242b7407a8526dbf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30013.066917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/adopt/throws-if-onDispose-not-callable.js",
+      "sha256": "f2d09e8b36de402d5937dca0e19f99d95cd91b77b05c6537242b7407a8526dbf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30271.464166,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/constructor.js",
+      "sha256": "9f8ec5dd58652b63ee8c8a2f334876a792cd6351cd69aa2621d109702c51bbc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30527.474791999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/constructor.js",
+      "sha256": "9f8ec5dd58652b63ee8c8a2f334876a792cd6351cd69aa2621d109702c51bbc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30787.923959,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/adds-onDispose.js",
+      "sha256": "354bd7b5fcc5c614dfeac482b3177b45b55dbcf765462f40de92fcd10c11ea73",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31044.700624999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/adds-onDispose.js",
+      "sha256": "354bd7b5fcc5c614dfeac482b3177b45b55dbcf765462f40de92fcd10c11ea73",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31302.98375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/length.js",
+      "sha256": "6911e38421e31c6264257bc32c9ca5fcf252946fc581e935f00d809bd88329eb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31563.632375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/length.js",
+      "sha256": "6911e38421e31c6264257bc32c9ca5fcf252946fc581e935f00d809bd88329eb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31821.844625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/name.js",
+      "sha256": "a28a498aa93e042e8d6a4e5709ed312cc06b07c58cae70b2dd3d58503cb4f149",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32077.726125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/name.js",
+      "sha256": "a28a498aa93e042e8d6a4e5709ed312cc06b07c58cae70b2dd3d58503cb4f149",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32335.677083000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/not-a-constructor.js",
+      "sha256": "8e1edc02b06c598c019eeaeec93b3ff9e726b7a51407aac9203b404a94caa354",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32592.84875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/not-a-constructor.js",
+      "sha256": "8e1edc02b06c598c019eeaeec93b3ff9e726b7a51407aac9203b404a94caa354",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32849.239250000006,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/prop-desc.js",
+      "sha256": "0d6839d01ea03bf06efc4f62810e70e5403f803643d36ba9a77a82c0afffd994",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33106.980082999995,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/prop-desc.js",
+      "sha256": "0d6839d01ea03bf06efc4f62810e70e5403f803643d36ba9a77a82c0afffd994",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33354.718375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/puts-onDispose-on-top-of-stack.js",
+      "sha256": "a04286fdeb4bbbf4b049d372f6d06975d3d307faddfa8b655c06865ba50cb075",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33611.592708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/puts-onDispose-on-top-of-stack.js",
+      "sha256": "a04286fdeb4bbbf4b049d372f6d06975d3d307faddfa8b655c06865ba50cb075",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33870.197875000005,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/returns-undefined.js",
+      "sha256": "3fb436a3de8d3315024175fa392bc095b471d4e581f1d060c6f625d417babf11",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34127.380416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/returns-undefined.js",
+      "sha256": "3fb436a3de8d3315024175fa392bc095b471d4e581f1d060c6f625d417babf11",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34384.89025,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ccfe7e9f20afa5df87a542957c19a0c3f97c670df8c59c84a12e74dc1bf64af5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 34643.436875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ccfe7e9f20afa5df87a542957c19a0c3f97c670df8c59c84a12e74dc1bf64af5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 34902.796834,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/this-not-object-throws.js",
+      "sha256": "4cd03d6c34d5a9893173625a85158215e384dad2551a79900225399c54496404",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21779.525,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/this-not-object-throws.js",
+      "sha256": "4cd03d6c34d5a9893173625a85158215e384dad2551a79900225399c54496404",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22037.621958000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/throws-if-disposed.js",
+      "sha256": "f71090b6b4a3e737714100327af1542dd4c99f4817f2ad28f8a8dfbc46cfaddf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22291.745624999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/throws-if-disposed.js",
+      "sha256": "f71090b6b4a3e737714100327af1542dd4c99f4817f2ad28f8a8dfbc46cfaddf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22549.418166999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/throws-if-onDispose-not-callable.js",
+      "sha256": "81f3f2f405defeeb488ac08a3ee49be5d23b23ddcadc460f8c1fb2a41c1b0d9c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22805.343249999998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/defer/throws-if-onDispose-not-callable.js",
+      "sha256": "81f3f2f405defeeb488ac08a3ee49be5d23b23ddcadc460f8c1fb2a41c1b0d9c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23061.605000000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/disposes-resources-in-reverse-order.js",
+      "sha256": "22b1ecb74fd70e349000cc673e37b85ce34168c2c96aae040a792b5c1f13e15e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23328.237417000004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/disposes-resources-in-reverse-order.js",
+      "sha256": "22b1ecb74fd70e349000cc673e37b85ce34168c2c96aae040a792b5c1f13e15e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23587.713874999994,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/does-not-reinvoke-disposers-if-already-disposed.js",
+      "sha256": "750f4ed18265ea6a7942bd062e1ff24663861828a0d23f93dabcaf1306157adb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23846.716291999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/does-not-reinvoke-disposers-if-already-disposed.js",
+      "sha256": "750f4ed18265ea6a7942bd062e1ff24663861828a0d23f93dabcaf1306157adb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24104.168082999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/does-not-throw-if-already-disposed.js",
+      "sha256": "960804f17eec2fa5aa83a723168e6d3951076b3323d693f1ae0bd92e3aee6b81",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24360.652458999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/does-not-throw-if-already-disposed.js",
+      "sha256": "960804f17eec2fa5aa83a723168e6d3951076b3323d693f1ae0bd92e3aee6b81",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24617.272916999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/length.js",
+      "sha256": "86f8ea7055970345bd2eeb9ee6de3f7dde2cf15f874afcaab9887c15943530d2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24873.408583000004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/length.js",
+      "sha256": "86f8ea7055970345bd2eeb9ee6de3f7dde2cf15f874afcaab9887c15943530d2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25129.929791000002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/name.js",
+      "sha256": "973f92015c3518af1cf787855aa595883e073141bab3605fa6944feb40f97237",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25386.740709000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/name.js",
+      "sha256": "973f92015c3518af1cf787855aa595883e073141bab3605fa6944feb40f97237",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25642.894499999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/not-a-constructor.js",
+      "sha256": "200d32196d22fcd6d8c4e00186155486fa4d039b72c7ec1b1baf297f9f510608",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25898.622833,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/not-a-constructor.js",
+      "sha256": "200d32196d22fcd6d8c4e00186155486fa4d039b72c7ec1b1baf297f9f510608",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26153.780958999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/prop-desc.js",
+      "sha256": "f9b8b74715c126f8caa4ac62726e123493be9fa4d80187348366b2ecac52542c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26414.111749999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/prop-desc.js",
+      "sha256": "f9b8b74715c126f8caa4ac62726e123493be9fa4d80187348366b2ecac52542c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26670.571082999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/returns-undefined.js",
+      "sha256": "d89dca58f6ea3c4c733114969ac11b4656af842d5227c3dd77704a10c9458e76",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26926.828666999994,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/returns-undefined.js",
+      "sha256": "d89dca58f6ea3c4c733114969ac11b4656af842d5227c3dd77704a10c9458e76",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27182.670083999998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/sets-state-to-disposed.js",
+      "sha256": "9e302ef633f91d4f210e164563971081e65f7f354027e7e6bb4e7e1a7e337398",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27443.318583,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/sets-state-to-disposed.js",
+      "sha256": "9e302ef633f91d4f210e164563971081e65f7f354027e7e6bb4e7e1a7e337398",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27700.148625,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ece7e2f22eb7bd07b3b2fa3e1f24cc3b6fbc5ce711096fea9024ac3bccf57800",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 27958.207167,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "ece7e2f22eb7bd07b3b2fa3e1f24cc3b6fbc5ce711096fea9024ac3bccf57800",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 28215.827624999998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/this-not-object-throws.js",
+      "sha256": "dfb5ec4a1d1b4cb687ffb0c5a157b0d6be60a52907d5dfba74fc36218d214b32",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28466.654625000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/this-not-object-throws.js",
+      "sha256": "dfb5ec4a1d1b4cb687ffb0c5a157b0d6be60a52907d5dfba74fc36218d214b32",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28719.863416,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "sha256": "2b2cdeb0e3df141d00e865f5acd7369017f99f66fb45d0df2f4ed023b480a825",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28971.877583,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "sha256": "2b2cdeb0e3df141d00e865f5acd7369017f99f66fb45d0df2f4ed023b480a825",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29223.205125,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "sha256": "bb7ca263594dcc8e30f41a3ec22c58fb20abe182cac4304210ba385b509cd150",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29475.22225,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/dispose/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "sha256": "bb7ca263594dcc8e30f41a3ec22c58fb20abe182cac4304210ba385b509cd150",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29728.822708,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/does-not-have-disposablestate-internal-slot.js",
+      "sha256": "5b559c4e35b289aadfdbb25664180551079fd89d21a37e16a533af4b15bc2dd8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29980.542125,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/does-not-have-disposablestate-internal-slot.js",
+      "sha256": "5b559c4e35b289aadfdbb25664180551079fd89d21a37e16a533af4b15bc2dd8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30232.929584000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/getter.js",
+      "sha256": "5834cd03a0675e5d0fc72bc36f0bf85ff888c6c9d02b5b2d3fbb0e4c6ad2d0fc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30490.414292,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/getter.js",
+      "sha256": "5834cd03a0675e5d0fc72bc36f0bf85ff888c6c9d02b5b2d3fbb0e4c6ad2d0fc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30746.966457999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/length.js",
+      "sha256": "023b5cbe4b25bde41f82d85d624f318088d8053149e152717d9090ae8ac7aef7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30995.419499999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/length.js",
+      "sha256": "023b5cbe4b25bde41f82d85d624f318088d8053149e152717d9090ae8ac7aef7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31252.063292000006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/name.js",
+      "sha256": "b9ac3125831830a2e389ba667a4be46059adb274fecf8d2a964f05c25cb570eb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31508.654375000006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/name.js",
+      "sha256": "b9ac3125831830a2e389ba667a4be46059adb274fecf8d2a964f05c25cb570eb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 31766.16458299999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/returns-false-when-not-disposed.js",
+      "sha256": "f191e5b8a801f50cd3c7e8bd4f206f3d0d7a2ff9623e3b5e259060c9b2d2c881",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32012.968957999998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/returns-false-when-not-disposed.js",
+      "sha256": "f191e5b8a801f50cd3c7e8bd4f206f3d0d7a2ff9623e3b5e259060c9b2d2c881",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32271.67949999999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/returns-true-when-disposed.js",
+      "sha256": "51bb2561bba2d9860324ff5cab3fc9ddf2a4f0704af50d2b22da6f4c3ad0c241",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32529.841834000006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/returns-true-when-disposed.js",
+      "sha256": "51bb2561bba2d9860324ff5cab3fc9ddf2a4f0704af50d2b22da6f4c3ad0c241",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 32787.101333000006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/this-not-object-throw.js",
+      "sha256": "255a575b295313712065a19d77f56ce5934b6e564d23d4d83bc7098ee1dc4337",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33043.496290999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/disposed/this-not-object-throw.js",
+      "sha256": "255a575b295313712065a19d77f56ce5934b6e564d23d4d83bc7098ee1dc4337",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33301.065624999996,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/does-not-dispose-resources.js",
+      "sha256": "3588de48bd76671ad40ed8284986941058dec4a1a9adff3c7da9e1404bf07d08",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33558.304625,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/does-not-dispose-resources.js",
+      "sha256": "3588de48bd76671ad40ed8284986941058dec4a1a9adff3c7da9e1404bf07d08",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 33815.566375,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/length.js",
+      "sha256": "1e5829c7589ddc34a9198a446055904e003bf54002131bb4bbc31683453b63b7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34076.107666,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/length.js",
+      "sha256": "1e5829c7589ddc34a9198a446055904e003bf54002131bb4bbc31683453b63b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34314.228667,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/name.js",
+      "sha256": "b10864d2e8599cf39f6e69fbe1b213332b48c9443c605ad0658ac3914369b899",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34570.68941700001,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/name.js",
+      "sha256": "b10864d2e8599cf39f6e69fbe1b213332b48c9443c605ad0658ac3914369b899",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 34825.718791,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/not-a-constructor.js",
+      "sha256": "d15b3c4418d0c2228b6d3e59f1b6e0661e0ac3425d97dbd9cc9186bf4c453366",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35080.815417000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/not-a-constructor.js",
+      "sha256": "d15b3c4418d0c2228b6d3e59f1b6e0661e0ac3425d97dbd9cc9186bf4c453366",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35339.06649999999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/prop-desc.js",
+      "sha256": "f7b176014495e9a6d548e5496f7b2a54e783b6574310edfc7a96750799e1fb3b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35599.249541000005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/prop-desc.js",
+      "sha256": "f7b176014495e9a6d548e5496f7b2a54e783b6574310edfc7a96750799e1fb3b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 35857.226625,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack-that-contains-moved-resources.js",
+      "sha256": "6db33f7ee98886b07701749c48ae84cd2be16cf688c0de363fd9c5f88fa92201",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "deepEqual.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "deepEqual.js",
+          "sha256": "b884b27b927d91c62eb9fc7d2ff9d76050d524d8179b9993eda3d5a2d9f86525"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36118.604917000004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack-that-contains-moved-resources.js",
+      "sha256": "6db33f7ee98886b07701749c48ae84cd2be16cf688c0de363fd9c5f88fa92201",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "deepEqual.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "deepEqual.js",
+          "sha256": "b884b27b927d91c62eb9fc7d2ff9d76050d524d8179b9993eda3d5a2d9f86525"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36367.32325,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack-that-is-still-pending.js",
+      "sha256": "395027b0a273053a13ab30e7bd56761bfdc42140a6c21ada08d1bce134ab568f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36620.088124999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack-that-is-still-pending.js",
+      "sha256": "395027b0a273053a13ab30e7bd56761bfdc42140a6c21ada08d1bce134ab568f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 36898.659415999995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack.js",
+      "sha256": "a8457713426576edb5a1b772b0ca5e9337942cc53979bf064dc1bc28d188a76f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37165.01849999999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/returns-new-disposablestack.js",
+      "sha256": "a8457713426576edb5a1b772b0ca5e9337942cc53979bf064dc1bc28d188a76f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37427.091624999994,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/sets-state-to-disposed.js",
+      "sha256": "ffe0cb6845816f8958ff700a8ec4197d8879d9457ec4512a560be77ebda07e79",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37677.660792,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/sets-state-to-disposed.js",
+      "sha256": "ffe0cb6845816f8958ff700a8ec4197d8879d9457ec4512a560be77ebda07e79",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 37932.710875,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/still-returns-new-disposablestack-when-subclassed.js",
+      "sha256": "84da4f32d6394911528410b83d79b95fea91454c08d19a00b47c988eed5e2454",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15807.343041999993,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/still-returns-new-disposablestack-when-subclassed.js",
+      "sha256": "84da4f32d6394911528410b83d79b95fea91454c08d19a00b47c988eed5e2454",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 16064.823124999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "c6897217550dcd07ace79d4166d9318d99d60cabdd6343fcfa32b5c76aee5e89",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 16324.045374999987,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "c6897217550dcd07ace79d4166d9318d99d60cabdd6343fcfa32b5c76aee5e89",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 16578.958165999997,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/this-not-object-throws.js",
+      "sha256": "782f3c9c139d0330a60dee209927ba3d076c8183f8c99ab9d2924ab602c60dce",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 16833.89275,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/this-not-object-throws.js",
+      "sha256": "782f3c9c139d0330a60dee209927ba3d076c8183f8c99ab9d2924ab602c60dce",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17089.379541000002,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/throws-if-disposed.js",
+      "sha256": "4eb980d33ee600a5ff0bb947cb52ed3e0782eafe682c367ce6bf0d6218b6c7c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17346.439625,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/move/throws-if-disposed.js",
+      "sha256": "4eb980d33ee600a5ff0bb947cb52ed3e0782eafe682c367ce6bf0d6218b6c7c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17603.535833,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/prop-desc.js",
+      "sha256": "55e04a2e9ac519eb1c53eb2d1dbf0585748c708d72f50d588ee6f1457d3d0c69",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 17862.037207999994,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/prop-desc.js",
+      "sha256": "55e04a2e9ac519eb1c53eb2d1dbf0585748c708d72f50d588ee6f1457d3d0c69",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18117.658417,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/proto.js",
+      "sha256": "b9fb53c44b71032f0acf2654bb5f90d30a64bf9e77168c2601bf3564236167b8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18373.70087500001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/proto.js",
+      "sha256": "b9fb53c44b71032f0acf2654bb5f90d30a64bf9e77168c2601bf3564236167b8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18624.791916999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/Symbol.dispose-getter.js",
+      "sha256": "b4afbc0ada4dfc2ff046a335c5ed479e3a93a519a1e50120501fae2b2d451fd5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 18887.339667000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/Symbol.dispose-getter.js",
+      "sha256": "b4afbc0ada4dfc2ff046a335c5ed479e3a93a519a1e50120501fae2b2d451fd5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19144.160625000004,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/adds-value.js",
+      "sha256": "5a269fd891fe7b8e046073261c8ea9f0bcf6de0de125a698004cd47fb2dcfad9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19401.765249999997,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/adds-value.js",
+      "sha256": "5a269fd891fe7b8e046073261c8ea9f0bcf6de0de125a698004cd47fb2dcfad9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19656.63508400001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/allows-null-value.js",
+      "sha256": "330da31495232177679447bb2052b19a2c7aeb896ccde7b86c807885e313e868",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19911.39675,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/allows-null-value.js",
+      "sha256": "330da31495232177679447bb2052b19a2c7aeb896ccde7b86c807885e313e868",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20169.192334000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/allows-undefined-value.js",
+      "sha256": "c02c0c47ecd4239fd713d44a46c868c143194f1d23b6e44bacb6c953426f4292",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20427.492417,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/allows-undefined-value.js",
+      "sha256": "c02c0c47ecd4239fd713d44a46c868c143194f1d23b6e44bacb6c953426f4292",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20684.870832999994,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/gets-value-Symbol.dispose-property-once.js",
+      "sha256": "d0d1921eb4eb5e1a7fcf7ec55a000aded52ec59e9ef229c83c8658bea6f826c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 20941.635917000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/gets-value-Symbol.dispose-property-once.js",
+      "sha256": "d0d1921eb4eb5e1a7fcf7ec55a000aded52ec59e9ef229c83c8658bea6f826c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21197.804375000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/length.js",
+      "sha256": "7809042f4cfbcf519502edf152be3c8053ef8b84d23c50480033f1513dba8c3e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21449.012917,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/length.js",
+      "sha256": "7809042f4cfbcf519502edf152be3c8053ef8b84d23c50480033f1513dba8c3e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21705.476083999994,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/name.js",
+      "sha256": "fe2800e59c81936d67bcf7d2e6001a7a6a4da4e8974c00cc0cc36e6b826c236c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 21961.048916999993,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/name.js",
+      "sha256": "fe2800e59c81936d67bcf7d2e6001a7a6a4da4e8974c00cc0cc36e6b826c236c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22215.46250000001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/not-a-constructor.js",
+      "sha256": "22d4839f934e6a420089f6c3fa814b74a77950f85e3313579fc5e2d44b9b1718",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22467.802041000003,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/not-a-constructor.js",
+      "sha256": "22d4839f934e6a420089f6c3fa814b74a77950f85e3313579fc5e2d44b9b1718",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "explicit-resource-management",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22725.079541,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/prop-desc.js",
+      "sha256": "1bd1b988b32cbc973358bcb1884d95ee7f4a6cd2c122439a0d02d1b8db4643e5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 22978.798458999998,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/prop-desc.js",
+      "sha256": "1bd1b988b32cbc973358bcb1884d95ee7f4a6cd2c122439a0d02d1b8db4643e5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23235.460416999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/puts-value-on-top-of-stack.js",
+      "sha256": "4932f347f8e908ff735db914bdf1af7289e1ec9123f103a870c5768e8348942b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23491.487875000006,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/puts-value-on-top-of-stack.js",
+      "sha256": "4932f347f8e908ff735db914bdf1af7289e1ec9123f103a870c5768e8348942b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 23749.431083999996,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/returns-value.js",
+      "sha256": "43237242fd814f907cda648201d993980d9af61158fced7d9065e33ed64520dd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24005.008499999996,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/returns-value.js",
+      "sha256": "43237242fd814f907cda648201d993980d9af61158fced7d9065e33ed64520dd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 24264.656749999995,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "754a19782e21f482dc72636b828d6d37c4e9db758b647865e41a8b90e42fa8ba",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 24522.170500000007,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/this-does-not-have-internal-disposablestate-throws.js",
+      "sha256": "754a19782e21f482dc72636b828d6d37c4e9db758b647865e41a8b90e42fa8ba",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 24774.40795800001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/this-not-object-throws.js",
+      "sha256": "87d69d85bbe2ab5094b471525afdf00f9495a33372e23cfa86f273eb74f9a747",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25032.500417000003,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/this-not-object-throws.js",
+      "sha256": "87d69d85bbe2ab5094b471525afdf00f9495a33372e23cfa86f273eb74f9a747",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25289.95591599999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-disposed.js",
+      "sha256": "c40fdf9279d3ebbcc909c37805798eac37dc9e9f96bd1bdece252ff92edf8c7d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25548.593542000002,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-disposed.js",
+      "sha256": "c40fdf9279d3ebbcc909c37805798eac37dc9e9f96bd1bdece252ff92edf8c7d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 25806.42920900001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-is-null.js",
+      "sha256": "e6627ec698939e70d763830eee013bddcc1bfd20b50df5189abaf9dafbf64e82",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26068.65324999999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-is-null.js",
+      "sha256": "e6627ec698939e70d763830eee013bddcc1bfd20b50df5189abaf9dafbf64e82",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26326.163625,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-is-undefined.js",
+      "sha256": "3274dcbec455c573d90749e1856b1cb0fa38227ea908444ea8a9b74b21b90235",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26582.129708000008,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-is-undefined.js",
+      "sha256": "3274dcbec455c573d90749e1856b1cb0fa38227ea908444ea8a9b74b21b90235",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 26840.741916,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-not-callable.js",
+      "sha256": "ad8c14663db0477dfcbb7385923e666e73a9a3eddd421fac80b8b488f26e16bd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27099.4415,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-Symbol.dispose-property-not-callable.js",
+      "sha256": "ad8c14663db0477dfcbb7385923e666e73a9a3eddd421fac80b8b488f26e16bd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27356.498915999997,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-missing-Symbol.dispose.js",
+      "sha256": "0a79059a14891f7810d4a0ea464596b628e08e48cee0f55f1ac1eca24d038aa5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27612.49008300001,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-missing-Symbol.dispose.js",
+      "sha256": "0a79059a14891f7810d4a0ea464596b628e08e48cee0f55f1ac1eca24d038aa5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 27870.401207999996,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-not-object.js",
+      "sha256": "1b966e55dca59a9655a9b7d8463c69fb8ac5a5091431231e39a851d406d215a4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28121.568291999996,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype/use/throws-if-value-not-object.js",
+      "sha256": "1b966e55dca59a9655a9b7d8463c69fb8ac5a5091431231e39a851d406d215a4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28379.800875,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget-abrupt.js",
+      "sha256": "9feac000a61d0f4c2146cad2175957b124013fc11a43dde4a98fa33f9bf59863",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28636.355792000002,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget-abrupt.js",
+      "sha256": "9feac000a61d0f4c2146cad2175957b124013fc11a43dde4a98fa33f9bf59863",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 28892.146542000002,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget-custom.js",
+      "sha256": "5e83bb74c5d274e637782478264a48a94c04e18a885a4299ad0f39f76742237f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29148.218999999997,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget-custom.js",
+      "sha256": "5e83bb74c5d274e637782478264a48a94c04e18a885a4299ad0f39f76742237f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29404.682875,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget.js",
+      "sha256": "4599a0c62ae0aeded75f9c99155ec3f59e56a682278ada48e1400f925565241b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29660.308458,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/prototype-from-newtarget.js",
+      "sha256": "4599a0c62ae0aeded75f9c99155ec3f59e56a682278ada48e1400f925565241b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29915.323040999996,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/undefined-newtarget-throws.js",
+      "sha256": "0c256298be8eb240cccfc3595e3fea5067fb50c27e375df390e02a066aa8e58c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30171.517041999992,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/DisposableStack/undefined-newtarget-throws.js",
+      "sha256": "0c256298be8eb240cccfc3595e3fea5067fb50c27e375df390e02a066aa8e58c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "explicit-resource-management"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 30425.968374999997,
+      "batch": 2
+    }
+  ]
+}

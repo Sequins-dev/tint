@@ -1,0 +1,18 @@
+{
+  "kind": "native-queue-sequencing",
+  "conformance": false,
+  "stoppedWaitingControllers": [
+    "node .tint-bootstrap/run-async-function-conformance-v1.mjs",
+    "node .tint-bootstrap/run-generator-family-conformance-v1.mjs"
+  ],
+  "activeInferiorStopped": false,
+  "nativeObservationsDiscarded": false,
+  "reason": "Order waiting jobs to prevent competing acquisitions of the same cooperative lane",
+  "order": [
+    "AsyncFunction body and finalizer validation",
+    "GeneratorFunction native validation",
+    "AsyncGeneratorFunction native validation",
+    "AsyncFunction unchanged Test262 group",
+    "GeneratorFunction and AsyncGeneratorFunction unchanged Test262 groups"
+  ]
+}

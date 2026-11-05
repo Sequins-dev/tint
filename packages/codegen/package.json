@@ -1,0 +1,40 @@
+{
+  "name": "@tint/codegen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./aarch64/isa": {
+      "types": "./dist/aarch64/isa.d.ts",
+      "import": "./dist/aarch64/isa.js"
+    },
+    "./aarch64/cell": {
+      "types": "./dist/aarch64/cell.d.ts",
+      "import": "./dist/aarch64/cell.js"
+    },
+    "./aarch64/scalar": {
+      "types": "./dist/aarch64/scalar/index.d.ts",
+      "import": "./dist/aarch64/scalar/index.js"
+    },
+    "./aarch64/barrier": {
+      "types": "./dist/aarch64/scalar/barrier.d.ts",
+      "import": "./dist/aarch64/scalar/barrier.js"
+    },
+    "./aarch64/startup": {
+      "types": "./dist/aarch64/startup.d.ts",
+      "import": "./dist/aarch64/startup.js"
+    },
+    "./aarch64/image-relocations": {
+      "types": "./dist/aarch64/image-relocations.d.ts",
+      "import": "./dist/aarch64/image-relocations.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/foundation": "workspace:*",
+    "@tint/ir": "workspace:*",
+    "@tint/abi": "workspace:*"
+  }
+}

@@ -1,0 +1,924 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/labeled",
+  "totals": {
+    "total": 37,
+    "passed": 8,
+    "failed": 4,
+    "unsupported": 24,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 1,
+    "passFraction": 0.21621621621621623
+  },
+  "observations": [
+    {
+      "path": "language/statements/labeled/S12.12_A1_T1.js",
+      "sha256": "5dd8b8dfc30d67097ccfffecda8112edf620ab8d382caefe41a068d9fe303ef2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5157.673625
+    },
+    {
+      "path": "language/statements/labeled/S12.12_A1_T1.js",
+      "sha256": "5dd8b8dfc30d67097ccfffecda8112edf620ab8d382caefe41a068d9fe303ef2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4249.859958
+    },
+    {
+      "path": "language/statements/labeled/continue.js",
+      "sha256": "d68bc727334944eca10958a883b621e5ce94c0f2016e656d4dbdf416037d423e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid control transfer label\",\"start\":719,\"end\":726,\"position\":{\"line\":25,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.41866599999957543
+    },
+    {
+      "path": "language/statements/labeled/continue.js",
+      "sha256": "d68bc727334944eca10958a883b621e5ce94c0f2016e656d4dbdf416037d423e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid control transfer label\",\"start\":733,\"end\":740,\"position\":{\"line\":26,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.24020800000107556
+    },
+    {
+      "path": "language/statements/labeled/cptn-break.js",
+      "sha256": "cb08236a1a8f862802cb2dac13895705d35a72b6705fa83530d8f8626c01076f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4092.147708999999
+    },
+    {
+      "path": "language/statements/labeled/cptn-break.js",
+      "sha256": "cb08236a1a8f862802cb2dac13895705d35a72b6705fa83530d8f8626c01076f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4176.2786670000005
+    },
+    {
+      "path": "language/statements/labeled/cptn-nrml.js",
+      "sha256": "ea13f4c384ab874d7808ada7fc88d967afe3a726092b2dc8cc05cc1a210bc3d7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4103.3604589999995
+    },
+    {
+      "path": "language/statements/labeled/cptn-nrml.js",
+      "sha256": "ea13f4c384ab874d7808ada7fc88d967afe3a726092b2dc8cc05cc1a210bc3d7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4188.204209000003
+    },
+    {
+      "path": "language/statements/labeled/decl-async-function.js",
+      "sha256": "26b3d19242670d9ab9661b32ca0aef2be3aea98bc04fa115cab24eaadc47e167",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected semicolon or supported statement boundary\",\"start\":530,\"end\":538,\"position\":{\"line\":20,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.2736250000016298
+    },
+    {
+      "path": "language/statements/labeled/decl-async-function.js",
+      "sha256": "26b3d19242670d9ab9661b32ca0aef2be3aea98bc04fa115cab24eaadc47e167",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected semicolon or supported statement boundary\",\"start\":544,\"end\":552,\"position\":{\"line\":21,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.15662500000325963
+    },
+    {
+      "path": "language/statements/labeled/decl-async-generator.js",
+      "sha256": "eec26f95978ed4b0c4fceb6fd8ddaa4b6300b73a8e8a691e4e62550313af9223",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected semicolon or supported statement boundary\",\"start\":531,\"end\":539,\"position\":{\"line\":20,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.13320799999928568
+    },
+    {
+      "path": "language/statements/labeled/decl-async-generator.js",
+      "sha256": "eec26f95978ed4b0c4fceb6fd8ddaa4b6300b73a8e8a691e4e62550313af9223",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"expected semicolon or supported statement boundary\",\"start\":545,\"end\":553,\"position\":{\"line\":21,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.08770799999911105
+    },
+    {
+      "path": "language/statements/labeled/decl-cls.js",
+      "sha256": "958f434e830a86d9fb0908762d7465678269a74d41d0b270a27f82f0ce862e68",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"class declaration requires a block\",\"start\":336,\"end\":337,\"position\":{\"line\":14,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.09712500000023283
+    },
+    {
+      "path": "language/statements/labeled/decl-cls.js",
+      "sha256": "958f434e830a86d9fb0908762d7465678269a74d41d0b270a27f82f0ce862e68",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"class declaration requires a block\",\"start\":350,\"end\":351,\"position\":{\"line\":15,\"column\":14}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07804100000066683
+    },
+    {
+      "path": "language/statements/labeled/decl-const.js",
+      "sha256": "1b40ec9b720e4e28112df7ff86875f69f9c473946da8a7c91fdcc68eb4afb973",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":340,\"end\":345,\"position\":{\"line\":14,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07379200000286801
+    },
+    {
+      "path": "language/statements/labeled/decl-const.js",
+      "sha256": "1b40ec9b720e4e28112df7ff86875f69f9c473946da8a7c91fdcc68eb4afb973",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":354,\"end\":359,\"position\":{\"line\":15,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06895799999983865
+    },
+    {
+      "path": "language/statements/labeled/decl-fun-strict.js",
+      "sha256": "30ae9003c0019283f2991f8933d2fae076d94882f9bddbd351225048bdd24122",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"function declaration requires a block\",\"start\":408,\"end\":409,\"position\":{\"line\":18,\"column\":17}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.09070799999972223
+    },
+    {
+      "path": "language/statements/labeled/decl-gen.js",
+      "sha256": "125a36b4dd7494930ad478aa520554186ca5456e92e3f98a8d4f55afa13a99fa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"function declaration requires a block\",\"start\":365,\"end\":366,\"position\":{\"line\":15,\"column\":16}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07966699999815319
+    },
+    {
+      "path": "language/statements/labeled/decl-gen.js",
+      "sha256": "125a36b4dd7494930ad478aa520554186ca5456e92e3f98a8d4f55afa13a99fa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"function declaration requires a block\",\"start\":379,\"end\":380,\"position\":{\"line\":16,\"column\":16}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06383399999685935
+    },
+    {
+      "path": "language/statements/labeled/decl-let.js",
+      "sha256": "1dbb4b10d01da2fd2ae8291ab5dad861824da49f2579fd2f1cfabbbed5d908f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":338,\"end\":341,\"position\":{\"line\":14,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.055457999998907326
+    },
+    {
+      "path": "language/statements/labeled/decl-let.js",
+      "sha256": "1dbb4b10d01da2fd2ae8291ab5dad861824da49f2579fd2f1cfabbbed5d908f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":352,\"end\":355,\"position\":{\"line\":15,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.057333000000653556
+    },
+    {
+      "path": "language/statements/labeled/let-array-with-newline.js",
+      "sha256": "7e4eb7fad97f5ac1b136dfd3634880a6dfeea7be3a64bb897af556d61e18dc66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":594,\"end\":597,\"position\":{\"line\":22,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.10025000000314321
+    },
+    {
+      "path": "language/statements/labeled/let-block-with-newline.js",
+      "sha256": "5e7e266863f651ece5d51bfc7e7053d6bdab35374bebe6c3f1461b4d1df5ffd3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":539,\"end\":542,\"position\":{\"line\":17,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.129957999997714
+    },
+    {
+      "path": "language/statements/labeled/let-identifier-with-newline.js",
+      "sha256": "2289ec33c5c37b317fbf76892150cb5b29ceedca2017704dd2af0a2b6f7a67cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"lexical declaration requires a block\",\"start\":558,\"end\":561,\"position\":{\"line\":17,\"column\":8}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.0211249999993015
+    },
+    {
+      "path": "language/statements/labeled/static-init-invalid-await.js",
+      "sha256": "0f5d5cb480fb813f38e6f94109c14edc774819622b5a4015de0b4766ae58343b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class-static-block"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"await is reserved in class static blocks\",\"start\":658,\"end\":663,\"position\":{\"line\":23,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.35033299999849987
+    },
+    {
+      "path": "language/statements/labeled/static-init-invalid-await.js",
+      "sha256": "0f5d5cb480fb813f38e6f94109c14edc774819622b5a4015de0b4766ae58343b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class-static-block"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"await is reserved in class static blocks\",\"start\":672,\"end\":677,\"position\":{\"line\":24,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0956659999974363
+    },
+    {
+      "path": "language/statements/labeled/tco.js",
+      "sha256": "4ca51aafb58e6f5cc080dcdd7d454c254d5735940fc26be5ed7a6ae388c6a4fe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "tail-call-optimization"
+        ],
+        "includes": [
+          "tcoHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "tcoHelper.js",
+          "sha256": "a533b07378e41044c98199e250e1c78a28610a783ad0814cb467e9ea2f5de8fa"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zkyTkJ/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zkyTkJ/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 38512 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zkyTkJ/test' (arm64)\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zkyTkJ/pid\",'w').write(str(p.GetProcessID()))\n5\n(lldb) continue\nProcess 38512 resuming\nProcess 38512 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=2, address=0x105c47e40)\n    frame #0: 0x000000010095eee8 test`\n->  0x10095eee8: str    x0, [sp, #0x20]\n    0x10095eeec: str    x3, [sp, #0x28]\n    0x10095eef0: str    xzr, [sp, #0x40]\n    0x10095eef4: str    xzr, [sp, #0x50]\n"
+      },
+      "status": "crash",
+      "elapsedMs": 4109.581208
+    },
+    {
+      "path": "language/statements/labeled/value-await-module-escaped.js",
+      "sha256": "495a2a433b655c08b6035b81023f624ee6a17817f3b97dec99955c0853c6bd42",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.024916999998822575
+    },
+    {
+      "path": "language/statements/labeled/value-await-module.js",
+      "sha256": "39de9daf4b36b4f9644b1b92a5203d306d8ad0c9f70d82f6467713d9149c02d9",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.01545800000167219
+    },
+    {
+      "path": "language/statements/labeled/value-await-non-module-escaped.js",
+      "sha256": "df88988532cf6ea260d3299673c938529114d5d5d440352b7166766fa4392f55",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4118.908999999996
+    },
+    {
+      "path": "language/statements/labeled/value-await-non-module-escaped.js",
+      "sha256": "df88988532cf6ea260d3299673c938529114d5d5d440352b7166766fa4392f55",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4138.776417000001
+    },
+    {
+      "path": "language/statements/labeled/value-await-non-module.js",
+      "sha256": "606f6d76ab554e6b6db1c9a02f60ae177e2ff24e4a65ca28d320087d7a9befa2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3779.967499999999
+    },
+    {
+      "path": "language/statements/labeled/value-await-non-module.js",
+      "sha256": "606f6d76ab554e6b6db1c9a02f60ae177e2ff24e4a65ca28d320087d7a9befa2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4300.365292000002
+    },
+    {
+      "path": "language/statements/labeled/value-yield-non-strict-escaped.js",
+      "sha256": "07063e8578f13038d581aa97a6d8e94b48298fa4b289f0bb5782e0b862ab2f04",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3721.681083999996
+    },
+    {
+      "path": "language/statements/labeled/value-yield-non-strict.js",
+      "sha256": "be8ae0d296fd6d1c2f359e238c256bcefc89f05067d187ac7975f914ad16105c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3640.8372919999965
+    },
+    {
+      "path": "language/statements/labeled/value-yield-strict-escaped.js",
+      "sha256": "d11bab244a3d7b4e86cf0075136ec96ede1cc0899a3f2d8968436f338b126e24",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid label\",\"start\":673,\"end\":683,\"position\":{\"line\":23,\"column\":1}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.2522919999973965
+    },
+    {
+      "path": "language/statements/labeled/value-yield-strict.js",
+      "sha256": "658f508b07a24bc1f7833736713878452041f2c5316fbe29a42747bb3af2e363",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"invalid label\",\"start\":372,\"end\":377,\"position\":{\"line\":18,\"column\":1}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.10750000000552973
+    }
+  ]
+}

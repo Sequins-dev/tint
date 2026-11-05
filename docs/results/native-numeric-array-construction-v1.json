@@ -1,0 +1,34 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "eaa2a6e7b8fd7b3de31fb557ea7e03cf3973bc33abbc9a0612292c8e90eb89b4",
+      "files": 431
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/named-zone-provider-v1-sources.json",
+    "imageSha256": "dd70f34f9ec1a8b4ef2587c73ef683882980a21cc38904f710ef88c4868c4f04",
+    "fixtureTool": "tools/verify-hosted-numeric-array-construction.ts",
+    "fixtureToolSha256": "e10ca7270bbdf034b6ac2618df49746ce65cf82faed056db5d7343e2395d3e79",
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "Numeric/readonly arrays, holes, exact copy ownership and conversion into all four strict native typed arrays"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "5b5f2222730282a96405645113e016c0c6073b76e492e37cdd4500a722f63232",
+      "files": 428
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/time-zone-identifiers-v1-sources.json",
+    "imageSha256": "4c64cfbd4f0feb585dc671746dd95497b389f27eb2fbcce98b8245b7fc23a129",
+    "fixtureTool": "tools/verify-hosted-time-zone-identifiers.ts",
+    "fixtureToolSha256": "a2cd59496396c54906775efca3c18b868b8545f4f5508d57124b7bc63551a285",
+    "data": {
+      "dataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataSha256": "5914dfd1cecfaefd5e692426cbda59429105c59f16e87fa2754c8eff3ccdefa2",
+      "entries": 598,
+      "checksum": -887353131
+    },
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "All 598 host identifiers and link targets, case-insensitive lookups, malformed graphs and relative-path validation"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

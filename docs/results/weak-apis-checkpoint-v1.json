@@ -1,0 +1,102 @@
+{
+  "kind": "weak-api-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "515fcb2a1f7991e2258248ac4e9c5f8d6ad7f896202bd9e59556dce1633db6d1",
+    "files": 516
+  },
+  "frameworks": 14,
+  "workspaceTestsAtWeakCheckpoint": 3717,
+  "bootstrap": "bootstrap-weak-apis-v1.json",
+  "stageBytes": 62553282,
+  "stageSha256": "05bf11cfb834b015c83b88ca933ef3b45ce37de7542e6ad8ea91480b600624ae",
+  "stageImagesByteIdentical": true,
+  "nativeLifetime": "native-weak-lifetimes-v2.json",
+  "nativeAPIRegressions": [
+    "native-weak-collections-validation-v1.json",
+    "native-weak-references-validation-v1.json"
+  ],
+  "completeSelections": [
+    {
+      "report": "test262-weak-map-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "1d7f6f9bb74c06f954c5a5f59cf70a69ad14eaeb2427c3cc0616c6e9aeb31c59",
+        "files": 514
+      },
+      "totals": {
+        "total": 281,
+        "passed": 281,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "test262-weak-set-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "1d7f6f9bb74c06f954c5a5f59cf70a69ad14eaeb2427c3cc0616c6e9aeb31c59",
+        "files": 514
+      },
+      "totals": {
+        "total": 170,
+        "passed": 169,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.9941176470588236
+      }
+    },
+    {
+      "report": "test262-weak-ref-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "515fcb2a1f7991e2258248ac4e9c5f8d6ad7f896202bd9e59556dce1633db6d1",
+        "files": 516
+      },
+      "totals": {
+        "total": 58,
+        "passed": 58,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "test262-finalization-registry-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "515fcb2a1f7991e2258248ac4e9c5f8d6ad7f896202bd9e59556dce1633db6d1",
+        "files": 516
+      },
+      "totals": {
+        "total": 94,
+        "passed": 93,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.9893617021276596
+      }
+    }
+  ],
+  "signature": {
+    "status": 0,
+    "log": ".tint-bootstrap/weak-apis-signature-v1.log"
+  },
+  "dwarf": {
+    "status": 0,
+    "log": ".tint-bootstrap/weak-apis-dwarf-v1.log",
+    "nonemptySections": [
+      "__debug_info",
+      "__debug_line"
+    ]
+  },
+  "policy": "Each complete selection retains its own source snapshot and every outcome. No cross-snapshot or whole-suite pass rate is computed. Two pre-entry launch failures remain recorded."
+}

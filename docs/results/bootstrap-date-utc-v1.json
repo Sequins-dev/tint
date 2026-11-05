@@ -1,0 +1,32 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "snapshot": ".tint-bootstrap/source-date-utc-v1",
+  "stage1": ".tint-bootstrap/stage1-date-utc-v1",
+  "stage2": ".tint-bootstrap/stage2-date-utc-v1",
+  "bytes": 56815218,
+  "sha256": "9cad5c676bdd4307ba02d12cc315bb1fd8701497b3d86ed4707bde02d6d98f88",
+  "nativeExitStatus": 0,
+  "launch": "debugserver-direct",
+  "elapsedMs": 505836.008542,
+  "byteIdentical": true,
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 567928,
+      "__debug_line": 14930377
+    },
+    "stage2": {
+      "__debug_info": 567928,
+      "__debug_line": 14930377
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "debuggerPermission": "com.apple.security.get-task-allow (XML and DER; Tint signer)",
+  "scope": "417-source snapshot adding numeric and UTC Date operations, UTC setters, serialization, interchange and UTC-string parsing, wall-clock host capability and zero-argument construction. Predates the active-realm array fix. Local-time operations remain incomplete; API conformance is recorded separately."
+}

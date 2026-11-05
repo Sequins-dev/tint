@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "1bffa82c418c1c928e69538aaab09c2951e3e175d3151b1f64157ea2dbde14fb",
+      "files": 434
+    },
+    "imageSha256": "da179fc41818c42ed5eab7a48e0b462d3fbe12e74594e11652e611deb4e1f4af",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const ids=Intl.supportedValuesOf(\"timeZone\");if(!Array.isArray(ids)||ids.length<340||!ids.includes(\"UTC\")||ids.includes(\"US/Eastern\"))throw 1;for(let i=1;i<ids.length;i++)if(ids[i-1]>=ids[i])throw 2;if(Intl.supportedValuesOf(\"timeZone\")===ids)throw 3;ids[0]=\"mutated\";if(Intl.supportedValuesOf(\"timeZone\")[0]===\"mutated\")throw 4;let log=\"\";Intl.supportedValuesOf({toString(){log+=\"s\";return \"timeZone\";}});if(log!==\"s\")throw 5;",
+        "sha256": "ad02deb1aee614de14ae0d03e935ce6b6caccb48290d6774f281731c10502742"
+      },
+      {
+        "index": 1,
+        "source": "for(const key of [\"unknown\",undefined,null,1,true,\"timezone\"]){let caught=false;try{Intl.supportedValuesOf(key);}catch(e){caught=e instanceof RangeError;}if(!caught)throw 1;}let symbol=false;try{Intl.supportedValuesOf(Symbol());}catch(e){symbol=e instanceof TypeError;}if(!symbol)throw 2;if(Object.prototype.toString.call(Intl)!==\"[object Intl]\"||Intl.supportedValuesOf.length!==1)throw 3;",
+        "sha256": "d402e25cd3d3bbf7d04deec52eb24f982e997911b18e35464a2d6b91c21860e9"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

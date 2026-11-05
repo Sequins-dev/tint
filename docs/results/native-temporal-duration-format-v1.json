@@ -1,0 +1,67 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "a8af02a5260cc84a98372e01ff33b7f7fe067a2b1f618f385c16d79bc5e63bb6",
+    "files": 436
+  },
+  "imageSha256": "51ac322cf1f424a85c0d5e4a7f8251380837be289f2426fed9d72d69ef5489c2",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let log=\"\";const d=new Temporal.Duration(0,0,0,0,1,59,59,900);const result=d.toString({get fractionalSecondDigits(){log+=\"f\";return 0;},get roundingMode(){log+=\"r\";return \"expand\";},get smallestUnit(){log+=\"s\";return undefined;}});if(result!==\"PT2H0S\"||log!==\"frs\")throw 1;if(d.negated().toString({fractionalSecondDigits:0,roundingMode:\"expand\"})!==\"-PT2H0S\")throw 2;",
+      "sha256": "35b6535fad98fe8a8f5f1a8edb133d53c28ee23477885bd4936fc5826133a5ca"
+    },
+    {
+      "index": 1,
+      "source": "const d=new Temporal.Duration(1,11,0,30,23,59,59,999,999,999);if(d.toString({fractionalSecondDigits:8,roundingMode:\"expand\"})!==\"P1Y11M31DT0.00000000S\")throw 1;if(new Temporal.Duration(1).toString({fractionalSecondDigits:3})!==\"P1YT0.000S\")throw 2;if(new Temporal.Duration(0,0,0,0,0,0,59,900).toString({smallestUnit:\"second\",roundingMode:\"expand\"})!==\"PT60S\")throw 3;",
+      "sha256": "52817a8ecb7c6b51ea3895aa288d82404dd06872950b413a34b1c550633440d3"
+    },
+    {
+      "index": 2,
+      "source": "let count=0;for(const options of [null,true,1,\"second\",{smallestUnit:\"minute\"},{smallestUnit:\"hour\"},{smallestUnit:\"auto\"},{fractionalSecondDigits:10},{fractionalSecondDigits:-1}]){try{new Temporal.Duration().toString(options);}catch(e){if(e instanceof TypeError||e instanceof RangeError)count++;}}if(count!==9)throw count;",
+      "sha256": "37cf02f5810fa4595a72fc822da2a3a7ca6e3cd0e9a688919800e38424ab49a1"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

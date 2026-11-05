@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-11-04T15:50:02.195Z",
+  "containmentTimeoutMs": 300000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-NRlF36/managed-script",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-NRlF36/managed-script.source.ts",
+  "fixtureSha256": "3ae7d1e97a8e328877956d1bcd413b7843c7f4e78295a840ab04e579a100b505",
+  "imageSha256": "0b444a23873aeb3a0b39f37c94e9af8235b741885eba17389664e579b76971ed",
+  "sourceSnapshot": {
+    "sha256": "db20a344d31debf9f3256e6632a562584b8fde2bb4f2975c52f9eeb04239bd7b",
+    "files": 546
+  },
+  "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-NRlF36/managed-script.manifest.json",
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerStdio": "disabled",
+  "debuggerTracing": true,
+  "relatedReports": [
+    "docs/results/native-managed-script-v2-analysis.json"
+  ],
+  "elapsedMs": 9954.614291000005,
+  "outcome": {
+    "kind": "crash",
+    "detail": "E4 instrumented execution: {\"kind\":\"native-managed-script-instrumented-execution\",\"conformance\":false,\"binary\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-NRlF36/managed-script\",\"buildManifest\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-NRlF36/managed-script.manifest.json\",\"sourceSnapshot\":{\"sha256\":\"db20a344d31debf9f3256e6632a562584b8fde2bb4f2975c52f9eeb04239bd7b\",\"files\":546},\"elapsedMs\":9952.488958000002,\"debuggerStatus\":0,\"error\":null,\"initial\":{\"stopped\":true,\"pid\":15472,\"at\":4.531444666},\"final\":null,\"diagnostic\":{\"sp\":4543834128,\"pc\":4472760484,\"instruction\":[224,27,0,249],\"context\":0,\"allocationState\":0,\"words\":null,\"regionBase\":4838146048,\"rootHeader\":[5,1,16384,5115544592],\"roots\":[0,0,0,0,0,0,0],\"error\":\"success\",\"stopped\":true,\"reason\":\"EXC_BAD_ACCESS (code=2, address=0x10ed56840)\"},\"log\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/e4-stack-v3/debugger.log\",\"relatedReports\":[\"docs/results/native-managed-script-v2.json\"]}"
+  }
+}

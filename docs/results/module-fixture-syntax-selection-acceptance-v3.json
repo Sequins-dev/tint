@@ -1,0 +1,59 @@
+{
+  "kind": "native-selection-acceptance",
+  "accepted": false,
+  "reason": "One earlier pre-entry timeout retained; not retried",
+  "previousObservations": "docs/results/module-fixture-syntax-interrupted-analysis-v1.json",
+  "launchControl": "docs/results/native-module-import-meta-v1.json",
+  "orderProvedNatively": false,
+  "sourceSnapshot": {
+    "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+    "files": 562
+  },
+  "toolchainSha256": "0ca7cfed3d7f20ffc3e2f292a217d71a5503030a4a51b5522e830f2eb48c0942",
+  "results": [
+    {
+      "selection": "language/module-code/instn-resolve-order-src.js",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-module-fixture-syntax-instn-resolve-order-src-v3.json"
+    },
+    {
+      "selection": "language/module-code/namespace",
+      "totals": {
+        "total": 38,
+        "passed": 38,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-module-fixture-syntax-namespace-regression-v3.json",
+      "samePerVariantStatuses": true
+    },
+    {
+      "selection": "language/module-code/ambiguous-export-bindings",
+      "totals": {
+        "total": 10,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 1,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9
+      },
+      "report": "docs/results/test262-module-fixture-syntax-ambiguous-regression-v3.json",
+      "samePerVariantStatuses": true
+    }
+  ]
+}

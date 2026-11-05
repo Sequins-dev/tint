@@ -1,0 +1,21 @@
+{
+  "kind": "direct-eval-declaration-helper-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "dd2c617202a3cd13bcb029310368ff1b9a8fb3b85679a34bacda9059886903bf",
+    "files": 551
+  },
+  "nativeReport": "docs/results/native-direct-eval-declarations-v1.json",
+  "indirectRegressionReport": "docs/results/native-indirect-eval-declaration-regression-v1.json",
+  "workspaceGate": {
+    "tests": 4059,
+    "log": ".tint-bootstrap/direct-eval-declarations-workspace-check-v2.log"
+  },
+  "scope": [
+    "local/global and strict declaration instantiation",
+    "catch-record exemption and intervening lexical conflicts",
+    "Annex B admission and factory ordering",
+    "unchanged indirect-eval lexical and Annex B native controls"
+  ],
+  "notEnabled": "direct string eval"
+}

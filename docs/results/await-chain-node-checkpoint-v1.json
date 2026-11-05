@@ -1,0 +1,33 @@
+{
+  "kind": "bounded-await-chain-node-checkpoint",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "workspaceGate": {
+    "tests": 4384,
+    "log": ".tint-bootstrap/await-chain-workspace-check-v1.log"
+  },
+  "regressions": {
+    "lowering": ".tint-bootstrap/await-chain-lowering-green-v1.log",
+    "modulePreparation": ".tint-bootstrap/await-chain-preparation-green-v1.log",
+    "managedEntry": ".tint-bootstrap/await-chain-managed-entry-v1.log"
+  },
+  "behavior": "Consecutive await expressions reuse a continuation loop. Operand evaluation happens once, and every await still suspends. No parser, checker or rewriter nesting budget was raised. Distinct suspension segments retain the existing explicit LIMIT result.",
+  "preparedPinnedFiles": [
+    "language/module-code/top-level-await/syntax/for-await-await-expr-nested.js",
+    "language/module-code/top-level-await/syntax/for-in-await-expr-nested.js",
+    "language/module-code/top-level-await/syntax/for-of-await-expr-nested.js"
+  ],
+  "nativeImagesBuilt": [
+    ".tint-bootstrap/await-chain-in-image-native-build-v1.log",
+    ".tint-bootstrap/await-chain-native-build-v3.log"
+  ],
+  "pending": [
+    "Serialized in-image lowering and eight-case native host gate",
+    "Combined frozen self-build and stage-image agreement",
+    "Unchanged Test262 reruns; no conformance pass is inferred from this checkpoint"
+  ]
+}

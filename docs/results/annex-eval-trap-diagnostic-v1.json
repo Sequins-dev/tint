@@ -1,0 +1,64 @@
+{
+  "kind": "native-fault-diagnostic",
+  "conformance": false,
+  "buildReport": "docs/results/annex-eval-trap-debug-build-v1.json",
+  "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/annex-eval-trap-debug-v1",
+  "sourceSnapshot": {
+    "sha256": "55e4007cec59e63ba7763705d27afce4f0b42f6ae562ff53d78165485597713c",
+    "files": 549
+  },
+  "timeoutMs": 300000,
+  "elapsedMs": 109214.56291699999,
+  "debuggerStatus": 0,
+  "error": null,
+  "initial": {
+    "stopped": true,
+    "pid": 24167
+  },
+  "final": null,
+  "fault": {
+    "state": "5",
+    "pc": 4376727664,
+    "sp": 4874266144,
+    "module": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/annex-eval-trap-debug-v1",
+    "function": "program:packages/js-runtime/src/environments/global/declarations.ts:instantiateGlobalDeclarations [__tint_specialized_6690$20012]",
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x104df9070)",
+    "region": {
+      "base": 4303847424,
+      "end": 4452696064
+    },
+    "registers": {
+      "x0": 1,
+      "x1": 0,
+      "x2": 0,
+      "x3": 4874265680,
+      "x4": 5031924016,
+      "x5": 5031924080,
+      "x6": 5031923760,
+      "x7": 4874132528,
+      "x8": 0,
+      "x9": 5031923856,
+      "x10": 4874446832,
+      "x11": 4449017896,
+      "x12": 4857419248,
+      "x13": 4613489280,
+      "x14": 4614347812,
+      "x15": 41,
+      "x16": 4314445648,
+      "x17": 72290496,
+      "x18": 0,
+      "x19": 6163031696,
+      "x20": 4579885056,
+      "x21": 4922032128,
+      "x22": 4857495552,
+      "x23": 2,
+      "x24": 6163033440,
+      "x25": 71,
+      "x26": 4303848432,
+      "x27": 0,
+      "x28": 0
+    }
+  },
+  "log": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/annex-trap-v1/debugger.log",
+  "originalJournal": "docs/results/test262-annexb-global-code-evalscript-host-native-v1.jsonl"
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "framework-workspace-validation",
+  "sourceSnapshot": {
+    "sha256": "8c3b48290cd97f470f033e9724f31bd376bc7cbd2affcb164a780573d7b94481",
+    "files": 507
+  },
+  "packages": 49,
+  "nodeTests": {
+    "passed": 3652,
+    "failed": 0,
+    "log": ".tint-bootstrap/js-engine-full-node-v1.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "parity": "framework-js-engine-lowering-parity-v1.json",
+  "nativeBuild": {
+    "status": "pre-existing-checker-failure-reproduced-in-frozen-baseline",
+    "message": "101363:101372: invalid property read",
+    "before": ".tint-bootstrap/js-engine-lowering-baseline-build-v1.log",
+    "after": ".tint-bootstrap/js-engine-lowering-native-build-v1.log"
+  },
+  "scope": "Pure ownership move, verified body and smoke identity. Dedicated native lowering compilation is not claimed successful; the same checker error occurs in the untouched frozen source. Native compatibility cleanup follows separately."
+}

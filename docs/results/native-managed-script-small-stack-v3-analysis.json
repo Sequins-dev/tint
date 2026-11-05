@@ -1,0 +1,14 @@
+{
+  "kind": "native-managed-script-stack-analysis",
+  "conformance": false,
+  "observation": "native-managed-script-small-stack-v3.json",
+  "diagnostic": "native-managed-script-small-stack-diagnostic-v3.json",
+  "finding": "The 1MiB stack fixture faults in the prologue of the recursive TypeScript expression checker at the guarded stack boundary. The 16MiB-stack build of the same frozen source passes all E4 execution checks.",
+  "sourceSnapshot": {
+    "sha256": "db20a344d31debf9f3256e6632a562584b8fde2bb4f2975c52f9eeb04239bd7b",
+    "files": 546
+  },
+  "passedWithStackBytes": 16777216,
+  "failedWithStackBytes": 1048576,
+  "limits": "No minimum safe stack size has been measured between these bounds. This is not a Test262 conformance run."
+}

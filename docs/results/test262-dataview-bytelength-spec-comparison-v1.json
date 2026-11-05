@@ -1,0 +1,15 @@
+{
+  "kind": "specification-comparison",
+  "baseline": "ECMAScript 2025",
+  "specification": "https://262.ecma-international.org/16.0/#sec-get-dataview.prototype.bytelength",
+  "nativeReport": "test262-dataview-bytelength-native-v1.json",
+  "nodeReport": "test262-dataview-bytelength-node-v1.json",
+  "finding": "The pinned tests for detached and out-of-bounds DataView byteLength expect zero. ECMAScript 2025 requires TypeError. Node 24.12 also fails these six variants with TypeError. Tint retains that specified behavior and retains the tests in the conformance denominator. One corresponding native variant had a pre-execution LLDB attach failure instead of a runtime observation.",
+  "tests": [
+    "built-ins/DataView/prototype/byteLength/detached-buffer.js",
+    "built-ins/DataView/prototype/byteLength/resizable-array-buffer-auto.js",
+    "built-ins/DataView/prototype/byteLength/resizable-array-buffer-fixed.js"
+  ],
+  "variantPolicy": "sloppy and strict",
+  "nativeLimitations": "Four additional ReferenceError failures require missing typed-array or SharedArrayBuffer globals; four LLDB pre-execution attach failures are retained."
+}

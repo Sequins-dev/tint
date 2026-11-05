@@ -1,0 +1,40 @@
+{
+  "priorAttempt": "bootstrap-framework-kernels-v1-attempt.json",
+  "startupTimeoutMs": 240000,
+  "kind": "native-self-hosting-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "49c9d453308322cd63662365c0315d37722b559d1a832a44da94eacc447b9d71",
+    "files": 492
+  },
+  "snapshot": ".tint-bootstrap/source-framework-kernels-selfbuild-v1",
+  "stage1": ".tint-bootstrap/stage1-framework-kernels-v1",
+  "stage2": ".tint-bootstrap/stage2-framework-kernels-startup-v2",
+  "bytes": 60691250,
+  "sha256": "2e5492da151a39b38a2fdaa2d8d43045246fb4860dec4fb08f0edb40ebb321b1",
+  "nativeExitStatus": 0,
+  "launch": "debugserver-direct",
+  "debuggerTracing": true,
+  "startupDirectory": "/tmp/tint-selfbuild-debugger-ATh5YB",
+  "elapsedMs": 543699.603625,
+  "byteIdentical": true,
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 1759482,
+      "__debug_line": 15577703
+    },
+    "stage2": {
+      "__debug_info": 1759482,
+      "__debug_line": 15577703
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "debuggerPermission": "com.apple.security.get-task-allow (XML and DER; Tint signer)",
+  "scope": "492-source generic-kernel migration snapshot: word buffer, dataflow and bit-vector consolidated into foundation with exact public subpaths; all three implementation bodies byte-identical. Same-source self-build exercises compiler IR analysis, optimization and emission; separate smoke image remains byte-identical."
+}

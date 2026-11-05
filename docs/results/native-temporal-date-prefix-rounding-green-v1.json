@@ -1,0 +1,62 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "5c56d758f629d89a8992c45974fcbae0e7b32c0a04f9188839ccccdce7b500fa",
+      "files": 407
+    },
+    "imageSha256": "88a387f12a6bdabd3f56e9f7f3c8189840babca43bc2d79e8b4af52b22283434",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.PlainDate(2020,1,1),b=new Temporal.PlainDate(2021,2,3);const d=a.until(b,{largestUnit:\"year\",smallestUnit:\"week\",roundingMode:\"halfExpand\"});if(d.years!==1||d.months!==1||d.weeks!==0||d.days!==0)throw 1;",
+        "sha256": "eb4afe010d57f051fb67f19c34ed2ec59184a1d4a08add5d3e68754c3f21acfd"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.PlainDate(2019,1,1),b=new Temporal.PlainDate(2020,1,10);const d=a.until(b,{largestUnit:\"year\",smallestUnit:\"month\",roundingMode:\"halfExpand\"});if(d.years!==1||d.months!==0||d.days!==0)throw 1;",
+        "sha256": "06866d2dfe54a736cc19a2dffaf6e1313549833e43e9d7234f71e0f12778ee26"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.PlainDate(2019,1,1),b=new Temporal.PlainDate(2019,2,15);const modes=[\"ceil\",\"floor\",\"expand\",\"trunc\",\"halfCeil\",\"halfFloor\",\"halfExpand\",\"halfTrunc\",\"halfEven\"],positive=[2,1,2,1,2,1,2,1,2],negative=[-1,-2,-2,-1,-1,-2,-2,-1,-2];for(let i=0;i<modes.length;i++){if(a.until(b,{smallestUnit:\"month\",roundingMode:modes[i]}).months!==positive[i]||a.since(b,{smallestUnit:\"month\",roundingMode:modes[i]}).months!==negative[i])throw 1;}",
+        "sha256": "4fcb92e5f08ad818e50da10598176ec5cb0be89fc963826e36a3c560c98e38c8"
+      }
+    ]
+  },
+  "cases": 3,
+  "completed": 3,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

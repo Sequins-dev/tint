@@ -1,0 +1,33 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "986817d7ee4f933e1a0d2dddd7347d2f2445241b162e13ef6730dbaa8f14199e",
+    "files": 505
+  },
+  "tests": {
+    "passed": 3604,
+    "failed": 0,
+    "log": ".tint-bootstrap/atomics-rmw-full-node-v1.log"
+  },
+  "checks": [
+    "build types",
+    "test types",
+    "host types",
+    "public imports/dependency contracts/acyclic graph:57 packages",
+    "full source/tools/config formatting"
+  ],
+  "nativeEvidence": {
+    "compareExchange": "atomics-compare-exchange-native-v1.json",
+    "atomicBacking": "shared-atomic-backing-native-v1.json",
+    "rmw": "native fixture built; execution pending"
+  },
+  "preservedFailures": [
+    {
+      "log": ".tint-bootstrap/atomics-rmw-observation-build-v1.log",
+      "stage": "check",
+      "reason": "native checker widens an array-iteration literal union at captured call; registration changed to explicit typed helper calls",
+      "correctedBuild": ".tint-bootstrap/atomics-rmw-observation-build-v2.log"
+    }
+  ]
+}

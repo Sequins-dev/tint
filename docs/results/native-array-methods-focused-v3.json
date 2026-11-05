@@ -1,0 +1,12 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-methods.ts",
+  "fixtureSha256": "35b6e2e53c45094b1f36db5294a2c7e02b0114419db0caf10e8c1373f6f3fed9",
+  "cases": 29,
+  "passed": 29,
+  "nodeReference": "All fixture sources completed in isolated Node vm contexts.",
+  "nativeValidation": "Fresh LLDB-controlled native process per case, stopped at entry and verified exit 42.",
+  "scope": "Adds generic fill/copyWithin with overlap, holes, inherited properties, coercion order and partial writes to the previous Array regression cases."
+}

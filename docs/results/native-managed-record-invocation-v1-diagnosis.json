@@ -1,0 +1,18 @@
+{
+  "kind": "native-fixture-failure-diagnosis",
+  "conformance": false,
+  "createdAt": "2026-11-03T20:51:16.819680+00:00",
+  "observation": "native-managed-record-invocation-v1.json",
+  "nativeExitStatus": 1,
+  "phase": "runtime IR emission before executable publication",
+  "cause": "Fixture returned a block-local SSA value from another block; the IR verifier correctly rejected it.",
+  "nodeReproduction": {
+    "code": "INVALID_IR",
+    "message": "value must be defined earlier in this block",
+    "function": 0,
+    "block": 1
+  },
+  "correction": "Store the result in a typed slot before branching, load it with a fresh function-wide value ID, and verify the fixture IR in Node before compiling its native source.",
+  "replacementFixture": ".tint-bootstrap/managed-record-invocation-v7/build.json",
+  "replacementOutcome": "pending"
+}

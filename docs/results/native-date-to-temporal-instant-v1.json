@@ -1,0 +1,65 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "a74ada745844aaad69f5003de4be41e4b2b08382a13120c98505d881324c9af9",
+      "files": 426
+    },
+    "imageSha256": "eb8b877a7564527b9f930b0fbf262b2a7dbe98134877c4a208fb4a4059bce16e",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const ms of [-8640000000000000,-123456789,0,123456789,8640000000000000]){const date=new Date(ms);date.valueOf=()=>{throw 1;};date[Symbol.toPrimitive]=()=>{throw 2;};const instant=date.toTemporalInstant();if(instant.epochNanoseconds!==BigInt(ms)*1000000n||Object.getPrototypeOf(instant)!==Temporal.Instant.prototype)throw 3;}",
+        "sha256": "fee3c45be714e7a9e266cc74dcf4f471fbbbc7ad6b2644923bb0253552c62b01"
+      },
+      {
+        "index": 1,
+        "source": "for(const value of [undefined,null,1,\"x\",{},[],Date.prototype,new Proxy(new Date(0),{})]){let caught=false;try{Date.prototype.toTemporalInstant.call(value);}catch(e){if(!(e instanceof TypeError))throw 1;caught=true;}if(!caught)throw 2;}let caught=false;try{new Date(NaN).toTemporalInstant();}catch(e){if(!(e instanceof RangeError))throw 3;caught=true;}if(!caught)throw 4;",
+        "sha256": "f3a7bf19d9caec74e649f8ff8d101a27dff1e6bf818d0a6d672476d0388a75b4"
+      },
+      {
+        "index": 2,
+        "source": "class D extends Date{}const date=new D(123);const other=$262.createRealm().global;const instant=other.Date.prototype.toTemporalInstant.call(date);if(Object.getPrototypeOf(instant)!==other.Temporal.Instant.prototype||instant.epochNanoseconds!==123000000n)throw 1;",
+        "sha256": "8e5bba670fef3be40839afc4faa3b2ba55433f032c179dfcce615a4deea51349"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

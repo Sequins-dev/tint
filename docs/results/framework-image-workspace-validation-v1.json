@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "scope": "Image framework ownership consolidation; no host, ABI, relocation, debug or signing behavior changes",
+  "sourceIdentity": {
+    "sha256": "b1be2d8b819ea40dff97c3bb47d1d0f5738c1970270e9d7fc390e116d44ff5d5",
+    "files": 494,
+    "importGrants": 399,
+    "packages": 68
+  },
+  "publicEntries": [
+    "@tint/image/layout",
+    "@tint/image/dwarf",
+    "@tint/image/darwin/dyld-fixups",
+    "@tint/image/darwin/signature",
+    "@tint/image/darwin/macho"
+  ],
+  "movedSourceFiles": 6,
+  "movedTestFiles": 6,
+  "newEntryGraphTests": 3,
+  "checks": [
+    {
+      "command": "node /Users/stephenbelanger/Library/pnpm/.tools/pnpm/10.34.8/node_modules/pnpm/bin/pnpm.cjs install --offline --ignore-scripts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-install-v1.log"
+    },
+    {
+      "command": "node tools/generate-compiler-catalog.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-catalog-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-build-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-testtypes-v2.log"
+    },
+    {
+      "command": "node node_modules/typescript/lib/tsc.js -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test packages/image/test/*.test.ts tools/image-framework.test.ts tools/selfhost-linked.test.ts tools/aarch64-layout.test.ts tools/native-test-traps.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-focused-v1.log"
+    },
+    {
+      "command": "node --test packages/typescript/test/syntax-objects.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-relative-fixture-green-v2.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-full-node-v2.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types '*.json' pnpm-workspace.yaml README.md",
+      "exitCode": 0,
+      "log": "/tmp/tint-image-format-check-v2.log"
+    }
+  ],
+  "testCounts": {
+    "focused": 53,
+    "relativeFixture": 25,
+    "fullWorkspace": 3475,
+    "failed": 0
+  },
+  "bodyParity": {
+    "result": "All six implementation token streams identical after excluding import declarations; declaration order preserved",
+    "report": "/tmp/tint-image-body-parity-v1.json",
+    "originals": "/tmp/tint-image-original-files-v1.json"
+  },
+  "observations": [
+    {
+      "kind": "expected-red",
+      "tests": 3,
+      "reason": "New image manifest and source entrypoints absent before move",
+      "log": "/tmp/tint-image-entry-red-v1.log"
+    },
+    {
+      "kind": "green",
+      "tests": 3,
+      "log": "/tmp/tint-image-entry-green-v1.log"
+    },
+    {
+      "kind": "retained-failure",
+      "tests": 3475,
+      "passed": 3474,
+      "failed": 1,
+      "reason": "Parser regression test used relative ../../macho/src/index.ts path. Updated only test physical path to ../../image/src/darwin/macho/index.ts; portable source identity unchanged. Focused25 and full3475 reruns pass.",
+      "log": "/tmp/tint-image-full-node-v1.log"
+    }
+  ],
+  "boundaries": {
+    "packages": 68,
+    "publicImports": true,
+    "dependencyContracts": true,
+    "acyclic": true,
+    "oldPackageAliases": false,
+    "rootExport": false,
+    "imageDependencies": ["@tint/foundation", "@tint/codegen"],
+    "preservedPatchEdge": "@tint/codegen/aarch64/isa"
+  },
+  "fixtureMigrations": [
+    "private compiled signature imports replaced by public entrypoint",
+    "generated signCode import, explicit physical grant and SignatureBlob type selection migrated together",
+    "DWARF and Mach-O direct entry source fixtures migrated",
+    "relative Mach-O parser regression source fixture migrated"
+  ],
+  "pendingNativeValidation": "Root owns non-debug framework-smoke byte comparison, frozen native fixtures and native self-build. This report makes no native execution claim.",
+  "nativeProcessesRun": false,
+  "remainingDocumentationForRoot": [
+    "docs/macos-arm64-target.md:3 old Mach-O package README link",
+    "docs/profiling.md:62 old @tint/dwarf public entry name"
+  ]
+}

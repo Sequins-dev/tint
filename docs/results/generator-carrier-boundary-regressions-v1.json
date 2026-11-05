@@ -1,0 +1,17 @@
+{
+  "kind": "node-feature-regression",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "9e011b0ae9676ae6b6d6a9a1bcc3f678966f982b07ca4214eeb74eccf1c8b359",
+    "files": 552
+  },
+  "tests": 18,
+  "pass": 18,
+  "log": ".tint-bootstrap/async-generator-transfer-green-v1.log",
+  "typecheck": ".tint-bootstrap/generator-final-test-types-v2.log",
+  "checks": [
+    "Prototype selection follows carrier parameter effects for both generator kinds",
+    "Idle carrier transfer rejects queued requests, pending resumptions, and cleared continuations",
+    "Failed transfer leaves the carrier unstarted and its continuation retained"
+  ]
+}

@@ -1,0 +1,530 @@
+{
+  "scope": "Pure numeric foundation ownership/import migration; no numeric algorithm, rounding/parser policy, constant regeneration or runtime helper namespace change",
+  "baseline": {
+    "packages": 62,
+    "sources": 502,
+    "sourceSnapshot": {
+      "sha256": "aef6324af9b6450d9dd9f53cf7bd8d289595093d7fdbaf7150b7b59bfa413dc6",
+      "files": 502
+    }
+  },
+  "current": {
+    "packages": 57,
+    "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+    "files": 502,
+    "nodeTests": 3562,
+    "explicitGrants": 346
+  },
+  "removedOwners": [
+    "big-integer",
+    "number-text",
+    "exact-sum",
+    "binary64-trigonometry",
+    "integer-rounding"
+  ],
+  "publicEntries": [
+    {
+      "specifier": "@tint/foundation/numeric/big-integer",
+      "types": "./dist/numeric/big-integer.d.ts",
+      "import": "./dist/numeric/big-integer.js"
+    },
+    {
+      "specifier": "@tint/foundation/numeric/number-text",
+      "types": "./dist/numeric/number-text/index.d.ts",
+      "import": "./dist/numeric/number-text/index.js"
+    },
+    {
+      "specifier": "@tint/foundation/numeric/exact-sum",
+      "types": "./dist/numeric/exact-sum.d.ts",
+      "import": "./dist/numeric/exact-sum.js"
+    },
+    {
+      "specifier": "@tint/foundation/numeric/binary64-trigonometry",
+      "types": "./dist/numeric/binary64-trigonometry/index.d.ts",
+      "import": "./dist/numeric/binary64-trigonometry/index.js"
+    },
+    {
+      "specifier": "@tint/foundation/numeric/integer-rounding",
+      "types": "./dist/numeric/integer-rounding.d.ts",
+      "import": "./dist/numeric/integer-rounding.js"
+    }
+  ],
+  "parity": {
+    "scope": "Pure ownership parity after only imports/reexports and formatting",
+    "method": "Pinned TypeScript parses declarations in order; remove import declarations, normalize reexport module strings; ordered scanner tokens ignore trivia and trailing commas only",
+    "sources": [
+      {
+        "old": "packages/big-integer/src/index.ts",
+        "next": "packages/foundation/src/numeric/big-integer.ts",
+        "beforeBodySha256": "956f764669dfafaa4b8e436687ec0452a0df2054007fccecdb88685036d6ce01",
+        "afterBodySha256": "956f764669dfafaa4b8e436687ec0452a0df2054007fccecdb88685036d6ce01",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/src/decimal.ts",
+        "next": "packages/foundation/src/numeric/number-text/decimal.ts",
+        "beforeBodySha256": "0c11741ba80ae4b4258a17b3cac539c9331627b302fdf800425ef9425943c82f",
+        "afterBodySha256": "0c11741ba80ae4b4258a17b3cac539c9331627b302fdf800425ef9425943c82f",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/src/decimal-format.ts",
+        "next": "packages/foundation/src/numeric/number-text/decimal-format.ts",
+        "beforeBodySha256": "6f24676291c60a776d311841213a2b614a4ee1aaaaa6cc3132629929dfdef3cd",
+        "afterBodySha256": "6f24676291c60a776d311841213a2b614a4ee1aaaaa6cc3132629929dfdef3cd",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/src/index.ts",
+        "next": "packages/foundation/src/numeric/number-text/index.ts",
+        "beforeBodySha256": "538b77bea66ff87fe5a128bdef1b30216d7c074286934d65c8e6e58945309d96",
+        "afterBodySha256": "538b77bea66ff87fe5a128bdef1b30216d7c074286934d65c8e6e58945309d96",
+        "equal": true
+      },
+      {
+        "old": "packages/exact-sum/src/index.ts",
+        "next": "packages/foundation/src/numeric/exact-sum.ts",
+        "beforeBodySha256": "3841910073c856b2f2e58fc1240aa58cf55618d32de264aee5b54e55ac597f6b",
+        "afterBodySha256": "3841910073c856b2f2e58fc1240aa58cf55618d32de264aee5b54e55ac597f6b",
+        "equal": true
+      },
+      {
+        "old": "packages/binary64-trigonometry/src/constant.ts",
+        "next": "packages/foundation/src/numeric/binary64-trigonometry/constant.ts",
+        "beforeBodySha256": "eb6b2c24659a6c47254db0dbb5b36de2ee2c78ba6d69a2176862dac7136942a9",
+        "afterBodySha256": "eb6b2c24659a6c47254db0dbb5b36de2ee2c78ba6d69a2176862dac7136942a9",
+        "equal": true
+      },
+      {
+        "old": "packages/binary64-trigonometry/src/index.ts",
+        "next": "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+        "beforeBodySha256": "2b519dca211d4c213e587342fa8ad498e6cae70e8d23b06671f3e4bde62badb7",
+        "afterBodySha256": "2b519dca211d4c213e587342fa8ad498e6cae70e8d23b06671f3e4bde62badb7",
+        "equal": true
+      },
+      {
+        "old": "packages/integer-rounding/src/index.ts",
+        "next": "packages/foundation/src/numeric/integer-rounding.ts",
+        "beforeBodySha256": "a78cbc7453922812dccacf91124ee2722f23de473416b52ef7e1a7a77e32e1ef",
+        "afterBodySha256": "a78cbc7453922812dccacf91124ee2722f23de473416b52ef7e1a7a77e32e1ef",
+        "equal": true
+      }
+    ],
+    "tests": [
+      {
+        "old": "packages/big-integer/test/ratio.test.ts",
+        "next": "packages/foundation/test/numeric-big-integer-ratio.test.ts",
+        "beforeBodySha256": "03868c21c60cbe0fbd2cb3f71d94d9e817896f46a05259256dbbd1ea30987305",
+        "afterBodySha256": "03868c21c60cbe0fbd2cb3f71d94d9e817896f46a05259256dbbd1ea30987305",
+        "equal": true
+      },
+      {
+        "old": "packages/big-integer/test/index.test.ts",
+        "next": "packages/foundation/test/numeric-big-integer.test.ts",
+        "beforeBodySha256": "cc75ced083d42369b8d219ffb20aaab996bbf127b47686630601ee97e253edde",
+        "afterBodySha256": "cc75ced083d42369b8d219ffb20aaab996bbf127b47686630601ee97e253edde",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/format.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-format.test.ts",
+        "beforeBodySha256": "613f7f355cc3c15302c0a0bdcc187a93217de0540e6977a2660f50e7f38ccb6f",
+        "afterBodySha256": "613f7f355cc3c15302c0a0bdcc187a93217de0540e6977a2660f50e7f38ccb6f",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/number.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-number.test.ts",
+        "beforeBodySha256": "b81d2cd510f1ac39529ac0c40dde1a1defb77a21d008e995630b2d6064449e60",
+        "afterBodySha256": "b81d2cd510f1ac39529ac0c40dde1a1defb77a21d008e995630b2d6064449e60",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/prefixes.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-prefixes.test.ts",
+        "beforeBodySha256": "09841be1166b52b96b0381c1d831e0840a6a76895a74b2ed86e4729011123c65",
+        "afterBodySha256": "09841be1166b52b96b0381c1d831e0840a6a76895a74b2ed86e4729011123c65",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/decimal.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-decimal.test.ts",
+        "beforeBodySha256": "7a6195643b5b66760f8c5c553828b8cf2ba52ebf0aed903358a152731040b4ae",
+        "afterBodySha256": "7a6195643b5b66760f8c5c553828b8cf2ba52ebf0aed903358a152731040b4ae",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/precision.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-precision.test.ts",
+        "beforeBodySha256": "d5b5572519a8f47d510d04ca2f6afec57fa430c185652adaa8c5e226e069f21e",
+        "afterBodySha256": "d5b5572519a8f47d510d04ca2f6afec57fa430c185652adaa8c5e226e069f21e",
+        "equal": true
+      },
+      {
+        "old": "packages/number-text/test/decimal-format.test.ts",
+        "next": "packages/foundation/test/numeric-number-text-decimal-format.test.ts",
+        "beforeBodySha256": "6bb7fd80124800beb208d7db8fe9661f41dc0b6d9f70feceeb070dc465abae52",
+        "afterBodySha256": "6bb7fd80124800beb208d7db8fe9661f41dc0b6d9f70feceeb070dc465abae52",
+        "equal": true
+      },
+      {
+        "old": "packages/exact-sum/test/sum.test.ts",
+        "next": "packages/foundation/test/numeric-exact-sum.test.ts",
+        "beforeBodySha256": "7fda67a4626f9dacfc552974649bab019ad3a950e1956a47073a1c306d3012e1",
+        "afterBodySha256": "7fda67a4626f9dacfc552974649bab019ad3a950e1956a47073a1c306d3012e1",
+        "equal": true
+      },
+      {
+        "old": "packages/binary64-trigonometry/test/trigonometry.test.ts",
+        "next": "packages/foundation/test/numeric-binary64-trigonometry.test.ts",
+        "beforeBodySha256": "6c3dc313486bb44dff16fa236dd6ce5f88b293e31cda50e188a129b0870de871",
+        "afterBodySha256": "6c3dc313486bb44dff16fa236dd6ce5f88b293e31cda50e188a129b0870de871",
+        "equal": true
+      },
+      {
+        "old": "packages/integer-rounding/test/rounding.test.ts",
+        "next": "packages/foundation/test/numeric-integer-rounding.test.ts",
+        "beforeBodySha256": "42f48dd8446c99aae22dd220597a0d0b5a576ad53030e1686db6e6488f6b19c7",
+        "afterBodySha256": "42f48dd8446c99aae22dd220597a0d0b5a576ad53030e1686db6e6488f6b19c7",
+        "equal": true
+      }
+    ],
+    "constant": {
+      "old": "packages/binary64-trigonometry/src/constant.ts",
+      "next": "packages/foundation/src/numeric/binary64-trigonometry/constant.ts",
+      "beforeSha256": "940ec726de8a33ed0fb0c0304712ed7d2be15cb0aa5114f3be1c430ef7b7719a",
+      "afterSha256": "940ec726de8a33ed0fb0c0304712ed7d2be15cb0aa5114f3be1c430ef7b7719a",
+      "byteIdentical": true
+    },
+    "reportPath": ".tint-bootstrap/foundation-numeric-parity-v1.json",
+    "checker": ".tint-bootstrap/foundation-numeric-parity-v1.mjs",
+    "originals": ".tint-bootstrap/foundation-numeric-originals-v1/"
+  },
+  "documents": {
+    "contracts": [
+      "packages/foundation/docs/numeric/big-integer.md",
+      "packages/foundation/docs/numeric/number-text.md",
+      "packages/foundation/docs/numeric/exact-sum.md",
+      "packages/foundation/docs/numeric/binary64-trigonometry.md",
+      "packages/foundation/docs/numeric/integer-rounding.md"
+    ],
+    "publicIndex": "packages/foundation/README.md",
+    "statusDashboards": "not edited"
+  },
+  "runtimeIdentity": {
+    "namespace": "number-text",
+    "provider": "packages/foundation/src/numeric/number-text/index.ts",
+    "preservedHelpers": [
+      "number-text:numberToString",
+      "number-text:stringToNumber"
+    ],
+    "fixtureAliases": "Explicit numericFixtureLocations composed at testWorkspaceModules callers; local number-text identity retained, complete private decimal/rounding/integer graph loaded"
+  },
+  "checks": [
+    {
+      "name": "entry graph/obsolete imports red",
+      "command": "node --test tools/foundation-numeric.test.ts",
+      "result": "expected failures: missing explicit numeric exports and obsolete imports",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-red-v1.log",
+        "sha256": "7602d9cab151dbd18a1f936858d1321dfe5ea477733aa6c1b5ade85058479375"
+      }
+    },
+    {
+      "name": "offline workspace links/lock",
+      "command": "node /Users/stephenbelanger/Library/pnpm/.tools/pnpm/10.34.8/node_modules/pnpm/bin/pnpm.cjs install --offline --ignore-scripts",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-install-v1.log",
+        "sha256": "d16aacb1f16829ad022ed6b053768bdac15d047d0be8e4c58eee418cbb4b5fec"
+      }
+    },
+    {
+      "name": "focused moved numeric + conversion/native compile tests",
+      "command": "node --test tools/foundation-numeric.test.ts packages/foundation/test/numeric-*.test.ts tools/number-text-native.test.ts",
+      "result": "49 passed, 0 failed; subsequent alias graph case also passes in final full suite",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-focused-v1.log",
+        "sha256": "4c27b98e64f17667a9eff81806f4a9f8eaf344a424ab759b1756a4eb167974d8"
+      }
+    },
+    {
+      "name": "final workspace build",
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-build-final-v2.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "test types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-test-types-final-v2.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "host types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-host-types-v2.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "full Node suite",
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "result": "3562 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-full-node-v2.log",
+        "sha256": "638bc17a5c75516abdf86283565046974456317eebd5038eed813d661f37a2d5"
+      }
+    },
+    {
+      "name": "dependency boundaries",
+      "command": "node tools/check-boundaries.ts",
+      "result": "57 portable packages, passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-boundaries-v2.log",
+        "sha256": "cd634cc77aa6a9b3748e72f722fb5c6c16c08fa62dbde997b062aa3649b51fde"
+      }
+    },
+    {
+      "name": "formatting",
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types \"*.json\" pnpm-workspace.yaml",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-format-check-v2.log",
+        "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+      }
+    }
+  ],
+  "smoke": {
+    "before": {
+      "kind": "framework-migration-smoke",
+      "sourceSnapshot": {
+        "sha256": "aef6324af9b6450d9dd9f53cf7bd8d289595093d7fdbaf7150b7b59bfa413dc6",
+        "files": 502
+      },
+      "toolchain": "live-workspace",
+      "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-numeric-smoke-before-v1/smoke",
+      "expectedExitStatus": 42,
+      "bytes": 1321778,
+      "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+      "policy": {
+        "debugSymbols": false,
+        "allowDebugger": true,
+        "runtimeEntry": "initializeCopyingRuntime",
+        "denseReferenceLists": false,
+        "managedBytes": 16777216,
+        "allocationCapacity": 1048576,
+        "rootCapacity": 65536,
+        "stackBytes": 1048576
+      },
+      "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+    },
+    "after": {
+      "kind": "framework-migration-smoke",
+      "sourceSnapshot": {
+        "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+        "files": 502
+      },
+      "toolchain": "live-workspace",
+      "path": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/foundation-numeric-smoke-after-v2/smoke",
+      "expectedExitStatus": 42,
+      "bytes": 1321778,
+      "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+      "policy": {
+        "debugSymbols": false,
+        "allowDebugger": true,
+        "runtimeEntry": "initializeCopyingRuntime",
+        "denseReferenceLists": false,
+        "managedBytes": 16777216,
+        "allocationCapacity": 1048576,
+        "rootCapacity": 65536,
+        "stackBytes": 1048576
+      },
+      "scope": "Non-debug image of unchanged main returning42 with real declared runtime roots. Byte identity and algorithm/native regressions are separate checks."
+    },
+    "sourceStableDuringAfterBuild": true,
+    "byteIdentical": true,
+    "comparison": ".tint-bootstrap/foundation-numeric-smoke-comparison-v2.json",
+    "imageSha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "expectedExitStatus": 42,
+    "nativeExecution": "root owns serialized LLDB execution; child built only"
+  },
+  "hostedFixtures": {
+    "list": ".tint-bootstrap/foundation-numeric-hosted-builds-v2.json",
+    "artifacts": [
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "big-integer",
+        "fixturePath": "tools/verify-hosted-big-integer.ts",
+        "fixtureSha256": "10a02c547403b8d43943ce867cc97f4b13e0bb12d7a97ac63379aaf9c88aa423",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-big-integer-kBvLy1/big-integer",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "b6ec271e15869446cf213b4cae3848d7141492586dd018a8aa7839895b9c2b07",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-big-integer-kBvLy1/big-integer.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-big-integer-build-v2.log"
+      },
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "integer-ratio",
+        "fixturePath": "tools/verify-hosted-integer-ratio.ts",
+        "fixtureSha256": "28b3e5d8a9de9ce8265bfaa8e6a732e5fddbe8f780ceb3d5142ac93d125a601b",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-integer-ratio-anlLjo/integer-ratio",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "6cda0ee521aeb695f5743f74b3004a6ab90c0d2b7ec7dd3d575eb490e20b1ffe",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-integer-ratio-anlLjo/integer-ratio.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-integer-ratio-build-v2.log"
+      },
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "integer-rounding",
+        "fixturePath": "tools/verify-hosted-integer-rounding.ts",
+        "fixtureSha256": "df005e86b4156885e1e9eafde52972eece596673784cbe20e5527ffd45ca16ab",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-integer-rounding-dJkv5K/integer-rounding",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "76ac3f9a01de174a32c2220746e3b9b195473ac9992f4991f09af94d45c5296c",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-integer-rounding-dJkv5K/integer-rounding.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-integer-rounding-build-v2.log"
+      },
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "decimal",
+        "fixturePath": "tools/verify-hosted-decimal.ts",
+        "fixtureSha256": "dc7cd97e7bf8473b524d33606f69e6aa6c3863fcba4d9ce672c58aeca8fc568c",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-SfNxkI/decimal-quantities",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "504164ae6fbdd2854ae19e8b53a1e0f0166557aa8d34c010a9236927a2da5ff7",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-quantities-SfNxkI/decimal-quantities.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-decimal-build-v2.log"
+      },
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "decimal-number-parts",
+        "fixturePath": "tools/verify-hosted-decimal-number-parts.ts",
+        "fixtureSha256": "62e6e2aee7c8794de09aeb05d7b622df14c983ee58ee687eaaa20ab095635fd2",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-fPZfcZ/decimal-number-parts",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "bab3f822aa7c0735bbcce6c76b1cd0f04fa6f216d20e59ed0f0d2ae61632eea5",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-decimal-number-parts-fPZfcZ/decimal-number-parts.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-decimal-number-parts-build-v2.log"
+      },
+      {
+        "kind": "foundation-numeric-hosted-fixture",
+        "fixture": "intl-mathematical-value",
+        "fixturePath": "tools/verify-hosted-intl-mathematical-value.ts",
+        "fixtureSha256": "4b87eb82adfe7f26d6e0ef159ed2812013fcf2a5d643c2f3eb8ae8195c02d4ba",
+        "helperPath": "tools/hosted-fixture.ts",
+        "helperSha256": "056dfd7f01ccec3b54fc39de86fd54f00434eec4c925aefab62030bbc7f24a5d",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-intl-mathematical-value-iVFPCx/intl-mathematical-value",
+        "sourceSnapshot": {
+          "sha256": "3cd5c2435dbcd0cfc047e295cc3945b0f5471a1ac21d728bd406df781af7e400",
+          "files": 502
+        },
+        "sourceSnapshotPath": ".tint-bootstrap/foundation-numeric-smoke-after-v2/source-snapshot.json",
+        "sourceStableDuringBuild": true,
+        "expectedExitStatus": 42,
+        "imageSha256": "4ded6bfd43888fb7b1aa31d106a8f8e215fd7b199b29920ab7db1b4ce8990ea2",
+        "builtOnly": true,
+        "debugSymbols": false,
+        "metadataPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-intl-mathematical-value-iVFPCx/intl-mathematical-value.build.json",
+        "log": ".tint-bootstrap/foundation-numeric-hosted-intl-mathematical-value-build-v2.log"
+      }
+    ]
+  },
+  "failedObservations": [
+    {
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-construction-before-v1.log",
+        "sha256": "3bf5787407d1d9faf564be89946aabeea89ec1cff90953323e7c716a907018c6"
+      },
+      "observation": "Verified baseline build-only construction tool fails UNKNOWN_TYPE DecimalQuantity at numeric index concatenation before ownership migration. The raw index omits its imported/reexported private graph."
+    },
+    {
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-construction-after-v1.log",
+        "sha256": "e6cf6e3ddf9f905b8e8bb4c62c0150dcdf316356aa04114c0a350861127938f0"
+      },
+      "observation": "First complete graph attempt reached unsupported native representation through the construction tool hand-written lowering path. Numeric cases were routed to existing compiler composition with full provider graph, without dropping imports/exports or changing source checks."
+    },
+    {
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-construction-after-v2.log",
+        "sha256": "b06c8af2881c9a841e1b61b1fdd456a51709c92f163ffc498ec99a57f0bc083c"
+      },
+      "observation": "With numeric graph/composition repaired, overall legacy construction setup gets farther then fails link unresolved ./external-memory.ts at a later manually assembled heap fixture. Baseline attribution for this later failure is unverified because the recorded baseline stops earlier. No unrelated heap-fixture repair was attempted."
+    },
+    {
+      "log": {
+        "path": ".tint-bootstrap/foundation-numeric-format-check-v1.log",
+        "sha256": "59497d6313694429627ba4ae4f7f395e31b29a6e530254dbe99f2b17aa76abc5"
+      },
+      "observation": "Initial formatting gate found 20 migrated import-wrap/document style issues; exactly those files were formatted. Final full Node/types/boundary/format gates pass."
+    }
+  ],
+  "constructionScope": "Numeric selectors/case source and reference expectations remain unchanged. Complete graph replaces index concatenation/manual numeric dependency decoding. Overall legacy tool still has the separately recorded later unresolved heap graph; dedicated hosted numeric builds and full Node native-compilation tests provide this migration proof.",
+  "nativeScope": "No child native executions. Six final-source hosted images and byte-identical smoke are ready for root; no Test262/conformance or native self-build claim from Node gates.",
+  "preserved": [
+    "Eight implementation declaration/body token sequences and eleven test bodies after allowed import/reexport/format changes",
+    "Trigonometry constant raw bytes; generator target path updated without running generator",
+    "Foundation remains dependency-free, no root/numeric barrel/wildcard/old owner aliases",
+    "All five old owner package/source/dist directories deleted; manifests/references/contracts/lock/workspace links migrated",
+    "No frozen directory, historical archive, existing report or dashboard mutation"
+  ]
+}

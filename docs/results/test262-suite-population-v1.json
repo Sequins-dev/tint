@@ -1,0 +1,2688 @@
+{
+  "kind": "suite-population-inventory",
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "files": 53751,
+  "variants": 103264,
+  "variantPolicy": "syntaxVariants from tools/test262.ts; all flags retained; fixtures excluded",
+  "groups": [
+    {
+      "path": "language/expressions",
+      "variants": 21386
+    },
+    {
+      "path": "language/statements",
+      "variants": 18119
+    },
+    {
+      "path": "built-ins/Temporal",
+      "variants": 9210
+    },
+    {
+      "path": "built-ins/Object",
+      "variants": 6802
+    },
+    {
+      "path": "built-ins/Array",
+      "variants": 6119
+    },
+    {
+      "path": "intl402/Temporal",
+      "variants": 4058
+    },
+    {
+      "path": "built-ins/RegExp",
+      "variants": 3756
+    },
+    {
+      "path": "built-ins/TypedArray",
+      "variants": 2890
+    },
+    {
+      "path": "staging/sm",
+      "variants": 2631
+    },
+    {
+      "path": "built-ins/String",
+      "variants": 2443
+    },
+    {
+      "path": "built-ins/Promise",
+      "variants": 1458
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors",
+      "variants": 1446
+    },
+    {
+      "path": "built-ins/Iterator",
+      "variants": 1368
+    },
+    {
+      "path": "built-ins/Date",
+      "variants": 1188
+    },
+    {
+      "path": "built-ins/DataView",
+      "variants": 1120
+    },
+    {
+      "path": "language/literals",
+      "variants": 1041
+    },
+    {
+      "path": "built-ins/Function",
+      "variants": 893
+    },
+    {
+      "path": "built-ins/Atomics",
+      "variants": 778
+    },
+    {
+      "path": "built-ins/Set",
+      "variants": 764
+    },
+    {
+      "path": "built-ins/Number",
+      "variants": 680
+    },
+    {
+      "path": "built-ins/Math",
+      "variants": 654
+    },
+    {
+      "path": "built-ins/Proxy",
+      "variants": 607
+    },
+    {
+      "path": "language/module-code",
+      "variants": 602
+    },
+    {
+      "path": "language/identifiers",
+      "variants": 535
+    },
+    {
+      "path": "intl402/NumberFormat",
+      "variants": 502
+    },
+    {
+      "path": "intl402/DateTimeFormat",
+      "variants": 490
+    },
+    {
+      "path": "language/arguments-object",
+      "variants": 460
+    },
+    {
+      "path": "language/eval-code",
+      "variants": 454
+    },
+    {
+      "path": "built-ins/ArrayBuffer",
+      "variants": 442
+    },
+    {
+      "path": "built-ins/Map",
+      "variants": 405
+    },
+    {
+      "path": "intl402/Locale",
+      "variants": 380
+    },
+    {
+      "path": "built-ins/JSON",
+      "variants": 332
+    },
+    {
+      "path": "annexB/language/eval-code/direct",
+      "variants": 310
+    },
+    {
+      "path": "built-ins/Reflect",
+      "variants": 306
+    },
+    {
+      "path": "language/block-scope",
+      "variants": 287
+    },
+    {
+      "path": "built-ins/WeakMap",
+      "variants": 281
+    },
+    {
+      "path": "language/function-code",
+      "variants": 281
+    },
+    {
+      "path": "annexB/built-ins/String/prototype",
+      "variants": 222
+    },
+    {
+      "path": "intl402/DurationFormat",
+      "variants": 220
+    },
+    {
+      "path": "language/types",
+      "variants": 211
+    },
+    {
+      "path": "built-ins/AsyncDisposableStack",
+      "variants": 208
+    },
+    {
+      "path": "built-ins/SharedArrayBuffer",
+      "variants": 208
+    },
+    {
+      "path": "language/asi",
+      "variants": 204
+    },
+    {
+      "path": "built-ins/Symbol",
+      "variants": 192
+    },
+    {
+      "path": "built-ins/NativeErrors",
+      "variants": 188
+    },
+    {
+      "path": "built-ins/DisposableStack",
+      "variants": 186
+    },
+    {
+      "path": "built-ins/Error",
+      "variants": 186
+    },
+    {
+      "path": "built-ins/WeakSet",
+      "variants": 170
+    },
+    {
+      "path": "intl402/ListFormat",
+      "variants": 162
+    },
+    {
+      "path": "annexB/language/eval-code/indirect",
+      "variants": 160
+    },
+    {
+      "path": "intl402/RelativeTimeFormat",
+      "variants": 160
+    },
+    {
+      "path": "language/statementList",
+      "variants": 160
+    },
+    {
+      "path": "intl402/Segmenter",
+      "variants": 158
+    },
+    {
+      "path": "built-ins/BigInt",
+      "variants": 154
+    },
+    {
+      "path": "built-ins/Uint8Array",
+      "variants": 140
+    },
+    {
+      "path": "language/import",
+      "variants": 135
+    },
+    {
+      "path": "language/white-space",
+      "variants": 134
+    },
+    {
+      "path": "intl402/Intl",
+      "variants": 132
+    },
+    {
+      "path": "intl402/Collator",
+      "variants": 130
+    },
+    {
+      "path": "built-ins/ShadowRealm",
+      "variants": 124
+    },
+    {
+      "path": "built-ins/GeneratorPrototype",
+      "variants": 122
+    },
+    {
+      "path": "intl402/DisplayNames",
+      "variants": 114
+    },
+    {
+      "path": "built-ins/decodeURIComponent",
+      "variants": 112
+    },
+    {
+      "path": "built-ins/decodeURI",
+      "variants": 110
+    },
+    {
+      "path": "built-ins/parseInt",
+      "variants": 110
+    },
+    {
+      "path": "built-ins/parseFloat",
+      "variants": 108
+    },
+    {
+      "path": "intl402/PluralRules",
+      "variants": 106
+    },
+    {
+      "path": "staging/explicit-resource-management",
+      "variants": 105
+    },
+    {
+      "path": "built-ins/Boolean",
+      "variants": 101
+    },
+    {
+      "path": "built-ins/AsyncGeneratorPrototype",
+      "variants": 96
+    },
+    {
+      "path": "language/computed-property-names",
+      "variants": 96
+    },
+    {
+      "path": "built-ins/FinalizationRegistry",
+      "variants": 94
+    },
+    {
+      "path": "language/future-reserved-words",
+      "variants": 85
+    },
+    {
+      "path": "language/line-terminators",
+      "variants": 82
+    },
+    {
+      "path": "language/comments",
+      "variants": 81
+    },
+    {
+      "path": "built-ins/AsyncFromSyncIteratorPrototype",
+      "variants": 76
+    },
+    {
+      "path": "language/global-code",
+      "variants": 75
+    },
+    {
+      "path": "built-ins/encodeURI",
+      "variants": 62
+    },
+    {
+      "path": "built-ins/encodeURIComponent",
+      "variants": 62
+    },
+    {
+      "path": "language/directive-prologue",
+      "variants": 62
+    },
+    {
+      "path": "built-ins/WeakRef",
+      "variants": 58
+    },
+    {
+      "path": "built-ins/global",
+      "variants": 56
+    },
+    {
+      "path": "language/reserved-words",
+      "variants": 53
+    },
+    {
+      "path": "annexB/built-ins/RegExp/prototype",
+      "variants": 52
+    },
+    {
+      "path": "built-ins/AggregateError",
+      "variants": 50
+    },
+    {
+      "path": "language/keywords",
+      "variants": 50
+    },
+    {
+      "path": "annexB/built-ins/Date/prototype",
+      "variants": 48
+    },
+    {
+      "path": "annexB/built-ins/RegExp/legacy-accessors",
+      "variants": 48
+    },
+    {
+      "path": "built-ins/ArrayIteratorPrototype",
+      "variants": 46
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction",
+      "variants": 46
+    },
+    {
+      "path": "built-ins/GeneratorFunction",
+      "variants": 46
+    },
+    {
+      "path": "built-ins/SuppressedError",
+      "variants": 44
+    },
+    {
+      "path": "intl402/String",
+      "variants": 38
+    },
+    {
+      "path": "language/destructuring",
+      "variants": 37
+    },
+    {
+      "path": "built-ins/AsyncFunction",
+      "variants": 36
+    },
+    {
+      "path": "built-ins/RegExpStringIteratorPrototype",
+      "variants": 34
+    },
+    {
+      "path": "built-ins/isFinite",
+      "variants": 30
+    },
+    {
+      "path": "built-ins/isNaN",
+      "variants": 30
+    },
+    {
+      "path": "built-ins/ThrowTypeError",
+      "variants": 28
+    },
+    {
+      "path": "built-ins/AsyncIteratorPrototype",
+      "variants": 26
+    },
+    {
+      "path": "intl402/Date",
+      "variants": 24
+    },
+    {
+      "path": "built-ins/MapIteratorPrototype",
+      "variants": 22
+    },
+    {
+      "path": "built-ins/SetIteratorPrototype",
+      "variants": 22
+    },
+    {
+      "path": "intl402/BigInt",
+      "variants": 22
+    },
+    {
+      "path": "language/identifier-resolution",
+      "variants": 22
+    },
+    {
+      "path": "language/punctuators",
+      "variants": 22
+    },
+    {
+      "path": "language/rest-parameters",
+      "variants": 22
+    },
+    {
+      "path": "built-ins/eval",
+      "variants": 20
+    },
+    {
+      "path": "annexB/language/literals/regexp",
+      "variants": 16
+    },
+    {
+      "path": "staging/built-ins",
+      "variants": 16
+    },
+    {
+      "path": "built-ins/StringIteratorPrototype",
+      "variants": 14
+    },
+    {
+      "path": "intl402/Number",
+      "variants": 14
+    },
+    {
+      "path": "staging/decorators",
+      "variants": 14
+    },
+    {
+      "path": "annexB/language/statements/for-in",
+      "variants": 12
+    },
+    {
+      "path": "built-ins/undefined",
+      "variants": 12
+    },
+    {
+      "path": "annexB/language/statements/try",
+      "variants": 10
+    },
+    {
+      "path": "built-ins/Infinity",
+      "variants": 10
+    },
+    {
+      "path": "built-ins/NaN",
+      "variants": 10
+    },
+    {
+      "path": "built-ins/AbstractModuleSource",
+      "variants": 8
+    },
+    {
+      "path": "annexB/language/expressions/assignmenttargettype",
+      "variants": 7
+    },
+    {
+      "path": "annexB/language/expressions/logical-assignment",
+      "variants": 6
+    },
+    {
+      "path": "staging/set-methods",
+      "variants": 6
+    },
+    {
+      "path": "annexB/built-ins/RegExp/named-groups",
+      "variants": 4
+    },
+    {
+      "path": "annexB/language/expressions/assignment",
+      "variants": 4
+    },
+    {
+      "path": "annexB/language/expressions/yield",
+      "variants": 4
+    },
+    {
+      "path": "annexB/language/statements/class",
+      "variants": 4
+    },
+    {
+      "path": "annexB/language/statements/const",
+      "variants": 4
+    },
+    {
+      "path": "intl402/Array",
+      "variants": 4
+    },
+    {
+      "path": "intl402/FallbackSymbol",
+      "variants": 4
+    },
+    {
+      "path": "staging/Temporal",
+      "variants": 4
+    },
+    {
+      "path": "staging/source-phase-imports",
+      "variants": 4
+    },
+    {
+      "path": "language/export",
+      "variants": 3
+    },
+    {
+      "path": "annexB/built-ins/Array/from",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-body.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-params.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-body.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-params.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-body.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-params.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/Object/is",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-control-escape-russian-letter.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-decimal-escape-not-capturing.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-invalid-control-escape-character-class-range.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-invalid-control-escape-character-class.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-leading-escape-BMP.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-leading-escape.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-trailing-escape-BMP.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-trailing-escape.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/RegExp/incomplete_hex_unicode_escape.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/TypedArrayConstructors/from",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/argument_bigint.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/argument_types.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/empty-string.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/escape-above-astral.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/escape-above.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/escape-below.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/length.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/name.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/not-a-constructor.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/prop-desc.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/to-primitive-err.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/to-primitive-observe.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/to-string-err-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/to-string-err.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/to-string-observe.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/escape/unmodified.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/argument_bigint.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/argument_types.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/empty-string.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/four-ignore-bad-u.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/four-ignore-end-str.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/four-ignore-non-hex.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/four.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/length.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/name.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/not-a-constructor.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/prop-desc.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/to-primitive-err.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/to-primitive-observe.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/to-string-err-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/to-string-err.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/to-string-observe.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/two-ignore-end-str.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/two-ignore-non-hex.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/built-ins/unescape/two.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/multi-line-html-close.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close-asi.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close-unicode-separators.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-open.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/coalesce",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/conditional",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/does-not-equals",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/equals",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/logical-and",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/logical-not",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/logical-or",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/strict-does-not-equals",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/strict-equals",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/template-literal",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/expressions/typeof",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/statements/for-await-of",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/statements/for-of",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/statements/function",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/statements/if",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/statements/switch",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-false.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-notsamevalue-nan.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-notsamevalue-notsame.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-notsamevalue-objects.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-notsamevalue-tostring.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-notsamevalue-zeros.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-obj.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-samevalue-nan.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-samevalue-objects.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-samevalue-same.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-samevalue-tostring.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-samevalue-zeros.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-custom-typeerror.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-custom.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-incorrect-ctor.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-native.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-no-arg.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-no-error.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-null-fn.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-null.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-primitive.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-same-realm.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-throws-single-arg.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-tostring.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assert-true.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/assertRelativeDateMs.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-func-throws-sync.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-rejects-non-callable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-return-not-thenable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-returns-undefined.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-then-rejects.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-then-resolves.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-asyncTest-without-async-flag.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-custom-typeerror.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-custom.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-func-never-settles.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-func-throws-sync.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-incorrect-ctor.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-invalid-func.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-native.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-no-arg.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-no-error.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-null.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-primitive.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-resolved-error.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-same-realm.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/asyncHelpers-throwsAsync-single-arg.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/byteConversionValues.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-arguments.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-arraylike.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-different-elements.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-different-length.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-empty.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-falsy-arguments.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-message.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-same-elements-different-order.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-same-elements-same-order.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-samevalue.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-sparse.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/compare-array-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/dateConstants.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/decimalToHexString.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-array.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-circular.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-deep.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-mapset.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-object.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-primitives-bigint.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/deepEqual-primitives.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/detachArrayBuffer-host-detachArrayBuffer.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/detachArrayBuffer.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/fnGlobalObject.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/isConstructor.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/nans.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/nativeFunctionMatcher.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/promiseHelper.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyconfigurable-configurable-object.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyconfigurable-configurable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyconfigurable-not-configurable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyenumerable-enumerable-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyenumerable-enumerable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyenumerable-not-enumerable-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifyenumerable-not-enumerable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotconfigurable-configurable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotconfigurable-not-configurable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotenumerable-enumerable-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotenumerable-enumerable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotenumerable-not-enumerable-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotenumerable-not-enumerable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotwritable-not-writable-strict.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifynotwritable-writable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifywritable-array-length.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifywritable-not-writable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/propertyhelper-verifywritable-writable.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/proxytrapshelper-default.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/proxytrapshelper-overrides.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/sta.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/tcoHelper.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/testTypedArray-conversions-call-error.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/testTypedArray-conversions.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/testTypedArray.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-arguments.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-configurable-object.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-desc-is-not-object.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-noproperty.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-restore-accessor-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-restore-accessor.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-restore-symbol.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-restore.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-same-value.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-string-prop.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-symbol-prop.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-undefined-desc.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-value-error.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/verifyProperty-value.js",
+      "variants": 2
+    },
+    {
+      "path": "harness/wellKnownIntrinsicObjects.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/TypedArray",
+      "variants": 2
+    },
+    {
+      "path": "intl402/constructors-string-and-single-element-array.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/constructors-taint-Object-prototype-2.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/constructors-taint-Object-prototype.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/default-locale-is-canonicalized.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/default-locale-is-supported.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/fallback-locales-are-supported.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/language-tags-canonicalized.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/language-tags-invalid.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/language-tags-valid.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/language-tags-with-underscore.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-consistent-with-resolvedOptions.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-default-locale-and-zxx-locale.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-duplicate-elements-removed.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-empty-and-undefined.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-locales-arg-coered-to-object.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-locales-arg-empty-array.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-returned-array-elements-are-not-frozen.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-taint-Array-2.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-taint-Array.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-test-option-localeMatcher.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-throws-if-element-not-string-or-object.js",
+      "variants": 2
+    },
+    {
+      "path": "intl402/supportedLocalesOf-unicode-extensions-ignored.js",
+      "variants": 2
+    },
+    {
+      "path": "language/source-text",
+      "variants": 2
+    },
+    {
+      "path": "staging/Uint8Array",
+      "variants": 2
+    },
+    {
+      "path": "staging/set-is-subset-of-empty-index.js",
+      "variants": 2
+    },
+    {
+      "path": "staging/set-is-subset-on-set-like.js",
+      "variants": 2
+    },
+    {
+      "path": "staging/set-is-subset-table-receiver-cleared.js",
+      "variants": 2
+    },
+    {
+      "path": "staging/set-is-subset-table-transition.js",
+      "variants": 2
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close-first-line-1.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close-first-line-2.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/comments/single-line-html-close-first-line-3.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-arguments.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-nested-blocks-with-fun-decl.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-nostrict.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/function-redeclaration-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/function-redeclaration-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-a-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-decl-b-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-else-stmt-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-decl-no-else-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/if-stmt-else-decl-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-decl-nostrict.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-case-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-decl-nostrict.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-dft-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-skip-param.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/function-code/switch-dflt-func-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/script-decl-lex-collision.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-block-scoping.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-block-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-block-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-fn-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-fn-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-non-enumerable-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-var-no-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-var-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-init.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-no-skip-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-block.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-for-in.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-for-of.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-for.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-switch.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err-try.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-skip-early-err.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-update.js",
+      "variants": 1
+    },
+    {
+      "path": "annexB/language/statements/labeled",
+      "variants": 1
+    },
+    {
+      "path": "staging/top-level-await",
+      "variants": 1
+    }
+  ]
+}

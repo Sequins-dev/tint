@@ -1,0 +1,83 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cb63692fa72e9d74e8582997713479bbabbf54414a63ea5f82975bdafb76b5b7",
+      "files": 413
+    },
+    "imageSha256": "231c7c0248227123c40798d4a6bc2c048312742ebc9c74591be0cbf1af86bc0c",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(-1);if(d.getTime()!==-1||d.getUTCFullYear()!==1969||d.getUTCMonth()!==11||d.getUTCDate()!==31||d.getUTCDay()!==3||d.getUTCHours()!==23||d.getUTCMinutes()!==59||d.getUTCSeconds()!==59||d.getUTCMilliseconds()!==999)throw 1;if(Object.prototype.toString.call(d)!==\"[object Date]\")throw 2;",
+        "sha256": "dbd475ec5eba23334d40a781a4a358c4efee74e56adfa319d2c951006d987a89"
+      },
+      {
+        "index": 1,
+        "source": "if(Date.UTC(99,12,0,24)!==Date.UTC(2000,0,1))throw 1;const d=new Date(8640000000000000);if(d.getUTCFullYear()!==275760||d.getUTCMonth()!==8||d.getUTCDate()!==13)throw 2;if(!Number.isNaN(new Date(8640000000000001).valueOf()))throw 3;",
+        "sha256": "34c83c6c9155a58bff9ca75cbcbc09b12b2b60d722650248b32e9aa1397884b1"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(-0.5);if(!Object.is(d.getTime(),0))throw 1;d.valueOf=()=>{throw 2;};const e=new Date(d);if(e.getTime()!==0)throw 3;let caught=false;try{Date.prototype.getTime.call(new Proxy(e,{}));}catch(e){caught=e instanceof TypeError;}if(!caught)throw 4;caught=false;try{Date.prototype.getTime();}catch(e){caught=e instanceof TypeError;}if(!caught)throw 5;",
+        "sha256": "d21e3fa3f74e222470079af73130f5535410765ce1914922455f60464169f786"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Date(0);if(d.setTime(1.9)!==1||d.getTime()!==1)throw 1;let order=\"\";const n={valueOf(){order+=\"y\";return NaN;}},m={valueOf(){order+=\"m\";return 0;}};if(!Number.isNaN(Date.UTC(n,m))||order!==\"ym\")throw 2;",
+        "sha256": "481fedc963e914d8b2eb412f3cb772a58a79ba982e581c48ade1bebb613a1f32"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

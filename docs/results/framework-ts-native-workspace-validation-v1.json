@@ -1,0 +1,508 @@
+{
+  "scope": "Phase C pure native ownership consolidation; no semantic changes or native execution",
+  "baseline": {
+    "sourceIdentity": "f683e451944bdd6c2aa8d34a10a7468f26734eeb4e0183494558da1c184abf4d",
+    "packages": 66,
+    "sources": 494,
+    "nodeTests": 3502
+  },
+  "current": {
+    "sha256": "645821c0c8ae87f17112dbccdaf8189ca1d34044fc7045161b3c742b50b2059e",
+    "files": 494,
+    "packages": 62,
+    "nodeTests": 3504
+  },
+  "ownersRemoved": [
+    "closure-layout",
+    "closure-lowering",
+    "scalar-lowering",
+    "runtime-linking",
+    "ts-linking"
+  ],
+  "publicEntries": [
+    {
+      "entry": "./closure/layout",
+      "types": "./dist/closure/layout.d.ts",
+      "import": "./dist/closure/layout.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./closure/lowering",
+      "types": "./dist/closure/lowering/index.d.ts",
+      "import": "./dist/closure/lowering/index.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./closure/class-construction",
+      "types": "./dist/closure/lowering/class-construction.d.ts",
+      "import": "./dist/closure/lowering/class-construction.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./closure/class-definition",
+      "types": "./dist/closure/lowering/class-definition.d.ts",
+      "import": "./dist/closure/lowering/class-definition.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./closure/records",
+      "types": "./dist/closure/lowering/records.d.ts",
+      "import": "./dist/closure/lowering/records.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./scalar",
+      "types": "./dist/scalar.d.ts",
+      "import": "./dist/scalar.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./runtime",
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "typesExist": true,
+      "importExists": true
+    },
+    {
+      "entry": "./modules",
+      "types": "./dist/modules/index.d.ts",
+      "import": "./dist/modules/index.js",
+      "typesExist": true,
+      "importExists": true
+    }
+  ],
+  "parity": {
+    "method": "Parse source statements with pinned TypeScript; omit import declarations; normalize reexport module strings and dynamic import paths; compare ordered scanner tokens ignoring trivia and trailing commas. Declaration ordering and implementation/test tokens remain exact.",
+    "sources": [
+      {
+        "old": "packages/closure-layout/src/index.ts",
+        "next": "packages/ts-native/src/closure/layout.ts",
+        "before": "10caa8d16a683c2744dcf4877490edd00da313697c3d0d05a9b80979d6a093a0",
+        "after": "10caa8d16a683c2744dcf4877490edd00da313697c3d0d05a9b80979d6a093a0",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/runtime-requirements.ts",
+        "next": "packages/ts-native/src/closure/lowering/runtime-requirements.ts",
+        "before": "184530388c3c5d36a5e704f52076e71f982a16d3aa27c71924868b9d547f9544",
+        "after": "184530388c3c5d36a5e704f52076e71f982a16d3aa27c71924868b9d547f9544",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/class-definition.ts",
+        "next": "packages/ts-native/src/closure/lowering/class-definition.ts",
+        "before": "2070de819b21a1f1268483cfa1611d584b297d9df7c0a9a7ecdd67fd44ad5199",
+        "after": "2070de819b21a1f1268483cfa1611d584b297d9df7c0a9a7ecdd67fd44ad5199",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/planning.ts",
+        "next": "packages/ts-native/src/closure/lowering/planning.ts",
+        "before": "d73c8863097c2f252a3596f5c2e6cf08fdc9986680ddaf321e645b54c8042bec",
+        "after": "d73c8863097c2f252a3596f5c2e6cf08fdc9986680ddaf321e645b54c8042bec",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/record-layout.ts",
+        "next": "packages/ts-native/src/closure/lowering/record-layout.ts",
+        "before": "e4af1803a7aedf8da8a5630daaf62b245f90007732b401f1543b74f4a9932d63",
+        "after": "e4af1803a7aedf8da8a5630daaf62b245f90007732b401f1543b74f4a9932d63",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/class-records.ts",
+        "next": "packages/ts-native/src/closure/lowering/class-records.ts",
+        "before": "632b930076edac486d8183f986fd26ad2a9754967e3c45bacc60b2c291b169a6",
+        "after": "632b930076edac486d8183f986fd26ad2a9754967e3c45bacc60b2c291b169a6",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/record-bindings.ts",
+        "next": "packages/ts-native/src/closure/lowering/record-bindings.ts",
+        "before": "be1699de97c409867dde949e4347a55d89e235b4571a4a9af662e6ef6cb56954",
+        "after": "be1699de97c409867dde949e4347a55d89e235b4571a4a9af662e6ef6cb56954",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/records.ts",
+        "next": "packages/ts-native/src/closure/lowering/records.ts",
+        "before": "ef00e14392f4854b97879fec3b627b8d031bb15cd226134fb37e3803b52771df",
+        "after": "ef00e14392f4854b97879fec3b627b8d031bb15cd226134fb37e3803b52771df",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/index.ts",
+        "next": "packages/ts-native/src/closure/lowering/index.ts",
+        "before": "120f450155cabe222a5096ccee044f8e8d6d0c8de53dd833000414f49c55ed86",
+        "after": "120f450155cabe222a5096ccee044f8e8d6d0c8de53dd833000414f49c55ed86",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/class-construction.ts",
+        "next": "packages/ts-native/src/closure/lowering/class-construction.ts",
+        "before": "f66f28d119379911400326d72cd19a82ccd0117620bc671c50030cb72530a912",
+        "after": "f66f28d119379911400326d72cd19a82ccd0117620bc671c50030cb72530a912",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/src/representation-views.ts",
+        "next": "packages/ts-native/src/closure/lowering/representation-views.ts",
+        "before": "19a9c6a3091e1f8df783c1fcac5f3173e39b7c82e8707091c35184a875c89645",
+        "after": "19a9c6a3091e1f8df783c1fcac5f3173e39b7c82e8707091c35184a875c89645",
+        "equal": true
+      },
+      {
+        "old": "packages/scalar-lowering/src/index.ts",
+        "next": "packages/ts-native/src/scalar.ts",
+        "before": "4b6fc889afd8684e56ce4ca428445cd98801d9c3d1c23568d6b5da0ec8105689",
+        "after": "4b6fc889afd8684e56ce4ca428445cd98801d9c3d1c23568d6b5da0ec8105689",
+        "equal": true
+      },
+      {
+        "old": "packages/runtime-linking/src/bindings.ts",
+        "next": "packages/ts-native/src/runtime/bindings.ts",
+        "before": "1d8ecbbb4619ecfcf1db69c9b932456c64acef5e02fb2935a9015ad0c3d190b5",
+        "after": "1d8ecbbb4619ecfcf1db69c9b932456c64acef5e02fb2935a9015ad0c3d190b5",
+        "equal": true
+      },
+      {
+        "old": "packages/runtime-linking/src/index.ts",
+        "next": "packages/ts-native/src/runtime/index.ts",
+        "before": "e06f80100396e10963b1ad79b8e98632a33323080b0620001e27bc568cf8d4f3",
+        "after": "e06f80100396e10963b1ad79b8e98632a33323080b0620001e27bc568cf8d4f3",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/invocation.ts",
+        "next": "packages/ts-native/src/modules/invocation.ts",
+        "before": "4e81919b9b0d39b8867a4759ebff386e356a6cd01d219ec002b3ae470de3b9e3",
+        "after": "4e81919b9b0d39b8867a4759ebff386e356a6cd01d219ec002b3ae470de3b9e3",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/span-index.ts",
+        "next": "packages/ts-native/src/modules/span-index.ts",
+        "before": "2a7297e473ce432f620a220530a442d6b097e9090c46e661903006e4c244082e",
+        "after": "2a7297e473ce432f620a220530a442d6b097e9090c46e661903006e4c244082e",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/initialization.ts",
+        "next": "packages/ts-native/src/modules/initialization.ts",
+        "before": "e8098db039a8e3367b01991a2fe4625b850bfa7487d1d7efb669d834be19df7f",
+        "after": "e8098db039a8e3367b01991a2fe4625b850bfa7487d1d7efb669d834be19df7f",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/constants.ts",
+        "next": "packages/ts-native/src/modules/constants.ts",
+        "before": "6f1dc5c5b0235e78c602e46fd672fdec408e0d71feb149541b06015d98a39ffd",
+        "after": "6f1dc5c5b0235e78c602e46fd672fdec408e0d71feb149541b06015d98a39ffd",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/specialization.ts",
+        "next": "packages/ts-native/src/modules/specialization.ts",
+        "before": "fa62a00b2bcc35003798b21c6697bb1228c0eec6f6fbf08baec371ab1b246c0c",
+        "after": "fa62a00b2bcc35003798b21c6697bb1228c0eec6f6fbf08baec371ab1b246c0c",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/index.ts",
+        "next": "packages/ts-native/src/modules/index.ts",
+        "before": "3bcddeabe1ffc4e2dee81a47a46262212340e95204ffdbdd23022893a1b6082a",
+        "after": "3bcddeabe1ffc4e2dee81a47a46262212340e95204ffdbdd23022893a1b6082a",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/native-globals.ts",
+        "next": "packages/ts-native/src/modules/native-globals.ts",
+        "before": "339773508a1799ff13f204bdded85d261fb038c4cb529f6e4a7e0927e9b35820",
+        "after": "339773508a1799ff13f204bdded85d261fb038c4cb529f6e4a7e0927e9b35820",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/checked-specialization.ts",
+        "next": "packages/ts-native/src/modules/checked-specialization.ts",
+        "before": "7d2e9356a55eae27b01b02572ca4e5d820ee3965e91ce6797d67c06a38fe9bd0",
+        "after": "7d2e9356a55eae27b01b02572ca4e5d820ee3965e91ce6797d67c06a38fe9bd0",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/src/instance.ts",
+        "next": "packages/ts-native/src/modules/instance.ts",
+        "before": "f23c1bd59f8ebc227a81959cb7c9aec3a9c2dd2081b5da055099c2677e510ebd",
+        "after": "f23c1bd59f8ebc227a81959cb7c9aec3a9c2dd2081b5da055099c2677e510ebd",
+        "equal": true
+      }
+    ],
+    "tests": [
+      {
+        "old": "packages/closure-layout/test/layout.test.ts",
+        "next": "packages/ts-native/test/closure-layout.test.ts",
+        "before": "ea839f0b8c84acf01ca19680fead86f6c13416518ffc5e5b6396dde8039d0f5d",
+        "after": "ea839f0b8c84acf01ca19680fead86f6c13416518ffc5e5b6396dde8039d0f5d",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/callable-views.test.ts",
+        "next": "packages/ts-native/test/closure-callable-views.test.ts",
+        "before": "f386077f1a21b8ed2e82dd1e1bb0358f9e52801f7e6fb159cb2ebb9ddf761fe8",
+        "after": "f386077f1a21b8ed2e82dd1e1bb0358f9e52801f7e6fb159cb2ebb9ddf761fe8",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/lowering.test.ts",
+        "next": "packages/ts-native/test/closure-lowering.test.ts",
+        "before": "58977e06dc96608abc20a80ba36549b1ea4ade29c482c94d8bb21dfc38e45457",
+        "after": "58977e06dc96608abc20a80ba36549b1ea4ade29c482c94d8bb21dfc38e45457",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/class-definition.test.ts",
+        "next": "packages/ts-native/test/closure-class-definition.test.ts",
+        "before": "f9dfacfb9ba521678716ee8db455ba2113630672d955a643bcbaeeb6860da37f",
+        "after": "f9dfacfb9ba521678716ee8db455ba2113630672d955a643bcbaeeb6860da37f",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/lists.test.ts",
+        "next": "packages/ts-native/test/closure-lists.test.ts",
+        "before": "60b611b4a5d1cf6d9b0f6ba24c12a15f24fdf093a3baa234f7a1e1a4a507ffa5",
+        "after": "60b611b4a5d1cf6d9b0f6ba24c12a15f24fdf093a3baa234f7a1e1a4a507ffa5",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/maps.test.ts",
+        "next": "packages/ts-native/test/closure-maps.test.ts",
+        "before": "49547adbd3169b654a6d1111ae2cbb08c554a0b8087f0bc337642ead9ce85073",
+        "after": "49547adbd3169b654a6d1111ae2cbb08c554a0b8087f0bc337642ead9ce85073",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/class-records.test.ts",
+        "next": "packages/ts-native/test/closure-class-records.test.ts",
+        "before": "8a573f062fc7922c6c74a8219cdf7613f0d9110b3caeda551701607b472dcc03",
+        "after": "8a573f062fc7922c6c74a8219cdf7613f0d9110b3caeda551701607b472dcc03",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/class-construction.test.ts",
+        "next": "packages/ts-native/test/closure-class-construction.test.ts",
+        "before": "e1bc553e4fd09caa5dcedda51f208c5b0873094d17eac7e93b28e4d32b87262a",
+        "after": "e1bc553e4fd09caa5dcedda51f208c5b0873094d17eac7e93b28e4d32b87262a",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/records.test.ts",
+        "next": "packages/ts-native/test/closure-records.test.ts",
+        "before": "1aa56ac3632ee2ef28c38ad8e6012dd95a593f21c2cb32c6e6e6361fde0e6581",
+        "after": "1aa56ac3632ee2ef28c38ad8e6012dd95a593f21c2cb32c6e6e6361fde0e6581",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/runtime-requirements.test.ts",
+        "next": "packages/ts-native/test/closure-runtime-requirements.test.ts",
+        "before": "c170662a48e6e0ad143b0429fb10f2ad1ac9ea11a39b21579fc0b619544d9d81",
+        "after": "c170662a48e6e0ad143b0429fb10f2ad1ac9ea11a39b21579fc0b619544d9d81",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/sets.test.ts",
+        "next": "packages/ts-native/test/closure-sets.test.ts",
+        "before": "af089e4e3bfd5f234518f175180fc9db2a2197a44bfb375162a88f096e7e8826",
+        "after": "af089e4e3bfd5f234518f175180fc9db2a2197a44bfb375162a88f096e7e8826",
+        "equal": true
+      },
+      {
+        "old": "packages/closure-lowering/test/string-lists.test.ts",
+        "next": "packages/ts-native/test/closure-string-lists.test.ts",
+        "before": "4459e4e33075d33076ad3c4fdc8c2b6dc20ef7ee3ced81e32d7d70d7a207fd91",
+        "after": "4459e4e33075d33076ad3c4fdc8c2b6dc20ef7ee3ced81e32d7d70d7a207fd91",
+        "equal": true
+      },
+      {
+        "old": "packages/runtime-linking/test/index.test.ts",
+        "next": "packages/ts-native/test/runtime-index.test.ts",
+        "before": "ec599260a84a00b2e1eae67cb53b32ef1a925222482a22938dc9048592967bdc",
+        "after": "ec599260a84a00b2e1eae67cb53b32ef1a925222482a22938dc9048592967bdc",
+        "equal": true
+      },
+      {
+        "old": "packages/runtime-linking/test/bindings.test.ts",
+        "next": "packages/ts-native/test/runtime-bindings.test.ts",
+        "before": "27f51ca1239f12ac450cf39e294faa72880646a6bf874c128adb2c5bb19ce1c5",
+        "after": "27f51ca1239f12ac450cf39e294faa72880646a6bf874c128adb2c5bb19ce1c5",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/link.test.ts",
+        "next": "packages/ts-native/test/modules-link.test.ts",
+        "before": "1416e7f1d8913e182ae730f096c6f679926dc7717b62d295f6bd8a3aac1b5504",
+        "after": "1416e7f1d8913e182ae730f096c6f679926dc7717b62d295f6bd8a3aac1b5504",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/native-globals.test.ts",
+        "next": "packages/ts-native/test/modules-native-globals.test.ts",
+        "before": "0a22eb4af8843c881228d75d60b2632d7cc9bd347eee133d1510be69d080136d",
+        "after": "0a22eb4af8843c881228d75d60b2632d7cc9bd347eee133d1510be69d080136d",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/checked-specialization.test.ts",
+        "next": "packages/ts-native/test/modules-checked-specialization.test.ts",
+        "before": "2d2522fea815a61741956e1c43a53fe42e2860319b471f576396f5411283e2d7",
+        "after": "2d2522fea815a61741956e1c43a53fe42e2860319b471f576396f5411283e2d7",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/span-index.test.ts",
+        "next": "packages/ts-native/test/modules-span-index.test.ts",
+        "before": "c75504dee98c1dd906a65c008edef896bf19c2a626c5cc538bad89db9fa3a767",
+        "after": "c75504dee98c1dd906a65c008edef896bf19c2a626c5cc538bad89db9fa3a767",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/instance.test.ts",
+        "next": "packages/ts-native/test/modules-instance.test.ts",
+        "before": "51f8a7790ebfa299ebedab920d31f5de6880fb6a4e63e6d57956c6489a5a56ae",
+        "after": "51f8a7790ebfa299ebedab920d31f5de6880fb6a4e63e6d57956c6489a5a56ae",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/specialization.test.ts",
+        "next": "packages/ts-native/test/modules-specialization.test.ts",
+        "before": "432967b9e114125a0cefc0c4be58436d70550727120368b66156b3bccd1c459e",
+        "after": "432967b9e114125a0cefc0c4be58436d70550727120368b66156b3bccd1c459e",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/classes.test.ts",
+        "next": "packages/ts-native/test/modules-classes.test.ts",
+        "before": "54b9f4f93d3c6d932ac3725d717d786ff52306ebd5936990fd0ad9d137093dd4",
+        "after": "54b9f4f93d3c6d932ac3725d717d786ff52306ebd5936990fd0ad9d137093dd4",
+        "equal": true
+      },
+      {
+        "old": "packages/ts-linking/test/initialization.test.ts",
+        "next": "packages/ts-native/test/modules-initialization.test.ts",
+        "before": "bcfd7c87c5c88f24e43889cecc9ba3946a66e012b97b77188b3a83ef848ef213",
+        "after": "bcfd7c87c5c88f24e43889cecc9ba3946a66e012b97b77188b3a83ef848ef213",
+        "equal": true
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "entry graph red",
+      "command": "node --test tools/ts-native-framework.test.ts",
+      "result": "expected failure: native framework manifest must exist",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-red-v1.log",
+        "sha256": "b3b7b8a51a8e6138cb78d6dbc3c072cac5383ce8ce24a908b77e42a988111067"
+      }
+    },
+    {
+      "name": "offline workspace install",
+      "command": "node /Users/stephenbelanger/Library/pnpm/.tools/pnpm/10.34.8/node_modules/pnpm/bin/pnpm.cjs install --offline --ignore-scripts",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-install-v1.log",
+        "sha256": "ccb926948c9e30f53efedcc87988f5553a406c744f782fafaa31c87e2bbf4d2d"
+      }
+    },
+    {
+      "name": "final build",
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-build-final-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "focused tests",
+      "command": "node --test tools/ts-native-framework.test.ts packages/ts-native/test/*.test.ts",
+      "result": "293 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-focused-v2.log",
+        "sha256": "f0623df43b8d3cc364586dfd617f804f57279d0f22a8d3b05cea50783c358591"
+      }
+    },
+    {
+      "name": "test types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-test-types-v2.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "host types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-host-types-v2.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "full Node tests",
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "result": "3504 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-full-node-v1.log",
+        "sha256": "446902d57f15e87588e5bf9367eacb41d672f16fb26067c07ad188cbc8bb4e9c"
+      }
+    },
+    {
+      "name": "boundaries",
+      "command": "node tools/check-boundaries.ts",
+      "result": "62 portable packages, passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-boundaries-final-v1.log",
+        "sha256": "aeee0ef51f1102cd3c9c53a24827f9c86cffe1f54e1e3697aa01e18fcd97d026"
+      }
+    },
+    {
+      "name": "formatting",
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types \"*.json\" pnpm-workspace.yaml",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/ts-native-format-check-v1.log",
+        "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+      }
+    }
+  ],
+  "failedObservations": [
+    {
+      "log": {
+        "path": ".tint-bootstrap/ts-native-focused-v1.log",
+        "sha256": "da0b387694479758650bba1126fa8568f81249dfb0ba529ef69eaf63452ec6e9"
+      },
+      "result": "Initial focused run failed because newly relative cross-owner imports used .js extensions. Changed to repository .ts source imports; focused v2 and full suite pass."
+    },
+    {
+      "result": "During parity review, relocation regex changed an embedded unresolved-import fixture string in modules-instance.test.ts. Restored original source text before focused v2/full tests. All 22 test body parity checks pass."
+    }
+  ],
+  "nativeValidation": {
+    "executed": false,
+    "reason": "Root owns serialized frozen SAB baseline/native sequence. Native smoke byte comparison, lowerer/class/module/runtime fixtures, compiler self-build and same-snapshot stage-image checks are pending root validation."
+  },
+  "preservedBoundaries": [
+    "No root/barrel/compatibility exports",
+    "Native framework external dependencies exactly typescript, foundation, ir, storage-layout",
+    "RuntimeSource helper namespaces unchanged",
+    "Frozen snapshots, immutable reports and archives not modified",
+    "No Git operations beyond initial read-only status discovering absent Git root"
+  ]
+}

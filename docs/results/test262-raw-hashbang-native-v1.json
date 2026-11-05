@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/comments/hashbang/line-terminator-paragraph-separator.js",
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/comments/hashbang/line-terminator-paragraph-separator.js",
+      "sha256": "990f0cd670ea79de0a7ae8ec79381a1a8d5703996ac65b802772c63d42f3e9ac",
+      "variant": "raw",
+      "metadata": {
+        "flags": [
+          "raw"
+        ],
+        "features": [
+          "hashbang"
+        ],
+        "includes": []
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3483.507542
+    }
+  ]
+}

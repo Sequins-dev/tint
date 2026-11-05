@@ -1,0 +1,15 @@
+{
+  "kind": "expected-failing-regression",
+  "fixture": "tools/verify-test262-native-array-iterator-state.ts",
+  "observations": [
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

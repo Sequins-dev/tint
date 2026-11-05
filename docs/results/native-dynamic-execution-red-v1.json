@@ -1,0 +1,69 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "860aec034eb5be5a32d1785bedd6a54e721a89c20c6fa8c5029cf90b7c4832c0",
+      "files": 446
+    },
+    "imageSha256": "45fc2cbb5bf951b97bbd4483edf3aba39e22e67adb19a2e8844238e05ce185ee",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const f=Function(\"return this;\");if(f()!==globalThis||f.call(null)!==globalThis||f.call(undefined)!==globalThis)throw 1;const receiver={};if(f.call(receiver)!==receiver)throw 2;if(typeof f.call(42)!==\"object\"||f.call(42).valueOf()!==42)throw 3;",
+        "sha256": "9cb41261ea1dc23c22890fb7ef8d1383841024c9d4b826638d6cb1acde115d3f"
+      },
+      {
+        "index": 1,
+        "source": "const f=Function(\"'use strict';return this;\");for(const value of [undefined,null,false,42,\"text\",{}])if(f.call(value)!==value)throw 1;",
+        "sha256": "e9e358105a8259051c712a126ce57e0e5bfcf76609f265e3cb4a1a1f5fca5cf6"
+      },
+      {
+        "index": 2,
+        "source": "for(const body of [\"\",\"return;\"]){const f=Function(body);if(f()!==undefined)throw 1;}if(Function(\"return 42;\")()!==42||Function(\"return true;\")()!==true)throw 2;",
+        "sha256": "42b615c3d226c883cb1dd42c8ecad6f663b31201a720cee0f0efa57821b16df8"
+      },
+      {
+        "index": 3,
+        "source": "const f=Function(\"return this;\");if(f.name!==\"anonymous\"||f.length!==0||Object.getPrototypeOf(f)!==Function.prototype)throw 1;const value=new f();if(Object.getPrototypeOf(value)!==f.prototype||!(value instanceof f))throw 2;if(Function.prototype.toString.call(f)!==\"function anonymous(\\n) {\\nreturn this;\\n}\")throw 3;",
+        "sha256": "4ccd1d7bf8a6e77400c9a4c00d09a21ac654492a40643d562c712b97fa26dcea"
+      },
+      {
+        "index": 4,
+        "source": "let count=0;const target=new Proxy(function(){},{get(t,key,r){if(key===\"prototype\"){count++;return null;}return Reflect.get(t,key,r);}});const f=Reflect.construct(Function,[\"return this;\"],target);if(count!==1||Object.getPrototypeOf(f)!==Function.prototype||f()!==globalThis)throw 1;",
+        "sha256": "885e35083fe175ec0667bb8578f7a05c4f15f75bc51d73cdc3c86c31a333d0af"
+      },
+      {
+        "index": 5,
+        "source": "const f=Function(\"return this;\");if(Reflect.ownKeys(Function.prototype)[0]!==\"length\"||Reflect.ownKeys(Function.prototype)[1]!==\"name\")throw 1;",
+        "sha256": "a6c0b00a1855baf82fa21f4d635fc56ba06e021a77eab6061bc91e0683717806"
+      }
+    ]
+  },
+  "outcome": {
+    "kind": "unsupported",
+    "reason": "native runtime reached an unsupported operation"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-zoned-from.ts",
+  "fixtureSha256": "d903d3dc52fd9403a28808f1f12fa4679b9996d977a4064bbc0188183642c4fa",
+  "imageSha256": "4862d08e36aaca2207269a4d46d9fd0194779a992cbf0fb8b88820758ba71558",
+  "signer": "Tint embedded ad-hoc signature; no host signing or rewriting",
+  "entitlement": "com.apple.security.get-task-allow (XML and DER)",
+  "signatureVerification": {
+    "status": 0,
+    "stderr": ""
+  },
+  "executableWriteback": "atomic-rename-after-fsync",
+  "debuggerLaunch": "debugserver-direct",
+  "cases": 3,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

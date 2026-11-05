@@ -1,0 +1,12 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-methods.ts",
+  "fixtureSha256": "1c36b1472c0bd7e2e3a2264ec0da9a1a11cabc3106f64d05be52a9c75251ebc4",
+  "cases": 19,
+  "passed": 19,
+  "nodeReference": "All fixture sources complete without throwing in an isolated Node vm context.",
+  "nativeValidation": "Each case selected from a shared native image, launched in a fresh LLDB-controlled process, stopped at entry and verified to exit with status 42.",
+  "scope": "Array every/some, find/findIndex/findLast/findLastIndex, reduce/reduceRight, indexOf/lastIndexOf/includes, splice/pop/shift/unshift. Covers holes, inherited properties, mutation, short-circuiting, coercion order, abrupt completion, callback receivers, species and partial writes. Not full Test262 coverage."
+}

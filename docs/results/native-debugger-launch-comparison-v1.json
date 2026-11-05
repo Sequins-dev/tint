@@ -1,0 +1,37 @@
+{
+  "kind": "debugger-launch-diagnostic",
+  "conformance": false,
+  "image": ".tint-bootstrap/debugger-failing-annexb-batch-v1",
+  "expectedExitStatus": 42,
+  "originalStopSignalDiagnostic": "/tmp/tint-debugger-retained-image-launch-v1.log",
+  "observations": [
+    {
+      "noStdio": false,
+      "elapsedMs": 5970.085541,
+      "status": 0,
+      "stdout": "(lldb) target create \".tint-bootstrap/debugger-failing-annexb-batch-v1\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 1\nProcess 70662 launched: '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 70662 resuming\nProcess 70662 exited with status = 42 (0x0000002a)\n(lldb) script print(\"FINAL_STATE\",lldb.process.GetState(),lldb.process.GetExitStatus())\nFINAL_STATE 10 42\n",
+      "stderr": ""
+    },
+    {
+      "noStdio": true,
+      "elapsedMs": 1853.6188330000004,
+      "status": 0,
+      "stdout": "(lldb) target create \".tint-bootstrap/debugger-failing-annexb-batch-v1\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry -- 1\nProcess 70666 launched: '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 70666 resuming\nProcess 70666 exited with status = 42 (0x0000002a)\n(lldb) script print(\"FINAL_STATE\",lldb.process.GetState(),lldb.process.GetExitStatus())\nFINAL_STATE 10 42\n",
+      "stderr": ""
+    },
+    {
+      "noStdio": false,
+      "elapsedMs": 2293.1695839999993,
+      "status": 0,
+      "stdout": "(lldb) target create \".tint-bootstrap/debugger-failing-annexb-batch-v1\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 1\nProcess 70670 launched: '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 70670 resuming\nProcess 70670 exited with status = 42 (0x0000002a)\n(lldb) script print(\"FINAL_STATE\",lldb.process.GetState(),lldb.process.GetExitStatus())\nFINAL_STATE 10 42\n",
+      "stderr": ""
+    },
+    {
+      "noStdio": true,
+      "elapsedMs": 275.13733299999876,
+      "status": 0,
+      "stdout": "(lldb) target create \".tint-bootstrap/debugger-failing-annexb-batch-v1\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry -- 1\nProcess 70677 launched: '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/debugger-failing-annexb-batch-v1' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 70677 resuming\nProcess 70677 exited with status = 42 (0x0000002a)\n(lldb) script print(\"FINAL_STATE\",lldb.process.GetState(),lldb.process.GetExitStatus())\nFINAL_STATE 10 42\n",
+      "stderr": ""
+    }
+  ]
+}

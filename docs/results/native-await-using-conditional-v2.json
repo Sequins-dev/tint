@@ -1,0 +1,122 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "dc186ba0695b3baf242ca1c25a89f2ea8d24f514be843ffb9c277cd2d3c3226c",
+    "files": 444
+  },
+  "imageSha256": "d3744776be9063aa872f9671964ec9476956e7711e11dbabd36306852775d558",
+  "asynchronous": true,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let log=\"\";async function f(){await using a={[Symbol.asyncDispose]:async function(){log+=\"a\";await 0;log+=\"A\";}};using b={[Symbol.dispose](){log+=\"b\";}};await using c={[Symbol.asyncDispose]:async function(){log+=\"c\";await 0;log+=\"C\";}};log+=\"x\";return 42;}f().then(value=>{if(value!==42||log!==\"xcCbaA\")throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "438ffa15cbe894e763ead1216ab1e6cc4909755c0b648780109fd71b78434591"
+    },
+    {
+      "index": 1,
+      "source": "async function f(){await using a={[Symbol.asyncDispose]:async function(){throw 19;}};using b={[Symbol.dispose](){throw 42;}};throw 9;}f().then(()=>{throw 1;},e=>{if(!(e instanceof SuppressedError)||e.error!==19||!(e.suppressed instanceof SuppressedError)||e.suppressed.error!==42||e.suppressed.suppressed!==9)throw 2;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "420fdc0fadb941d97584f04c4e5b91c1cd79019c4e03f7fdeaa8a782e65179ee"
+    },
+    {
+      "index": 2,
+      "source": "let log=\"\";async function f(){await using a={get [Symbol.asyncDispose](){log+=\"a\";return null;},get [Symbol.dispose](){log+=\"s\";return function(){log+=\"d\";return {get then(){throw 1;}};};}};log+=\"x\";}f().then(()=>{if(log!==\"asxd\")throw 2;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "b1c713008eb12f8b9c40ec4a0a24335433ffaef5841fcc2e0a0066ea4d2d7723"
+    },
+    {
+      "index": 3,
+      "source": "let log=\"\";async function f(){await using x=null;log+=\"b\";}const p=f();log+=\"o\";p.then(()=>{if(log!==\"bo\")throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "006d46e543ccf597d45795449b054f85f23330b2938fe16f589fd2e876eebd10"
+    },
+    {
+      "index": 4,
+      "source": "let log=\"\";async function f(){using a={[Symbol.dispose](){log+=\"a\";}};await using b=null;log+=\"b\";}const p=f();log+=\"o\";p.then(()=>{if(log!==\"boa\")throw 1;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "e28f6f51637a2d018727c14230ac5d41dedc7d4b101b106d782e5a4de466cfdd"
+    },
+    {
+      "index": 5,
+      "source": "let log=\"\";async function f(){for(await using x of [{[Symbol.asyncDispose]:async function(){log+=\"a\";await 0;log+=\"A\";}},{[Symbol.asyncDispose]:async function(){log+=\"b\";}}]){log+=\"x\";continue;}if(log!==\"xaAxb\")throw 1;}f().then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "3a9edd474c03432ae4e846ba08218a4772bbf541a0e307eb4921ffa32d07fdde"
+    },
+    {
+      "index": 6,
+      "source": "let log=\"\";async function f(){outer:{log+=\"b\";break outer;await using x=null;}log+=\"e\";}const p=f();if(log!==\"be\")throw 1;p.then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "7ba28bfefabc2084ab8ef00bd44a0f07be2c11d293314392efa067167faa288f"
+    },
+    {
+      "index": 7,
+      "source": "let log=\"\";async function f(){try{await using x={[Symbol.asyncDispose](){log+=\"d\";throw 19;}};}catch(e){if(e!==19)throw 1;log+=\"c\";}}const p=f();if(log!==\"dc\")throw 2;p.then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "e55947c32cd04fd098152a4ca679fd26835f5a8229456add80bf4418dae35dc0"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

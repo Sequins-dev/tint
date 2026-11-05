@@ -1,0 +1,18 @@
+{
+  "kind": "native-module-validation-infrastructure-observation",
+  "conformance": false,
+  "selfBuild": {
+    "report": "docs/results/bootstrap-module-linking-v1.json",
+    "initial": {
+      "stopped": false,
+      "pid": 0
+    },
+    "result": null,
+    "classification": "debugger failed before confirmed native entry; compiler fixed point unestablished"
+  },
+  "loadingEvaluation": {
+    "report": "docs/results/native-module-evaluation-v1.json",
+    "classification": "debugger failed before confirmed native entry; runtime behavior unestablished"
+  },
+  "policy": "Retain both observations; no automatic retries or source behavior inferred from launcher failures."
+}

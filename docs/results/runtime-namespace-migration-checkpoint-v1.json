@@ -1,0 +1,33 @@
+{
+  "kind": "framework-migration-checkpoint",
+  "createdAt": "2026-11-03T10:35:39.892562+00:00",
+  "slice": "M2 stable runtime namespaces independent of source ownership",
+  "beforeSource": {
+    "sha256": "78a3bf38adaa1c3fcf7a3c20e48f9fa2de293dde0cf2a71c4d923f4fafc983f9",
+    "files": 492
+  },
+  "afterSource": {
+    "sha256": "4f3ff5d6028e79d587690f2918cf20395b1bf21800db0ebb03b7bae125759636",
+    "files": 492
+  },
+  "packages": 92,
+  "workspaceGates": {
+    "tests": 3458,
+    "passed": 3458,
+    "types": "passed build/tests/host",
+    "boundaries": "92 packages",
+    "formatting": "passed",
+    "log": "/tmp/tint-runtime-namespace-alltests-v1.log"
+  },
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "2b5a9af6c7943dc5d80c9720d83e64b9bcf3af46e291da9a93ed43d2d516119f",
+    "byteIdentical": true,
+    "manifest": ".tint-bootstrap/framework-runtime-namespace-after-v1/manifest.json"
+  },
+  "selfbuild": "bootstrap-runtime-namespace-v1.json",
+  "selfbuildBytes": 60330658,
+  "selfbuildByteIdentical": true,
+  "contract": "RuntimeSource.namespace required; existing labels unchanged. Physical SourceInput/ImportMapping/catalog ownership remains packageId. Namespace/provider registrations validated; no alias/compatibility field.",
+  "limitations": "Architecture evidence, not additional Test262 coverage."
+}

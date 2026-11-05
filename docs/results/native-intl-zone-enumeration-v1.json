@@ -1,0 +1,31 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "named-zone-enumeration-native-build",
+    "sourceSnapshot": {
+      "sha256": "1c436e2bdfd705514f460af452881973ea5f85849ae3059d8ea54be1f63fc596",
+      "files": 434
+    }
+  },
+  "resources": {
+    "data": [
+      {
+        "path": "/usr/share/zoneinfo/tzdata.zi",
+        "sha256": "5914dfd1cecfaefd5e692426cbda59429105c59f16e87fa2754c8eff3ccdefa2"
+      },
+      {
+        "path": "/usr/share/zoneinfo/America/New_York",
+        "sha256": "e9ed07d7bee0c76a9d442d091ef1f01668fee7c4f26014c0a868b19fe6c18a95"
+      },
+      {
+        "path": "/usr/share/zoneinfo/Africa/Abidjan",
+        "sha256": "d2efac4e5f23d88c95d72c1db42807170f52f43dd98a205af5a92a91b9f2d997"
+      }
+    ]
+  },
+  "imageSha256": "5471a9f53bef024609987cf3d211ae00823a9951b6d6fea39b447a7a983d8561",
+  "outcome": {
+    "kind": "completed"
+  }
+}

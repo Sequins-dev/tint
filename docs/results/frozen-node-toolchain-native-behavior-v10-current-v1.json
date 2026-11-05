@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-native-full-suite-toolchain",
+  "sourceSnapshot": {
+    "sha256": "bc9f16fa0d1e675c3bc78c988a22e531145d92ac0d8bc3bd9809f5af3308874a",
+    "files": 552
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v10-current-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v10-current-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v10-current-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v10-current-v1/source-snapshot.json",
+    "sha256": "07f2c22d8b1f0d533c5fa97764c6f81da624cac227e4c60fd7e2ad8eee3f6e5a"
+  },
+  "capabilities": {
+    "directEvalSiteView": true,
+    "weakStorage": "packages/native-runtime/src/intrinsics/weak.ts",
+    "weakRef": true,
+    "finalizationRegistry": true,
+    "disposal": true,
+    "asyncDisposal": true,
+    "sharedBuffers": true,
+    "atomics": true,
+    "spinHint": "packages/native-runtime/src/intrinsics/spin-hint.ts",
+    "sharedAtomics": true
+  },
+  "engine": "native-script-v8-function-fallback",
+  "workspaceGate": {
+    "tests": 4078,
+    "log": ".tint-bootstrap/eval-context-workspace-check-v2.log"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "kind": "build-memory-policy-node-checkpoint",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "49a58f74460de20aa4bc178e5acb133b6eb6683cfcb8e2751b6292bebfbeaa4c",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4362,
+    "log": ".tint-bootstrap/generational-workspace-preflight-workspace-check-v1.log"
+  },
+  "red": ".tint-bootstrap/generational-workspace-preflight-red-v1.log",
+  "focused": ".tint-bootstrap/generational-workspace-preflight-focused-v1.log",
+  "rootCause": "Generational initialization requires semispace forwarding/start bitmap and old-space mark storage; the build preflight checked only copying runtime metadata.",
+  "retainedNativeStartupFailure": "docs/results/native-module-await-nested-rewrite-large-heap-v1.json",
+  "validWorkspaceNativeProof": "docs/results/native-module-await-nested-rewrite-large-workspace-v1.json",
+  "limits": "Valid native runtime behavior is unchanged. New build rejection and the later rewriter source await the next combined frozen self-build."
+}

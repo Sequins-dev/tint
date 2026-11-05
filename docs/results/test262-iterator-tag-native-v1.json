@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 4,
+        "kind": "execution",
+        "compileMs": 6344.255916,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/Iterator/prototype/Symbol.toStringTag",
+  "totals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/Iterator/prototype/Symbol.toStringTag/prop-desc.js",
+      "sha256": "2e56ed6808dd14c1b9cff68ef0306459615de22446a9d5096ea4f6b8ace73aa4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "iterator-helpers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 9080.616625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Iterator/prototype/Symbol.toStringTag/prop-desc.js",
+      "sha256": "2e56ed6808dd14c1b9cff68ef0306459615de22446a9d5096ea4f6b8ace73aa4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "iterator-helpers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 11316.142416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Iterator/prototype/Symbol.toStringTag/weird-setter.js",
+      "sha256": "562b938c88b20e63f7eaa71f2aa6762811ab27c7d2c9b3a10889851a0803b9e7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "iterator-helpers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 13556.795709,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Iterator/prototype/Symbol.toStringTag/weird-setter.js",
+      "sha256": "562b938c88b20e63f7eaa71f2aa6762811ab27c7d2c9b3a10889851a0803b9e7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "iterator-helpers"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 15798.554125,
+      "batch": 0
+    }
+  ]
+}

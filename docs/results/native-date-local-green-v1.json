@@ -1,0 +1,74 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "environment": {
+    "TZ": null
+  },
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "2a21b7745a1ab2d95c03050298de1b36c5b22b06645876cd770e3aee2a04695d",
+      "files": 417
+    },
+    "imageSha256": "d2b63084537d065ecfededdd274425d2699959c88619c0acaa44809755927cd7",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(0),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1970,0,1,4,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "d806765f791072ecfb7e5d6b7de024c33d4dca329e74b44e28dfe722245707b5"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(946684800000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2000,0,1,6,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "bdcb6133a79e12897b0fb30c34f445b60da69cc5327d7fc95ce4a9c84a3e2a14"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(1735689600000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2025,0,1,3,8,0,0,0,-480];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "fbad702ba0e734e509be5806950761245923546dde690d0c5f43a8f976f51fe2"
+      },
+      {
+        "index": 3,
+        "source": "if(!Number.isNaN(new Date(NaN).getTimezoneOffset()))throw 1;let caught=false;try{Date.prototype.getHours.call(new Proxy(new Date(0),{}));}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;",
+        "sha256": "f0ee53766cd531c92fa0d0179ac14ec119fd9411bbad91f625a090c82a9a2c9a"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

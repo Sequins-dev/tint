@@ -1,0 +1,34 @@
+{
+  "kind": "managed-source-entry-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1c6ccb1e2e67cd3c42a76c8e41b5df12c8b3e53fb26ee47db68f7bf381e8e488",
+    "files": 506
+  },
+  "selfBuild": {
+    "report": "bootstrap-managed-source-entry-v1.json",
+    "bytes": 61922610,
+    "sha256": "361ad1f66f87b18eb26eb6a36267634605b04ac4d7295294a5cf24bb1798472b",
+    "byteIdentical": true,
+    "exitStatus": 0
+  },
+  "nativeSourceEntry": {
+    "report": "native-managed-source-entry-diagnostic-v2.json",
+    "originalPreEntryFailure": "native-managed-source-entry-v1.json",
+    "outcome": {
+      "kind": "completed"
+    },
+    "coverage": [
+      "native TypeScript parsing, checking, lowering, optimization and code emission",
+      "two imported AOT helpers",
+      "retained callbacks and objects through copying GC",
+      "throw payloads and nested invocation root restoration"
+    ]
+  },
+  "workspaceTests": 3670,
+  "limitations": [
+    "context-domain authorization remains pending",
+    "general Script and Function fallbacks remain pending",
+    "closed source entry does not execute module initializers"
+  ]
+}

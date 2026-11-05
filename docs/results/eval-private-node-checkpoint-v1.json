@@ -1,0 +1,38 @@
+{
+  "kind": "eval-private-node-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "42be685a1a923d1db3aa083c29ae83472d3feae563819f9720248bf2945c1e60",
+    "files": 552
+  },
+  "workspaceTests": 4112,
+  "workspaceLog": ".tint-bootstrap/eval-private-workspace-check-v2.log",
+  "redLogs": [
+    ".tint-bootstrap/eval-private-binding-red-v1.log",
+    ".tint-bootstrap/eval-private-resolver-red-v1.log",
+    ".tint-bootstrap/eval-private-lowering-red-v1.log"
+  ],
+  "managedCompile": ".tint-bootstrap/eval-private-surface-census-v2.log",
+  "nativeBuildFailures": [
+    ".tint-bootstrap/eval-private-host-native-build-v1.log",
+    ".tint-bootstrap/eval-private-host-native-build-v2.log",
+    ".tint-bootstrap/eval-private-context-native-build-v1.log"
+  ],
+  "census": {
+    "kind": "node-managed-script-surface-census",
+    "conformance": false,
+    "scope": "Shared tools fixture including host ScriptEntryFrame",
+    "vocabulary": 128,
+    "records": 183,
+    "signatures": 166,
+    "runtimes": 41,
+    "digest": "89eacebb40c4867d69965b1fe5a72e5ea70cbbd1a6e75be5cc15a1144ae93ce7"
+  },
+  "nativeStatus": "binaries built; serial validation waits for DE5a self-build",
+  "remaining": [
+    "native context/site/entry fixtures",
+    "41 native host cases",
+    "frozen self-build",
+    "unchanged focused Test262 selections"
+  ]
+}

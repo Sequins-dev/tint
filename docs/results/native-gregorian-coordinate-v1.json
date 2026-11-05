@@ -1,0 +1,34 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-hosted-fixture",
+    "sourceSnapshot": {
+      "sha256": "37f0c7f70b03bad6f11e46f9a3744aaddefe1e86fcf9dd3e9a463963befd58cc",
+      "files": 427
+    },
+    "sourceSnapshotFile": ".tint-bootstrap/gregorian-local-coordinate-v1-sources.json",
+    "imageSha256": "6b5d56cd1715879a5cf4203fe9668570642bc15f4fa1f52af8f01ca27acec160",
+    "fixtureTool": "tools/verify-hosted-gregorian-calendar.ts",
+    "fixtureToolSha256": "359d61b0c3ace9a04c9ec816f051d7de261bea37e2efa3c7ecb05d24f9fee3e0",
+    "resources": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "description": "Complete 400-year cycle, clipped API ranges and unclipped billion-year coordinates"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

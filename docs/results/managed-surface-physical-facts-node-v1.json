@@ -1,0 +1,31 @@
+{
+  "kind": "managed-surface-physical-facts-node-validation",
+  "conformance": false,
+  "native": false,
+  "sourceSnapshot": {
+    "sha256": "2793aab92ede1f24f7a061676dfaa5370e18f0ff9a90679f634eb0fbebf56057",
+    "files": 526
+  },
+  "workspaceTests": 3778,
+  "verified": [
+    "Full Script vocabulary: every object and function alias has a physical fact",
+    "All exact semantic class members share their representative layout or ABI",
+    "Recursive records, optional-field presence and default argument encodings",
+    "Missing collection providers and invalid runtime namespaces fail explicitly"
+  ],
+  "gates": [
+    {
+      "path": ".tint-bootstrap/surface-physical-facts-full-vocabulary-v1.log",
+      "sha256": "e210869338537bb3b789726a3dcfa99d150a37b2565946d253f439d52802c03e"
+    },
+    {
+      "path": ".tint-bootstrap/surface-physical-facts-workspace-tests-v1.log",
+      "sha256": "85cf97542618f73b95eb02b14740aa5d1b884cce6ac14ff58606d9c30e8ba49c"
+    },
+    {
+      "path": ".tint-bootstrap/surface-physical-facts-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "nativeValidation": "queued separately; no native claim in this report"
+}

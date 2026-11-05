@@ -1,0 +1,59 @@
+{
+  "kind": "native-import-resolution-validation",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "workspaceLog": ".tint-bootstrap/import-resolution-workspace-check-v1.log",
+  "priorCompilerGate": "docs/results/json-await-chains-selfbuild-artifact-validation-v1.json",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "primitive bare specifiers reject asynchronously",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-import-resolution-case-0-v1.json"
+    },
+    {
+      "selectedCase": 1,
+      "name": "nested import promises reject while the inner module loads",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-import-resolution-case-1-v1.json"
+    },
+    {
+      "selectedCase": 2,
+      "name": "computed undiscovered relative siblings stay unsupported",
+      "expected": {
+        "kind": "unsupported"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-import-resolution-case-2-v1.json"
+    },
+    {
+      "selectedCase": 3,
+      "name": "specifier coercion failures retain their identity",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-import-resolution-case-3-v1.json"
+    }
+  ],
+  "selfBuild": "Portable source unchanged from the accepted combined compiler snapshot; tools-only update. Unchanged Test262 reruns pending."
+}

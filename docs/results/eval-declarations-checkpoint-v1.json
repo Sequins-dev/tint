@@ -1,0 +1,20 @@
+{
+  "kind": "eval-declarations-runtime-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "c71fcb7964a117175a35ade7802cb266691180d2c189c5dd49b3e1c62553fdc2",
+    "files": 550
+  },
+  "nativeReport": "native-eval-declarations-v1.json",
+  "nodeTests": {
+    "cases": 7,
+    "log": ".tint-bootstrap/eval-declarations-green-v2.log"
+  },
+  "workspace": {
+    "tests": 3953,
+    "log": ".tint-bootstrap/eval-declarations-workspace-check-v1.log",
+    "formatFix": ".tint-bootstrap/eval-declarations-format-check-v2.log",
+    "typecheck": ".tint-bootstrap/eval-declarations-typecheck-v2.log"
+  },
+  "scope": "Global-environment EvalDeclarationInstantiation only. Strict eval keeps var/functions local; sloppy eval checks admission before mutation and creates deletable globals; lexical declarations use the fresh eval environment. Function factories run after lexicals exist; last duplicate wins; Annex B admission is separate. Direct and indirect string eval remain disabled."
+}

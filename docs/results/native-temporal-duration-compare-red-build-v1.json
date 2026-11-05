@@ -1,0 +1,8 @@
+{
+  "kind": "native-build-observation",
+  "conformance": false,
+  "fixture": "tools/verify-test262-native-temporal-duration-compare.ts",
+  "stage": "check",
+  "binaryProduced": false,
+  "log": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"ok\":false,\"outcome\":{\"kind\":\"unsupported\",\"reason\":\"native compilation: {\\\"stage\\\":\\\"check\\\",\\\"message\\\":\\\"packages/ordinary-object/src/temporal-duration-arithmetic.ts:3283:3297: invalid property read\\\"}\"}}\n    at verifyNativeScriptCases (file:///Users/stephenbelanger/Code/nodejs/tint/tools/native-script-fixture.ts:43:10)\n    at file:///Users/stephenbelanger/Code/nodejs/tint/tools/verify-test262-native-temporal-duration-compare.ts:2:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n"
+}

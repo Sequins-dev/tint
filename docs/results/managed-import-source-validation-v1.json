@@ -1,0 +1,28 @@
+{
+  "kind": "managed-import-source-validation",
+  "createdAt": "2026-11-03T09:07:10.224106+00:00",
+  "sourceSnapshot": {
+    "sha256": "eb93addda78d3e2bf8757b43070d2023a59f788e864993d8203fd242dcce712a",
+    "files": 492
+  },
+  "frozenSources": ".tint-bootstrap/source-managed-imports-v1.json",
+  "scope": "EmissionOptions migration, symbolic managed pointer metadata and trusted pure resolution; no managed code invocation",
+  "checks": {
+    "workspaceTests": 3428,
+    "passed": 3428,
+    "types": "passed (build, tests, host)",
+    "dependencyBoundaries": "passed, 94 packages",
+    "formatting": "passed",
+    "testsLog": "/tmp/tint-managed-imports-workspace-tests-v1.log",
+    "formatLog": "/tmp/tint-managed-imports-workspace-format-v1.log"
+  },
+  "fixture": ".tint-bootstrap/native-managed-imports-v5/build.json",
+  "nativeExecution": "queued behind active NumberFormat rerun; separate immutable report required",
+  "earlierBuildAttempts": [
+    "native-managed-imports-build-attempt-v1.json",
+    "native-managed-imports-build-attempt-v2.json",
+    "native-managed-imports-build-attempt-v3.json",
+    "native-managed-imports-build-attempt-v4.json"
+  ],
+  "limitations": "No expanded Function/eval support or managed executable-call capability is claimed."
+}

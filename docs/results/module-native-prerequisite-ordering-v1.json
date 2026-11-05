@@ -1,0 +1,10 @@
+{
+  "kind": "native-queue-sequencing",
+  "conformance": false,
+  "stoppedWaitingController": "node .tint-bootstrap/run-module-import-bindings-validation-v1.mjs",
+  "nativeInferiorStopped": false,
+  "nativeObservationsDiscarded": false,
+  "reason": "Module fixture execution depends on a free native lane, not successful completion of every constructor conformance group. Known intrinsic-harness timeouts remain preserved and their performance investigation is deferred.",
+  "gate": "Completion of the GeneratorFunction selection process, then cooperative lane ownership.",
+  "replacement": ".tint-bootstrap/run-module-import-bindings-validation-v2.mjs"
+}

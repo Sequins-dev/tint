@@ -1,0 +1,740 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 180000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "0c92b0c201a2460a8b25feb9ca07430a26253db0d5dbac1f304dc38758890d87",
+    "files": 491
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-function-reflection-v1/source-snapshot.json",
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 1048576,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 180000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 22,
+        "kind": "execution",
+        "compileMs": 47598.729583,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "intl402/NumberFormat/prototype/formatRange",
+  "totals": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/argument-to-Intlmathematicalvalue-throws.js",
+      "sha256": "bdd6dee6ee81ee2644a5a7a0f7c0d1a83f2fd91c473c725cc2f7e55b7a15865a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 48912.510875,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/argument-to-Intlmathematicalvalue-throws.js",
+      "sha256": "bdd6dee6ee81ee2644a5a7a0f7c0d1a83f2fd91c473c725cc2f7e55b7a15865a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49199.002375000004,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/builtin.js",
+      "sha256": "a96065532e23556ab5bacf6e52c7711b76cb8487ad695c8dd8d08433107a290d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49490.304917,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/builtin.js",
+      "sha256": "a96065532e23556ab5bacf6e52c7711b76cb8487ad695c8dd8d08433107a290d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 49772.444417000006,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/en-US.js",
+      "sha256": "9304d9b38b784196f6b380e5288e036d63897b63a329eed3e539dcd263eb2f53",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 50169.820833,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/en-US.js",
+      "sha256": "9304d9b38b784196f6b380e5288e036d63897b63a329eed3e539dcd263eb2f53",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 52005.879208,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/invoked-as-func.js",
+      "sha256": "bb8a814350baf6000d5f6901c9243b7a2be14a38c534a48073c58f4a6382832c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 53569.286333,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/invoked-as-func.js",
+      "sha256": "bb8a814350baf6000d5f6901c9243b7a2be14a38c534a48073c58f4a6382832c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 56146.9535,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/length.js",
+      "sha256": "55c4c685fb82d0c9b7dbf2b4a52bc015b4303db8f5af53ee6e892bd85c3b2622",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 57348.700375,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/length.js",
+      "sha256": "55c4c685fb82d0c9b7dbf2b4a52bc015b4303db8f5af53ee6e892bd85c3b2622",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 57738.314959,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/name.js",
+      "sha256": "c7d9627ceff034d7a92f4a3d04510ba33af23e2d6ed8f2f9e47c90da9a6d73d0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58097.905667,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/name.js",
+      "sha256": "c7d9627ceff034d7a92f4a3d04510ba33af23e2d6ed8f2f9e47c90da9a6d73d0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58454.952833,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/nan-arguments-throws.js",
+      "sha256": "728b89435583fe0974ce34848bc2399d4288ffb9a4be2354eb91a56c7d24be92",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 58799.074334,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/nan-arguments-throws.js",
+      "sha256": "728b89435583fe0974ce34848bc2399d4288ffb9a4be2354eb91a56c7d24be92",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 59160.33725,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/prop-desc.js",
+      "sha256": "5fe34a7c61209957f84e04a03b2849b2ff6be1371bfc22e1db3b943363c0619c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 59518.349834,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/prop-desc.js",
+      "sha256": "5fe34a7c61209957f84e04a03b2849b2ff6be1371bfc22e1db3b943363c0619c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 59841.80625,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/pt-PT.js",
+      "sha256": "1da83ee11a8a2b80f4796b0ce849c785671a2f3c08908d0da7bfae729cbd73f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 60172.425209,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/pt-PT.js",
+      "sha256": "1da83ee11a8a2b80f4796b0ce849c785671a2f3c08908d0da7bfae729cbd73f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 60510.817917,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/undefined-arguments-throws.js",
+      "sha256": "fc5c970bd2586799a13c7701e6449bfda899fc7c2f1797da471d789c217aa800",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 60836.280208000004,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/undefined-arguments-throws.js",
+      "sha256": "fc5c970bd2586799a13c7701e6449bfda899fc7c2f1797da471d789c217aa800",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61150.100375,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/x-greater-than-y-not-throws.js",
+      "sha256": "dfef2d1112b6f9fedb90c3005feac5e003728f294103b810aec7e243f51fa9a9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61480.341958000005,
+      "batch": 0
+    },
+    {
+      "path": "intl402/NumberFormat/prototype/formatRange/x-greater-than-y-not-throws.js",
+      "sha256": "dfef2d1112b6f9fedb90c3005feac5e003728f294103b810aec7e243f51fa9a9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.NumberFormat-v3"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 61796.141125,
+      "batch": 0
+    }
+  ]
+}

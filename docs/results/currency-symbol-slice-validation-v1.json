@@ -1,0 +1,31 @@
+{
+  "kind": "currency-symbol-slice-validation",
+  "files": [
+    {
+      "path": "tools/generate-currency-symbol-data.ts",
+      "sha256": "0b874cc8095457962ab66bce1a27766b1cb103d2e2362feda3ca89ba0e9c209d"
+    },
+    {
+      "path": "packages/ordinary-object/src/currency-symbol-data.ts",
+      "sha256": "d6b3580497ac8652bc795b520d7d3f4afd4d3242586bdfc16a40b9ef436dfa08"
+    },
+    {
+      "path": "packages/ordinary-object/src/currency-symbols.ts",
+      "sha256": "f47ad575af74062ff69cf5f42340a20938205e3e4fdcf85ae77f54dc323f83e1"
+    },
+    {
+      "path": "packages/ordinary-object/test/currency-symbols.test.ts",
+      "sha256": "1ae41e97a4448fb8939c9a6c60905c433f9d127c4306b2731f94f084c174ca88"
+    },
+    {
+      "path": "packages/ordinary-object/currency-symbol-data-manifest.json",
+      "sha256": "911af96d0cfc41eea8bde9741651413d4aaa0fcfa2962fa1af0dbd0e8a9abc77"
+    }
+  ],
+  "tests": {
+    "passed": 4,
+    "failed": 0
+  },
+  "independentExtraction": "/tmp/tint-currency-symbol-independent-v1.json",
+  "nativeExecution": "not run; root owns integration validation"
+}

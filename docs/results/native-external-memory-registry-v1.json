@@ -1,0 +1,18 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "59cb2072db4effa9fc085b1b4e8ce028d7e7eb7409b45dac386adfdc992e52d6",
+    "files": 447
+  },
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-external-memory-xsjXsL/external-memory",
+  "imageSha256": "2c1587372cb826638ece97ee6a7f9e73d8d23596da4fc6ee20c13688831e4217",
+  "fixture": "tools/verify-native-external-memory.ts",
+  "fixtureSha256": "f66f725fb3449fd28f11035448e1cc7f4806a7a9434e8eaed8a27ab77f39e2ed",
+  "debuggerLaunch": "debugserver-connected",
+  "debuggerTracing": true,
+  "outcome": {
+    "kind": "completed"
+  },
+  "scope": "Registry ownership boundaries and retained function/buffer state across 200000 record allocations. Registry is not yet wired into collector read authorization."
+}

@@ -1,0 +1,9 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    String.raw`const t=new Temporal.PlainTime(23,59,59,999,999,999);if(t.toString({fractionalSecondDigits:3})!=="23:59:59.999"||t.toString({smallestUnit:"second",roundingMode:"ceil"})!=="00:00:00"||t.toString({smallestUnit:"minute"})!=="23:59")throw 1;const options={fractionalSecondDigits:6,get timeZone(){throw 2;},get calendarName(){throw 3;}};if(t.toString(options)!=="23:59:59.999999"||t.toLocaleString()!=="23:59:59.999999999")throw 4;`,
+    String.raw`const t=new Temporal.PlainTime(23,59,59,999,999,999);if(t.round("second").toString()!=="00:00:00"||new Temporal.PlainTime(3,34,56).round({smallestUnit:"hour",roundingIncrement:8}).hour!==0||new Temporal.PlainTime(12).equals("12:00")!==true||new Temporal.PlainTime(12).equals("12:00:00.000000001"))throw 1;class T extends Temporal.PlainTime{}const sub=new T(12);if(sub.round("nanosecond")===sub||sub.round("nanosecond") instanceof T)throw 2;`,
+    String.raw`let log="",ok=false;try{new Temporal.PlainTime().round({get roundingIncrement(){log+="i;";return 60;},get roundingMode(){log+="m;";return "expand";},get smallestUnit(){log+="u;";return "second";}});}catch(e){ok=e instanceof RangeError;}if(!ok||log!=="i;m;u;")throw 1;let touched=false;ok=false;try{Temporal.PlainTime.prototype.round.call({}, {get roundingIncrement(){touched=true;return 1;}});}catch(e){ok=e instanceof TypeError;}if(!ok||touched)throw 2;for(const value of [{smallestUnit:"hour",roundingIncrement:24},{smallestUnit:"minute",roundingIncrement:60},{smallestUnit:"second",roundingIncrement:29},{smallestUnit:"nanosecond",roundingIncrement:1000}]){ok=false;try{new Temporal.PlainTime().round(value);}catch(e){ok=e instanceof RangeError;}if(!ok)throw 3;}`,
+  ],
+  { nodeReference: false },
+);

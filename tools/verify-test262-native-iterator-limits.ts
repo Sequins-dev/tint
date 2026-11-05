@@ -1,0 +1,15 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+// Node 24 predates the finite safe-integer limit in the pinned Test262 suite.
+verifyNativeScriptCases(
+  [
+    `if([1,2,3].values().take(2).toArray().join()!=="1,2"||[1,2,3].values().drop(2).toArray().join()!=="3"||[1,2].values().take(Infinity).toArray().join()!=="1,2"||[1,2].values().drop(Infinity).toArray().length!==0||[1,2].values().take(-0.5).toArray().length!==0||[1,2].values().drop(-0.5).toArray().join()!=="1,2")throw 1;`,
+    `for(const name of ["take","drop"]){let order="",calls=0;const source={get next(){order+="n";return ()=>{calls++;return {done:true};};}};const helper=Iterator.prototype[name].call(source,{valueOf(){order+="c";return 1;}});if(order!=="cn"||calls!==0)throw 1;if(!helper.next().done||calls!==1)throw 2;}`,
+    `for(const name of ["take","drop"]){for(const limit of [NaN,undefined,-1,-Infinity,9007199254740992,1n,Symbol()]){let closed=0;const source={get next(){throw 1;},return(){closed++;throw 2;}};let caught;try{Iterator.prototype[name].call(source,limit);}catch(e){caught=e;}const numeric=typeof limit==="bigint"||typeof limit==="symbol";if(!(caught instanceof (numeric?TypeError:RangeError))||closed!==1)throw 3;}}`,
+    `let calls=0,closed=0;const source={next(){calls++;return {value:42,done:false};},return(){closed++;return {};}};const helper=Iterator.prototype.take.call(source,1);if(helper.next().value!==42||closed!==0||calls!==1)throw 1;if(!helper.next().done||closed!==1||calls!==1||!helper.return().done||closed!==1)throw 2;const zero=Iterator.prototype.take.call(source,0);if(!zero.next().done||calls!==1||closed!==2)throw 3;`,
+    `let calls=0,reads=0;const source={next(){calls++;return {done:calls>3,get value(){reads++;if(calls<3)throw 1;return 42;}};}};const helper=Iterator.prototype.drop.call(source,2);if(helper.next().value!==42||calls!==3||reads!==1||!helper.next().done||reads!==1)throw 2;`,
+    `const marker={};for(const name of ["take","drop"]){let closed=0;const helper=Iterator.prototype[name].call({next(){throw marker;},return(){closed++;return {};}},1);let caught;try{helper.next();}catch(e){caught=e;}if(caught!==marker||closed!==0||!helper.return().done||closed!==0)throw 1;}`,
+    `for(const name of ["take","drop"]){let closed=0;const source={next(){throw 1;},return(){closed++;return {};}};const helper=Iterator.prototype[name].call(source,3);if(!helper.return(19).done||closed!==1||!helper.next().done||closed!==1)throw 2;}const a=[1].values();const p=Object.getPrototypeOf(a.map(x=>x));if(Object.getPrototypeOf(a.take(1))!==p||Object.getPrototypeOf(a.drop(1))!==p)throw 3;`,
+    `for(const name of ["take","drop"]){const marker={};let closed=0;let caught;try{Iterator.prototype[name].call({get next(){throw 1;},return(){closed++;return {};}},{valueOf(){throw marker;}});}catch(e){caught=e;}if(caught!==marker||closed!==1)throw 2;let converted=0;try{Iterator.prototype[name].call(null,{valueOf(){converted++;return 1;}});}catch(e){if(!(e instanceof TypeError))throw 3;}if(converted!==0)throw 4;}`,
+  ],
+  { nodeReference: false },
+);

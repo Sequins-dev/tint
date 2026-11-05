@@ -1,0 +1,59 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "2ce89a6e7a4d0621238868dacedb2c0d1f10dc0936369525621c456bd279026a",
+      "files": 434
+    },
+    "imageSha256": "7b0742359d69d45b03906af49ea05eb4387f856934a0e8e48aadc307e5696a64",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": "America/Cambridge_Bay",
+        "path": "/usr/share/zoneinfo/America/Cambridge_Bay"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const name of [\"America/Cambridge_Bay\",\"Antarctica/Rothera\"]){const min=new Temporal.ZonedDateTime(-8640000000000000000000n,name);if(min.offsetNanoseconds!==0)throw 1;const next=min.getTimeZoneTransition(\"next\");if(next!==null&&next.epochNanoseconds<=min.epochNanoseconds)throw 2;const max=new Temporal.ZonedDateTime(8640000000000000000000n,name),prev=max.getTimeZoneTransition(\"previous\");if(prev!==null&&prev.epochNanoseconds>=max.epochNanoseconds)throw 3;if(min.getTimeZoneTransition(\"previous\")!==null||max.getTimeZoneTransition(\"next\")!==null)throw 4;}",
+        "sha256": "c7e40428d546bcf5e820513c704154fc7e8fd612ce76c48d2865e6b71528aa3b"
+      },
+      {
+        "index": 1,
+        "source": "const value=-8640000000000000,d=new Date(value);if(d.getTimezoneOffset()!==0)throw 1;const copy=new Date(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds());if(copy.getTime()!==value||Date.parse(d.toString())!==value)throw 2;",
+        "sha256": "b03b80d18e7eac46fc4a7dbf16622d9ef38dc06f728373b60476d3800c28b8c6"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

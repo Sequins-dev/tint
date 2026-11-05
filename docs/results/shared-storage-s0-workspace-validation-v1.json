@@ -1,0 +1,181 @@
+{
+  "scope": "S0 portable shared-block contract with explicitly injected trusted service and genuine Node-only reference adapter. No Script constructor/installer or native shared service.",
+  "baseline": {
+    "packages": 62,
+    "sources": 494,
+    "nodeTests": 3504,
+    "sourceIdentity": "645821c0c8ae87f17112dbccdaf8189ca1d34044fc7045161b3c742b50b2059e"
+  },
+  "current": {
+    "packages": 62,
+    "sha256": "ce5f7d83b8d981c435a3d5aea9aac05905fe519d362371293959a78a884a952d",
+    "files": 495,
+    "nodeTests": 3513
+  },
+  "publicEntry": {
+    "specifier": "@tint/byte-storage/shared",
+    "types": "./dist/shared.d.ts",
+    "import": "./dist/shared.js"
+  },
+  "ordinaryStorage": {
+    "path": "packages/byte-storage/src/index.ts",
+    "beforeSha256": "006ed8ab0f7e9343ae72589d1f4e5fb4d29c4eed7803d9e64e06a3d65e4fb4ed",
+    "afterSha256": "006ed8ab0f7e9343ae72589d1f4e5fb4d29c4eed7803d9e64e06a3d65e4fb4ed",
+    "unchanged": true,
+    "graph": ["packages/byte-storage/src/index.ts"]
+  },
+  "sharedGraph": [
+    "packages/byte-storage/src/shared.ts",
+    "packages/foundation/src/binary/word64.ts"
+  ],
+  "implementationFiles": [
+    {
+      "path": "packages/byte-storage/src/shared.ts",
+      "sha256": "b841ee41d53222cd897d60fdde3f6d2849e9d018f93d54eeb297aed8585249bb"
+    },
+    {
+      "path": "tools/node-shared-block-service.ts",
+      "sha256": "8073782444f83483dfc8c28d41e59f526690b18501cbc929f4d0608899f2e8eb"
+    },
+    {
+      "path": "tools/shared-storage.test.ts",
+      "sha256": "76ee3a819feb3556c3220cd3f687420390910e44e6088f20e928b70b1e5414aa"
+    }
+  ],
+  "contracts": [
+    "Primitive engineId/blockId identity independent of wrapper equality",
+    "Explicit engine-owned opaque handle and immutable maximum/growability metadata",
+    "Authoritative ordered shared length; no wrapper-local copied logical length",
+    "Atomic grow service contract revalidates current length, never shrinks or copies; equality also publishes",
+    "One appropriate length read per fixed/tracking element witness after caller observable hooks",
+    "Separate byte and width-preserving aligned unsigned 1/2/4-byte operations",
+    "Width64 capture to caller scratch and exact foundation Word64 lo/hi transport; no arbitrary uint64 Number payload",
+    "Node adapter reserves genuine SharedArrayBuffer once and uses Atomics metadata/CAS; unordered length reads use stronger seq-cst metadata reads",
+    "Portable shared graph includes only foundation Word64; no Node/SAB global fallback"
+  ],
+  "checks": [
+    {
+      "name": "initial semantic red",
+      "command": "node --test tools/shared-storage.test.ts",
+      "result": "expected failure: portable shared-block contract must exist",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-red-v1.log",
+        "sha256": "f762b71f65c2842183b3de6eb42a73766ed6a9bfa3c3ebc6a79556b89d520ec5"
+      }
+    },
+    {
+      "name": "adapter width regression red",
+      "command": "node --test tools/shared-storage.test.ts",
+      "result": "expected failure: forced width 8 must not enter unsigned-32 operation",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-width-red-v1.log",
+        "sha256": "ee327eed5ef2afb90a3021aa043ef4ea682f72124d2a0ad9d603936d6d16803a"
+      }
+    },
+    {
+      "name": "workspace installation",
+      "command": "node /Users/stephenbelanger/Library/pnpm/.tools/pnpm/10.34.8/node_modules/pnpm/bin/pnpm.cjs install --offline --ignore-scripts",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-install-v2.log",
+        "sha256": "a9841b4831fc4e3f2e4dae1042acbbee2a626dc522e8346e90a81e876b65a8e4"
+      }
+    },
+    {
+      "name": "workspace build",
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-build-final-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "test types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-test-types-final-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "host types",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-host-types-v1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "focused storage tests",
+      "command": "node --test tools/shared-storage.test.ts packages/byte-storage/test/*.test.ts",
+      "result": "20 passed, 0 failed; 9 shared and 11 ordinary storage tests",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-focused-final-v1.log",
+        "sha256": "74996b4a3560af0e675dca662bf280d36e9fa5b65f92d3f1b258d90e4e37d8b6"
+      }
+    },
+    {
+      "name": "full Node suite",
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "result": "3513 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-full-node-v1.log",
+        "sha256": "d33a25d0093eea3e88c5c7b7a01c934d68bdea650b27e0c1238a6db482fb9439"
+      }
+    },
+    {
+      "name": "dependency boundaries",
+      "command": "node tools/check-boundaries.ts",
+      "result": "passed; 62 portable packages",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-boundaries-v1.log",
+        "sha256": "aeee0ef51f1102cd3c9c53a24827f9c86cffe1f54e1e3697aa01e18fcd97d026"
+      }
+    },
+    {
+      "name": "format check",
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types \"*.json\" pnpm-workspace.yaml",
+      "result": "passed",
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-format-check-v1.log",
+        "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+      }
+    }
+  ],
+  "failedObservations": [
+    {
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-test-types-v1.log",
+        "sha256": "1f12bb6900e05346d8a8d85ea5d9f37859e0ffbeb5495c79a9a227dbdfe69058"
+      },
+      "result": "Type-only tooling public imports could not resolve because root had no @tint/byte-storage devDependency. Added explicit workspace tooling dependency and reinstalled offline; final typechecks pass."
+    },
+    {
+      "log": {
+        "path": ".tint-bootstrap/shared-storage-s0-width-red-v1.log",
+        "sha256": "ee327eed5ef2afb90a3021aa043ef4ea682f72124d2a0ad9d603936d6d16803a"
+      },
+      "result": "Reference adapter initially admitted forced width=8 through unsigned-32 operations. Added explicit 1/2/4 width validation before host access; focused and full tests pass."
+    }
+  ],
+  "nativeValidation": {
+    "executed": false,
+    "reason": "Root owns serialized native baseline/S1 sequence. S0 is a portable contract and genuine Node reference evidence only, not native SAB, worker, Atomics or cross-agent correctness."
+  },
+  "deferred": [
+    "Native owned stable mappings/registry/quotas and width64 leaves (S1)",
+    "Script SharedArrayBuffer constructor, brand checks and view routing (S2)",
+    "Native unchanged SharedArrayBuffer/ArrayBuffer/DataView selections (S3)",
+    "Cross-agent native race/progress proof before worker/Atomics claims"
+  ],
+  "preserved": [
+    "Ordinary ByteStorage source and existing tests",
+    "No shared flag, resize-by-copy or portable global SharedArrayBuffer fallback",
+    "No Script constructor/installer publication",
+    "No external-memory registry grants, unmap or finalization",
+    "No frozen snapshot, archive, existing report or root-owned status document edits"
+  ]
+}

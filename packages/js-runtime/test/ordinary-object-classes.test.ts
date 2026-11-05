@@ -1,0 +1,378 @@
+import type { ScriptPropertyKey } from "@tint/js-runtime/objects";
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import * as objects from "../src/objects/index.ts";
+const hooks: objects.ObjectHooks<unknown> = {
+  undefinedValue: undefined,
+  sameValue: Object.is,
+  call: () => {
+    throw "unexpected hook";
+  },
+};
+test("base classes have construct-only behavior and standard constructor/prototype attributes", () => {
+  assert.equal(typeof objects.createBaseClass, "function");
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const c = objects.createBaseClass("C", 2, undefined, [], realm, hooks);
+  assert.equal(c.prototype, realm.functionPrototype);
+  assert.equal(objects.getOwnProperty(c, "name")?.value, "C");
+  assert.equal(objects.getOwnProperty(c, "length")?.value, 2);
+  const descriptor = objects.getOwnProperty(c, "prototype")!;
+  assert.equal(descriptor.writable, false);
+  assert.equal(descriptor.enumerable, false);
+  assert.equal(descriptor.configurable, false);
+  const prototype = descriptor.value as objects.OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
+  assert.equal(prototype.prototype, realm.objectPrototype);
+  assert.equal(objects.getOwnProperty(prototype, "constructor")?.value, c);
+  assert.throws(
+    () => objects.callObject(c, undefined, [], undefined),
+    (error: unknown) =>
+      (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
+        .prototype === realm.prototypes.get("type"),
+  );
+});
+test("class methods are non-enumerable, replaceable and non-constructible", () => {
+  assert.equal(typeof objects.defineClassMethod, "function");
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const target = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  objects.defineClassMethod(
+    target,
+    "method",
+    1,
+    (receiver, args) => receiver,
+    realm,
+    hooks,
+  );
+  const descriptor = objects.getOwnProperty(target, "method")!;
+  assert.equal(descriptor.enumerable, false);
+  assert.equal(descriptor.writable, true);
+  assert.equal(descriptor.configurable, true);
+  const method = descriptor.value as objects.OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
+  assert.equal(method.internalConstruct, undefined);
+  assert.equal(method.internalHomeObject, target);
+  assert.equal(objects.getOwnProperty(method, "name")?.value, "method");
+  assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
+  assert.equal(objects.callObject(method, 42, [], undefined).value, 42);
+});
+
+test("computed class methods cannot redefine a non-configurable constructor prototype", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const c = objects.createBaseClass("C", 0, undefined, [], realm, hooks);
+  assert.throws(
+    () =>
+      objects.defineClassMethod(
+        c,
+        "prototype",
+        0,
+        (receiver, args) => undefined,
+        realm,
+        hooks,
+      ),
+    (error: unknown) =>
+      (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
+        .prototype === realm.prototypes.get("type"),
+  );
+});
+
+test("class accessor definitions merge halves and preserve callable metadata", () => {
+  assert.equal(typeof objects.defineClassAccessor, "function");
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const target = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  objects.defineClassAccessor(
+    target,
+    "x",
+    false,
+    (receiver, args) => receiver,
+    realm,
+    hooks,
+  );
+  const getter = objects.getOwnProperty(target, "x")!
+    .get as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
+  objects.defineClassAccessor(
+    target,
+    "x",
+    true,
+    (receiver, args) => args[0],
+    realm,
+    hooks,
+  );
+  const descriptor = objects.getOwnProperty(target, "x")!;
+  assert.equal(descriptor.get, getter);
+  assert.equal(getter.internalHomeObject, target);
+  assert.equal(
+    (descriptor.set as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
+      .internalHomeObject,
+    target,
+  );
+  assert.equal(descriptor.enumerable, false);
+  assert.equal(descriptor.configurable, true);
+  assert.equal(objects.getOwnProperty(getter, "name")?.value, "get x");
+  assert.equal(objects.getOwnProperty(getter, "length")?.value, 0);
+  const setter = descriptor.set as objects.OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
+  assert.equal(objects.getOwnProperty(setter, "name")?.value, "set x");
+  assert.equal(objects.getOwnProperty(setter, "length")?.value, 1);
+  assert.equal(getter.internalConstruct, undefined);
+  assert.equal(setter.internalConstruct, undefined);
+  assert.equal(objects.callObject(getter, 42, [], undefined).value, 42);
+  objects.defineClassMethod(target, "x", 0, () => 1, realm, hooks);
+  objects.defineClassAccessor(target, "x", false, () => 42, realm, hooks);
+  assert.equal(objects.getOwnProperty(target, "x")!.set, undefined);
+});
+test("source functions expose standard name and length descriptors", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  for (const constructible of [false, true]) {
+    const fn = objects.createSourceFunction(
+      () => 42,
+      constructible,
+      realm,
+      hooks,
+      "self",
+      2,
+    );
+    for (const [key, value] of [
+      ["name", "self"],
+      ["length", 2],
+    ] as const) {
+      const descriptor = objects.getOwnProperty(fn, key);
+      assert.ok(descriptor);
+      assert.equal(descriptor.value, value);
+      assert.equal(descriptor.writable, false);
+      assert.equal(descriptor.enumerable, false);
+      assert.equal(descriptor.configurable, true);
+    }
+    assert.equal(
+      objects.getOwnProperty(fn, "prototype") !== undefined,
+      constructible,
+    );
+    assert.equal(objects.callObject(fn, undefined, [], undefined).value, 42);
+  }
+});
+
+test("source execution receives its own identity independently of receiver and binding", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  for (const constructible of [false, true]) {
+    const seen: unknown[] = [];
+    const fn = objects.createSourceFunction(
+      (receiver, args, callee) => {
+        seen.push(receiver, args[0]);
+        return callee;
+      },
+      constructible,
+      realm,
+      hooks,
+    );
+    const other = objects.createSourceFunction(
+      () => undefined,
+      false,
+      realm,
+      hooks,
+    );
+    assert.equal(objects.callObject(fn, other, [42], undefined).value, fn);
+    assert.deepEqual(seen, [other, 42]);
+    assert.equal(objects.callObject(other, fn, [], undefined).value, undefined);
+  }
+});
+
+test("source methods capture their home object before their first call", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const home = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  const method = objects.createSourceFunction(
+    (receiver, args, callee) =>
+      objects.getSuperBase(
+        callee as objects.OrdinaryObject<ScriptPropertyKey, unknown>,
+      ),
+    false,
+    realm,
+    hooks,
+    "m",
+    0,
+    home,
+  );
+  assert.equal(method.internalHomeObject, home);
+  assert.equal(
+    objects.callObject(method, 42, [], undefined).value,
+    realm.objectPrototype,
+  );
+  const ordinary = objects.createSourceFunction(
+    () => undefined,
+    false,
+    realm,
+    hooks,
+  );
+  assert.equal(ordinary.internalHomeObject, undefined);
+});
+
+test("prepared class prototypes are published unchanged and become the constructor home", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const prototype = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  const constructor = objects.createBaseClass(
+    "C",
+    0,
+    undefined,
+    [],
+    realm,
+    hooks,
+    prototype,
+  );
+  assert.equal(
+    objects.getOwnProperty(constructor, "prototype")?.value,
+    prototype,
+  );
+  assert.equal(
+    objects.getOwnProperty(prototype, "constructor")?.value,
+    constructor,
+  );
+  assert.equal(constructor.internalHomeObject, prototype);
+});
+
+test("derived class identities retain separate constructor and instance prototype chains", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const parent = objects.createBaseClass(
+    "Parent",
+    0,
+    undefined,
+    [],
+    realm,
+    hooks,
+  );
+  const parentPrototype = objects.getOwnProperty(parent, "prototype")!
+    .value as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
+  const prototype = objects.createObject(parentPrototype);
+  const derived = objects.createDerivedClass(
+    "Derived",
+    2,
+    undefined,
+    [],
+    realm,
+    hooks,
+    parent,
+    prototype,
+  );
+  assert.equal(derived.prototype, parent);
+  assert.equal(derived.internalHomeObject, prototype);
+  assert.equal(objects.getOwnProperty(derived, "prototype")?.value, prototype);
+  assert.equal(prototype.prototype, parentPrototype);
+  assert.equal(
+    objects.getOwnProperty(prototype, "constructor")?.value,
+    derived,
+  );
+  assert.equal(objects.getOwnProperty(derived, "name")?.value, "Derived");
+  assert.equal(objects.getOwnProperty(derived, "length")?.value, 2);
+  assert.throws(
+    () => objects.callObject(derived, undefined, [], undefined),
+    (error: unknown) =>
+      (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
+        .prototype === realm.prototypes.get("type"),
+  );
+});
+
+test("private class methods install before fields and remain separate from properties", () => {
+  assert.equal(typeof objects.initializeClassPrivateMethods, "function");
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const instance = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  const name = objects.createPrivateName("#method");
+  const method = objects.createClassMethod(
+    realm.objectPrototype,
+    "#method",
+    0,
+    () => 42,
+    realm,
+    hooks,
+  );
+  objects.initializeClassPrivateMethods(
+    instance,
+    [{ name, kind: "method", value: method }],
+    realm,
+  );
+  assert.equal(objects.hasPrivateElement(instance, name), true);
+  assert.equal(
+    objects.getPrivateElement(
+      { value: instance, object: instance },
+      name,
+      hooks,
+    ).value,
+    method,
+  );
+  assert.equal(objects.getOwnProperty(instance, "#method"), undefined);
+  assert.equal(method.internalHomeObject, realm.objectPrototype);
+  assert.equal(method.internalConstruct, undefined);
+  assert.equal(objects.getOwnProperty(method, "name")?.value, "#method");
+  assert.equal(objects.callObject(method, instance, [], undefined).value, 42);
+  assert.throws(() =>
+    objects.initializeClassPrivateMethods(
+      instance,
+      [{ name, kind: "method", value: method }],
+      realm,
+    ),
+  );
+});
+
+test("public accessor metadata uses the source parameter length", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const target = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  objects.defineClassAccessor(
+    target,
+    "x",
+    true,
+    () => undefined,
+    realm,
+    hooks,
+    0,
+  );
+  const setter = objects.getOwnProperty(target, "x")!
+    .set as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
+  assert.equal(objects.getOwnProperty(setter, "length")?.value, 0);
+});

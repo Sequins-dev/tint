@@ -1,0 +1,44 @@
+{
+  "kind": "native-selection-checkpoint",
+  "conformance": true,
+  "scope": "two complete, distinct selected families; not whole-suite coverage",
+  "sourceSnapshot": {
+    "sha256": "dc02ba996a88397297be0b7b1d0f8f6e9005cb2ea704f2bf7924818267341291",
+    "files": 550
+  },
+  "families": [
+    {
+      "selection": "annexB/language/global-code",
+      "report": "docs/results/test262-annexb-global-code-admission-native-v1.json",
+      "totals": {
+        "total": 153,
+        "passed": 153,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/global-code",
+      "report": "docs/results/test262-global-code-admission-native-v1.json",
+      "totals": {
+        "total": 75,
+        "passed": 73,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9733333333333334
+      }
+    }
+  ],
+  "retainedEarlierFailures": [
+    "docs/results/test262-annexb-global-code-evalscript-host-native-v1.json",
+    "docs/results/test262-global-code-evalscript-host-native-v1.json"
+  ],
+  "remaining": "two language/global-code variants need direct string eval"
+}

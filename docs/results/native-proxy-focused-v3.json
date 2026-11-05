@@ -1,0 +1,13 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-proxy.ts",
+  "fixtureSha256": "426260b226fd02f57001a3b6bea8218f31c064c1cd4cf2bc2cc70bae83aae0cf",
+  "runner": "tools/native-script-fixture.ts",
+  "runnerSha256": "b28381f61a6e15b76b1e5b7fe1c49d88cdef132ea5ffa0f8326657cf9df2a58f",
+  "cases": 8,
+  "passed": 8,
+  "nativeValidation": "One staged executable, fresh LLDB-controlled process per case, expected exit 42. Earlier incomplete debugger-launch observations retained separately.",
+  "scope": "Proxy trap fallback, receivers, revocation, property/descriptor/key/prototype/extensibility invariants, callable and constructible targets."
+}

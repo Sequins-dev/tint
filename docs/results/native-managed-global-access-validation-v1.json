@@ -1,0 +1,45 @@
+{
+  "kind": "native-managed-global-access-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "passed": 8,
+  "total": 8,
+  "reports": [
+    "native-managed-global-access-connected-v4-0.json",
+    "native-managed-global-access-connected-v4-1.json",
+    "native-managed-global-access-connected-v4-2.json",
+    "native-managed-global-access-connected-v4-3.json",
+    "native-managed-global-access-connected-v4-4.json",
+    "native-managed-global-access-connected-v4-5.json",
+    "native-managed-global-access-connected-v4-6.json",
+    "native-managed-global-access-connected-v4-7.json"
+  ],
+  "regressions": [
+    "fresh global resolution",
+    "getter ordering and receiver",
+    "abrupt completion",
+    "nullish base and missing final property",
+    "primitive receiver",
+    "static Unicode/computed property names",
+    "constructor realm and error realm",
+    "intermediate values retained across moving GC"
+  ],
+  "oldCallbackProfile": "native-managed-access-old-invocation-diagnostic-v2.json",
+  "retainedFailures": [
+    "native-managed-global-access-v1-0.json",
+    "native-managed-global-access-green-v3-0.json",
+    "native-managed-global-access-diagnostic-v2-0.json",
+    "native-managed-global-access-diagnostic-v2-1.json",
+    "native-managed-global-access-diagnostic-v2-2.json",
+    "native-managed-global-access-diagnostic-v2-3.json",
+    "native-managed-global-access-diagnostic-v2-4.json",
+    "native-managed-global-access-diagnostic-v2-5.json",
+    "native-managed-global-access-diagnostic-v2-6.json",
+    "native-managed-global-access-diagnostic-v2-7.json"
+  ],
+  "correction": "Two-argument signature metadata requires a 48-byte trusted window. The host now computes this from shared ABI constants instead of retaining the old 32-byte zero-argument window.",
+  "scope": "Bespoke regressions only. General expression/call compilation, eval and complete Function conformance remain separate."
+}

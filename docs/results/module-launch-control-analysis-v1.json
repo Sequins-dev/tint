@@ -1,0 +1,15 @@
+{
+  "kind": "native-launch-control-analysis",
+  "conformance": false,
+  "control": "docs/results/module-launch-control-v2.json",
+  "previousProof": "docs/results/native-module-linking-v1.json",
+  "sameImageSha256": "40c5253acfd1387da505b7b2eac4cf9c6257ac203b70e964de56a0f2eb67f95c",
+  "observation": "The unchanged previously passing image did not reach confirmed stopped-at-entry within the bounded control.",
+  "limits": "No new module code ran in this control; no root cause or general host-wide failure established. The protected system-binary control is separately unsuitable.",
+  "systemControlLimitation": "docs/results/module-system-control-limitation-v1.json",
+  "withheld": [
+    "docs/results/native-module-evaluation-v2.json",
+    "docs/results/bootstrap-module-loading-v1.json"
+  ],
+  "next": "Continue M2 Node implementation; native acceptance and frozen fixed point remain pending."
+}

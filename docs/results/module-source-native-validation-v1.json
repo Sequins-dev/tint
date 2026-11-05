@@ -1,0 +1,41 @@
+{
+  "kind": "native-feature-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+    "files": 562
+  },
+  "workspace": "docs/results/module-source-lowering-node-checkpoint-v1.json",
+  "cases": [
+    {
+      "report": "docs/results/native-module-in-image-lowering-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-module-cumulative-evaluation-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-module-source-lowering-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "failedObservations": [
+    "docs/results/native-module-source-lowering-v1.json",
+    "docs/results/native-module-source-lowering-diagnostic-v1.json",
+    "docs/results/native-module-source-lowering-diagnostic-v2.json",
+    "docs/results/native-module-source-lowering-diagnostic-v3.json",
+    "docs/results/native-module-source-lowering-diagnostic-v4.json"
+  ],
+  "diagnosis": "Generated module fixture omitted compiler-authorized symbol and bigint views. Binding the same three views as Script fixtures makes the unchanged semantic assertions complete. No portable runtime or lowerer relaxation.",
+  "remaining": [
+    "Frozen native self-build and stage-image comparison",
+    "M2b Test262 module host integration"
+  ]
+}

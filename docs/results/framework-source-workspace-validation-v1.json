@@ -1,0 +1,99 @@
+{
+  "kind": "framework-migration-workspace-validation",
+  "sourceSnapshot": {
+    "sha256": "ef410a7c06d72ef7699717a8b74f2376f2967b659fd8ee7914f56695a5dffd31",
+    "files": 492
+  },
+  "scope": "Pure source framework consolidation",
+  "baselineSource": "1c9b56fd923a8f12d10df0bb1e8105d2fee146cb110e8346358f84f7e75dc2b0",
+  "commands": [
+    {
+      "name": "build",
+      "cmd": "node node_modules/typescript/lib/tsc.js -b",
+      "chunk_id": "1f3474",
+      "wall_time_seconds": 9.75e-6,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "name": "testTypes",
+      "cmd": "node node_modules/typescript/lib/tsc.js -p tsconfig.tests.json",
+      "chunk_id": "3ddc52",
+      "wall_time_seconds": 4.844039208,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "name": "hostTypes",
+      "cmd": "node node_modules/typescript/lib/tsc.js -p tsconfig.host.json",
+      "chunk_id": "d513d7",
+      "wall_time_seconds": 0.038584042,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "name": "boundaries",
+      "cmd": "node tools/check-boundaries.ts",
+      "chunk_id": "a7c3cd",
+      "wall_time_seconds": 0.445995584,
+      "exit_code": 0,
+      "original_token_count": 23,
+      "output": "Verified public imports, dependency contracts and acyclic graph for 83 portable packages.\n"
+    },
+    {
+      "name": "format",
+      "cmd": "node node_modules/prettier/bin/prettier.cjs --check packages tools types '*.json' pnpm-workspace.yaml README.md docs/build-inputs.md",
+      "chunk_id": "9f18f5",
+      "wall_time_seconds": 5.035526917,
+      "exit_code": 0,
+      "original_token_count": 17,
+      "output": "Checking formatting...\nAll matched files use Prettier code style!\n"
+    }
+  ],
+  "nodeTests": {
+    "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+    "exit_code": 0,
+    "tests": 3459,
+    "passed": 3459,
+    "failed": 0,
+    "baselineTests": 3458,
+    "addedTests": 1,
+    "log": "/tmp/tint-source-framework-full-node-v1.log"
+  },
+  "focusedTests": {
+    "tests": 19,
+    "passed": 19,
+    "failed": 0,
+    "log": "/tmp/tint-source-framework-focused-v1.log"
+  },
+  "install": {
+    "command": "node /Users/stephenbelanger/Library/pnpm/.tools/pnpm/10.34.8/node_modules/pnpm/bin/pnpm.cjs install --offline --ignore-scripts",
+    "exit_code": 0,
+    "log": "/tmp/tint-source-framework-install-v1.log"
+  },
+  "packages": 83,
+  "sources": 492,
+  "grants": 354,
+  "preservation": [
+    "text.ts exact original source body",
+    "catalog.ts exact original source body",
+    "resolver.ts exact original source except two same-package relative imports",
+    "Old source package directories and root aliases absent",
+    "No root/wildcard/source compatibility exports",
+    "No frozen trees, reports or archive edits",
+    "Native smoke and self-build belong to root"
+  ],
+  "sourceIdentity": {
+    "sha256": "ef410a7c06d72ef7699717a8b74f2376f2967b659fd8ee7914f56695a5dffd31",
+    "files": 492
+  },
+  "implementationSha256": {
+    "text": "87bd1d9e00f67d6e895ec7dabaa9780b180ca291984e2c2622d6221b93c0a30d",
+    "catalog": "071c9d8609a101a2f41f7860d51c4882a9d85fe92fd669237427f0816f6e3105",
+    "resolver": "dd92abce396180b09fffd046685ff41f676e926e8e02317c711923115a1c1580"
+  },
+  "touchedFiles": "/tmp/tint-source-framework-touched-final-v1.json"
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "8e2002e1482140bea9dd56ca743c8f38764fa5b02c79c485753737718fa76bcf"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "69a54dd241f112bf643ca613f8ab47b576978d7675892f83188e9ce3a14bab96"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "a604a58d061e349c7f59d62fbf68a38efec1c285a396851b116f997f7d24eca7"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "c7cb26dab8aed68a914e7344fdcdb8cb862c21d0d2e2131c714cd116f62244fa"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "714f8030cfa85ed181fee000f3d9f84412d7ac33f0699d50f5b1801cda161547"
+    }
+  ]
+}

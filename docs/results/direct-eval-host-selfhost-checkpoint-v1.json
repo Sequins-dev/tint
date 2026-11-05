@@ -1,0 +1,28 @@
+{
+  "kind": "native-selfhost-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "5d1967574760292ac65d6c7ef1cd8ae1a1d5266b2b3193cc0fd694825066cef8",
+    "files": 552
+  },
+  "selfBuild": "docs/results/bootstrap-direct-eval-host-v1.json",
+  "workspaceTests": 4102,
+  "bytes": 71616466,
+  "sha256": "1614a7cd0bfc09c4ffaa1fcfc242e1bc4a5428f53bfa84b04a36430c345377eb",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/direct-eval-host-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/direct-eval-host-dwarf-v1.log"
+    }
+  },
+  "nativeFixtures": [
+    "docs/results/native-direct-eval-service-validation-v1.json",
+    "docs/results/native-test262-direct-eval-validation-v1.json"
+  ],
+  "conformanceStatus": "targeted unchanged selections queued; no new native conformance pass rate claimed"
+}

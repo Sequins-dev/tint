@@ -1,0 +1,170 @@
+{
+  "kind": "locale-services-validation",
+  "generatedAt": "2026-11-03T00:49:25.671Z",
+  "sourceSnapshot": {
+    "sha256": "44875d8a8cde41dce9eeb1e1ba127fa8fe9752ed5252fce8fe0cbd16f154c27f",
+    "files": 462
+  },
+  "previous": "docs/results/native-locale-services-validation-v1.json",
+  "implemented": [
+    "Unicode locale parsing and CLDR canonicalization",
+    "Intl.getCanonicalLocales",
+    "Intl.Locale constructor and core accessors",
+    "Locale.maximize/minimize",
+    "Locale.getHourCycles/getTextInfo/getWeekInfo/getTimeZones"
+  ],
+  "data": {
+    "cldr": "49",
+    "archiveSha256": "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89",
+    "languageRules": 813,
+    "typeAliases": 61,
+    "likelySubtags": 7868,
+    "hourPreferences": 277,
+    "scriptDirections": 184,
+    "territoryZoneSets": 248,
+    "independentMetadataExtraction": "All six metadata tables match independent XML-parser extraction under /tmp/tint-locale-info-prototype-20261103"
+  },
+  "nativeFixtures": [
+    {
+      "report": "docs/results/native-locale-objects-case-0-v5.json",
+      "selectedCase": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-1-v5.json",
+      "selectedCase": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-2-v5.json",
+      "selectedCase": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-3-v5.json",
+      "selectedCase": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-4-v5.json",
+      "selectedCase": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-5-v5.json",
+      "selectedCase": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-6-v5.json",
+      "selectedCase": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-7-v5.json",
+      "selectedCase": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-8-v5.json",
+      "selectedCase": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-9-v5.json",
+      "selectedCase": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-10-v5.json",
+      "selectedCase": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-11-v5.json",
+      "selectedCase": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-12-v5.json",
+      "selectedCase": 12,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "report": "docs/results/native-locale-objects-case-13-v5.json",
+      "selectedCase": 13,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "completedConformance": [
+    {
+      "report": "docs/results/test262-canonical-locales-native-v2.json",
+      "scope": "Older 460-source snapshot; complete selection",
+      "passed": 76,
+      "total": 76
+    },
+    {
+      "report": "docs/results/test262-locale-family-native-v1.json",
+      "scope": "Older constructor/accessor snapshot, predating likely-subtag and metadata methods",
+      "passed": 218,
+      "total": 380
+    }
+  ],
+  "activeConformance": {
+    "report": "docs/results/test262-locale-family-native-v2.json",
+    "toolchain": "docs/results/frozen-node-toolchain-locale-metadata-v1.json",
+    "complete": false
+  },
+  "regressions": {
+    "territoryFallback": "Unknown language plus script does not invent a different base language when selecting territory aliases.",
+    "xmlWhitespace": "Multiline XML timezone lists do not create an empty zone name; complete248-region catalog validates nonempty sorted unique names."
+  },
+  "workspaceValidation": {
+    "tests": 3280,
+    "failed": 0,
+    "logs": [
+      "/tmp/tint-locale-metadata-workspace-tests-v1.log",
+      "/tmp/tint-locale-metadata-test-types-v1.log",
+      "/tmp/tint-locale-info-host-types-v1.log",
+      "/tmp/tint-locale-metadata-boundaries-v1.log",
+      "/tmp/tint-locale-metadata-format-check-v1.log"
+    ]
+  },
+  "selfHosting": {
+    "stage1": ".tint-bootstrap/stage1-locale-metadata-v1",
+    "snapshot": ".tint-bootstrap/source-locale-metadata-v1",
+    "nativeSelfBuild": "Queued behind the current coverage selection; not yet verified"
+  },
+  "deferred": [
+    "Locale calendars/collations/numbering availability requires real formatter-service registries",
+    "Whole-suite behavior measurement and over90% native passes"
+  ]
+}

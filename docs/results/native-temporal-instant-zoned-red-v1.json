@@ -1,0 +1,30 @@
+{
+  "kind": "development-red-observation",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-temporal-instant-zoned.ts",
+  "fixtureSha256": "9b17490d06470d136a22cacda2b98104a406229c0cc5fefd772f46b920e6e522",
+  "imageSha256": "62118b4abdfa612feb4baac714eb111987b3eeab735a5f3de3c18a2495b98a3d",
+  "cases": 2,
+  "passed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

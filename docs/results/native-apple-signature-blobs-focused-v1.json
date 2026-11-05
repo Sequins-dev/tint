@@ -1,0 +1,37 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "fixture": "tools/verify-hosted-apple-signature.ts",
+  "imageSha256": "a943feffb653f394214a9f30ed4fd035da0ca8f3d1b0aab23dafdd034ac630f9",
+  "signer": "Tint; no host signing",
+  "signatureVerification": 0,
+  "reference": "Node crypto SHA-256 of complete signature bytes",
+  "prefixLengths": [
+    0,
+    3,
+    4096,
+    4097
+  ],
+  "specialSlots": [
+    [],
+    [
+      5
+    ]
+  ],
+  "cases": 2,
+  "passed": 2,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

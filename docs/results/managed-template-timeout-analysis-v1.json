@@ -1,0 +1,17 @@
+{
+  "kind": "native-managed-template-timeout-analysis",
+  "conformance": false,
+  "accepted": false,
+  "observation": "docs/results/native-managed-templates-case-0-v1.json",
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "outcome": "timeout",
+  "confirmedInitialStop": true,
+  "duringLaunchSample": ".tint-bootstrap/managed-template-debugserver-launch-sample-v1.txt",
+  "sampleFinding": "Before any packet or initial-state file was visible, debugserver was waiting in RNBRunLoopLaunchInferior / DNBProcessWaitForEvents. The final outcome later contains a confirmed dyld initial stop and continue.",
+  "imageSignature": ".tint-bootstrap/managed-template-image-signature-v1.log",
+  "limits": "No timing split between launch and execution was recorded; the sample does not prove the whole timeout was infrastructure, nor that template execution began or failed. No native acceptance is claimed.",
+  "next": "Run a separate previously passing image with the existing connected-before-launch protocol; retain this timeout regardless of control outcome."
+}

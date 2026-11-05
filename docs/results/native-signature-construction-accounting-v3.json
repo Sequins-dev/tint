@@ -1,0 +1,211 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "fixture": "tools/verify-construction.ts",
+  "scope": "Signer byte comparison, paired exact-allocation/exhaustion tests and the existing deliberately mismatched callable-signature guards.",
+  "allocationBytes": [
+    5440,
+    5952,
+    10032,
+    10544
+  ],
+  "signalPolicy": "Expected BRK #3 recorded before debugger cleanup; no claim of observed exit 133",
+  "cases": 10,
+  "passed": 8,
+  "observations": [
+    {
+      "file": "signature-0-constructed",
+      "passed": false,
+      "expected": "exit 0 after full byte and exact allocation checks",
+      "initial": {
+        "state": 0,
+        "pid": 0
+      },
+      "sha256": "e9b32d4cee201058cc62d9918356e0758359bb3d7b56110bd5a2cba383016576",
+      "status": 1,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-ksf60a/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-ksf60a/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-ksf60a/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-ksf60a/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-ksf60a/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-ksf60a/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-ksf60a/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n22\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+      "stderr": "error: Command requires a current process.\n"
+    },
+    {
+      "file": "signature-0-exhausted",
+      "passed": false,
+      "expected": "BRK #3 after one successful signing invocation",
+      "initial": {
+        "state": 0,
+        "pid": 0
+      },
+      "sha256": "5a4914cac707220f701e1d70f51516ad98c17110d217c5190eedbb54e26684a7",
+      "status": 1,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-exhausted\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-exhausted' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-nVVQR5/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-nVVQR5/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-nVVQR5/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-0-exhausted\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-nVVQR5/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-nVVQR5/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-nVVQR5/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-nVVQR5/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n22\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n",
+      "stderr": "error: Command requires a current process.\n"
+    },
+    {
+      "file": "signature-3-constructed",
+      "passed": true,
+      "expected": "exit 0 after full byte and exact allocation checks",
+      "initial": {
+        "state": 5,
+        "pid": 25622
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 0,
+        "instruction": 0,
+        "description": null,
+        "cleanupState": 10,
+        "cleanupExitStatus": 0
+      },
+      "sha256": "44c5c91ff40a5f6b86eb25bddd9effeee4943f290c5c0e5aadcf12ce628503b3",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-WlZcsr/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-WlZcsr/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-WlZcsr/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-WlZcsr/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-WlZcsr/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-WlZcsr/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-WlZcsr/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25622 resuming\nProcess 25622 exited with status = 0 (0x00000000)\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-WlZcsr/outcome.json\\\",'w').write(json.dumps(r))\")\n",
+      "stderr": ""
+    },
+    {
+      "file": "signature-3-exhausted",
+      "passed": true,
+      "expected": "BRK #3 after one successful signing invocation",
+      "initial": {
+        "state": 5,
+        "pid": 25711
+      },
+      "outcome": {
+        "state": 5,
+        "exitStatus": -1,
+        "instruction": 3558867040,
+        "description": "EXC_BREAKPOINT (code=1, subcode=0x1008dd92c)",
+        "cleanupState": 10,
+        "cleanupExitStatus": 9
+      },
+      "sha256": "d107eb0a29a89e833e2750ee4a34ba0db0554105732e1c0cf8003ea05640bd55",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-exhausted\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-exhausted' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-kpYf4Y/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-kpYf4Y/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-kpYf4Y/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-3-exhausted\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-kpYf4Y/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-kpYf4Y/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-kpYf4Y/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-kpYf4Y/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25711 resuming\nProcess 25711 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x1008dd92c)\n       frame #0: 0x00000001008dd92c signature-3-exhausted`\n->  0x1008dd92c: brk    #0x3\n    0x1008dd930: ldr    x9, [sp, #0x10]\n    0x1008dd934: adr    x16, 0x1008dd934\n    0x1008dd938: mov    x17, #0x10f0              ; =4336 \nTarget 0: (signature-3-exhausted) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-kpYf4Y/outcome.json\\\",'w').write(json.dumps(r))\")\nProcess 25711 exited with status = 9 (0x00000009) killed\n",
+      "stderr": ""
+    },
+    {
+      "file": "signature-4096-constructed",
+      "passed": true,
+      "expected": "exit 0 after full byte and exact allocation checks",
+      "initial": {
+        "state": 5,
+        "pid": 25735
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 0,
+        "instruction": 0,
+        "description": null,
+        "cleanupState": 10,
+        "cleanupExitStatus": 0
+      },
+      "sha256": "ad37c4424598c1c185fc4df746bcc244d2fb32bcef800d8800edf0e0910995fe",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-h2cDry/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-h2cDry/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-h2cDry/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-h2cDry/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-h2cDry/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-h2cDry/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-h2cDry/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25735 resuming\nProcess 25735 exited with status = 0 (0x00000000)\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-h2cDry/outcome.json\\\",'w').write(json.dumps(r))\")\n",
+      "stderr": ""
+    },
+    {
+      "file": "signature-4096-exhausted",
+      "passed": true,
+      "expected": "BRK #3 after one successful signing invocation",
+      "initial": {
+        "state": 5,
+        "pid": 25758
+      },
+      "outcome": {
+        "state": 5,
+        "exitStatus": -1,
+        "instruction": 3558867040,
+        "description": "EXC_BREAKPOINT (code=1, subcode=0x102ce6124)",
+        "cleanupState": 10,
+        "cleanupExitStatus": 9
+      },
+      "sha256": "4c41a4ffcf56e6e4218a6d723ba6d12c32dce88bde69609612b7568722a6e0bf",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-exhausted\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-exhausted' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-7eXy9G/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-7eXy9G/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-7eXy9G/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4096-exhausted\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-7eXy9G/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-7eXy9G/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-7eXy9G/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-7eXy9G/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25758 resuming\nProcess 25758 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x102ce6124)\n       frame #0: 0x0000000102ce6124 signature-4096-exhausted`\n->  0x102ce6124: brk    #0x3\n    0x102ce6128: ldr    x9, [sp, #0x10]\n    0x102ce612c: adr    x16, 0x102ce612c\n    0x102ce6130: mov    x17, #0x10f0              ; =4336 \nTarget 0: (signature-4096-exhausted) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-7eXy9G/outcome.json\\\",'w').write(json.dumps(r))\")\nProcess 25758 exited with status = 9 (0x00000009) killed\n",
+      "stderr": ""
+    },
+    {
+      "file": "signature-4097-constructed",
+      "passed": true,
+      "expected": "exit 0 after full byte and exact allocation checks",
+      "initial": {
+        "state": 5,
+        "pid": 25784
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 0,
+        "instruction": 0,
+        "description": null,
+        "cleanupState": 10,
+        "cleanupExitStatus": 0
+      },
+      "sha256": "42e58baf8b7b2e6cf367282154a482a1daee70409898678fc631f271844e14b2",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-ykgaup/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-ykgaup/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-ykgaup/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-ykgaup/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-ykgaup/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-ykgaup/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-ykgaup/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25784 resuming\nProcess 25784 exited with status = 0 (0x00000000)\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-ykgaup/outcome.json\\\",'w').write(json.dumps(r))\")\n",
+      "stderr": ""
+    },
+    {
+      "file": "signature-4097-exhausted",
+      "passed": true,
+      "expected": "BRK #3 after one successful signing invocation",
+      "initial": {
+        "state": 5,
+        "pid": 25810
+      },
+      "outcome": {
+        "state": 5,
+        "exitStatus": -1,
+        "instruction": 3558867040,
+        "description": "EXC_BREAKPOINT (code=1, subcode=0x104122224)",
+        "cleanupState": 10,
+        "cleanupExitStatus": 9
+      },
+      "sha256": "9179fa65609a23db2c227c51d06432c9543b2d4c9b8f6f346be72c925a1f2e99",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-exhausted\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-exhausted' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-d2Sb97/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-d2Sb97/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-d2Sb97/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/signature-4097-exhausted\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-d2Sb97/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-d2Sb97/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-d2Sb97/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-d2Sb97/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25810 resuming\nProcess 25810 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x104122224)\n       frame #0: 0x0000000104122224 signature-4097-exhausted`\n->  0x104122224: brk    #0x3\n    0x104122228: ldr    x9, [sp, #0x10]\n    0x10412222c: adr    x16, 0x10412222c\n    0x104122230: mov    x17, #0x45f0              ; =17904 \nTarget 0: (signature-4097-exhausted) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-d2Sb97/outcome.json\\\",'w').write(json.dumps(r))\")\nProcess 25810 exited with status = 9 (0x00000009) killed\n",
+      "stderr": ""
+    },
+    {
+      "file": "function-values-invalid-signature-constructed",
+      "passed": true,
+      "expected": "BRK #3 for the deliberately mismatched callable signature",
+      "initial": {
+        "state": 5,
+        "pid": 25860
+      },
+      "outcome": {
+        "state": 5,
+        "exitStatus": -1,
+        "instruction": 3558867040,
+        "description": "EXC_BREAKPOINT (code=1, subcode=0x1007c8ad0)",
+        "cleanupState": 10,
+        "cleanupExitStatus": 9
+      },
+      "sha256": "100b5ec03c7b66c4e435dfc36d5183e1c2bdc37bb24b09d6e18fd67c2b6841e6",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-constructed\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-constructed' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-bK29pu/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-bK29pu/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-bK29pu/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-constructed\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-bK29pu/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-bK29pu/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-bK29pu/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-bK29pu/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25860 resuming\nProcess 25860 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x1007c8ad0)\n       frame #0: 0x00000001007c8ad0 function-values-invalid-signature-constructed`\n->  0x1007c8ad0: brk    #0x3\n    0x1007c8ad4: ldr    x1, [x12, #0x18]\n    0x1007c8ad8: ldr    x16, [x12, #0x10]\n    0x1007c8adc: blr    x16\nTarget 0: (function-values-invalid-signature-constructed) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-bK29pu/outcome.json\\\",'w').write(json.dumps(r))\")\nProcess 25860 exited with status = 9 (0x00000009) killed\n",
+      "stderr": ""
+    },
+    {
+      "file": "function-values-invalid-signature-exhausted",
+      "passed": true,
+      "expected": "BRK #3 for the deliberately mismatched callable signature",
+      "initial": {
+        "state": 5,
+        "pid": 25884
+      },
+      "outcome": {
+        "state": 5,
+        "exitStatus": -1,
+        "instruction": 3558867040,
+        "description": "EXC_BREAKPOINT (code=1, subcode=0x102660b38)",
+        "cleanupState": 10,
+        "cleanupExitStatus": 9
+      },
+      "sha256": "170b193dfccb5048ccf752462afb82042619143961fce7e7c81082af03f777d8",
+      "status": 0,
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-exhausted\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-exhausted' (arm64).\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/tmp/tint-accounting-debugger-gcoUtA/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-accounting-debugger-gcoUtA/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-accounting-debugger-gcoUtA/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-construction-ooHUhX/function-values-invalid-signature-exhausted\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-accounting-debugger-gcoUtA/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-accounting-debugger-gcoUtA/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-accounting-debugger-gcoUtA/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-accounting-debugger-gcoUtA/initial.json\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n26\n(lldb) continue\nProcess 25884 resuming\nProcess 25884 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x102660b38)\n       frame #0: 0x0000000102660b38 function-values-invalid-signature-exhausted`\n->  0x102660b38: brk    #0x3\n    0x102660b3c: ldr    x1, [x12, #0x18]\n    0x102660b40: ldr    x16, [x12, #0x10]\n    0x102660b44: blr    x16\nTarget 0: (function-values-invalid-signature-exhausted) stopped.\n(lldb) script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\ns=p.GetState()\\nstopped=s==lldb.eStateStopped\\nt=p.GetSelectedThread()\\ne=lldb.SBError()\\ni=p.ReadUnsignedFromMemory(t.GetFrameAtIndex(0).GetPC(),4,e) if stopped else 0\\nr={'state':s,'exitStatus':p.GetExitStatus(),'instruction':i,'description':t.GetStopDescription(512) if stopped else None}\\nif stopped: p.Kill()\\nr['cleanupState']=p.GetState()\\nr['cleanupExitStatus']=p.GetExitStatus()\\nassert p.GetState()==lldb.eStateExited\\nopen(\\\"/tmp/tint-accounting-debugger-gcoUtA/outcome.json\\\",'w').write(json.dumps(r))\")\nProcess 25884 exited with status = 9 (0x00000009) killed\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,821 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/new.target",
+  "totals": {
+    "total": 28,
+    "passed": 3,
+    "failed": 2,
+    "unsupported": 8,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 15,
+    "passFraction": 0.10714285714285714
+  },
+  "observations": [
+    {
+      "path": "language/expressions/new.target/asi.js",
+      "sha256": "772c8f341b1e2f259cc51d1049f1b1db6cc73f0767b9f57a379e0405550905c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-wSFJmu/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-wSFJmu/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 33087.305792
+    },
+    {
+      "path": "language/expressions/new.target/asi.js",
+      "sha256": "772c8f341b1e2f259cc51d1049f1b1db6cc73f0767b9f57a379e0405550905c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19698.416042000004
+    },
+    {
+      "path": "language/expressions/new.target/escaped-new.js",
+      "sha256": "059dfe27c85373d55483ce0222828bdb2cfc4869eea8484ce0c19eb91c5fc791",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"escaped keyword is not an identifier reference\",\"start\":803,\"end\":811,\"position\":{\"line\":24,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.4269999999960419
+    },
+    {
+      "path": "language/expressions/new.target/escaped-new.js",
+      "sha256": "059dfe27c85373d55483ce0222828bdb2cfc4869eea8484ce0c19eb91c5fc791",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"escaped keyword is not an identifier reference\",\"start\":817,\"end\":825,\"position\":{\"line\":25,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.25700000000506407
+    },
+    {
+      "path": "language/expressions/new.target/escaped-target.js",
+      "sha256": "ca9b5a47a18314d4ba7e4c218fa60fd207d22a215154dd9554c670bd35e98a40",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"new.target requires a function context and literal target spelling\",\"start\":817,\"end\":820,\"position\":{\"line\":24,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.21637500000360887
+    },
+    {
+      "path": "language/expressions/new.target/escaped-target.js",
+      "sha256": "ca9b5a47a18314d4ba7e4c218fa60fd207d22a215154dd9554c670bd35e98a40",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"code\":\"SYNTAX_ERROR\",\"message\":\"new.target requires a function context and literal target spelling\",\"start\":831,\"end\":834,\"position\":{\"line\":25,\"column\":5}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.14029099999606842
+    },
+    {
+      "path": "language/expressions/new.target/unary-expr.js",
+      "sha256": "fe3e646f8626a844aefb51af2078c73f49c5a30eebcee44893d7ad6d7b9b7e9e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "new.target",
+          "async-functions"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.4430419999989681
+    },
+    {
+      "path": "language/expressions/new.target/unary-expr.js",
+      "sha256": "fe3e646f8626a844aefb51af2078c73f49c5a30eebcee44893d7ad6d7b9b7e9e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "new.target",
+          "async-functions"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native job queue and async completion are not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.15087499999935972
+    },
+    {
+      "path": "language/expressions/new.target/value-via-call.js",
+      "sha256": "b4cc27c2f76f814b825c2bc572d6a337ec8168597120670b615eb82270ae0e2a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-P6uv1v/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-P6uv1v/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 33463.85329200001
+    },
+    {
+      "path": "language/expressions/new.target/value-via-call.js",
+      "sha256": "b4cc27c2f76f814b825c2bc572d6a337ec8168597120670b615eb82270ae0e2a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zWCZrb/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zWCZrb/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31591.043374999994
+    },
+    {
+      "path": "language/expressions/new.target/value-via-fpapply.js",
+      "sha256": "7da718539eaedb7e87e10450fd3b60fabaa14b44938926afd531a4bbc35df8ab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gKi0FS/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gKi0FS/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31383.644209000006
+    },
+    {
+      "path": "language/expressions/new.target/value-via-fpapply.js",
+      "sha256": "7da718539eaedb7e87e10450fd3b60fabaa14b44938926afd531a4bbc35df8ab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 28181.181249999994
+    },
+    {
+      "path": "language/expressions/new.target/value-via-fpcall.js",
+      "sha256": "6d59bf08bad987a7c74999996a57a740ba26701e34edf81ff633c56869bd6810",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ArDKcg/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ArDKcg/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 34735.040416
+    },
+    {
+      "path": "language/expressions/new.target/value-via-fpcall.js",
+      "sha256": "6d59bf08bad987a7c74999996a57a740ba26701e34edf81ff633c56869bd6810",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k4tU0x/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k4tU0x/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31520.194000000018
+    },
+    {
+      "path": "language/expressions/new.target/value-via-member.js",
+      "sha256": "f18e2268cc4aaee1426db88d2ceff3af72ca50925be057410f58fe3776696a3b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-EPD9jQ/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-EPD9jQ/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31636.913750000007
+    },
+    {
+      "path": "language/expressions/new.target/value-via-member.js",
+      "sha256": "f18e2268cc4aaee1426db88d2ceff3af72ca50925be057410f58fe3776696a3b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 19636.602125000034
+    },
+    {
+      "path": "language/expressions/new.target/value-via-new.js",
+      "sha256": "2736e29450eb3ce303b7343c97539cca26842a29e92a8f59509fbcf624113736",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-YlExD6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-YlExD6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31497.571209000016
+    },
+    {
+      "path": "language/expressions/new.target/value-via-new.js",
+      "sha256": "2736e29450eb3ce303b7343c97539cca26842a29e92a8f59509fbcf624113736",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dH4T7e/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dH4T7e/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31429.767041999963
+    },
+    {
+      "path": "language/expressions/new.target/value-via-reflect-apply.js",
+      "sha256": "1c45ce50e6352677dda6ac813de9e9a9a323b27b133afba91f095388217e385f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 27241.91954199999
+    },
+    {
+      "path": "language/expressions/new.target/value-via-reflect-apply.js",
+      "sha256": "1c45ce50e6352677dda6ac813de9e9a9a323b27b133afba91f095388217e385f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-L44Brz/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-L44Brz/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31423.270750000025
+    },
+    {
+      "path": "language/expressions/new.target/value-via-reflect-construct.js",
+      "sha256": "7b45ad7277e1816ecd5efaf1fe8ebd44173ea8718c26d6a596d7d8942b40dac4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "Reflect",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1A138O/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1A138O/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31509.286499999987
+    },
+    {
+      "path": "language/expressions/new.target/value-via-reflect-construct.js",
+      "sha256": "7b45ad7277e1816ecd5efaf1fe8ebd44173ea8718c26d6a596d7d8942b40dac4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "Reflect",
+          "Reflect.construct"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AAtpCa/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AAtpCa/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31431.403417000023
+    },
+    {
+      "path": "language/expressions/new.target/value-via-super-call.js",
+      "sha256": "f63d4376131b965ab57312cf7fbea1f1a2dca58b21597225aca040897c0acd90",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BXzMTW/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BXzMTW/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31436.464708000014
+    },
+    {
+      "path": "language/expressions/new.target/value-via-super-call.js",
+      "sha256": "f63d4376131b965ab57312cf7fbea1f1a2dca58b21597225aca040897c0acd90",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 29958.676499999943
+    },
+    {
+      "path": "language/expressions/new.target/value-via-super-property.js",
+      "sha256": "43411673ac56cbd9c76350032d5f29140f74b60d42379e8f6ed5a8e6017a8315",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-U6cyYD/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-U6cyYD/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 32989.32029100007
+    },
+    {
+      "path": "language/expressions/new.target/value-via-super-property.js",
+      "sha256": "43411673ac56cbd9c76350032d5f29140f74b60d42379e8f6ed5a8e6017a8315",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "new.target"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LiqO4W/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LiqO4W/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\n"
+      },
+      "status": "crash",
+      "elapsedMs": 31352.56895799993
+    },
+    {
+      "path": "language/expressions/new.target/value-via-tagged-template.js",
+      "sha256": "28cf9e98ceac4d5d06c9c6fc43984936e8760f4fe1cb296544c3d52be5d0cf11",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "template"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":513,\"end\":515,\"position\":{\"line\":21,\"column\":2}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.9904999999562278
+    },
+    {
+      "path": "language/expressions/new.target/value-via-tagged-template.js",
+      "sha256": "28cf9e98ceac4d5d06c9c6fc43984936e8760f4fe1cb296544c3d52be5d0cf11",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "new.target",
+          "template"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"feature\":\"template-literals\",\"code\":\"UNSUPPORTED_SYNTAX\",\"message\":\"tagged templates are not implemented\",\"start\":527,\"end\":529,\"position\":{\"line\":22,\"column\":2}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2089159999741241
+    }
+  ]
+}

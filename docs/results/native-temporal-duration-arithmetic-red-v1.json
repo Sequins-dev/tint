@@ -1,0 +1,71 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "dbe590a49b3383942cf7dd382fb2959e3b27cb391a87fe7e2a7419a772690fdf",
+      "files": 411
+    },
+    "imageSha256": "566ea6729ebc6ac5cc7e86843e54b82b76639c841efb5ca75a513a3d4636cd68",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.Duration(0,0,0,1,23),b=new Temporal.Duration(0,0,0,0,2);const d=a.add(b);if(d.days!==2||d.hours!==1)throw 1;const x=new Temporal.Duration(0,0,0,0,23).add(b);if(x.days!==0||x.hours!==25)throw 2;",
+        "sha256": "28548a8120865234b828b898c5f451a25c942c4fc39589f9697b7acb81b54e6b"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Temporal.Duration(0,0,0,1).subtract({hours:25});if(d.days!==0||d.hours!==-1)throw 1;let ok=false;try{new Temporal.Duration(1).add({days:1});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;",
+        "sha256": "88f36ab0a376a027bc94b88fa7d2decce17ab7f4a6c46b1addd30c3c4f45ac92"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.Duration(0,0,0,0,0,0,0,0,18446744073709552,616),b=a.add({microseconds:1});if(b.microseconds!==18446744073709552||b.nanoseconds!==616)throw 1;",
+        "sha256": "7abffbda8b7c13bbdbe72288e93c3b2f922bfb80a1c29a1a14b7a01cf0661939"
+      }
+    ]
+  },
+  "cases": 3,
+  "completed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

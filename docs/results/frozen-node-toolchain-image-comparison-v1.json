@@ -1,0 +1,25 @@
+{
+  "kind": "node-toolchain-image-comparison",
+  "conformance": false,
+  "toolchain": {
+    "kind": "frozen-node-toolchain",
+    "conformance": false,
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-using-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-using-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-using-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-using-v1/source-snapshot.json",
+    "sha256": "3642e956dca939091d5d8f5a79cb08cd9d8b72882d6b5361a70e0935598e482a"
+  },
+  "source": "let closed=false;{using resource={[Symbol.dispose](){closed=true;}};}if(!closed)throw 1;",
+  "byteIdentical": true,
+  "images": [
+    {
+      "bytes": 17767896,
+      "sha256": "14fff2184baa9432eb57fb0ea3314b8a0385784a12ec7f01b11a8c3dc6ff673b"
+    },
+    {
+      "bytes": 17767896,
+      "sha256": "14fff2184baa9432eb57fb0ea3314b8a0385784a12ec7f01b11a8c3dc6ff673b"
+    }
+  ]
+}

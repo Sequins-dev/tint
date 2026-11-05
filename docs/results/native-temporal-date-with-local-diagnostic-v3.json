@@ -1,0 +1,56 @@
+{
+  "kind": "native-launch-diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test",
+  "imageSha256": "d94b1eb8728e52d71462db4e352fcea26f237ab0d80d6967e611f29e1e7c1538",
+  "observations": [
+    {
+      "index": 0,
+      "directory": "/tmp/tint-local-launch-l6f2V4",
+      "data": {},
+      "status": {
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      "timedOut": true,
+      "owned": [
+        52910,
+        52911
+      ],
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) settings set target.detach-on-error false\n(lldb) process launch --no-stdio --stop-at-entry -- 0\n",
+      "stderr": ""
+    },
+    {
+      "index": 1,
+      "directory": "/tmp/tint-local-launch-KdQt0u",
+      "data": {},
+      "status": {
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      "timedOut": true,
+      "owned": [
+        52968,
+        52969
+      ],
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) settings set target.detach-on-error false\n(lldb) process launch --no-stdio --stop-at-entry -- 1\n",
+      "stderr": ""
+    },
+    {
+      "index": 2,
+      "directory": "/tmp/tint-local-launch-Zig2cQ",
+      "data": {},
+      "status": {
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      "timedOut": true,
+      "owned": [
+        53093,
+        53094
+      ],
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-ccUNBR/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) settings set target.detach-on-error false\n(lldb) process launch --no-stdio --stop-at-entry -- 2\n",
+      "stderr": ""
+    }
+  ]
+}

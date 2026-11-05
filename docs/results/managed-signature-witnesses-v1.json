@@ -1,0 +1,19 @@
+{
+  "kind": "managed-signature-witness-regressions",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "38a6358ad2179c7698a31f54089a74fbdbee67077707ee26ac48bb5e867dc81d",
+    "files": 522
+  },
+  "nativeFixtures": [
+    "docs/results/native-managed-witness-factory-compiler-v2.json",
+    "docs/results/native-managed-witness-factory-runtime-v2.json"
+  ],
+  "workspaceTests": 3753,
+  "testLog": ".tint-bootstrap/managed-witness-workspace-tests-v1.log",
+  "formatLog": ".tint-bootstrap/managed-witness-final-format-v2.log",
+  "previousSelfBuild": "docs/results/managed-entry-checkpoint-v1.json",
+  "selfBuildMatchesThisSource": false,
+  "scope": "Metadata-only typed callback witnesses, fresh witness tables and stable function identities, AOT signature inspection across GC, deliberate throws, native generation and compilation with the existing SparseList provider. Semantic signature-group membership is not yet selected automatically.",
+  "retainedFailure": "docs/results/native-managed-witness-factory-compiler-v1.json"
+}

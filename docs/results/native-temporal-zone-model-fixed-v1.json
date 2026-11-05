@@ -1,0 +1,65 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "3905def59c4d1680c33d0e3b8a5d4a3450f5def01cfc145b41b5e086afb7ed2b",
+      "files": 431
+    },
+    "imageSha256": "6611f8d1a77d1eb41f09b3f0ec0566ccb89c6c732764fc2fc93647f0719fe904",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=Temporal.ZonedDateTime.from(\"1970-01-01T00:00:00.123456789[+05:30]\");if(a.toString({fractionalSecondDigits:3})!==\"1970-01-01T00:00:00.123+05:30[+05:30]\"||a.toString({smallestUnit:\"second\",offset:\"never\",timeZoneName:\"never\",calendarName:\"critical\"})!==\"1970-01-01T00:00:00[!u-ca=iso8601]\"||a.toString({smallestUnit:\"minute\",timeZoneName:\"critical\"})!==\"1970-01-01T00:00+05:30[!+05:30]\")throw 1;",
+        "sha256": "29bf4b38b4ec1abbf0d03aa4dbe0d0bf53c56907076c9ff34a3a2a7044412dfa"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.ZonedDateTime(-1n,\"UTC\");if(a.toString({fractionalSecondDigits:0})!==\"1969-12-31T23:59:59+00:00[UTC]\"||a.toString({smallestUnit:\"second\",roundingMode:\"ceil\"})!==\"1970-01-01T00:00:00+00:00[UTC]\")throw 1;let log=\"\";a.toString({get calendarName(){log+=\"c\";return \"auto\";},get fractionalSecondDigits(){log+=\"f\";return \"auto\";},get offset(){log+=\"o\";return \"auto\";},get roundingMode(){log+=\"r\";return \"trunc\";},get smallestUnit(){log+=\"s\";return \"second\";},get timeZoneName(){log+=\"z\";return \"auto\";}});if(log!==\"cforsz\")throw 2;",
+        "sha256": "042da6b2dd823a270fab275adff3c7962c0b2713ed732c4896293b175d4c0ea3"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.ZonedDateTime(1n,\"UTC\");if(a.toJSON({get calendarName(){throw 1;}})!==\"1970-01-01T00:00:00.000000001+00:00[UTC]\")throw 2;let log=\"\";let ok=false;try{a.toString({smallestUnit:\"hour\",get timeZoneName(){log+=\"z\";return \"auto\";}});}catch(e){ok=e instanceof RangeError;}if(!ok||log!==\"z\")throw 3;",
+        "sha256": "2b0c9b81fe73ad44142eabc8f3c1133973a399d70c3e5b85f5f2c3c8d921f027"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

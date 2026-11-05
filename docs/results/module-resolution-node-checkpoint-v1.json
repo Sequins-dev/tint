@@ -1,0 +1,34 @@
+{
+  "kind": "node-feature-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "ac8cafc9f446a6cd7e27c4a2618ebeee18118e6fd98856c53aab1deb22276310",
+    "files": 555
+  },
+  "source": ".tint-bootstrap/module-resolution-source-v1.json",
+  "feature": "Module records and export resolution",
+  "workspaceGate": {
+    "tests": 4154,
+    "pass": 4154,
+    "fail": 0,
+    "log": ".tint-bootstrap/module-resolution-workspace-check-v1.log"
+  },
+  "focused": {
+    "tests": 8,
+    "pass": 8,
+    "log": ".tint-bootstrap/module-resolution-green-v2.log"
+  },
+  "nativeChecker": {
+    "stage": "checked",
+    "functions": 36,
+    "log": ".tint-bootstrap/module-resolution-selfcheck-v3.json"
+  },
+  "native": "Hosted fixture built; queued after the import-binding fixture",
+  "remaining": [
+    "Linking",
+    "Namespace objects",
+    "Loading and evaluation",
+    "Test262 runner integration",
+    "Consolidated frozen self-build after M1a catalog changes"
+  ]
+}

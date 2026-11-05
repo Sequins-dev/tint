@@ -1,0 +1,10 @@
+{
+  "report": "test262-string-lower-native-v1.json",
+  "unsupportedDependency": "eval runtime source compilation",
+  "path": "built-ins/String/prototype/toLowerCase/S15.5.4.16_A1_T3.js",
+  "variants": [
+    "sloppy",
+    "strict"
+  ],
+  "evidence": "The unchanged source calls eval on a string literal before invoking the casing method. No source rewriting is applied."
+}

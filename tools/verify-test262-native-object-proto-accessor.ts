@@ -1,0 +1,9 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const p={x:42},o={};o.__proto__=p;if(Object.getPrototypeOf(o)!==p||o.x!==42)throw 1;const d=Object.getOwnPropertyDescriptor(Object.prototype,"__proto__");if(d.get.call(o)!==p||d.set.call(o,null)!==undefined||d.get.call(o)!==null)throw 2;`,
+  `const d=Object.getOwnPropertyDescriptor(Object.prototype,"__proto__");for(const x of [null,undefined]){let n=0;try{d.get.call(x);}catch(e){if(e instanceof TypeError)n++;}try{d.set.call(x,1);}catch(e){if(e instanceof TypeError)n++;}if(n!==2)throw 1;}if(d.get.call(19)!==Number.prototype||d.set.call(19,{})!==undefined)throw 2;`,
+  `const d=Object.getOwnPropertyDescriptor(Object.prototype,"__proto__"),o={};for(const p of [undefined,19,"x",true,Symbol()]){if(d.set.call(o,p)!==undefined||Object.getPrototypeOf(o)!==Object.prototype)throw 1;}`,
+  `const o={};Object.preventExtensions(o);o.__proto__=Object.prototype;let caught=false;try{o.__proto__={};}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;const a={},b=Object.create(a);caught=false;try{a.__proto__=b;}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;`,
+  `const d=Object.getOwnPropertyDescriptor(Object.prototype,"__proto__"),parent={};let order="";const proxy=new Proxy({}, {getPrototypeOf(){order+="g";return parent;},setPrototypeOf(t,p){if(p!==parent)throw 1;order+="s";return false;}});if(d.get.call(proxy)!==parent)throw 2;let caught=false;try{d.set.call(proxy,parent);}catch(e){caught=e instanceof TypeError;}if(!caught||order!=="gs")throw 3;`,
+  `const o=Object.fromEntries([["__proto__",42]]);if(o.__proto__!==42||Object.getPrototypeOf(o)!==Object.prototype)throw 1;const copy={...o};if(copy.__proto__!==42||Object.getPrototypeOf(copy)!==Object.prototype)throw 2;`,
+]);

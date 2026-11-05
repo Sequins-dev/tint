@@ -1,0 +1,26 @@
+{
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": ".",
+  "counts": {
+    "lowered": 92235,
+    "unsupported": 2330,
+    "parse-negative-separate": 8699
+  },
+  "kind": "lowering-inventory-summary",
+  "variants": 103264,
+  "blockers": {
+    "Script expression lowering is not implemented: import-call": 1151,
+    "native module execution is not implemented": 638,
+    "resource disposal is not implemented": 270,
+    "sloppy block functions require Annex B binding": 229,
+    "decorators and auto-accessors are not implemented": 42
+  },
+  "scope": "Bootstrap-host parsing/binding/lowering of unchanged test and harness sources. No native emission or execution; parse-negative variants are classified separately. Runtime APIs and behavior are not measured.",
+  "fullInventory": {
+    "path": ".tint-bootstrap/test262-full-lowering-v1.json",
+    "sha256": "1053f0f4ac9e10074abb90709ad61534f61fe4356d30f8c70d151dea5b7b0817"
+  }
+}

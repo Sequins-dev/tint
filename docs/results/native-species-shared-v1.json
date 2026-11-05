@@ -1,0 +1,10 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-hosted-promise-capability.ts",
+  "fixtureSha256": "9ccf6795e010873d65ac850c51e68fdb9f4bdc8907ec280bde67694e9312d885",
+  "nativeExitStatus": 42,
+  "scope": "Promise capability and extracted generic species selection.",
+  "log": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-promise-capability-oHltAd/promise-capability\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-promise-capability-oHltAd/promise-capability' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 161 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-promise-capability-oHltAd/promise-capability' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 161 resuming\nProcess 161 exited with status = 42 (0x0000002a)\n(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\n"
+}

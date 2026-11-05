@@ -1,0 +1,44 @@
+{
+  "kind": "managed-semantic-witnesses-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "ceb8ca7e30c12ab051d734ca2a57ea191bba80cfdf38bc158f042ab5d93fdacb",
+    "files": 519
+  },
+  "selfBuild": "docs/results/bootstrap-managed-semantic-witnesses-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-semantic-witnesses-v1.json",
+    "docs/results/native-managed-entry-selection-v1.json"
+  ],
+  "bytes": 62926306,
+  "sha256": "64c9d1c329c8c3d3030f62318314106378a2ef095eb4eba889800b84b41de2ea",
+  "byteIdentical": true,
+  "workspaceTests": 3739,
+  "gateLogs": [
+    {
+      "path": ".tint-bootstrap/semantic-witness-final-workspace-tests-v1.log",
+      "sha256": "ac7617556da41242e01a074bed2156edb687475e6b73e2c94f1363778acafeec"
+    },
+    {
+      "path": ".tint-bootstrap/semantic-witness-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/semantic-witness-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/semantic-witness-dwarf-v1.log"
+    }
+  },
+  "previousCheckpoint": "docs/results/managed-surface-contracts-checkpoint-v1.json",
+  "remaining": [
+    "Two-live-context isolation proof",
+    "AOT helper-table retention and semantic member selection including function variance",
+    "Physical directory, serialization and general managed entry",
+    "General eval/Function execution"
+  ]
+}

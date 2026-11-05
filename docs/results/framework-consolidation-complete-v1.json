@@ -1,0 +1,48 @@
+{
+  "kind": "framework-ownership-consolidation-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "08df6850cbb6e16524efd14474fdd4af35c2967cd54b5d5cbe1b8133f495720c",
+    "files": 506
+  },
+  "packages": [
+    "abi",
+    "bench",
+    "codegen",
+    "compiler",
+    "foundation",
+    "image",
+    "ir",
+    "js-engine",
+    "js-runtime",
+    "native-runtime",
+    "platform",
+    "source",
+    "ts-native",
+    "typescript"
+  ],
+  "originalPackageCount": 94,
+  "currentPackageCount": 14,
+  "nodeTests": {
+    "passed": 3657,
+    "failed": 0
+  },
+  "nativeSelfBuild": "bootstrap-framework-boundaries-v1.json",
+  "nativeSmoke": "framework-smoke-stdio-native-v1.json",
+  "contracts": {
+    "acyclic": true,
+    "publicEntrypoints": true,
+    "typescriptIndependentOfNativeRuntime": true,
+    "codegenIndependentOfPlatformPolicy": true,
+    "imageIndependentOfInstructionEncoder": true,
+    "helperNamespacesPreserved": true,
+    "unusedPrototypesRetired": true
+  },
+  "futureWork": [
+    "general managed-runtime imports and canonical invocation frames",
+    "frontend checking before native specialization",
+    "richer optimization/representation and machine IR capabilities",
+    "additional operating-system adapters"
+  ],
+  "scope": "Completes framework ownership consolidation and the identified platform/image dependency leaks. It does not complete language/runtime coverage or future compiler capabilities."
+}

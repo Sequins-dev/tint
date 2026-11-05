@@ -1,0 +1,37 @@
+{
+  "kind": "native-runtime-feature-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "6d91a4727285ce1ef88463d852c8dcd85469da93e8fb85af068e8cbb645db999",
+    "files": 557
+  },
+  "node": {
+    "tests": 4172,
+    "pass": 4172,
+    "fail": 0,
+    "log": ".tint-bootstrap/module-linking-workspace-check-v1.log"
+  },
+  "focused": {
+    "resolution": 10,
+    "namespace": 7,
+    "linking": 9
+  },
+  "nativeChecker": {
+    "functions": 563,
+    "stage": "checked",
+    "log": ".tint-bootstrap/module-linking-selfcheck-v1.json"
+  },
+  "nativeProofs": [
+    "docs/results/native-module-import-bindings-v1.json",
+    "docs/results/native-module-resolution-v2.json",
+    "docs/results/native-module-namespace-v1.json",
+    "docs/results/native-module-linking-v1.json"
+  ],
+  "catalog": {
+    "files": 557,
+    "explicitImportGrants": 414,
+    "frameworks": 14
+  },
+  "compilerFixedPoint": "pending",
+  "remaining": "Module loading, evaluation and Test262 runner integration are not implemented."
+}

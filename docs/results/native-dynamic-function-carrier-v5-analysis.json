@@ -1,0 +1,11 @@
+{
+  "kind": "native-fixture-failure-analysis",
+  "conformance": false,
+  "observation": "docs/results/native-dynamic-function-carrier-v5.json",
+  "exitStatus": 180,
+  "established": "Arithmetic/default/rest check completed successfully; fixture identity assertion failed.",
+  "cause": "Fixture called the carrier internalCall directly outside a source execution context. Ordinary object invocation applies internalExecutionContext in callObjectValue. Production Function fallback executes internalCall inside the outer source function context.",
+  "correction": "Invoke the standalone carrier through callObjectValue, preserve the stored-identity assertion, and add a Node regression observing the outer Function context during general fallback.",
+  "nextReport": "docs/results/native-dynamic-function-carrier-v6.json",
+  "nativeCorrectionValidated": false
+}

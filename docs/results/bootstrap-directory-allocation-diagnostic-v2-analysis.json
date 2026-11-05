@@ -1,0 +1,43 @@
+{
+  "kind": "native-allocation-failure-analysis",
+  "conformance": false,
+  "sourceReport": "docs/results/bootstrap-directory-allocation-diagnostic-v2.json",
+  "failureStage": 4,
+  "meaning": "major collection live bytes exceed old-space capacity",
+  "oldCapacityBytes": 1744830464,
+  "liveBytes": 1761087024,
+  "excessBytes": 16256560,
+  "liveObjects": 25693835,
+  "fixups": 35239764,
+  "requestedBytes": 48,
+  "diagnostic": {
+    "sp": 4722193472,
+    "context": 4722376288,
+    "allocationState": 16223099552,
+    "words": [
+      268435440,
+      268435456,
+      1744830464,
+      1697436912,
+      516997760,
+      3,
+      1,
+      1744830464,
+      2826486800,
+      3,
+      3329803280,
+      3,
+      207,
+      1048576,
+      0,
+      4,
+      25693835,
+      1761087024,
+      35239764,
+      48
+    ],
+    "error": "success",
+    "stopped": true,
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x10151bc3c)"
+  }
+}

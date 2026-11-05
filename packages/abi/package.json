@@ -1,0 +1,32 @@
+{
+  "name": "@tint/abi",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./function": {
+      "types": "./dist/function.d.ts",
+      "import": "./dist/function.js"
+    },
+    "./shared-block": {
+      "types": "./dist/shared-block.d.ts",
+      "import": "./dist/shared-block.js"
+    },
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "import": "./dist/host.js"
+    },
+    "./relocation": {
+      "types": "./dist/relocation.d.ts",
+      "import": "./dist/relocation.js"
+    },
+    "./weak-slot": {
+      "types": "./dist/weak-slot.d.ts",
+      "import": "./dist/weak-slot.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {}
+}

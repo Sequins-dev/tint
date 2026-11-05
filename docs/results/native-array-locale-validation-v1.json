@@ -1,0 +1,29 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T03:36:11.698893+00:00",
+  "scope": "Array and TypedArray toLocaleString; shared indexed joining preserves one length snapshot, coercion/call order, primitive receivers, option forwarding and buffer resize semantics",
+  "sourceSnapshot": {
+    "sha256": "e777869524f808cb5f7a53f11e2a760fa57afbb10819bddb6b95bebe3752d2ac",
+    "files": 491
+  },
+  "fixtures": {
+    "passed": 6,
+    "total": 6,
+    "reports": [
+      "native-array-locale-case-0-v1.json",
+      "native-array-locale-case-1-v1.json",
+      "native-array-locale-case-2-v1.json",
+      "native-array-locale-case-3-v1.json",
+      "native-array-locale-case-4-v1.json",
+      "native-array-locale-case-5-v1.json"
+    ]
+  },
+  "workspaceChecks": {
+    "tests": 3395,
+    "passed": 3395,
+    "typeChecks": "passed",
+    "boundaries": "passed",
+    "format": "passed"
+  },
+  "limitations": "Bespoke native fixtures are separate from the complete unchanged Test262 selections being run."
+}

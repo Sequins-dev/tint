@@ -1,0 +1,13 @@
+{
+  "kind": "native-run-interruption",
+  "run": ".tint-bootstrap/test262-proxy-native-v1.jsonl",
+  "selection": "built-ins/Proxy",
+  "observation": {
+    "path": "built-ins/Proxy/has/call-in-prototype-index.js",
+    "variant": "sloppy",
+    "outcome": "timeout",
+    "elapsedMs": 610604.403542
+  },
+  "cause": "The coordinator was administratively suspended while a native self-build ran. Its timeout clock continued to advance. This observation cannot establish a runtime hang. The original result remains unchanged and in the denominator.",
+  "followUp": "Do not suspend a live coordinator; use a separate complete post-fix run for current coverage."
+}

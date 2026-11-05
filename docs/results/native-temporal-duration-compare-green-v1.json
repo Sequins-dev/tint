@@ -1,0 +1,62 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "0287280dd32ab01f94bd75ad02cff5767ec6d4a5fdda874867ced79a903b564c",
+      "files": 411
+    },
+    "imageSha256": "c4e48e1dcbdfdbb67f14a86a503f55d8aa81128ee672ca2a29f9f7ca1dd32406",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.Duration(0,0,0,0,0,0,0,0,18446744073709552,616),b=new Temporal.Duration(0,0,0,0,0,0,0,0,18446744073709552,617);if(Temporal.Duration.compare(a,b)!==-1||Temporal.Duration.compare(b,a)!==1||Temporal.Duration.compare(a,a)!==0)throw 1;",
+        "sha256": "a35edf3460ce4b1b54adecae5a68092808fb4112925a74ff518adaa792a471a3"
+      },
+      {
+        "index": 1,
+        "source": "if(Temporal.Duration.compare({years:1},{days:366},{relativeTo:\"2020-01-01\"})!==0||Temporal.Duration.compare({years:1},{days:366},{relativeTo:\"2021-01-01\"})!==-1||Temporal.Duration.compare({years:1},{years:1})!==0)throw 1;let ok=false;try{Temporal.Duration.compare({years:1},{days:365});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;",
+        "sha256": "809000dcda31b7c106948d6b98197741cfacbb588978423c742455a1ee2ff87a"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const a={get hours(){log+=\"a\";return 1;}},b={get minutes(){log+=\"b\";return 60;}};if(Temporal.Duration.compare(a,b,{get relativeTo(){log+=\"r\";return new Temporal.ZonedDateTime(0n,\"UTC\");}})!==0||log!==\"abr\")throw 1;",
+        "sha256": "7937089306124ae222d3825e467bf40e4f1d5b45aec278d6e56ad04bb33495fd"
+      }
+    ]
+  },
+  "cases": 3,
+  "completed": 3,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

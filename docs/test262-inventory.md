@@ -1,0 +1,713 @@
+# Test262 coverage: complete group inventory
+
+Updated 2026-11-06 from completed saved native runtime reports, with pinned source hashes verified. [Machine-readable evidence](results/test262-native-group-inventory-v89.json).
+
+**The current whole-suite native behavior pass rate is unknown.** The native syntax gate passed all **103,264 variants**; that is separate from runtime conformance. Completed native reports contain outcomes for **33,707 distinct variants**, including failures, unsupported cases and infrastructure outcomes. **69,557 variants have no outcome in those completed reports.** In-progress journals are excluded. Different frozen sources, resource budgets and historical reports are not combined into a current pass rate.
+
+All **139 directory families** are listed below. A family can have substantial implementation while lacking a complete run. A selection-evidence family can have outcomes for every variant across historical or ancestor selections, but no one dedicated complete family report.
+
+| Evidence category | Families | Suite variants in these families | Recorded distinct outcomes |
+| --- | ---: | ---: | ---: |
+| All passing | 32 | 4,649 | 4,649 |
+| Complete report; gaps | 29 | 9,952 | 9,952 |
+| Selection evidence; no family report | 29 | 84,766 | 19,106 |
+| No recorded outcomes | 49 | 3,897 | 0 |
+
+## Coverage across every domain
+
+“Recorded” is an outcome footprint, not a pass count.
+
+| Domain | Families | Suite variants | Recorded outcomes | No recorded outcome |
+| --- | ---: | ---: | ---: | ---: |
+| `annexB` | 16 | 1,377 | 1,377 | 0 |
+| `built-ins` | 64 | 47,399 | 21,124 | 26,275 |
+| `harness` | 1 | 232 | 0 | 232 |
+| `intl402` | 20 | 6,764 | 1,814 | 4,950 |
+| `language` | 28 | 44,701 | 9,391 | 35,310 |
+| `staging` | 10 | 2,791 | 1 | 2,790 |
+
+## Current capability and dependency status
+
+| Area                                       | Implementation and evidence                                                                                                                                                 | Remaining work                                                                                                                                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Foundational language                      | Bindings/destructuring 1,031/1,031; delete 103/103; calls 171/171; super 184/184; assignment 850/850. Constructor realm fix has eight native passes and a byte-identical self-build.                            | All six original call-group faults pass the unchanged rerun. Native source/bound/call/apply, ten lowered-source cases and in-image compilation pass 100,000 calls. Frozen self-build and artifact checks pass for the reference fixes; iterator completion is running, followed by function and control-flow groups.              |
+| Syntax/front end                           | 103,264/103,264 native syntax validations                                                                                                                                   | Behavior runs still needed for many frontend-focused families                                                                                                        |
+| Core values, objects, collections, buffers | Broad implementation; complete and partial family results below                                                                                                             | Large Array/Object/String/RegExp/Promise/TypedArray families remain incompletely measured                                                                            |
+| Eval and dynamic function bodies           | Script evaluator, indirect/direct eval, ordinary/async/generator/async-generator fallback implemented; native fixtures pass                                                 | Historical direct eval 279/336 on a 552-file snapshot. Its [57 non-passes now prepare](results/direct-eval-known-gaps-refresh-node-v1.json) with admitted site flags; both old timeouts were before native entry. This is not a new native result; complete current reruns remain pending         |
+| Modules                                    | Static graph, linking, namespaces, module dynamic import and import.meta implemented; 24/24 targeted variants, namespaces 38/38, ambiguous exports 9/10, fixture syntax 6/6 | Script-root canaries 12/12; complete dynamic-import directory 1,559/1,900 with 341 unsupported and no failures/crashes/timeouts. import.meta is running. The complete top-level-await selection passes [253/253](results/test262-language-module-top-level-await-bounded-v2.json); iteration reruns remain pending. Module eval passes 3/3 focused variants. JSON host, bounded await chains and their byte-identical native self-build pass [combined acceptance](results/json-await-native-compiler-acceptance-v1.json); the completed attribute selections are listed below. [24 former bare-specifier variants now pass](results/test262-dynamic-import-bare-specifiers-native-v1.json), separately from the retained full directory report. Both [eval-import variants pass](results/test262-dynamic-import-eval-native-v1.json). The complete static import-attributes group is [12/17](results/test262-language-import-attributes-json-v2.json), with five text-module proposal blockers and no failures or infrastructure outcomes. The [module-code import-attributes selection](results/test262-language-module-import-attributes-json-v2.json) passes 13/13. The [dynamic-import attributes selection](results/test262-language-dynamic-import-attributes-json-v2.json) is 42/44, with two explicit text-module proposal blockers and no failures or infrastructure outcomes. Source/defer proposals remain |
+| Fixture binding errors                     | Tools extension passes 4,290 workspace checks; 16 module variants now prepare for native syntax proof                                                                       | Original 31 fixture cases pass within the 43-case native gate; all [16 unchanged conformance variants pass](results/test262-dynamic-import-fixture-binding-native-v2.json)                                                                                   |
+| Generators/async                           | Runtime suspension and dynamic constructor paths implemented, with bespoke native gates                                                                                     | AsyncFunction 34/36 and GeneratorFunction 44/46 have two intrinsic-enumeration timeouts each; AsyncGeneratorFunction complete-family evidence is older               |
+| Weak APIs/GC                               | WeakMap/WeakSet/WeakRef/FinalizationRegistry native implementation and moving-GC proofs                                                                                     | Two retained launch failures across complete weak-family reports; Test262 $262.gc host facility remains absent                                                       |
+| Agents/Atomics                             | Shared buffers and part of Atomics implemented                                                                                                                              | Worker/agent coordination and wait/notify host support; Atomics 366/778                                                                                              |
+| Intl/Temporal                              | Locale, NumberFormat, PluralRules, ListFormat, RelativeTimeFormat and substantial Temporal implementation                                                                   | DateTimeFormat, DurationFormat, Collator, Segmenter, DisplayNames and non-ISO calendar work; complete Temporal measurements missing                                  |
+| Proposals/staging                          | Mixed existing implementation and proposal-specific gaps                                                                                                                    | Separate source/defer/text/bytes/decorator work; almost all staging families unmeasured                                                                              |
+
+## All 139 directory families
+
+Complete-family ratios describe the linked saved snapshot, not necessarily current code. “Other” includes harness errors, crashes and timeouts. A dash means no dedicated complete family report; it does not mean unsupported.
+
+| Family | Suite variants | Recorded outcomes | Status | Complete-family passes | Fail | Unsupported | Other | Evidence |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- |
+| `annexB/built-ins/Array` | 2 | 2 | All passing | 2/2 | 0 | 0 | 0 | [Report](results/test262-annex-array-survey-native-v1.json) |
+| `annexB/built-ins/Date` | 48 | 48 | All passing | 48/48 | 0 | 0 | 0 | [Report](results/test262-annex-date-survey-native-v1.json) |
+| `annexB/built-ins/escape` | 32 | 32 | All passing | 32/32 | 0 | 0 | 0 | [Report](results/test262-escape-native-v1.json) |
+| `annexB/built-ins/Function` | 12 | 12 | All passing | 12/12 | 0 | 0 | 0 | [Report](results/test262-annex-function-survey-native-v1.json) |
+| `annexB/built-ins/Object` | 2 | 2 | All passing | 2/2 | 0 | 0 | 0 | [Report](results/test262-annex-object-survey-native-v1.json) |
+| `annexB/built-ins/RegExp` | 124 | 124 | Complete report; gaps | 120/124 | 0 | 4 | 0 | [Report](results/test262-annex-regexp-survey-native-v1.json) |
+| `annexB/built-ins/String` | 222 | 222 | All passing | 222/222 | 0 | 0 | 0 | [Report](results/test262-annexb-string-native-v3.json) |
+| `annexB/built-ins/TypedArrayConstructors` | 2 | 2 | Selection evidence; no family report | — | — | — | — | — |
+| `annexB/built-ins/unescape` | 38 | 38 | All passing | 38/38 | 0 | 0 | 0 | [Report](results/test262-unescape-native-v1.json) |
+| `annexB/language/comments` | 13 | 13 | All passing | 13/13 | 0 | 0 | 0 | [Report](results/test262-annex-comments-native-v3.json) |
+| `annexB/language/eval-code` | 470 | 470 | Selection evidence; no family report | — | — | — | — | — |
+| `annexB/language/expressions` | 43 | 43 | All passing | 43/43 | 0 | 0 | 0 | [Report](results/test262-annexb-expressions-native-v1.json) |
+| `annexB/language/function-code` | 159 | 159 | Complete report; gaps | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-native-v1.json) |
+| `annexB/language/global-code` | 153 | 153 | All passing | 153/153 | 0 | 0 | 0 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
+| `annexB/language/literals` | 16 | 16 | Selection evidence; no family report | — | — | — | — | — |
+| `annexB/language/statements` | 41 | 41 | All passing | 41/41 | 0 | 0 | 0 | [Report](results/test262-annexb-statements-native-v2.json) |
+| `built-ins/AbstractModuleSource` | 8 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/AggregateError` | 50 | 2 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/Array` | 6,119 | 1,223 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/ArrayBuffer` | 442 | 442 | All passing | 442/442 | 0 | 0 | 0 | [Report](results/test262-arraybuffer-shared-native-v2.json) |
+| `built-ins/ArrayIteratorPrototype` | 46 | 46 | All passing | 46/46 | 0 | 0 | 0 | [Report](results/test262-array-iterator-family-native-v2.json) |
+| `built-ins/AsyncDisposableStack` | 208 | 208 | Complete report; gaps | 206/208 | 0 | 2 | 0 | [Report](results/test262-async-disposable-stack-native-v1.json) |
+| `built-ins/AsyncFromSyncIteratorPrototype` | 76 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/AsyncFunction` | 36 | 36 | Complete report; gaps | 34/36 | 0 | 0 | 2 | [Report](results/test262-async-function-body-native-v1.json) |
+| `built-ins/AsyncGeneratorFunction` | 46 | 46 | Complete report; gaps | 36/46 | 0 | 9 | 1 | [Report](results/test262-async-generator-function-family-native-v4.json) |
+| `built-ins/AsyncGeneratorPrototype` | 96 | 92 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/AsyncIteratorPrototype` | 26 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/Atomics` | 778 | 778 | Complete report; gaps | 366/778 | 184 | 0 | 228 | [Report](results/test262-atomics-family-native-v1.json) |
+| `built-ins/BigInt` | 154 | 154 | All passing | 154/154 | 0 | 0 | 0 | [Report](results/test262-bigint-family-native-v2.json) |
+| `built-ins/Boolean` | 101 | 101 | Complete report; gaps | 99/101 | 0 | 2 | 0 | [Report](results/test262-boolean-framework-native-v1.json) |
+| `built-ins/DataView` | 1,120 | 1,120 | Complete report; gaps | 1,110/1,120 | 0 | 0 | 10 | [Report](results/test262-dataview-shared-native-v2.json) |
+| `built-ins/Date` | 1,188 | 1,188 | Complete report; gaps | 1,176/1,188 | 6 | 6 | 0 | [Report](results/test262-date-family-native-v8.json) |
+| `built-ins/decodeURI` | 110 | 110 | Complete report; gaps | 108/110 | 0 | 0 | 2 | [Report](results/test262-decode-uri-native-v1.json) |
+| `built-ins/decodeURIComponent` | 112 | 112 | Complete report; gaps | 110/112 | 0 | 0 | 2 | [Report](results/test262-decode-uri-component-native-v1.json) |
+| `built-ins/DisposableStack` | 186 | 186 | Complete report; gaps | 184/186 | 0 | 2 | 0 | [Report](results/test262-disposable-stack-native-v2.json) |
+| `built-ins/encodeURI` | 62 | 62 | All passing | 62/62 | 0 | 0 | 0 | [Report](results/test262-encode-uri-native-v2.json) |
+| `built-ins/encodeURIComponent` | 62 | 62 | All passing | 62/62 | 0 | 0 | 0 | [Report](results/test262-encode-uri-component-native-v2.json) |
+| `built-ins/Error` | 186 | 24 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/eval` | 20 | 20 | Complete report; gaps | 18/20 | 0 | 2 | 0 | [Report](results/test262-eval-family-native-v1.json) |
+| `built-ins/FinalizationRegistry` | 94 | 94 | Complete report; gaps | 93/94 | 0 | 0 | 1 | [Report](results/test262-finalization-registry-native-v1.json) |
+| `built-ins/Function` | 893 | 893 | Complete report; gaps | 703/893 | 16 | 147 | 27 | [Report](results/test262-function-managed-access-native-v1.json) |
+| `built-ins/GeneratorFunction` | 46 | 46 | Complete report; gaps | 44/46 | 0 | 0 | 2 | [Report](results/test262-generator-function-fallback-native-v1.json) |
+| `built-ins/GeneratorPrototype` | 122 | 118 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/global` | 56 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/Infinity` | 10 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/isFinite` | 30 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/isNaN` | 30 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/Iterator` | 1,368 | 1,368 | Complete report; gaps | 1,350/1,368 | 12 | 6 | 0 | [Report](results/test262-iterator-native-v1.json) |
+| `built-ins/JSON` | 332 | 332 | All passing | 332/332 | 0 | 0 | 0 | [Report](results/test262-json-native-v1.json) |
+| `built-ins/Map` | 405 | 405 | All passing | 405/405 | 0 | 0 | 0 | [Report](results/test262-map-weak-followup-native-v1.json) |
+| `built-ins/MapIteratorPrototype` | 22 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/Math` | 654 | 654 | Complete report; gaps | 652/654 | 0 | 0 | 2 | [Report](results/test262-math-family-native-v1.json) |
+| `built-ins/NaN` | 10 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/NativeErrors` | 188 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/Number` | 680 | 104 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/Object` | 6,802 | 938 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/parseFloat` | 108 | 108 | All passing | 108/108 | 0 | 0 | 0 | [Report](results/test262-parse-float-native-v2.json) |
+| `built-ins/parseInt` | 110 | 110 | All passing | 110/110 | 0 | 0 | 0 | [Report](results/test262-parse-int-native-v2.json) |
+| `built-ins/Promise` | 1,458 | 434 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/Proxy` | 607 | 607 | Complete report; gaps | 582/607 | 8 | 14 | 3 | [Report](results/test262-proxy-native-v2.json) |
+| `built-ins/Reflect` | 306 | 306 | Complete report; gaps | 305/306 | 0 | 0 | 1 | [Report](results/test262-reflect-framework-native-v1.json) |
+| `built-ins/RegExp` | 3,756 | 510 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/RegExpStringIteratorPrototype` | 34 | 34 | All passing | 34/34 | 0 | 0 | 0 | [Report](results/test262-regexp-string-iterator-native-v1.json) |
+| `built-ins/Set` | 764 | 764 | All passing | 764/764 | 0 | 0 | 0 | [Report](results/test262-set-weak-followup-native-v1.json) |
+| `built-ins/SetIteratorPrototype` | 22 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/ShadowRealm` | 124 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/SharedArrayBuffer` | 208 | 208 | All passing | 208/208 | 0 | 0 | 0 | [Report](results/test262-sharedarraybuffer-native-v4.json) |
+| `built-ins/String` | 2,443 | 564 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/StringIteratorPrototype` | 14 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/SuppressedError` | 44 | 44 | Complete report; gaps | 40/44 | 0 | 4 | 0 | [Report](results/test262-suppressed-error-native-v1.json) |
+| `built-ins/Symbol` | 192 | 192 | All passing | 192/192 | 0 | 0 | 0 | [Report](results/test262-symbol-native-v3.json) |
+| `built-ins/Temporal` | 9,210 | 5,084 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/ThrowTypeError` | 28 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/TypedArray` | 2,890 | 436 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/TypedArrayConstructors` | 1,446 | 110 | Selection evidence; no family report | — | — | — | — | — |
+| `built-ins/Uint8Array` | 140 | 140 | All passing | 140/140 | 0 | 0 | 0 | [Report](results/test262-uint8-family-native-v3.json) |
+| `built-ins/undefined` | 12 | 0 | No recorded outcomes | — | — | — | — | — |
+| `built-ins/WeakMap` | 281 | 281 | All passing | 281/281 | 0 | 0 | 0 | [Report](results/test262-weak-map-native-v1.json) |
+| `built-ins/WeakRef` | 58 | 58 | All passing | 58/58 | 0 | 0 | 0 | [Report](results/test262-weak-ref-native-v1.json) |
+| `built-ins/WeakSet` | 170 | 170 | Complete report; gaps | 169/170 | 0 | 0 | 1 | [Report](results/test262-weak-set-native-v1.json) |
+| `harness [direct files]` | 232 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402 [direct files]` | 44 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/Array` | 4 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/BigInt` | 22 | 22 | All passing | 22/22 | 0 | 0 | 0 | [Report](results/test262-bigint-locale-intl-native-v3.json) |
+| `intl402/Collator` | 130 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/Date` | 24 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/DateTimeFormat` | 490 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/DisplayNames` | 114 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/DurationFormat` | 220 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/FallbackSymbol` | 4 | 2 | Selection evidence; no family report | — | — | — | — | — |
+| `intl402/Intl` | 132 | 126 | Selection evidence; no family report | — | — | — | — | — |
+| `intl402/ListFormat` | 162 | 162 | All passing | 162/162 | 0 | 0 | 0 | [Report](results/test262-list-format-native-v1.json) |
+| `intl402/Locale` | 380 | 380 | Complete report; gaps | 338/380 | 42 | 0 | 0 | [Report](results/test262-locale-family-native-v4.json) |
+| `intl402/Number` | 14 | 14 | All passing | 14/14 | 0 | 0 | 0 | [Report](results/test262-number-locale-intl-native-v3.json) |
+| `intl402/NumberFormat` | 502 | 502 | Complete report; gaps | 406/502 | 2 | 92 | 2 | [Report](results/test262-intl-number-format-family-native-v4.json) |
+| `intl402/PluralRules` | 106 | 106 | Complete report; gaps | 104/106 | 2 | 0 | 0 | [Report](results/test262-plural-rules-native-v1.json) |
+| `intl402/RelativeTimeFormat` | 160 | 160 | All passing | 160/160 | 0 | 0 | 0 | [Report](results/test262-relative-time-native-v1.json) |
+| `intl402/Segmenter` | 158 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/String` | 38 | 0 | No recorded outcomes | — | — | — | — | — |
+| `intl402/Temporal` | 4,058 | 340 | Selection evidence; no family report | — | — | — | — | — |
+| `intl402/TypedArray` | 2 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/arguments-object` | 460 | 460 | Complete report; gaps | 456/460 | 2 | 2 | 0 | [Report](results/test262-arguments-native-v2.json) |
+| `language/asi` | 204 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/block-scope` | 287 | 287 | All passing | 287/287 | 0 | 0 | 0 | [Report](results/test262-language-block-scope-core-v1.json) |
+| `language/comments` | 81 | 1 | Selection evidence; no family report | — | — | — | — | — |
+| `language/computed-property-names` | 96 | 8 | Selection evidence; no family report | — | — | — | — | — |
+| `language/destructuring` | 37 | 37 | Complete report; gaps | 34/37 | 0 | 2 | 1 | [Report](results/test262-destructuring-native-v2.json) |
+| `language/directive-prologue` | 62 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/eval-code` | 454 | 454 | Selection evidence; no family report | — | — | — | — | — |
+| `language/export` | 3 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/expressions` | 21,386 | 5,277 | Selection evidence; no family report | — | — | — | — | — |
+| `language/function-code` | 281 | 1 | Selection evidence; no family report | — | — | — | — | — |
+| `language/future-reserved-words` | 85 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/global-code` | 75 | 75 | Complete report; gaps | 74/75 | 0 | 0 | 1 | [Report](results/test262-global-code-direct-eval-native-v1.json) |
+| `language/identifier-resolution` | 22 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/identifiers` | 535 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/import` | 135 | 17 | Selection evidence; no family report | — | — | — | — | — |
+| `language/keywords` | 50 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/line-terminators` | 82 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/literals` | 1,041 | 480 | Selection evidence; no family report | — | — | — | — | — |
+| `language/module-code` | 602 | 328 | Selection evidence; no family report | — | — | — | — | — |
+| `language/punctuators` | 22 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/reserved-words` | 53 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/rest-parameters` | 22 | 22 | Complete report; gaps | 21/22 | 0 | 0 | 1 | [Report](results/test262-rest-parameters-native-v2.json) |
+| `language/source-text` | 2 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/statementList` | 160 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/statements` | 18,119 | 1,944 | Selection evidence; no family report | — | — | — | — | — |
+| `language/types` | 211 | 0 | No recorded outcomes | — | — | — | — | — |
+| `language/white-space` | 134 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging [direct files]` | 8 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/built-ins` | 16 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/decorators` | 14 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/explicit-resource-management` | 105 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/set-methods` | 6 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/sm` | 2,631 | 1 | Selection evidence; no family report | — | — | — | — | — |
+| `staging/source-phase-imports` | 4 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/Temporal` | 4 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/top-level-await` | 1 | 0 | No recorded outcomes | — | — | — | — | — |
+| `staging/Uint8Array` | 2 | 0 | No recorded outcomes | — | — | — | — | — |
+
+## Complete selection reports
+
+These include narrower selections and overlap. Never sum this table. Older failures remain linked even when later fixes have passed focused rechecks.
+
+| Selection | Passed / total | Failed | Unsupported | Other outcomes | Report |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `annexB` | 875/1,377 | 1 | 489 | 12 | [Report](results/test262-annexb-v9-prefix-native-v1.json) |
+| `annexB/built-ins/Array` | 2/2 | 0 | 0 | 0 | [Report](results/test262-annex-array-survey-native-v1.json) |
+| `annexB/built-ins/Date` | 48/48 | 0 | 0 | 0 | [Report](results/test262-annex-date-survey-native-v1.json) |
+| `annexB/built-ins/Function` | 12/12 | 0 | 0 | 0 | [Report](results/test262-annex-function-survey-native-v1.json) |
+| `annexB/built-ins/Object` | 2/2 | 0 | 0 | 0 | [Report](results/test262-annex-object-survey-native-v1.json) |
+| `annexB/built-ins/RegExp` | 120/124 | 0 | 4 | 0 | [Report](results/test262-annex-regexp-survey-native-v1.json) |
+| `annexB/built-ins/String` | 222/222 | 0 | 0 | 0 | [Report](results/test262-annexb-string-native-v3.json) |
+| `annexB/built-ins/String/prototype/substr` | 30/30 | 0 | 0 | 0 | [Report](results/test262-string-substr-native-v1.json) |
+| `annexB/built-ins/escape` | 32/32 | 0 | 0 | 0 | [Report](results/test262-escape-native-v1.json) |
+| `annexB/built-ins/unescape` | 38/38 | 0 | 0 | 0 | [Report](results/test262-unescape-native-v1.json) |
+| `annexB/language/comments` | 13/13 | 0 | 0 | 0 | [Report](results/test262-annex-comments-native-v3.json) |
+| `annexB/language/eval-code/direct/script-decl-lex-no-collision.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-direct-eval-annex-canary-native-v1.json) |
+| `annexB/language/expressions` | 43/43 | 0 | 0 | 0 | [Report](results/test262-annexb-expressions-native-v1.json) |
+| `annexB/language/expressions/assignmenttargettype` | 7/7 | 0 | 0 | 0 | [Report](results/test262-call-assignment-targets-native-v1.json) |
+| `annexB/language/function-code` | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-native-v1.json) |
+| `annexB/language/global-code` | 153/153 | 0 | 0 | 0 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
+| `annexB/language/global-code/block-decl-global-existing-global-init.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-annex-admission-first-native-v1.json) |
+| `annexB/language/global-code/block-decl-global-existing-non-enumerable-global-init.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-annex-admission-non-enumerable-native-v1.json) |
+| `annexB/language/statements` | 41/41 | 0 | 0 | 0 | [Report](results/test262-annexb-statements-native-v2.json) |
+| `annexB/language/statements/for-in` | 12/12 | 0 | 0 | 0 | [Report](results/test262-for-in-initializers-native-v1.json) |
+| `built-ins/AggregateError/order-of-args-evaluation.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-aggregate-order-native-v1.json) |
+| `built-ins/Array/from` | 86/90 | 4 | 0 | 0 | [Report](results/test262-array-from-native-v1.json) |
+| `built-ins/Array/fromAsync` | 186/186 | 0 | 0 | 0 | [Report](results/test262-array-from-async-native-v1.json) |
+| `built-ins/Array/length` | 60/60 | 0 | 0 | 0 | [Report](results/test262-array-length-native-v2.json) |
+| `built-ins/Array/prototype/Symbol.unscopables` | 10/10 | 0 | 0 | 0 | [Report](results/test262-array-unscopables-native-v1.json) |
+| `built-ins/Array/prototype/concat` | 117/137 | 20 | 0 | 0 | [Report](results/test262-array-concat-native-v1.json) |
+| `built-ins/Array/prototype/every` | 406/433 | 18 | 6 | 3 | [Report](results/test262-array-every-native-v1.json) |
+| `built-ins/Array/prototype/every/15.4.4.16-1-10.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-every-math-native-v1.json) |
+| `built-ins/Array/prototype/fill` | 40/44 | 0 | 4 | 0 | [Report](results/test262-array-fill-native-v1.json) |
+| `built-ins/Array/prototype/find` | 36/44 | 0 | 6 | 2 | [Report](results/test262-array-find-native-v2.json) |
+| `built-ins/Array/prototype/flat` | 36/38 | 2 | 0 | 0 | [Report](results/test262-array-flat-native-v1.json) |
+| `built-ins/Array/prototype/flatMap` | 41/47 | 6 | 0 | 0 | [Report](results/test262-array-flatmap-native-v1.json) |
+| `built-ins/Array/prototype/includes` | 52/60 | 2 | 6 | 0 | [Report](results/test262-array-includes-native-v2.json) |
+| `built-ins/Array/prototype/join/S15.4.4.5_A1.1_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-join-native-v1.json) |
+| `built-ins/Array/prototype/map/create-proto-from-ctor-realm-array.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-species-cross-realm-native-v1.json) |
+| `built-ins/Array/prototype/map/create-revoked-proxy.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-species-revoked-native-v1.json) |
+| `built-ins/Array/prototype/push/S15.4.4.7_A1_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-push-native-v1.json) |
+| `built-ins/Array/prototype/push/set-length-zero-array-is-frozen.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-push-frozen-native-v1.json) |
+| `built-ins/Array/prototype/toLocaleString` | 16/22 | 0 | 6 | 0 | [Report](results/test262-array-tolocalestring-native-v1.json) |
+| `built-ins/Array/prototype/toSorted` | 42/42 | 0 | 0 | 0 | [Report](results/test262-array-tosorted-native-v1.json) |
+| `built-ins/ArrayBuffer` | 442/442 | 0 | 0 | 0 | [Report](results/test262-arraybuffer-shared-native-v2.json) |
+| `built-ins/ArrayBuffer/prototype/byteLength` | 16/20 | 4 | 0 | 0 | [Report](results/test262-arraybuffer-bytelength-native-v1.json) |
+| `built-ins/ArrayIteratorPrototype` | 46/46 | 0 | 0 | 0 | [Report](results/test262-array-iterator-family-native-v2.json) |
+| `built-ins/AsyncDisposableStack` | 206/208 | 0 | 2 | 0 | [Report](results/test262-async-disposable-stack-native-v1.json) |
+| `built-ins/AsyncFunction` | 34/36 | 0 | 0 | 2 | [Report](results/test262-async-function-body-native-v1.json) |
+| `built-ins/AsyncGeneratorFunction` | 36/46 | 0 | 9 | 1 | [Report](results/test262-async-generator-function-family-native-v4.json) |
+| `built-ins/AsyncGeneratorPrototype/next` | 22/22 | 0 | 0 | 0 | [Report](results/test262-async-generator-next-native-v1.json) |
+| `built-ins/AsyncGeneratorPrototype/return` | 38/38 | 0 | 0 | 0 | [Report](results/test262-async-generator-return-native-v1.json) |
+| `built-ins/AsyncGeneratorPrototype/throw` | 32/32 | 0 | 0 | 0 | [Report](results/test262-async-generator-throw-native-v1.json) |
+| `built-ins/Atomics` | 366/778 | 184 | 0 | 228 | [Report](results/test262-atomics-family-native-v1.json) |
+| `built-ins/Atomics/compareExchange` | 33/34 | 0 | 0 | 1 | [Report](results/test262-atomics-compare-exchange-native-v1.json) |
+| `built-ins/Atomics/isLockFree` | 14/14 | 0 | 0 | 0 | [Report](results/test262-atomics-islockfree-native-v1.json) |
+| `built-ins/Atomics/load` | 28/28 | 0 | 0 | 0 | [Report](results/test262-atomics-load-native-v1.json) |
+| `built-ins/Atomics/notify/non-shared-bufferdata-returns-0.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-atomics-notify-ordinary-native-v1.json) |
+| `built-ins/Atomics/pause` | 10/10 | 0 | 0 | 0 | [Report](results/test262-atomics-pause-native-v1.json) |
+| `built-ins/Atomics/store` | 34/34 | 0 | 0 | 0 | [Report](results/test262-atomics-store-native-v1.json) |
+| `built-ins/Atomics/waitAsync` | 88/202 | 0 | 8 | 106 | [Report](results/test262-wait-async-immediate-native-v1.json) |
+| `built-ins/BigInt` | 154/154 | 0 | 0 | 0 | [Report](results/test262-bigint-family-native-v2.json) |
+| `built-ins/BigInt/asIntN` | 28/28 | 0 | 0 | 0 | [Report](results/test262-bigint-asintn-native-v1.json) |
+| `built-ins/BigInt/prototype/toString/length.js` | 0/2 | 0 | 0 | 2 | [Report](results/test262-bigint-tostring-length-native-v1.json) |
+| `built-ins/BigInt/prototype/valueOf` | 14/16 | 2 | 0 | 0 | [Report](results/test262-bigint-valueof-native-v1.json) |
+| `built-ins/Boolean` | 99/101 | 0 | 2 | 0 | [Report](results/test262-boolean-framework-native-v1.json) |
+| `built-ins/DataView` | 1,110/1,120 | 0 | 0 | 10 | [Report](results/test262-dataview-shared-native-v2.json) |
+| `built-ins/DataView/prototype/byteLength` | 13/26 | 9 | 0 | 4 | [Report](results/test262-dataview-bytelength-native-v1.json) |
+| `built-ins/DataView/prototype/getUint8` | 28/34 | 2 | 0 | 4 | [Report](results/test262-dataview-getuint8-native-v1.json) |
+| `built-ins/DataView/prototype/setBigInt64` | 44/48 | 4 | 0 | 0 | [Report](results/test262-dataview-setbigint64-native-v1.json) |
+| `built-ins/Date` | 1,176/1,188 | 6 | 6 | 0 | [Report](results/test262-date-family-native-v8.json) |
+| `built-ins/Date/UTC` | 34/34 | 0 | 0 | 0 | [Report](results/test262-date-utc-native-v1.json) |
+| `built-ins/Date/now` | 12/12 | 0 | 0 | 0 | [Report](results/test262-date-now-native-v3.json) |
+| `built-ins/Date/parse` | 14/16 | 0 | 2 | 0 | [Report](results/test262-date-parse-native-v6.json) |
+| `built-ins/Date/prototype` | 456/970 | 424 | 90 | 0 | [Report](results/test262-date-prototype-native-v4.json) |
+| `built-ins/Date/prototype/Symbol.toPrimitive` | 36/36 | 0 | 0 | 0 | [Report](results/test262-date-to-primitive-native-v2.json) |
+| `built-ins/Date/prototype/getHours` | 14/16 | 0 | 2 | 0 | [Report](results/test262-date-get-hours-native-v5.json) |
+| `built-ins/Date/prototype/getTime` | 16/16 | 0 | 0 | 0 | [Report](results/test262-date-get-time-native-v3.json) |
+| `built-ins/Date/prototype/getTimezoneOffset` | 16/16 | 0 | 0 | 0 | [Report](results/test262-date-timezone-offset-native-v5.json) |
+| `built-ins/Date/prototype/getUTCFullYear` | 16/16 | 0 | 0 | 0 | [Report](results/test262-date-get-utc-full-year-native-v3.json) |
+| `built-ins/Date/prototype/setUTCFullYear` | 12/12 | 0 | 0 | 0 | [Report](results/test262-date-set-utc-full-year-native-v1.json) |
+| `built-ins/Date/prototype/setUTCSeconds` | 0/18 | 0 | 18 | 0 | [Report](results/test262-date-set-utc-seconds-native-v3.json) |
+| `built-ins/Date/prototype/toDateString` | 14/14 | 0 | 0 | 0 | [Report](results/test262-date-to-date-string-native-v6.json) |
+| `built-ins/Date/prototype/toISOString` | 16/34 | 10 | 8 | 0 | [Report](results/test262-date-iso-string-native-v2.json) |
+| `built-ins/Date/prototype/toJSON` | 0/26 | 0 | 26 | 0 | [Report](results/test262-date-to-json-native-v3.json) |
+| `built-ins/Date/prototype/toString` | 12/16 | 0 | 4 | 0 | [Report](results/test262-date-to-string-native-v6.json) |
+| `built-ins/Date/prototype/toTimeString` | 11/12 | 0 | 0 | 1 | [Report](results/test262-date-to-time-string-native-v6.json) |
+| `built-ins/Date/prototype/toUTCString` | 0/18 | 0 | 18 | 0 | [Report](results/test262-date-utc-string-native-v3.json) |
+| `built-ins/DisposableStack` | 184/186 | 0 | 2 | 0 | [Report](results/test262-disposable-stack-native-v2.json) |
+| `built-ins/Error/isError` | 22/24 | 0 | 2 | 0 | [Report](results/test262-error-brand-native-v1.json) |
+| `built-ins/FinalizationRegistry` | 93/94 | 0 | 0 | 1 | [Report](results/test262-finalization-registry-native-v1.json) |
+| `built-ins/Function` | 703/893 | 16 | 147 | 27 | [Report](results/test262-function-managed-access-native-v1.json) |
+| `built-ins/Function/S15.3.2.1_A1_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-dynamic-function-body-coercion-native-v1.json) |
+| `built-ins/Function/S15.3.2.1_A3_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-dynamic-function-parameter-coercion-native-v1.json) |
+| `built-ins/Function/S15.3_A3_T3.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-function-global-missing-native-v1.json) |
+| `built-ins/Function/S15.3_A3_T4.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-function-global-late-binding-native-v1.json) |
+| `built-ins/Function/prototype/bind` | 105/200 | 66 | 17 | 12 | [Report](results/test262-function-bind-native-v1.json) |
+| `built-ins/Function/prototype/bind/15.3.4.5-9-2.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-bind-prototype-native-v1.json) |
+| `built-ins/Function/prototype/bind/BoundFunction_restricted-properties.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-bound-restricted-native-v1.json) |
+| `built-ins/Function/prototype/bind/S15.3.4.5_A3.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-bind-in-native-v1.json) |
+| `built-ins/Function/prototype/bind/S15.3.4.5_A5.js` | 0/2 | 2 | 0 | 0 | [Report](results/test262-bind-date-probe-v1.json) |
+| `built-ins/Function/prototype/call` | 26/90 | 3 | 43 | 18 | [Report](results/test262-function-call-native-v1.json) |
+| `built-ins/Function/prototype/toString` | 150/160 | 0 | 10 | 0 | [Report](results/test262-function-tostring-native-v1.json) |
+| `built-ins/GeneratorFunction` | 44/46 | 0 | 0 | 2 | [Report](results/test262-generator-function-fallback-native-v1.json) |
+| `built-ins/GeneratorPrototype/next` | 27/28 | 0 | 0 | 1 | [Report](results/test262-generator-next-script-records-native-v3.json) |
+| `built-ins/GeneratorPrototype/return` | 46/46 | 0 | 0 | 0 | [Report](results/test262-generator-return-native-v2.json) |
+| `built-ins/GeneratorPrototype/throw` | 44/44 | 0 | 0 | 0 | [Report](results/test262-generator-throw-native-v1.json) |
+| `built-ins/Iterator` | 1,350/1,368 | 12 | 6 | 0 | [Report](results/test262-iterator-native-v1.json) |
+| `built-ins/Iterator/from` | 36/38 | 2 | 0 | 0 | [Report](results/test262-iterator-from-native-v1.json) |
+| `built-ins/Iterator/prototype/Symbol.dispose` | 12/12 | 0 | 0 | 0 | [Report](results/test262-iterator-dispose-native-v1.json) |
+| `built-ins/Iterator/prototype/Symbol.toStringTag` | 4/4 | 0 | 0 | 0 | [Report](results/test262-iterator-tag-native-v1.json) |
+| `built-ins/Iterator/prototype/constructor` | 4/4 | 0 | 0 | 0 | [Report](results/test262-iterator-constructor-property-native-v1.json) |
+| `built-ins/Iterator/prototype/forEach` | 53/56 | 0 | 0 | 3 | [Report](results/test262-iterator-foreach-native-v1.json) |
+| `built-ins/Iterator/prototype/reduce` | 64/64 | 0 | 0 | 0 | [Report](results/test262-iterator-reduce-native-v1.json) |
+| `built-ins/Iterator/prototype/toArray` | 35/38 | 0 | 0 | 3 | [Report](results/test262-iterator-toarray-native-v1.json) |
+| `built-ins/Iterator/zip` | 74/76 | 0 | 2 | 0 | [Report](results/test262-iterator-zip-native-v2.json) |
+| `built-ins/Iterator/zipKeyed` | 86/88 | 0 | 2 | 0 | [Report](results/test262-iterator-zip-keyed-native-v2.json) |
+| `built-ins/JSON` | 332/332 | 0 | 0 | 0 | [Report](results/test262-json-native-v1.json) |
+| `built-ins/JSON/parse` | 154/154 | 0 | 0 | 0 | [Report](results/test262-json-parse-native-v1.json) |
+| `built-ins/JSON/stringify` | 134/134 | 0 | 0 | 0 | [Report](results/test262-json-stringify-native-v1.json) |
+| `built-ins/Map` | 405/405 | 0 | 0 | 0 | [Report](results/test262-map-weak-followup-native-v1.json) |
+| `built-ins/Math` | 652/654 | 0 | 0 | 2 | [Report](results/test262-math-family-native-v1.json) |
+| `built-ins/Math/cbrt` | 10/10 | 0 | 0 | 0 | [Report](results/test262-math-cbrt-native-v1.json) |
+| `built-ins/Math/clz32` | 20/20 | 0 | 0 | 0 | [Report](results/test262-math-clz32-native-v1.json) |
+| `built-ins/Math/f16round` | 10/10 | 0 | 0 | 0 | [Report](results/test262-math-f16round-native-v1.json) |
+| `built-ins/Math/fround` | 18/18 | 0 | 0 | 0 | [Report](results/test262-math-fround-native-v1.json) |
+| `built-ins/Math/hypot` | 24/24 | 0 | 0 | 0 | [Report](results/test262-math-hypot-native-v1.json) |
+| `built-ins/Math/pow` | 56/56 | 0 | 0 | 0 | [Report](results/test262-math-pow-native-v2.json) |
+| `built-ins/Math/random` | 10/10 | 0 | 0 | 0 | [Report](results/test262-math-random-native-v1.json) |
+| `built-ins/Math/round` | 22/22 | 0 | 0 | 0 | [Report](results/test262-math-round-native-v1.json) |
+| `built-ins/Math/sumPrecise` | 20/20 | 0 | 0 | 0 | [Report](results/test262-math-sum-precise-native-v1.json) |
+| `built-ins/Number/prototype/toExponential` | 30/30 | 0 | 0 | 0 | [Report](results/test262-number-exponential-native-v1.json) |
+| `built-ins/Number/prototype/toFixed` | 32/32 | 0 | 0 | 0 | [Report](results/test262-number-fixed-native-v1.json) |
+| `built-ins/Number/prototype/toLocaleString` | 8/8 | 0 | 0 | 0 | [Report](results/test262-number-locale-native-v2.json) |
+| `built-ins/Number/prototype/toPrecision` | 34/34 | 0 | 0 | 0 | [Report](results/test262-number-precision-native-v1.json) |
+| `built-ins/Object/assign` | 76/76 | 0 | 0 | 0 | [Report](results/test262-object-assign-native-v1.json) |
+| `built-ins/Object/entries` | 40/42 | 0 | 2 | 0 | [Report](results/test262-object-entries-native-v1.json) |
+| `built-ins/Object/fromEntries` | 50/50 | 0 | 0 | 0 | [Report](results/test262-object-fromentries-native-v1.json) |
+| `built-ins/Object/getOwnPropertyDescriptors` | 32/36 | 0 | 0 | 4 | [Report](results/test262-object-descriptors-native-v1.json) |
+| `built-ins/Object/getOwnPropertySymbols` | 16/24 | 8 | 0 | 0 | [Report](results/test262-symbol-reflection-native-v2.json) |
+| `built-ins/Object/groupBy` | 28/28 | 0 | 0 | 0 | [Report](results/test262-object-groupby-native-v1.json) |
+| `built-ins/Object/hasOwn` | 124/124 | 0 | 0 | 0 | [Report](results/test262-object-hasown-native-v1.json) |
+| `built-ins/Object/prototype` | 474/494 | 16 | 2 | 2 | [Report](results/test262-object-prototype-native-v1.json) |
+| `built-ins/Object/prototype/isPrototypeOf` | 14/20 | 0 | 0 | 6 | [Report](results/test262-object-isprototypeof-native-v2.json) |
+| `built-ins/Object/prototype/toLocaleString` | 21/22 | 0 | 0 | 1 | [Report](results/test262-object-localestring-native-v1.json) |
+| `built-ins/Object/prototype/toString` | 82/82 | 0 | 0 | 0 | [Report](results/test262-object-tostring-core-focus-v1.json) |
+| `built-ins/Object/prototype/valueOf` | 36/40 | 0 | 0 | 4 | [Report](results/test262-object-valueof-native-v1.json) |
+| `built-ins/Object/setPrototypeOf` | 10/24 | 6 | 2 | 6 | [Report](results/test262-set-prototype-native-v1.json) |
+| `built-ins/Object/values` | 38/40 | 0 | 2 | 0 | [Report](results/test262-object-values-native-v1.json) |
+| `built-ins/Promise/Symbol.species` | 10/10 | 0 | 0 | 0 | [Report](results/test262-promise-species-native-v1.json) |
+| `built-ins/Promise/all` | 190/196 | 4 | 2 | 0 | [Report](results/test262-promise-all-native-v1.json) |
+| `built-ins/Promise/all/invoke-resolve-get-once-multiple-calls.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-all-resolve-native-v1.json) |
+| `built-ins/Promise/allSettled/resolve-ignores-late-rejection.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-settled-once-native-v1.json) |
+| `built-ins/Promise/any/reject-all-mixed.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-any-reject-native-v1.json) |
+| `built-ins/Promise/exception-after-resolve-in-executor.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-executor-abrupt-native-v1.json) |
+| `built-ins/Promise/exec-args.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-executor-native-v2.json) |
+| `built-ins/Promise/prototype/finally` | 56/58 | 2 | 0 | 0 | [Report](results/test262-promise-finally-native-v2.json) |
+| `built-ins/Promise/prototype/finally/rejected-observable-then-calls-PromiseResolve.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-finally-filter-native-v1.json) |
+| `built-ins/Promise/prototype/finally/rejected-observable-then-calls.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-finally-apply-native-v1.json) |
+| `built-ins/Promise/prototype/finally/resolution-value-no-override.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-finally-value-native-v1.json) |
+| `built-ins/Promise/prototype/then` | 146/146 | 0 | 0 | 0 | [Report](results/test262-promise-then-native-v2.json) |
+| `built-ins/Promise/prototype/then/S25.4.4_A1.1_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-sequence-foreach-native-v1.json) |
+| `built-ins/Promise/race/invoke-then-get-error-close.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-race-close-native-v1.json) |
+| `built-ins/Promise/resolve-non-obj-deferred.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-deferred-native-v1.json) |
+| `built-ins/Promise/withResolvers` | 10/12 | 2 | 0 | 0 | [Report](results/test262-promise-with-resolvers-native-v1.json) |
+| `built-ins/Proxy` | 582/607 | 8 | 14 | 3 | [Report](results/test262-proxy-native-v2.json) |
+| `built-ins/Proxy/create-target-is-not-a-constructor.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-proxy-eval-target-native-v1.json) |
+| `built-ins/Proxy/get` | 32/38 | 2 | 0 | 4 | [Report](results/test262-proxy-get-native-v1.json) |
+| `built-ins/Proxy/get/trap-is-not-callable-realm.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-proxy-get-cross-realm-native-v1.json) |
+| `built-ins/Proxy/ownKeys` | 54/54 | 0 | 0 | 0 | [Report](results/test262-proxy-ownkeys-native-v1.json) |
+| `built-ins/Proxy/revocable/tco-fn-realm.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-evalscript-child-proxy-evalscript-host-native-v1.json) |
+| `built-ins/Reflect` | 305/306 | 0 | 0 | 1 | [Report](results/test262-reflect-framework-native-v1.json) |
+| `built-ins/RegExp/escape` | 40/40 | 0 | 0 | 0 | [Report](results/test262-regexp-escape-native-v2.json) |
+| `built-ins/RegExp/property-escapes/character-class.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-property-class-native-v1.json) |
+| `built-ins/RegExp/property-escapes/generated/ASCII.js` | 0/2 | 0 | 0 | 2 | [Report](results/test262-regexp-ascii-generated-native-v5.json) |
+| `built-ins/RegExp/property-escapes/loose-matching-07.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-property-alias-native-v1.json) |
+| `built-ins/RegExp/prototype/Symbol.matchAll` | 52/52 | 0 | 0 | 0 | [Report](results/test262-regexp-symbol-matchall-native-v1.json) |
+| `built-ins/RegExp/prototype/Symbol.replace` | 138/138 | 0 | 0 | 0 | [Report](results/test262-regexp-symbol-replace-native-v1.json) |
+| `built-ins/RegExp/prototype/Symbol.split` | 84/88 | 2 | 2 | 0 | [Report](results/test262-regexp-symbol-split-native-v1.json) |
+| `built-ins/RegExp/prototype/exec` | 154/158 | 0 | 4 | 0 | [Report](results/test262-regexp-exec-native-v2.json) |
+| `built-ins/RegExp/prototype/exec/regexp-builtin-exec-v-u-flag.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-property-exec-native-v1.json) |
+| `built-ins/RegExp/prototype/source` | 12/24 | 12 | 0 | 0 | [Report](results/test262-regexp-source-native-v1.json) |
+| `built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-18.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-set-punctuation-native-v1.json) |
+| `built-ins/RegExp/unicode_full_case_folding.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-simple-fold-native-v1.json) |
+| `built-ins/RegExpStringIteratorPrototype` | 34/34 | 0 | 0 | 0 | [Report](results/test262-regexp-string-iterator-native-v1.json) |
+| `built-ins/Set` | 764/764 | 0 | 0 | 0 | [Report](results/test262-set-weak-followup-native-v1.json) |
+| `built-ins/SharedArrayBuffer` | 208/208 | 0 | 0 | 0 | [Report](results/test262-sharedarraybuffer-native-v4.json) |
+| `built-ins/String/fromCharCode` | 34/34 | 0 | 0 | 0 | [Report](results/test262-string-from-char-code-native-v2.json) |
+| `built-ins/String/fromCodePoint` | 22/22 | 0 | 0 | 0 | [Report](results/test262-string-from-code-point-native-v1.json) |
+| `built-ins/String/prototype/charAt` | 58/60 | 2 | 0 | 0 | [Report](results/test262-string-char-at-native-v3.json) |
+| `built-ins/String/prototype/charCodeAt` | 48/50 | 2 | 0 | 0 | [Report](results/test262-string-char-code-at-native-v1.json) |
+| `built-ins/String/prototype/codePointAt` | 32/32 | 0 | 0 | 0 | [Report](results/test262-string-code-point-at-native-v1.json) |
+| `built-ins/String/prototype/isWellFormed` | 11/16 | 0 | 0 | 5 | [Report](results/test262-string-iswellformed-native-v1.json) |
+| `built-ins/String/prototype/normalize` | 25/28 | 0 | 0 | 3 | [Report](results/test262-string-normalize-native-v1.json) |
+| `built-ins/String/prototype/startsWith` | 42/42 | 0 | 0 | 0 | [Report](results/test262-string-starts-with-native-v1.json) |
+| `built-ins/String/prototype/substring` | 90/92 | 0 | 2 | 0 | [Report](results/test262-string-substring-native-v1.json) |
+| `built-ins/String/prototype/toLowerCase` | 58/60 | 0 | 2 | 0 | [Report](results/test262-string-lower-native-v1.json) |
+| `built-ins/String/prototype/toUpperCase` | 50/52 | 0 | 2 | 0 | [Report](results/test262-string-upper-native-v1.json) |
+| `built-ins/String/prototype/toWellFormed` | 11/16 | 0 | 0 | 5 | [Report](results/test262-string-towellformed-native-v1.json) |
+| `built-ins/String/raw` | 60/60 | 0 | 0 | 0 | [Report](results/test262-string-raw-native-v1.json) |
+| `built-ins/SuppressedError` | 40/44 | 0 | 4 | 0 | [Report](results/test262-suppressed-error-native-v1.json) |
+| `built-ins/Symbol` | 192/192 | 0 | 0 | 0 | [Report](results/test262-symbol-native-v3.json) |
+| `built-ins/Temporal/Duration/basic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-basic-native-v1.json) |
+| `built-ins/Temporal/Duration/compare` | 100/100 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-compare-native-v1.json) |
+| `built-ins/Temporal/Duration/mixed.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-mixed-native-v1.json) |
+| `built-ins/Temporal/Duration/out-of-range.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-out-of-range-native-v1.json) |
+| `built-ins/Temporal/Duration/prototype/add` | 68/68 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-add-native-v1.json) |
+| `built-ins/Temporal/Duration/prototype/round` | 251/252 | 0 | 0 | 1 | [Report](results/test262-temporal-duration-round-native-v4.json) |
+| `built-ins/Temporal/Duration/prototype/subtract` | 68/68 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-subtract-native-v1.json) |
+| `built-ins/Temporal/Duration/prototype/toString` | 88/88 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-string-native-v1.json) |
+| `built-ins/Temporal/Duration/prototype/total` | 156/156 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-total-native-v3.json) |
+| `built-ins/Temporal/Duration/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-duration-subclass-native-v1.json) |
+| `built-ins/Temporal/Instant` | 346/934 | 495 | 90 | 3 | [Report](results/test262-temporal-instant-native-v1.json) |
+| `built-ins/Temporal/Instant/fromEpochMilliseconds` | 20/20 | 0 | 0 | 0 | [Report](results/test262-temporal-instant-milliseconds-native-v2.json) |
+| `built-ins/Temporal/Instant/prototype/toString` | 109/110 | 0 | 0 | 1 | [Report](results/test262-temporal-instant-string-precision-native-v3.json) |
+| `built-ins/Temporal/Now` | 132/132 | 0 | 0 | 0 | [Report](results/test262-temporal-now-system-host-native-v1.json) |
+| `built-ins/Temporal/Now/instant` | 18/18 | 0 | 0 | 0 | [Report](results/test262-temporal-now-instant-native-v1.json) |
+| `built-ins/Temporal/PlainDate/argument-convert.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-argument-convert-native-v1.json) |
+| `built-ins/Temporal/PlainDate/basic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-basic-native-v1.json) |
+| `built-ins/Temporal/PlainDate/from` | 142/142 | 0 | 0 | 0 | [Report](results/test262-temporal-date-from-native-v3.json) |
+| `built-ins/Temporal/PlainDate/limits.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-limits-native-v1.json) |
+| `built-ins/Temporal/PlainDate/prototype/since` | 174/174 | 0 | 0 | 0 | [Report](results/test262-temporal-date-since-native-v2.json) |
+| `built-ins/Temporal/PlainDate/prototype/toString` | 36/36 | 0 | 0 | 0 | [Report](results/test262-temporal-date-tostring-native-v2.json) |
+| `built-ins/Temporal/PlainDate/prototype/toZonedDateTime` | 92/92 | 0 | 0 | 0 | [Report](results/test262-temporal-date-to-zoned-native-v1.json) |
+| `built-ins/Temporal/PlainDate/prototype/until` | 172/172 | 0 | 0 | 0 | [Report](results/test262-temporal-date-until-native-v2.json) |
+| `built-ins/Temporal/PlainDate/prototype/with` | 50/50 | 0 | 0 | 0 | [Report](results/test262-temporal-date-with-native-v2.json) |
+| `built-ins/Temporal/PlainDate/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-subclass-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/basic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-basic-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/from` | 140/140 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-from-native-v2.json) |
+| `built-ins/Temporal/PlainDateTime/limits.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-limits-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/prototype/since` | 190/190 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-since-native-v3.json) |
+| `built-ins/Temporal/PlainDateTime/prototype/toString` | 98/98 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-string-precision-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime` | 58/58 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-to-zoned-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/prototype/until` | 196/196 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-until-native-v3.json) |
+| `built-ins/Temporal/PlainDateTime/prototype/with` | 60/60 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-with-now-native-v1.json) |
+| `built-ins/Temporal/PlainDateTime/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-date-time-subclass-native-v1.json) |
+| `built-ins/Temporal/PlainMonthDay/argument-invalid.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-month-day-argument-invalid-native-v1.json) |
+| `built-ins/Temporal/PlainMonthDay/basic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-month-day-basic-native-v1.json) |
+| `built-ins/Temporal/PlainMonthDay/from` | 114/118 | 2 | 2 | 0 | [Report](results/test262-temporal-month-day-from-native-v1.json) |
+| `built-ins/Temporal/PlainMonthDay/prototype/toString` | 32/32 | 0 | 0 | 0 | [Report](results/test262-temporal-month-day-string-native-v1.json) |
+| `built-ins/Temporal/PlainMonthDay/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-month-day-subclass-native-v1.json) |
+| `built-ins/Temporal/PlainYearMonth/basic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-year-month-basic-native-v1.json) |
+| `built-ins/Temporal/PlainYearMonth/from` | 124/128 | 0 | 4 | 0 | [Report](results/test262-temporal-year-month-from-native-v1.json) |
+| `built-ins/Temporal/PlainYearMonth/limits.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-year-month-limits-native-v1.json) |
+| `built-ins/Temporal/PlainYearMonth/prototype/toString` | 34/34 | 0 | 0 | 0 | [Report](results/test262-temporal-year-month-string-native-v1.json) |
+| `built-ins/Temporal/PlainYearMonth/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-year-month-subclass-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/argument-convert.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-argument-convert-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/compare` | 100/100 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-compare-native-v2.json) |
+| `built-ins/Temporal/ZonedDateTime/from` | 182/182 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-from-named-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/limits.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-limits-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/add` | 86/86 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-add-native-v2.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/equals` | 110/110 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-equals-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/getTimeZoneTransition` | 28/28 | 0 | 0 | 0 | [Report](results/test262-temporal-zone-transition-native-v2.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/hoursInDay` | 10/10 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-hours-named-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/round` | 92/92 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-round-model-native-v2.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/since` | 193/202 | 0 | 0 | 9 | [Report](results/test262-temporal-zoned-since-duration-native-v3.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/startOfDay` | 18/18 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-start-named-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/subtract` | 84/84 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-subtract-native-v2.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/toInstant` | 12/20 | 8 | 0 | 0 | [Report](results/test262-temporal-zoned-toInstant-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/toPlainDate` | 12/14 | 2 | 0 | 0 | [Report](results/test262-temporal-zoned-toPlainDate-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/toPlainDateTime` | 18/20 | 2 | 0 | 0 | [Report](results/test262-temporal-zoned-toPlainDateTime-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/toPlainTime` | 16/18 | 2 | 0 | 0 | [Report](results/test262-temporal-zoned-toPlainTime-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/toString` | 124/124 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-format-native-v3.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/until` | 194/198 | 0 | 0 | 4 | [Report](results/test262-temporal-zoned-until-duration-native-v3.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/with` | 82/82 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-with-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/withCalendar` | 30/32 | 2 | 0 | 0 | [Report](results/test262-temporal-zoned-withCalendar-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/withPlainTime` | 72/72 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-withPlainTime-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/prototype/withTimeZone` | 32/32 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-withTimeZone-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/subclass.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-subclass-native-v1.json) |
+| `built-ins/Temporal/ZonedDateTime/timezone-string.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-temporal-zoned-timezone-string-native-v1.json) |
+| `built-ins/TypedArray/prototype/at` | 24/30 | 0 | 6 | 0 | [Report](results/test262-typed-array-at-native-v1.json) |
+| `built-ins/TypedArray/prototype/length` | 30/36 | 0 | 6 | 0 | [Report](results/test262-typed-array-length-native-v1.json) |
+| `built-ins/TypedArray/prototype/set` | 188/220 | 20 | 12 | 0 | [Report](results/test262-typed-array-set-native-v1.json) |
+| `built-ins/TypedArray/prototype/set/BigInt/array-arg-set-values-in-order.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-typed-array-set-bigint-order-native-v1.json) |
+| `built-ins/TypedArray/prototype/set/array-arg-set-values-in-order.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-typed-array-set-order-native-v1.json) |
+| `built-ins/TypedArray/prototype/toLocaleString` | 72/78 | 0 | 6 | 0 | [Report](results/test262-typed-array-tolocalestring-native-v1.json) |
+| `built-ins/TypedArray/prototype/toReversed` | 18/18 | 0 | 0 | 0 | [Report](results/test262-typed-array-toreversed-native-v3.json) |
+| `built-ins/TypedArray/prototype/with` | 54/54 | 0 | 0 | 0 | [Report](results/test262-typed-array-with-native-v1.json) |
+| `built-ins/TypedArrayConstructors/internals/Get` | 52/56 | 4 | 0 | 0 | [Report](results/test262-typed-array-get-native-v1.json) |
+| `built-ins/TypedArrayConstructors/of` | 52/54 | 2 | 0 | 0 | [Report](results/test262-typed-array-of-native-v1.json) |
+| `built-ins/Uint8Array` | 140/140 | 0 | 0 | 0 | [Report](results/test262-uint8-family-native-v3.json) |
+| `built-ins/Uint8Array/fromHex` | 18/18 | 0 | 0 | 0 | [Report](results/test262-uint8-fromhex-native-v1.json) |
+| `built-ins/Uint8Array/prototype/setFromHex` | 22/26 | 2 | 0 | 2 | [Report](results/test262-uint8-setfromhex-native-v1.json) |
+| `built-ins/Uint8Array/prototype/toHex` | 14/14 | 0 | 0 | 0 | [Report](results/test262-uint8-tohex-native-v1.json) |
+| `built-ins/WeakMap` | 281/281 | 0 | 0 | 0 | [Report](results/test262-weak-map-native-v1.json) |
+| `built-ins/WeakRef` | 58/58 | 0 | 0 | 0 | [Report](results/test262-weak-ref-native-v1.json) |
+| `built-ins/WeakSet` | 169/170 | 0 | 0 | 1 | [Report](results/test262-weak-set-native-v1.json) |
+| `built-ins/decodeURI` | 108/110 | 0 | 0 | 2 | [Report](results/test262-decode-uri-native-v1.json) |
+| `built-ins/decodeURIComponent` | 110/112 | 0 | 0 | 2 | [Report](results/test262-decode-uri-component-native-v1.json) |
+| `built-ins/encodeURI` | 62/62 | 0 | 0 | 0 | [Report](results/test262-encode-uri-native-v2.json) |
+| `built-ins/encodeURIComponent` | 62/62 | 0 | 0 | 0 | [Report](results/test262-encode-uri-component-native-v2.json) |
+| `built-ins/eval` | 18/20 | 0 | 2 | 0 | [Report](results/test262-eval-family-native-v1.json) |
+| `built-ins/parseFloat` | 108/108 | 0 | 0 | 0 | [Report](results/test262-parse-float-native-v2.json) |
+| `built-ins/parseInt` | 110/110 | 0 | 0 | 0 | [Report](results/test262-parse-int-native-v2.json) |
+| `intl402/BigInt/prototype/toLocaleString` | 22/22 | 0 | 0 | 0 | [Report](results/test262-bigint-locale-intl-native-v3.json) |
+| `intl402/FallbackSymbol/per-realm.js` | 0/2 | 2 | 0 | 0 | [Report](results/test262-evalscript-child-intl-evalscript-host-native-v1.json) |
+| `intl402/Intl/getCanonicalLocales` | 76/76 | 0 | 0 | 0 | [Report](results/test262-canonical-locales-native-v2.json) |
+| `intl402/Intl/supportedValuesOf` | 20/50 | 6 | 24 | 0 | [Report](results/test262-intl-supported-values-native-v3.json) |
+| `intl402/ListFormat` | 162/162 | 0 | 0 | 0 | [Report](results/test262-list-format-native-v1.json) |
+| `intl402/Locale` | 338/380 | 42 | 0 | 0 | [Report](results/test262-locale-family-native-v4.json) |
+| `intl402/Locale/prototype/getCalendars` | 16/16 | 0 | 0 | 0 | [Report](results/test262-locale-calendars-native-v1.json) |
+| `intl402/Locale/prototype/getCollations` | 24/26 | 2 | 0 | 0 | [Report](results/test262-locale-collations-native-v1.json) |
+| `intl402/Number/prototype/toLocaleString` | 14/14 | 0 | 0 | 0 | [Report](results/test262-number-locale-intl-native-v3.json) |
+| `intl402/NumberFormat` | 406/502 | 2 | 92 | 2 | [Report](results/test262-intl-number-format-family-native-v4.json) |
+| `intl402/NumberFormat/prototype/formatRange` | 22/22 | 0 | 0 | 0 | [Report](results/test262-number-range-native-v2.json) |
+| `intl402/NumberFormat/prototype/formatRangeToParts` | 20/20 | 0 | 0 | 0 | [Report](results/test262-number-range-parts-native-v2.json) |
+| `intl402/PluralRules` | 104/106 | 2 | 0 | 0 | [Report](results/test262-plural-rules-native-v1.json) |
+| `intl402/RelativeTimeFormat` | 160/160 | 0 | 0 | 0 | [Report](results/test262-relative-time-native-v1.json) |
+| `intl402/Temporal/Duration/prototype/round` | 16/18 | 0 | 2 | 0 | [Report](results/test262-intl-temporal-duration-round-prefix-native-v3.json) |
+| `intl402/Temporal/Duration/prototype/total` | 12/14 | 0 | 2 | 0 | [Report](results/test262-intl-temporal-duration-total-prefix-native-v3.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition` | 18/18 | 0 | 0 | 0 | [Report](results/test262-intl-temporal-zone-transition-native-v3.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/hoursInDay` | 10/10 | 0 | 0 | 0 | [Report](results/test262-intl-temporal-zoned-hours-model-native-v1.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/round` | 6/6 | 0 | 0 | 0 | [Report](results/test262-intl-temporal-zoned-round-model-native-v2.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/since` | 0/134 | 0 | 134 | 0 | [Report](results/test262-intl-temporal-zoned-since-prefix-native-v2.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/startOfDay` | 8/8 | 0 | 0 | 0 | [Report](results/test262-intl-temporal-zoned-start-model-native-v1.json) |
+| `intl402/Temporal/ZonedDateTime/prototype/until` | 0/132 | 0 | 132 | 0 | [Report](results/test262-intl-temporal-zoned-until-prefix-native-v2.json) |
+| `language/arguments-object` | 456/460 | 2 | 2 | 0 | [Report](results/test262-arguments-native-v2.json) |
+| `language/arguments-object/10.6-12-2.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-arguments-callee-descriptor-v1.json) |
+| `language/arguments-object/cls-expr-meth-args-trailing-comma-null.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-arguments-class-null-recheck-v1.json) |
+| `language/arguments-object/unmapped/via-params-rest.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-rest-arguments-native-v1.json) |
+| `language/block-scope` | 287/287 | 0 | 0 | 0 | [Report](results/test262-language-block-scope-core-v1.json) |
+| `language/block-scope/syntax/function-declarations` | 10/12 | 0 | 2 | 0 | [Report](results/test262-block-function-declarations-native-v1.json) |
+| `language/block-scope/syntax/redeclaration` | 170/189 | 0 | 19 | 0 | [Report](results/test262-binding-redeclarations-native-v1.json) |
+| `language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-let.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-native-binding-duplicate-let-v1.json) |
+| `language/comments/hashbang/line-terminator-paragraph-separator.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-raw-hashbang-native-v1.json) |
+| `language/computed-property-names/class/accessor` | 8/8 | 0 | 0 | 0 | [Report](results/test262-class-accessors-native-script-modes-v1.json) |
+| `language/destructuring` | 34/37 | 0 | 2 | 1 | [Report](results/test262-destructuring-native-v2.json) |
+| `language/eval-code/direct` | 279/336 | 0 | 55 | 2 | [Report](results/test262-direct-eval-host-native-v1.json) |
+| `language/eval-code/direct/export.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-module-eval-export-v1.json) |
+| `language/eval-code/direct/import.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-module-eval-import-v1.json) |
+| `language/eval-code/indirect` | 4/118 | 0 | 114 | 0 | [Report](results/test262-indirect-eval-baseline-native-v1.json) |
+| `language/expressions/addition` | 2/95 | 32 | 61 | 0 | [Report](results/test262-addition-native-v1.json) |
+| `language/expressions/addition/S11.6.1_A2.1_T2.js` | 1/2 | 0 | 1 | 0 | [Report](results/test262-reference-error-native-v2.json) |
+| `language/expressions/addition/S11.6.1_A2.3_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-addition-coercion-native-v1.json) |
+| `language/expressions/addition/bigint-arithmetic.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-bigint-addition-native-v1.json) |
+| `language/expressions/array/11.1.4_4-5-1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-inherited-readonly-v1.json) |
+| `language/expressions/array/S11.1.4_A1.1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-empty-native-v1.json) |
+| `language/expressions/array/S11.1.4_A1.4.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-elisions-native-v1.json) |
+| `language/expressions/array/S11.1.4_A2.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-array-nested-native-v1.json) |
+| `language/expressions/arrow-function/syntax/early-errors` | 43/43 | 0 | 0 | 0 | [Report](results/test262-arrow-early-errors-native-v2.json) |
+| `language/expressions/assignment` | 850/850 | 0 | 0 | 0 | [Report](results/test262-language-assignment-name-fixed-v1.json) |
+| `language/expressions/assignment/destructuring` | 4/15 | 0 | 11 | 0 | [Report](results/test262-assignment-destructuring-native-v1.json) |
+| `language/expressions/assignment/dstr` | 439/640 | 0 | 189 | 12 | [Report](results/test262-assignment-dstr-native-v2.json) |
+| `language/expressions/assignment/dstr/obj-empty-symbol.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-obj-empty-symbol-native-v2.json) |
+| `language/expressions/assignment/dstr/obj-rest-order.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-obj-rest-order-native-v2.json) |
+| `language/expressions/assignment/dstr/obj-rest-symbol-val.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-obj-rest-symbol-val-native-v2.json) |
+| `language/expressions/assignment/fn-name-lhs-cover.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-language-assignment-cover-name-fixed-v1.json) |
+| `language/expressions/async-generator` | 1,037/1,212 | 6 | 168 | 1 | [Report](results/test262-async-generator-expression-native-v1.json) |
+| `language/expressions/async-generator/yield-star-async-next.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-next-native-v1.json) |
+| `language/expressions/async-generator/yield-star-async-return.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-return-native-v1.json) |
+| `language/expressions/async-generator/yield-star-async-throw.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-throw-native-v1.json) |
+| `language/expressions/async-generator/yield-star-sync-next.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-sync-next-native-v1.json) |
+| `language/expressions/async-generator/yield-star-sync-return.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-sync-return-native-v1.json) |
+| `language/expressions/async-generator/yield-star-sync-throw.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-delegate-sync-throw-native-v1.json) |
+| `language/expressions/await` | 44/44 | 0 | 0 | 0 | [Report](results/test262-await-handoff-native-v6.json) |
+| `language/expressions/await/async-generator-interleaved.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-await-interleaved-native-v1.json) |
+| `language/expressions/await/no-operand.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-native-parse-await-no-operand-v1.json) |
+| `language/expressions/call` | 171/171 | 0 | 0 | 0 | [Report](results/test262-language-call-tail-transfers-v1.json) |
+| `language/expressions/call/spread-obj-manipulate-outter-obj-in-getter.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-object-spread-native-v1.json) |
+| `language/expressions/call/spread-sngl-iter.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-call-spread-native-v1.json) |
+| `language/expressions/call/tco-non-eval-global.js` | 0/1 | 0 | 0 | 1 | [Report](results/test262-language-tailcall-global-baseline-v1.json) |
+| `language/expressions/class/scope-name-lex-close.js` | 1/2 | 0 | 1 | 0 | [Report](results/test262-class-scope-native-v1.json) |
+| `language/expressions/delete` | 103/103 | 0 | 0 | 0 | [Report](results/test262-language-delete-reference-core-v1.json) |
+| `language/expressions/delete/S11.4.1_A3.1.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-delete-declared-variable-recheck-v1.json) |
+| `language/expressions/delete/member-computed-reference-undefined.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-delete-undefined-base-recheck-v1.json) |
+| `language/expressions/dynamic-import` | 1,559/1,900 | 0 | 341 | 0 | [Report](results/test262-script-dynamic-import-directory-v1.json) |
+| `language/expressions/dynamic-import [JSON and async cycle subset]` | 4/4 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-json-cycle-native-v1.json) |
+| `language/expressions/dynamic-import [bare-specifier subset]` | 24/24 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-bare-specifiers-native-v1.json) |
+| `language/expressions/dynamic-import [fixture binding error subset]` | 16/16 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-binding-native-v2.json) |
+| `language/expressions/dynamic-import/assignment-expression/import-meta.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-00-v1.json) |
+| `language/expressions/dynamic-import/catch/top-level-import-catch-eval-rqstd-abrupt-typeerror.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-5-v1.json) |
+| `language/expressions/dynamic-import/catch/top-level-import-catch-file-does-not-exist.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-1-v1.json) |
+| `language/expressions/dynamic-import/catch/top-level-import-catch-instn-iee-err-circular.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-4-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-cls-anon.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-01-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-cls-name-meth.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-02-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-cls-named.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-03-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-cls-anon.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-04-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-cls-name-meth.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-05-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-cls-named.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-06-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-fn-anon.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-07-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-fn-named.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-08-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-gen-anon.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-09-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-gen-named.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-10-v1.json) |
+| `language/expressions/dynamic-import/eval-export-dflt-expr-in.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-11-v1.json) |
+| `language/expressions/dynamic-import/eval-self-once-module.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-12-v1.json) |
+| `language/expressions/dynamic-import/eval-self-once-script.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-2-v1.json) |
+| `language/expressions/dynamic-import/import-attributes` | 42/44 | 0 | 2 | 0 | [Report](results/test262-language-dynamic-import-attributes-json-v2.json) |
+| `language/expressions/dynamic-import/imported-self-update.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-13-v1.json) |
+| `language/expressions/dynamic-import/namespace/await-ns-get-nested-namespace-dflt-indirect.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-14-v1.json) |
+| `language/expressions/dynamic-import/namespace/promise-then-ns-get-nested-namespace-dflt-indirect.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-15-v1.json) |
+| `language/expressions/dynamic-import/reuse-namespace-object-from-import.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-16-v1.json) |
+| `language/expressions/dynamic-import/reuse-namespace-object-from-script.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-0-v1.json) |
+| `language/expressions/dynamic-import/syntax/valid/top-level-empty-str-is-valid-assign-expr.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-script-dynamic-import-canary-3-v1.json) |
+| `language/expressions/dynamic-import/usage-from-eval.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-eval-native-v1.json) |
+| `language/expressions/equals` | 33/93 | 37 | 20 | 3 | [Report](results/test262-equality-native-v1.json) |
+| `language/expressions/equals/S11.9.1_A5.2.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-equality-numeric-string-native-v1.json) |
+| `language/expressions/equals/S11.9.1_A7.4.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-equality-boxes-native-v1.json) |
+| `language/expressions/exponentiation` | 53/88 | 2 | 28 | 5 | [Report](results/test262-exponentiation-native-v2.json) |
+| `language/expressions/exponentiation/applying-the-exp-operator_A14.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-exponentiation-math-constants-native-v1.json) |
+| `language/expressions/exponentiation/applying-the-exp-operator_A16.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-exponentiation-math-constants-A16-native-v1.json) |
+| `language/expressions/exponentiation/applying-the-exp-operator_A20.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-exponentiation-math-constants-A20-native-v1.json) |
+| `language/expressions/exponentiation/applying-the-exp-operator_A22.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-exponentiation-math-constants-A22-native-v1.json) |
+| `language/expressions/function/name.js` | 0/2 | 0 | 0 | 2 | [Report](results/test262-function-name-native-v8.json) |
+| `language/expressions/function/named-no-strict-reassign-fn-name-in-body-in-arrow.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-named-function-sloppy-arrow-v1.json) |
+| `language/expressions/function/named-no-strict-reassign-fn-name-in-body.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-named-function-sloppy-v1.json) |
+| `language/expressions/function/named-strict-error-reassign-fn-name-in-body-in-arrow.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-named-function-strict-arrow-v1.json) |
+| `language/expressions/function/named-strict-error-reassign-fn-name-in-body.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-named-function-strict-v1.json) |
+| `language/expressions/import.meta/distinct-for-each-module.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-17-v1.json) |
+| `language/expressions/import.meta/import-meta-is-an-ordinary-object.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-18-v1.json) |
+| `language/expressions/import.meta/not-accessible-from-direct-eval.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-module-eval-import-meta-v1.json) |
+| `language/expressions/import.meta/same-object-returned.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-19-v1.json) |
+| `language/expressions/import.meta/syntax/goal-module-nested-function.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-20-v1.json) |
+| `language/expressions/import.meta/syntax/goal-module.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-21-v1.json) |
+| `language/expressions/in` | 21/69 | 7 | 41 | 0 | [Report](results/test262-in-native-v1.json) |
+| `language/expressions/instanceof/symbol-hasinstance-invocation.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-hasinstance-invocation-native-v1.json) |
+| `language/expressions/less-than/S11.8.1_A2.3_T1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-relational-coercion-native-v1.json) |
+| `language/expressions/new.target` | 3/28 | 2 | 8 | 15 | [Report](results/test262-new-target-native-v1.json) |
+| `language/expressions/object/__proto__-poisoned-object-prototype.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-prototype-setter-native-v1.json) |
+| `language/expressions/object/accessor-name-computed-err-to-prop-key.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-computed-accessor-error-native-v1.json) |
+| `language/expressions/object/accessor-name-literal-string-default.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-object-accessors-native-v1.json) |
+| `language/expressions/object/computed-property-name-topropertykey-before-value-evaluation.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-computed-key-order-native-v1.json) |
+| `language/expressions/optional-chaining` | 28/76 | 4 | 44 | 0 | [Report](results/test262-optional-chaining-native-v1.json) |
+| `language/expressions/postfix-increment/bigint.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-bigint-postfix-increment-native-v1.json) |
+| `language/expressions/super` | 184/184 | 0 | 0 | 0 | [Report](results/test262-language-super-reference-core-v1.json) |
+| `language/expressions/super/call-bind-this-value-twice.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-super-rebinding-native-v1.json) |
+| `language/expressions/super/call-bind-this-value.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-super-binding-native-v1.json) |
+| `language/expressions/super/prop-dot-cls-val.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-super-inheritance-native-v1.json) |
+| `language/expressions/super/prop-dot-obj-ref-strict.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-super-strict-native-v1.json) |
+| `language/expressions/super/prop-dot-obj-ref-this.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-super-receiver-native-v1.json) |
+| `language/expressions/tagged-template` | 48/48 | 0 | 0 | 0 | [Report](results/test262-language-tagged-template-current-v1.json) |
+| `language/expressions/tagged-template [runtime cache subset]` | 12/12 | 0 | 0 | 0 | [Report](results/test262-tagged-template-runtime-cache-native-v1.json) |
+| `language/expressions/tagged-template/template-object.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-template-object-native-v1.json) |
+| `language/expressions/template-literal` | 52/114 | 2 | 60 | 0 | [Report](results/test262-template-literal-native-v1.json) |
+| `language/expressions/yield` | 120/123 | 0 | 3 | 0 | [Report](results/test262-yield-native-v7.json) |
+| `language/expressions/yield/from-with.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-yield-with-native-v1.json) |
+| `language/expressions/yield/invalid-left-hand-side.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-native-parse-yield-assignment-v1.json) |
+| `language/expressions/yield/rhs-template-middle.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-yield-template-middle-native-v1.json) |
+| `language/function-code/S10.2.1_A2.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-duplicate-parameters-native-v1.json) |
+| `language/global-code` | 74/75 | 0 | 0 | 1 | [Report](results/test262-global-code-direct-eval-native-v1.json) |
+| `language/global-code/script-decl-lex-var-declared-via-eval.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-module-host-script-guard-v1.json) |
+| `language/import/import-attributes` | 12/17 | 0 | 5 | 0 | [Report](results/test262-language-import-attributes-json-v2.json) |
+| `language/import/import-attributes/json-idempotency.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-json-idempotency-canary-v2.json) |
+| `language/import/import-attributes/json-invalid.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-json-invalid-canary-v2.json) |
+| `language/import/import-attributes/json-value-number.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-json-default-canary-v2.json) |
+| `language/literals/regexp` | 152/480 | 48 | 280 | 0 | [Report](results/test262-regexp-literals-native-v1.json) |
+| `language/literals/regexp/early-err-arithmetic-modifiers-code-point-repeat-i-1.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-duplicate-modifier-native-v1.json) |
+| `language/literals/regexp/named-groups/invalid-duplicate-groupspecifier-u.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-regexp-duplicate-name-native-v1.json) |
+| `language/module-code/ambiguous-export-bindings` | 9/10 | 0 | 1 | 0 | [Report](results/test262-dynamic-import-ambiguous-regression-v1.json) |
+| `language/module-code/early-dup-export-as-star-as.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-module-namespace-duplicate-v1.json) |
+| `language/module-code/early-dup-export-id-as.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-binding-export-alias-v1.json) |
+| `language/module-code/early-dup-export-id.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-binding-export-duplicate-v1.json) |
+| `language/module-code/early-dup-top-function.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-binding-module-functions-v1.json) |
+| `language/module-code/early-export-ill-formed-string.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-module-name-unicode-v1.json) |
+| `language/module-code/early-export-unresolvable.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-native-binding-export-unresolved-v1.json) |
+| `language/module-code/eval-this.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-module-eval-this-native-v1.json) |
+| `language/module-code/import-attributes` | 13/13 | 0 | 0 | 0 | [Report](results/test262-language-module-import-attributes-json-v2.json) |
+| `language/module-code/instn-resolve-empty-export.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-0-v1.json) |
+| `language/module-code/instn-resolve-empty-import.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-1-v1.json) |
+| `language/module-code/instn-resolve-err-syntax-1.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-2-v1.json) |
+| `language/module-code/instn-resolve-err-syntax-2.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-3-v1.json) |
+| `language/module-code/instn-resolve-order-depth.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-4-v1.json) |
+| `language/module-code/instn-resolve-order-src.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-fixture-syntax-regression-5-v1.json) |
+| `language/module-code/namespace` | 38/38 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-namespace-regression-v1.json) |
+| `language/module-code/top-level-await` | 253/253 | 0 | 0 | 0 | [Report](results/test262-language-module-top-level-await-bounded-v2.json) |
+| `language/module-code/top-level-await/await-dynamic-import-rejection.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-module-await-dynamic-rejection-canary-v1.json) |
+| `language/module-code/top-level-await/module-self-import-async-resolution-ticks.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-module-await-self-import-ticks-canary-v1.json) |
+| `language/module-code/top-level-await/syntax/for-await-await-expr-nested.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-nested-for-await-canary-v2.json) |
+| `language/module-code/top-level-await/syntax/for-in-await-expr-nested.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-nested-for-in-canary-v2.json) |
+| `language/module-code/top-level-await/syntax/for-of-await-expr-nested.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-nested-for-of-canary-v2.json) |
+| `language/module-code/verify-dfs.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-22-v1.json) |
+| `language/rest-parameters` | 21/22 | 0 | 0 | 1 | [Report](results/test262-rest-parameters-native-v2.json) |
+| `language/statements/async-function` | 52/133 | 3 | 78 | 0 | [Report](results/test262-async-function-declaration-native-v1.json) |
+| `language/statements/async-function/returns-async-arrow.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-async-return-arrow-native-v1.json) |
+| `language/statements/await-using` | 180/188 | 0 | 8 | 0 | [Report](results/test262-await-using-handoff-native-v4.json) |
+| `language/statements/class/elements/regular-definitions-private-method-getter-usage.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-private-getter-native-v1.json) |
+| `language/statements/class/elements/regular-definitions-private-method-usage.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-private-method-native-v1.json) |
+| `language/statements/class/elements/syntax/early-errors` | 438/444 | 0 | 6 | 0 | [Report](results/test262-class-early-errors-native-v1.json) |
+| `language/statements/class/elements/wrapped-in-sc-private-field-usage.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-private-field-native-v1.json) |
+| `language/statements/class/static-init-invalid-arguments.js` | 0/2 | 0 | 2 | 0 | [Report](results/test262-static-block-arguments-native-v1.json) |
+| `language/statements/class/static-init-invalid-lex-var.js` | 0/2 | 0 | 2 | 0 | [Report](results/test262-static-block-bindings-native-v1.json) |
+| `language/statements/class/static-init-sequence.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-static-block-sequence-native-v1.json) |
+| `language/statements/const/dstr` | 186/186 | 0 | 0 | 0 | [Report](results/test262-language-const-destructuring-core-v1.json) |
+| `language/statements/continue/nested-let-bound-for-loops-labeled-continue.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-labelled-continue-native-v1.json) |
+| `language/statements/continue/shadowing-loop-variable-in-same-scope-as-continue.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-continue-native-script-modes-v1.json) |
+| `language/statements/debugger` | 2/4 | 0 | 2 | 0 | [Report](results/test262-debugger-native-v1.json) |
+| `language/statements/for-await-of/async-from-sync-iterator-continuation-abrupt-completion-get-constructor.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-await-sync-abrupt-native-v1.json) |
+| `language/statements/for-await-of/iterator-close-non-throw-get-method-non-callable.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-await-close-noncallable-native-v1.json) |
+| `language/statements/for-await-of/iterator-close-throw-get-method-abrupt.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-await-close-throw-native-v1.json) |
+| `language/statements/for-await-of/ticks-with-async-iter-resolved-promise-and-constructor-lookup.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-await-async-ticks-native-v1.json) |
+| `language/statements/for-await-of/ticks-with-sync-iter-resolved-promise-and-constructor-lookup.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-await-sync-ticks-native-v1.json) |
+| `language/statements/for-in/head-const-bound-names-fordecl-tdz.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-const-bound-names-fordecl-tdz-v1.json) |
+| `language/statements/for-in/head-decl-expr.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-decl-expr-v1.json) |
+| `language/statements/for-in/head-expr-expr.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-expr-expr-v1.json) |
+| `language/statements/for-in/head-let-bound-names-fordecl-tdz.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-let-bound-names-fordecl-tdz-v1.json) |
+| `language/statements/for-in/head-let-fresh-binding-per-iteration.js` | 0/2 | 2 | 0 | 0 | [Report](results/test262-forin-head-let-fresh-binding-per-iteration-v1.json) |
+| `language/statements/for-in/head-lhs-cover.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-lhs-cover-v1.json) |
+| `language/statements/for-in/head-lhs-let.js` | 0/1 | 0 | 1 | 0 | [Report](results/test262-forin-head-lhs-let-v1.json) |
+| `language/statements/for-in/head-lhs-member.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-forin-head-lhs-member-v1.json) |
+| `language/statements/for-of/body-dstr-assign.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-for-of-array-assignment-native-v1.json) |
+| `language/statements/for-of/dstr/const-ary-ptrn-rest-id-direct.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-of-array-rest-native-v1.json) |
+| `language/statements/for-of/head-await-using-fresh-binding-per-iteration.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-language-for-of-await-using-canary-v1.json) |
+| `language/statements/for-of/head-let-destructuring.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-for-of-array-head-native-v1.json) |
+| `language/statements/for-of/head-lhs-member.js` | 1/2 | 0 | 0 | 1 | [Report](results/test262-for-of-member-native-v2.json) |
+| `language/statements/for-of/iterator-close-throw-get-method-abrupt.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-iterator-close-throw-get-method-abrupt-native-v1.json) |
+| `language/statements/for-of/iterator-close-via-break.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-iterator-close-via-break-native-v1.json) |
+| `language/statements/for-of/iterator-close-via-continue.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-labelled-iterator-close-native-v1.json) |
+| `language/statements/function/dstr` | 372/372 | 0 | 0 | 0 | [Report](results/test262-language-parameter-destructuring-core-v1.json) |
+| `language/statements/generators/generator-created-after-decl-inst.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-generator-declaration-instantiation-native-v1.json) |
+| `language/statements/labeled` | 8/37 | 4 | 24 | 1 | [Report](results/test262-labelled-statements-native-v1.json) |
+| `language/statements/labeled/let-block-with-newline.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-labelled-let-block-native-v1.json) |
+| `language/statements/labeled/let-identifier-with-newline.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-labelled-let-identifier-native-v1.json) |
+| `language/statements/try/dstr` | 186/186 | 0 | 0 | 0 | [Report](results/test262-language-catch-destructuring-core-v1.json) |
+| `language/statements/using` | 146/154 | 0 | 8 | 0 | [Report](results/test262-using-annex-native-v3.json) |
+| `language/statements/with` | 120/182 | 59 | 3 | 0 | [Report](results/test262-with-native-v1.json) |
+| `staging/sm/expressions/optional-chain-first-expression-module.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-23-v1.json) |
+
+## Work in progress and reporting policy
+
+The completed dynamic-import directory and assignment reports are included. Completed focused module-eval and await-using checks are included; pending complete directory reruns are excluded. Full-suite measurement and compiler-performance work remain deferred by user direction. Work continues on known behavior gaps. Future status updates should include this full-domain summary, changes since the previous inventory, active runs, and implementation blockers—not just the latest feature slice.
+
+[Implementation backlog](test262-backlog/README.md) · [Native dashboard](test262.md) · [Measurement gaps](test262-measurement-gaps.md)

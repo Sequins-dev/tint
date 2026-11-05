@@ -1,0 +1,7 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const dispose=Iterator.prototype[Symbol.dispose];for(const result of [undefined,null,1,"x",{},true]){let calls=0;const receiver={return(){if(this!==receiver||arguments.length!==0)throw 1;calls++;return result;}};if(dispose.call(receiver)!==undefined||calls!==1)throw 2;}`,
+  `const dispose=Iterator.prototype[Symbol.dispose];for(const value of [{},{return:undefined},{return:null},42,"x",true,Symbol(),1n]){if(dispose.call(value)!==undefined)throw 1;}for(const value of [null,undefined,{return:1},{return:{}}]){let caught=false;try{dispose.call(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}`,
+  `const dispose=Iterator.prototype[Symbol.dispose],marker={};for(const receiver of [{get return(){throw marker;}},{return(){throw marker;}}]){let caught;try{dispose.call(receiver);}catch(e){caught=e;}if(caught!==marker)throw 1;}let calls=0;const receiver={return(){calls++;return null;}};dispose.call(receiver);dispose.call(receiver);if(calls!==2)throw 2;`,
+  `let closed=0;function* g(){try{yield 1;}finally{closed++;}}const iterator=g();iterator.next();if(iterator[Symbol.dispose]()!==undefined||closed!==1||!iterator.next().done)throw 1;let count=0;const helper=Iterator.from({next(){return {value:1,done:false};},return(){count++;return {};}}).map(x=>x);helper[Symbol.dispose]();if(count!==1||!helper.next().done)throw 2;`,
+]);

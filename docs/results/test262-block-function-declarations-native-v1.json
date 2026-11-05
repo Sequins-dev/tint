@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v2",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "dirty": false,
+  "selection": "language/block-scope/syntax/function-declarations",
+  "totals": {
+    "total": 12,
+    "passed": 10,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.8333333333333334
+  },
+  "observations": [
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-case-expression-statement-list.js",
+      "sha256": "88abe3f158cca8986dcac1ee53a1b70e374fd8627a0cbcf9bb48391dd922e853",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":304,\"end\":319,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 12.921082999999982
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-case-expression-statement-list.js",
+      "sha256": "88abe3f158cca8986dcac1ee53a1b70e374fd8627a0cbcf9bb48391dd922e853",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6786.171959
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-default-statement-list.js",
+      "sha256": "eb2eb379a08dda274c344910a5cda5e76a9026c7869f527d4cef49568ecf5069",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":294,\"end\":309,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.104999999999563
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-default-statement-list.js",
+      "sha256": "eb2eb379a08dda274c344910a5cda5e76a9026c7869f527d4cef49568ecf5069",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6169.204292000001
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-do-statement-while-expression.js",
+      "sha256": "ae78f27e611836ddf2f313723dac6ffe13833ab710d85a8da65eb585204fa8c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5550.759417000001
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-do-statement-while-expression.js",
+      "sha256": "ae78f27e611836ddf2f313723dac6ffe13833ab710d85a8da65eb585204fa8c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4903.449292000001
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-for-statement.js",
+      "sha256": "106dad671af74b447afb480ba702db759bea06147740d55ac8938ced50c10f06",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4856.749584000001
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-for-statement.js",
+      "sha256": "106dad671af74b447afb480ba702db759bea06147740d55ac8938ced50c10f06",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4824.101041000002
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-if-expression-statement-else-statement.js",
+      "sha256": "3528659096f90ae5c83035f393285b465f82cc5faf24786971414e48d17625b5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4810.795624999999
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-if-expression-statement.js",
+      "sha256": "5fb9925cf2754f6ab881e5446eca95eff560803eef294789a792d52a57d4ca2e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4709.084040999995
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-while-expression-statement.js",
+      "sha256": "17e0cb1deff95a1e57f2a5bc3f7428ba0ba261fbca5ad6231e55190ad194e7ba",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4714.510458000004
+    },
+    {
+      "path": "language/block-scope/syntax/function-declarations/in-statement-position-while-expression-statement.js",
+      "sha256": "17e0cb1deff95a1e57f2a5bc3f7428ba0ba261fbca5ad6231e55190ad194e7ba",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4703.564291000002
+    }
+  ]
+}

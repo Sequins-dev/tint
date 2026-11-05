@@ -1,0 +1,320 @@
+{
+  "sourceReport": "docs/results/test262-map-native-v1.json",
+  "scope": "Classification of recorded non-passes; does not alter original totals or claim later fixes passed.",
+  "categories": {
+    "pre-entry-lldb-attach-failure": {
+      "count": 15,
+      "observations": [
+        {
+          "path": "built-ins/Map/Symbol.species/length.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/Symbol.species/length.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/iterator-value-failure.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/not-a-constructor.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/not-a-constructor.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/return-undefined.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/return-undefined.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/callbackfn-throws.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/callbackfn-throws.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/canonical-key-passed-to-callback.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/canonical-key-passed-to-callback.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/check-callback-fn-args.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/name.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/not-a-constructor.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/values/does-not-have-mapdata-internal-slot.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "dynamic-function-construction": {
+      "count": 4,
+      "observations": [
+        {
+          "path": "built-ins/Map/proto-from-ctor-realm.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/proto-from-ctor-realm.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/different-types-function-callbackfn-does-not-throw.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/different-types-function-callbackfn-does-not-throw.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-set-global": {
+      "count": 24,
+      "observations": [
+        {
+          "path": "built-ins/Map/prototype/clear/context-is-set-object-throws.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/clear/context-is-set-object-throws.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/delete/context-is-set-object-throws.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/delete/context-is-set-object-throws.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/entries/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/entries/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/get/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/get/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsert/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsert/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/has/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/has/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/set/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/set/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/size/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/size/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/values/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/values/does-not-have-mapdata-internal-slot-set.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-weakmap-global": {
+      "count": 24,
+      "observations": [
+        {
+          "path": "built-ins/Map/prototype/clear/context-is-weakmap-object-throws.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/clear/context-is-weakmap-object-throws.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/delete/context-is-weakmap-object-throws.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/delete/context-is-weakmap-object-throws.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/entries/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/entries/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/forEach/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/get/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/get/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsert/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsert/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/has/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/has/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/keys/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/set/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/set/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/size/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/size/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        },
+        {
+          "path": "built-ins/Map/prototype/values/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/values/does-not-have-mapdata-internal-slot-weakmap.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "function-tostring-harness-message": {
+      "count": 2,
+      "observations": [
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-evaluate-callbackfn-if-key-present.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/prototype/getOrInsertComputed/does-not-evaluate-callbackfn-if-key-present.js",
+          "variant": "strict"
+        }
+      ]
+    },
+    "missing-set-and-weak-collection-globals": {
+      "count": 2,
+      "observations": [
+        {
+          "path": "built-ins/Map/valid-keys.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "built-ins/Map/valid-keys.js",
+          "variant": "strict"
+        }
+      ]
+    }
+  }
+}

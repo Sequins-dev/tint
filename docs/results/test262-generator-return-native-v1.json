@@ -1,0 +1,1340 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/GeneratorPrototype/return",
+  "totals": {
+    "total": 46,
+    "passed": 28,
+    "failed": 0,
+    "unsupported": 18,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.6086956521739131
+  },
+  "observations": [
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-completed.js",
+      "sha256": "84202f93af1096238b9dfec48feaf83dc1f411e7c5ca2da9fdc3f1f248d1e0de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5326.350083
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-completed.js",
+      "sha256": "84202f93af1096238b9dfec48feaf83dc1f411e7c5ca2da9fdc3f1f248d1e0de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4204.161958
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-executing.js",
+      "sha256": "276000e933d65575f2ecd3e43cffe578512650c1ff6cf259f8c96313a96fece9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4431.207917
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-executing.js",
+      "sha256": "276000e933d65575f2ecd3e43cffe578512650c1ff6cf259f8c96313a96fece9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4193.050332999999
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-suspended-start.js",
+      "sha256": "ee0c80122b82a8f6eba6144539e5ea43feef742210776b6d86f17e510830d61e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4161.016958
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/from-state-suspended-start.js",
+      "sha256": "ee0c80122b82a8f6eba6144539e5ea43feef742210776b6d86f17e510830d61e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4250.793833
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/length.js",
+      "sha256": "a67e8b5613fefa46cee46d31b7466eaf69e55807e22ed9fa41295a778e036389",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6404.918874999996
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/length.js",
+      "sha256": "a67e8b5613fefa46cee46d31b7466eaf69e55807e22ed9fa41295a778e036389",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6501.907207999997
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/name.js",
+      "sha256": "6fb72a9f908ee628a34c4bcca59c9f9d29486cdddebd94ade914d285f352098d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6148.727749999998
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/name.js",
+      "sha256": "6fb72a9f908ee628a34c4bcca59c9f9d29486cdddebd94ade914d285f352098d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6203.634875000003
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/not-a-constructor.js",
+      "sha256": "bfd469588eb87b3928d66b24659b1ac194e271363b1482896407ab9b62317264",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "generators",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4018.6249580000003
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/not-a-constructor.js",
+      "sha256": "bfd469588eb87b3928d66b24659b1ac194e271363b1482896407ab9b62317264",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "generators",
+          "arrow-function"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6761.886374999995
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/property-descriptor.js",
+      "sha256": "b7155a9ab0ad0a7824101057bce1021a52b5b5766fd6657dae54139165341b0e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5899.232207999994
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/property-descriptor.js",
+      "sha256": "b7155a9ab0ad0a7824101057bce1021a52b5b5766fd6657dae54139165341b0e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5901.4520829999965
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/this-val-not-generator.js",
+      "sha256": "f050614479699ea3da2830ac6a29aa93dc46b81ef09a82c82168596964bf5fd7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4546.279083000001
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/this-val-not-generator.js",
+      "sha256": "f050614479699ea3da2830ac6a29aa93dc46b81ef09a82c82168596964bf5fd7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4146.971416999993
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/this-val-not-object.js",
+      "sha256": "0e8c7312fe69495333bd3e934e2a9abb7d479da8d6d2d82c2a98ee305a23787f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4130.947959000012
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/this-val-not-object.js",
+      "sha256": "0e8c7312fe69495333bd3e934e2a9abb7d479da8d6d2d82c2a98ee305a23787f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4712.630040999997
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-before-try.js",
+      "sha256": "3326b4b3d85b253c4ce34305329c4d8d9f2bdb925643f4c6303b74454bde529f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3979.0599159999983
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-before-try.js",
+      "sha256": "3326b4b3d85b253c4ce34305329c4d8d9f2bdb925643f4c6303b74454bde529f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3964.532625000007
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-following-catch.js",
+      "sha256": "1d46e255e2207fa71c12d07e105e75ed78f36f8a88e865f9454662e34f18c93a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4090.354917000004
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-following-catch.js",
+      "sha256": "1d46e255e2207fa71c12d07e105e75ed78f36f8a88e865f9454662e34f18c93a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3955.0995419999963
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-within-catch.js",
+      "sha256": "dc5c432c4919980ca3b93eb54246a5b8c70b6c75caf8b5be62070d492d337c5b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":539,\"end\":544,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.2339999999967404
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-within-catch.js",
+      "sha256": "dc5c432c4919980ca3b93eb54246a5b8c70b6c75caf8b5be62070d492d337c5b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":553,\"end\":558,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.4058329999970738
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-within-try.js",
+      "sha256": "e5b9baf276e12724a688d651fc72bb54dc0cd5ec0355b497b4531fdd08c96d63",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":494,\"end\":499,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.4769999999989523
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-catch-within-try.js",
+      "sha256": "e5b9baf276e12724a688d651fc72bb54dc0cd5ec0355b497b4531fdd08c96d63",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":508,\"end\":513,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.297666999991634
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-before-try.js",
+      "sha256": "bd2cd12f98335c4b0401cb9fc1c04d0255627dc64f24deb9d4e2767f2ef26f8d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3985.5602910000016
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-before-try.js",
+      "sha256": "bd2cd12f98335c4b0401cb9fc1c04d0255627dc64f24deb9d4e2767f2ef26f8d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3975.9585829999996
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-following-finally.js",
+      "sha256": "062253c5bdbefdbd2686e1bdee149366ce804266e4c928341bba952bc6fcfa4d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3954.839625000008
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-following-finally.js",
+      "sha256": "062253c5bdbefdbd2686e1bdee149366ce804266e4c928341bba952bc6fcfa4d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3994.81070799999
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-catch.js",
+      "sha256": "1e0c2e6af4a805e22e9633c8ea7349ecf1fd820dc09d5640f095fce01f1315db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":616,\"end\":621,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.502374999996391
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-catch.js",
+      "sha256": "1e0c2e6af4a805e22e9633c8ea7349ecf1fd820dc09d5640f095fce01f1315db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":630,\"end\":635,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.4604169999947771
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-finally.js",
+      "sha256": "5b91e1e4cf507d3d6f794beaf43b6a6e69a3ee6075be091232b6ecd7fbae1c12",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":566,\"end\":571,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.2929169999988517
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-finally.js",
+      "sha256": "5b91e1e4cf507d3d6f794beaf43b6a6e69a3ee6075be091232b6ecd7fbae1c12",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":580,\"end\":585,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1557499999908032
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-inner-try.js",
+      "sha256": "111d0000c2c4f2bd87bccb45ff47f0b08b8a30e19d5a4d3e38ab5323b727a30d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":567,\"end\":572,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.1699589999916498
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-inner-try.js",
+      "sha256": "111d0000c2c4f2bd87bccb45ff47f0b08b8a30e19d5a4d3e38ab5323b727a30d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":581,\"end\":586,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.0741670000134036
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "sha256": "917dd9040b3835a548a8c15b865cc22a4c4e71c09f8203dee9ac86f5550458d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4081.5428329999995
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "sha256": "917dd9040b3835a548a8c15b865cc22a4c4e71c09f8203dee9ac86f5550458d1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4098.104166999998
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "sha256": "acded1ca1d402726fc39b2bc818f72be427bdff1eb0447f9c6558da225b334f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":558,\"end\":563,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.2702080000017304
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "sha256": "acded1ca1d402726fc39b2bc818f72be427bdff1eb0447f9c6558da225b334f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":572,\"end\":577,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.420125000004191
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-set-property-within-try.js",
+      "sha256": "da177e813feacda7e98f48798287a341ae175dc2dc38c582f0f874e837dff05e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":573,\"end\":578,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.146082999999635
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-set-property-within-try.js",
+      "sha256": "da177e813feacda7e98f48798287a341ae175dc2dc38c582f0f874e837dff05e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":587,\"end\":592,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0402919999905862
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-within-finally.js",
+      "sha256": "3fca6f794c22ba2d790db57b9570ffcb507b47290ea90ea15b085094813e840b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":520,\"end\":525,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0950840000004973
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-within-finally.js",
+      "sha256": "3fca6f794c22ba2d790db57b9570ffcb507b47290ea90ea15b085094813e840b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":534,\"end\":539,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0763330000045244
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-within-try.js",
+      "sha256": "c05157ec0cfd79e8f5ebef41b56bec253ba7864a2bbffc27fd1d73af6b29a1fb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":513,\"end\":518,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.0984590000007302
+    },
+    {
+      "path": "built-ins/GeneratorPrototype/return/try-finally-within-try.js",
+      "sha256": "c05157ec0cfd79e8f5ebef41b56bec253ba7864a2bbffc27fd1d73af6b29a1fb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":527,\"end\":532,\"code\":\"UNSUPPORTED\",\"message\":\"generator suspension lowering for structured control flow or delegation is not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 1.109249999979511
+    }
+  ]
+}

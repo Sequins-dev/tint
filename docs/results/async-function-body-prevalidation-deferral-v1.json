@@ -1,0 +1,17 @@
+{
+  "kind": "waiting-native-validation-deferral",
+  "conformance": false,
+  "controllers": [
+    {
+      "pid": 40008,
+      "command": "node .tint-bootstrap/run-async-function-body-validation-v1.mjs"
+    },
+    {
+      "pid": 40012,
+      "command": "node .tint-bootstrap/run-async-function-body-selfbuild-v1.mjs"
+    }
+  ],
+  "reason": "Read-only review and failing managed-preparation tests reproduced the uncontracted finally cleanup factory. No native run of this snapshot had begun. Preserve the source9005 frozen image and assets; replace acceptance with a snapshot containing the direct-call helper fix.",
+  "red": ".tint-bootstrap/managed-finally-red-v1.log",
+  "discardedNativeObservations": 0
+}

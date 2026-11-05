@@ -1,0 +1,67 @@
+export type Constant = number | boolean;
+export function unary(operator: string, value: Constant): Constant | undefined {
+  if (operator === "!") return !value;
+  if (operator === "truthy") return !!value;
+  if (operator === "is-integer")
+    return typeof value === "number" && Number.isInteger(value);
+  if (typeof value === "boolean")
+    return operator === "boolean-number" ? (value ? 1 : 0) : undefined;
+  switch (operator) {
+    case "+":
+      return value;
+    case "-":
+      return -value;
+    case "~":
+      return ~value;
+    case "ceil":
+      return Math.ceil(value);
+    case "trunc":
+      return Math.trunc(value);
+    case "sqrt":
+      return Math.sqrt(value);
+  }
+  return undefined;
+}
+export function binary(
+  operator: string,
+  left: Constant,
+  right: Constant,
+): Constant | undefined {
+  if (typeof left !== typeof right) return undefined;
+  if (operator === "===" || operator === "==") return left === right;
+  if (operator === "!==" || operator === "!=") return left !== right;
+  if (typeof left !== "number" || typeof right !== "number") return undefined;
+  switch (operator) {
+    case "+":
+      return left + right;
+    case "-":
+      return left - right;
+    case "*":
+      return left * right;
+    case "/":
+      return left / right;
+    case "%":
+      return left % right;
+    case "<<":
+      return left << right;
+    case ">>":
+      return left >> right;
+    case ">>>":
+      return left >>> right;
+    case "&":
+      return left & right;
+    case "|":
+      return left | right;
+    case "^":
+      return left ^ right;
+    case "<":
+      return left < right;
+    case ">":
+      return left > right;
+    case "<=":
+      return left <= right;
+    case ">=":
+      return left >= right;
+  }
+  return undefined;
+}

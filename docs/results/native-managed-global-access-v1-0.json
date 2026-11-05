@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-11-03T17:53:41.288Z",
+  "containmentTimeoutMs": 60000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-AITLgF/test",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-AITLgF/fixture.json",
+  "fixtureSha256": "5881992263623b80d4d7d2c3ee49d4fea1c69a5c54b47250016960a6144ea67d",
+  "imageSha256": "3918f852123d64a6f1ab619b659342005deabab35e0054d4e17641e4ed77d1aa",
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "debuggerLaunch": "lldb-local",
+  "debuggerTracing": false,
+  "selectedCase": 0,
+  "elapsedMs": 30300.501,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-AITLgF/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-AITLgF/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry -- 0\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "kind": "native-fixture-failure-analysis",
+  "failedReport": "native-numeric-conditional-checker-v1.json",
+  "cause": "Outdated metadata capacity for generational runtime initialization",
+  "managedBytes": 67108864,
+  "semispaceUnits": 2097152,
+  "requiredMetadataWords": 2162688,
+  "configuredMetadataWords": 786528,
+  "correctedAllocationCapacity": 1048576,
+  "checkerExecuted": false,
+  "evidence": "initializeGenerationalRuntime requires metadata.length >= units + ceil(units/32); aarch64-host allocates allocationCapacity*3+96 metadata words."
+}

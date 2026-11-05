@@ -1,0 +1,47 @@
+{
+  "kind": "managed-surface-contracts-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "399f611214db3b5498953cd4662ab75e46297157b7c16f5f0bbf965c60382134",
+    "files": 519
+  },
+  "selfBuild": "docs/results/bootstrap-managed-surface-local-identities-v2.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-surface-local-signatures-v2.json",
+    "docs/results/native-managed-surface-script-0-v1.json",
+    "docs/results/native-managed-surface-script-1-v1.json",
+    "docs/results/native-managed-surface-script-2-v1.json"
+  ],
+  "bytes": 62875330,
+  "byteIdentical": true,
+  "sha256": "d15cf96b4e735cfc42f359b355a1562481ca062b0a74c3ae4d93305ef070d06c",
+  "workspaceTests": 3736,
+  "gateLogs": [
+    {
+      "path": ".tint-bootstrap/local-signature-final-workspace-tests-v1.log",
+      "sha256": "642d4daa1948f696f3bc0a61ab302d710ea12045788dae19cc964fd9abd94e5b"
+    },
+    {
+      "path": ".tint-bootstrap/local-signature-final-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-surface-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-surface-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Two-live-context/heap isolation proof",
+    "Semantic indirect-witness selection and function-ID mapping in lowering",
+    "AOT helper-table retention and physical identity directories",
+    "Surface serialization and general managed entry",
+    "General eval/Function execution"
+  ],
+  "retainedPriorObservation": "docs/results/bootstrap-managed-surface-local-identities-v1.json"
+}

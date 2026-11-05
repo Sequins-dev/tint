@@ -1,0 +1,9 @@
+{
+  "kind": "node-census-provenance-correction",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "retained": "docs/results/managed-template-surface-census-node-v1.json",
+  "corrected": "docs/results/managed-template-surface-census-node-v2.json",
+  "cause": "The comparison loaded a frozen helper while retaining the live working directory. Its source lookup therefore used live runtime sources. The current-source census was valid, but the previous comparison mixed old registry code with new runtime record declarations.",
+  "correction": "Compare against the immutable, source-fingerprinted prior census rather than evaluating a helper against implicit filesystem state. No native or conformance result used the mixed comparison."
+}

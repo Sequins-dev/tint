@@ -1,0 +1,717 @@
+{
+  "kind": "partial-run-gap-inventory",
+  "conformance": false,
+  "sourceJournal": "docs/results/test262-full-suite-native-v3.jsonl",
+  "sourceSnapshot": {
+    "sha256": "bdf5743d2e7d34c0590b8dca296e0bcf49177476a9d4a0e3d7d1d9d4df16afd0",
+    "files": 403
+  },
+  "scope": "Interrupted historical run only. Directory counts include observed variants, not complete family populations or current-code pass rates. No whole-suite percentage.",
+  "groups": [
+    {
+      "group": "annexB/built-ins/Array",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "annexB/built-ins/Date",
+      "observed": 48,
+      "outcomes": {
+        "fail": 48
+      }
+    },
+    {
+      "group": "annexB/built-ins/Function",
+      "observed": 12,
+      "outcomes": {
+        "unsupported": 12
+      }
+    },
+    {
+      "group": "annexB/built-ins/Object",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "annexB/built-ins/RegExp",
+      "observed": 124,
+      "outcomes": {
+        "pass": 120,
+        "unsupported": 4
+      }
+    },
+    {
+      "group": "annexB/built-ins/String",
+      "observed": 222,
+      "outcomes": {
+        "pass": 222
+      }
+    },
+    {
+      "group": "annexB/built-ins/TypedArrayConstructors",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "annexB/built-ins/escape",
+      "observed": 32,
+      "outcomes": {
+        "pass": 32
+      }
+    },
+    {
+      "group": "annexB/built-ins/unescape",
+      "observed": 38,
+      "outcomes": {
+        "pass": 38
+      }
+    },
+    {
+      "group": "annexB/language/comments",
+      "observed": 13,
+      "outcomes": {
+        "fail": 10,
+        "pass": 3
+      }
+    },
+    {
+      "group": "annexB/language/eval-code",
+      "observed": 470,
+      "outcomes": {
+        "unsupported": 470
+      }
+    },
+    {
+      "group": "annexB/language/expressions",
+      "observed": 43,
+      "outcomes": {
+        "pass": 43
+      }
+    },
+    {
+      "group": "annexB/language/function-code",
+      "observed": 159,
+      "outcomes": {
+        "unsupported": 74,
+        "fail": 30,
+        "pass": 55
+      }
+    },
+    {
+      "group": "annexB/language/global-code",
+      "observed": 153,
+      "outcomes": {
+        "unsupported": 83,
+        "fail": 25,
+        "pass": 45
+      }
+    },
+    {
+      "group": "annexB/language/literals",
+      "observed": 16,
+      "outcomes": {
+        "pass": 16
+      }
+    },
+    {
+      "group": "annexB/language/statements",
+      "observed": 41,
+      "outcomes": {
+        "pass": 41
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/length.js",
+      "observed": 1,
+      "outcomes": {
+        "unsupported": 1
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/name.js",
+      "observed": 1,
+      "outcomes": {
+        "unsupported": 1
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/proto.js",
+      "observed": 1,
+      "outcomes": {
+        "unsupported": 1
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/prototype",
+      "observed": 3,
+      "outcomes": {
+        "unsupported": 3
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/prototype.js",
+      "observed": 1,
+      "outcomes": {
+        "unsupported": 1
+      }
+    },
+    {
+      "group": "built-ins/AbstractModuleSource/throw-from-constructor.js",
+      "observed": 1,
+      "outcomes": {
+        "unsupported": 1
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/cause-property.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/errors-iterabletolist-failures.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/errors-iterabletolist.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/is-a-constructor.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/length.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/message-method-prop-cast.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/message-method-prop.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/message-tostring-abrupt-symbol.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/message-tostring-abrupt.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/message-undefined-no-prop.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/name.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/newtarget-is-undefined.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/newtarget-proto-custom.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/newtarget-proto-fallback.js",
+      "observed": 2,
+      "outcomes": {
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/newtarget-proto.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/order-of-args-evaluation.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/prop-desc.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/proto-from-ctor-realm.js",
+      "observed": 2,
+      "outcomes": {
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/proto.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/AggregateError/prototype",
+      "observed": 12,
+      "outcomes": {
+        "pass": 12
+      }
+    },
+    {
+      "group": "built-ins/Array/15.4.5-1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/15.4.5.1-5-1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/15.4.5.1-5-2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A1.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A1.1_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A1.1_T3.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A1.2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A1.3_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A2.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A2.2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.1_A3.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A1.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A1.1_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A1.1_T3.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A1.2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A1.3_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A2.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.2.1_A2.2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.3_A1.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.3_A1.1_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.3_A1.1_T3.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.1_A1.2_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.1_A2.1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.1_A2.2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.1_A2.3_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A1_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A1_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A2_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A3_T1.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A3_T2.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4.5.2_A3_T3.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T10.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T4.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T5.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T6.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T7.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T8.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/S15.4_A1.1_T9.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/Symbol.species",
+      "observed": 8,
+      "outcomes": {
+        "pass": 8
+      }
+    },
+    {
+      "group": "built-ins/Array/constructor.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/from",
+      "observed": 90,
+      "outcomes": {
+        "pass": 88,
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/fromAsync",
+      "observed": 186,
+      "outcomes": {
+        "fail": 186
+      }
+    },
+    {
+      "group": "built-ins/Array/is-a-constructor.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/isArray",
+      "observed": 58,
+      "outcomes": {
+        "pass": 56,
+        "fail": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/length",
+      "observed": 60,
+      "outcomes": {
+        "pass": 58,
+        "fail": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/length.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/name.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/of",
+      "observed": 32,
+      "outcomes": {
+        "pass": 30,
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/prop-desc.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/property-cast-boolean-primitive.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/property-cast-nan-infinity.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/property-cast-number.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/proto-from-ctor-realm-one.js",
+      "observed": 2,
+      "outcomes": {
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/proto-from-ctor-realm-two.js",
+      "observed": 2,
+      "outcomes": {
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/proto-from-ctor-realm-zero.js",
+      "observed": 2,
+      "outcomes": {
+        "unsupported": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/proto.js",
+      "observed": 2,
+      "outcomes": {
+        "pass": 2
+      }
+    },
+    {
+      "group": "built-ins/Array/prototype",
+      "observed": 376,
+      "outcomes": {
+        "pass": 362,
+        "unsupported": 12,
+        "fail": 2
+      }
+    }
+  ]
+}

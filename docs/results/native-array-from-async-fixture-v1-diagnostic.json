@@ -1,0 +1,7 @@
+{
+  "kind": "native-fixture-diagnostic",
+  "conformance": false,
+  "report": "native-array-from-async-green-v1.json",
+  "observation": "All five cases failed with ReferenceError because the raw async fixture referred to $DONE without a harness. The method calls reached their then expressions; this report does not establish semantic success or failure of the new API.",
+  "correction": "Use the same completion-print contract as verify-test262-native-async-dispose.ts; retain the original report and rebuild in a new artifact."
+}

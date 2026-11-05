@@ -1,0 +1,32 @@
+{
+  "kind": "native-script-evaluator-service-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "55e4007cec59e63ba7763705d27afce4f0b42f6ae562ff53d78165485597713c",
+    "files": 549
+  },
+  "nativeReport": "native-script-evaluator-service-v1.json",
+  "diagnosticReport": "native-script-evaluator-service-diagnostic-v1.json",
+  "workspace": {
+    "tests": 3937,
+    "log": ".tint-bootstrap/script-compile-workspace-check-v1.log"
+  },
+  "focusedNodeTests": {
+    "tests": 33,
+    "log": ".tint-bootstrap/script-compile-green-v2.log"
+  },
+  "framePromotion": {
+    "directoryDigest": "f8009ab6a9901f5c19753f298964edee03a843988256dc97fcd6a659b330461a",
+    "scriptCodeSha256": "7b83a4c69ce45897cd66ac93c4de91df0cc794a121da24d35ca3973c1c9600fd",
+    "unchanged": true
+  },
+  "resources": {
+    "managedBytes": 268435456,
+    "allocationCapacity": 8388608,
+    "stackBytes": 16777216,
+    "executableMemoryBytes": 1048576,
+    "maxScriptCodeBytes": 262144
+  },
+  "stoppedToExitSeconds": 59.035093542,
+  "scope": "Real evaluator parses, lowers, compiles, links, publishes and invokes three Scripts; persistent globals, fresh Script records, declaration and parser errors, sticky unsupported state and GC churn. Timing covers initialization and all three compilations, not compile-only. Test262 host integration and whole-suite resource policy remain pending. Self-hosting checkpoint managed-script-pipeline-selfhost-checkpoint-v2 predates these evaluator changes."
+}

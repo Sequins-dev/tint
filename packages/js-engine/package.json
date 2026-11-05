@@ -1,0 +1,43 @@
+{
+  "name": "@tint/js-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./lowering": {
+      "types": "./dist/lowering/index.d.ts",
+      "import": "./dist/lowering/index.js"
+    },
+    "./native/code-storage": {
+      "types": "./dist/native/code-storage.d.ts",
+      "import": "./dist/native/code-storage.js"
+    },
+    "./dynamic-function": {
+      "types": "./dist/dynamic-function.d.ts",
+      "import": "./dist/dynamic-function.js"
+    },
+    "./script-evaluation": {
+      "types": "./dist/script-evaluation.d.ts",
+      "import": "./dist/script-evaluation.js"
+    },
+    "./native/script-entry": {
+      "types": "./dist/native/script-entry.d.ts",
+      "import": "./dist/native/script-entry.js"
+    },
+    "./native/script-compile": {
+      "types": "./dist/native/script-compile.d.ts",
+      "import": "./dist/native/script-compile.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tint/typescript": "workspace:*",
+    "@tint/abi": "workspace:*",
+    "@tint/compiler": "workspace:*",
+    "@tint/js-runtime": "workspace:*",
+    "@tint/source": "workspace:*",
+    "@tint/foundation": "workspace:*"
+  }
+}

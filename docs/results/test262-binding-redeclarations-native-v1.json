@@ -1,0 +1,4938 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v2",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/block-scope/syntax/redeclaration",
+  "totals": {
+    "total": 189,
+    "passed": 170,
+    "failed": 0,
+    "unsupported": 19,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.8994708994708994
+  },
+  "observations": [
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "b1df19336221edf08561c4662e51fda7ad3e65ebab2448370c3dd3cac794a3ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4993.1990000000005
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "b1df19336221edf08561c4662e51fda7ad3e65ebab2448370c3dd3cac794a3ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4051.7134159999996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "9c0df7ac2c54cdac29df9be489d277d102e26b9d2c0021340a1e72e4fde644ce",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration",
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4076.4803329999995
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "9c0df7ac2c54cdac29df9be489d277d102e26b9d2c0021340a1e72e4fde644ce",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration",
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4217.410582999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-class.js",
+      "sha256": "79d635f36a9e734644ee5177d12b8b117340fc3d0e82859a1a4d053b16938463",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4387.121458999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-class.js",
+      "sha256": "79d635f36a9e734644ee5177d12b8b117340fc3d0e82859a1a4d053b16938463",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4542.353292
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-const.js",
+      "sha256": "facb7910c188a7f73d039ab6093a5dce2c0fc0a3c070c7cfd27784bc8bc58f3d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4546.441040999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-const.js",
+      "sha256": "facb7910c188a7f73d039ab6093a5dce2c0fc0a3c070c7cfd27784bc8bc58f3d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5284.682249999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-function.js",
+      "sha256": "be6d66e347959beeca0f95281350efcce7647286cf17fc62b9fbd3bf4fa9eac2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5376.392832999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-function.js",
+      "sha256": "be6d66e347959beeca0f95281350efcce7647286cf17fc62b9fbd3bf4fa9eac2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5206.034874999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-generator.js",
+      "sha256": "347690e0fd598e18be43ecace8489fdf3a15d0aa995048fc8b51b8856f47524d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5706.5871250000055
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-generator.js",
+      "sha256": "347690e0fd598e18be43ecace8489fdf3a15d0aa995048fc8b51b8856f47524d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5312.839957999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-let.js",
+      "sha256": "63f636176a030d9ff7077fab02979b686ef7681b736d794ae381ec7df84d73d4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5264.399624999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-let.js",
+      "sha256": "63f636176a030d9ff7077fab02979b686ef7681b736d794ae381ec7df84d73d4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4994.149875000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-var.js",
+      "sha256": "dc5a1faf00de911d0de6e7e1ef0a663a642b293650afb0cad183ad039e59aa91",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4735.820707999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-function-name-redeclaration-attempt-with-var.js",
+      "sha256": "dc5a1faf00de911d0de6e7e1ef0a663a642b293650afb0cad183ad039e59aa91",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4671.179000000004
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "f437b2356c160623af077e08225f72289c5eb232d3fbeb8233fd8ae10a92b572",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5106.299792000005
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "f437b2356c160623af077e08225f72289c5eb232d3fbeb8233fd8ae10a92b572",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4870.918291999988
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "f4e48a8b4c889905bd527119154c8d61471a49b4a11459a05eec45e72186d812",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5536.411416000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "f4e48a8b4c889905bd527119154c8d61471a49b4a11459a05eec45e72186d812",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4856.755875000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-class.js",
+      "sha256": "18142a7ab71c04d8fc1ad80cdf160da160c507294cb29504b5ae5aafb2b3affc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4868.745542000004
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-class.js",
+      "sha256": "18142a7ab71c04d8fc1ad80cdf160da160c507294cb29504b5ae5aafb2b3affc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5181.057541000002
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-const.js",
+      "sha256": "1f932edd28c9b5cb95b9155fa1cc3c936e5cdd747603b09ade96d954fdeee57b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5467.257167000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-const.js",
+      "sha256": "1f932edd28c9b5cb95b9155fa1cc3c936e5cdd747603b09ade96d954fdeee57b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5025.867666000006
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-function.js",
+      "sha256": "e2bfd401146dd636dcdc54a8e8024481fe8c7657803a98188e5ba4c05b87eac4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5216.421625000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-function.js",
+      "sha256": "e2bfd401146dd636dcdc54a8e8024481fe8c7657803a98188e5ba4c05b87eac4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5438.878833999988
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-generator.js",
+      "sha256": "50a81b97826089a31830c701c39beda7755b60ff31ecf0de919f6a1f24960f76",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4937.255749999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-generator.js",
+      "sha256": "50a81b97826089a31830c701c39beda7755b60ff31ecf0de919f6a1f24960f76",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5227.457666000002
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-let.js",
+      "sha256": "5d4bca4152876b59bdc3942989dc1a686d41798466b94790b5850e84002187ed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5328.244207999989
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-let.js",
+      "sha256": "5d4bca4152876b59bdc3942989dc1a686d41798466b94790b5850e84002187ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5308.411624999979
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-var.js",
+      "sha256": "713c8fe659fb14733f70277a811fd22536c2494c1031d1183b37fb1518abe603",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5027.979208999983
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/async-generator-name-redeclaration-attempt-with-var.js",
+      "sha256": "713c8fe659fb14733f70277a811fd22536c2494c1031d1183b37fb1518abe603",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5282.203957999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "bd2a19a84e96307988e9356e8d2293a34fb3aa3e1df3de9bd19a4acd5808d857",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5489.379665999993
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "bd2a19a84e96307988e9356e8d2293a34fb3aa3e1df3de9bd19a4acd5808d857",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5453.483707999985
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "4acbfd20495277ecdeae4eb0dc2454a06af2e7de2b1efbd629f1e3a1eb41901d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4532.476167000015
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "4acbfd20495277ecdeae4eb0dc2454a06af2e7de2b1efbd629f1e3a1eb41901d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4453.9466660000035
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-class.js",
+      "sha256": "9693562ffbc08119daa98d9c79ee7334ec8dea737796c38d8d34264f6c8b02e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4377.457792000001
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-class.js",
+      "sha256": "9693562ffbc08119daa98d9c79ee7334ec8dea737796c38d8d34264f6c8b02e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4361.483540999994
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-const.js",
+      "sha256": "9d83c478d84a68f1399f08575170306cc00b773b2419bc27ab8333b569184fc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4394.081333000009
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-const.js",
+      "sha256": "9d83c478d84a68f1399f08575170306cc00b773b2419bc27ab8333b569184fc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4774.582083000016
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-function.js",
+      "sha256": "af1cd2a7f618e7377240e226a351cdaae9190864e627e493526d2b2787992168",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4432.753957999987
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-function.js",
+      "sha256": "af1cd2a7f618e7377240e226a351cdaae9190864e627e493526d2b2787992168",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4564.731
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "sha256": "6c71d5d12c5dbf5cdeed49eb23e2c0775368407417c9d1cd99b7102aaa664aaa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10091.401834000018
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-generator.js",
+      "sha256": "6c71d5d12c5dbf5cdeed49eb23e2c0775368407417c9d1cd99b7102aaa664aaa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5658.539083000011
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-let.js",
+      "sha256": "88cfff4580956a2b2b5fe2694ea846412b455d7053f4f0aa67f5441c058099aa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4737.760333000013
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-let.js",
+      "sha256": "88cfff4580956a2b2b5fe2694ea846412b455d7053f4f0aa67f5441c058099aa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4554.504625000001
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-var.js",
+      "sha256": "d483c5f4c1625db53e3dcbe56ced431d7c4e513c06a80f62a8400f34a19452c5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5186.597999999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/class-name-redeclaration-attempt-with-var.js",
+      "sha256": "d483c5f4c1625db53e3dcbe56ced431d7c4e513c06a80f62a8400f34a19452c5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5192.053209000005
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "e645bbb8a72a2d1bea14fc1c0842eba9447f00a4b80f6018c315aab37358b58f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4987.06700000001
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "e645bbb8a72a2d1bea14fc1c0842eba9447f00a4b80f6018c315aab37358b58f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4486.012000000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "132faf6b22640df3254212dfb5915772a9111a51c10431d727f7b6c84917ff30",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4560.426042000006
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "132faf6b22640df3254212dfb5915772a9111a51c10431d727f7b6c84917ff30",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4573.159749999992
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-class.js",
+      "sha256": "992fa68f31e97738f41a03abdaa44d4bfe0a651ca1e52e756f2457d656afac01",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4664.054541999969
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-class.js",
+      "sha256": "992fa68f31e97738f41a03abdaa44d4bfe0a651ca1e52e756f2457d656afac01",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5026.5459170000395
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-const.js",
+      "sha256": "a802623f19d278e43c226ded89edbe5da5ba6102e2c4e12fa35d2dda70e48be9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5323.949250000005
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-const.js",
+      "sha256": "a802623f19d278e43c226ded89edbe5da5ba6102e2c4e12fa35d2dda70e48be9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4766.158750000002
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-function.js",
+      "sha256": "acde19d24d57424403eddcdcd985a638242eb02f594dc4c09a5c188fe6d83941",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5240.401124999975
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-function.js",
+      "sha256": "acde19d24d57424403eddcdcd985a638242eb02f594dc4c09a5c188fe6d83941",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4706.521083
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "sha256": "8ee88245c18263d2faad893c2dfadfa6c78d09813f378c8b3fc3edc3280453a9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4655.713667000004
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-generator.js",
+      "sha256": "8ee88245c18263d2faad893c2dfadfa6c78d09813f378c8b3fc3edc3280453a9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4906.380750000011
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-let.js",
+      "sha256": "12dba6be33e94018a933d79743e28b2f981508ebd49a3d29d8a83857602baf76",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5371.196041000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-let.js",
+      "sha256": "12dba6be33e94018a933d79743e28b2f981508ebd49a3d29d8a83857602baf76",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4479.467457999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-var.js",
+      "sha256": "b7271cbb31c0d464a683c8ab972bcb9f8324c62a1149cac231e7fcdba6f1e58b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4875.723457999993
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/const-name-redeclaration-attempt-with-var.js",
+      "sha256": "b7271cbb31c0d464a683c8ab972bcb9f8324c62a1149cac231e7fcdba6f1e58b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5277.824749999971
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "95daa805319e856271dff84661f4f03be707fdf833664b757e3a85b71c7927b7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5465.294875000021
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "95daa805319e856271dff84661f4f03be707fdf833664b757e3a85b71c7927b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5017.325791999989
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "6220f0015b3b9bb812328a9e7732deebf05121dece8e157b52b99594893ce2c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5412.572083999985
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "6220f0015b3b9bb812328a9e7732deebf05121dece8e157b52b99594893ce2c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5734.605582999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-class.js",
+      "sha256": "9294803ab331ab5044ef06b13db1bca08ac435bd8dc2bb106e9eae295bc2c362",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4880.537292000023
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-class.js",
+      "sha256": "9294803ab331ab5044ef06b13db1bca08ac435bd8dc2bb106e9eae295bc2c362",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4997.096666999976
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-const.js",
+      "sha256": "9c3d18ad319bec3a15e51406bb2ee946c0d2ab6b3e7af5a3656db7389b5b313f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5263.068333000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-const.js",
+      "sha256": "9c3d18ad319bec3a15e51406bb2ee946c0d2ab6b3e7af5a3656db7389b5b313f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5437.386500000022
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-function.js",
+      "sha256": "461bfa490251ac8c1c34b2cd372c05b967b8262fcd54f61a2fcc4a661f071af4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5576.487957999983
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-function.js",
+      "sha256": "461bfa490251ac8c1c34b2cd372c05b967b8262fcd54f61a2fcc4a661f071af4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5288.7789590000175
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "71e52a7861b1f4405726bb8218f6c54a4a0e42988e2a66e021bdda0c9119d5f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5554.928083999956
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "71e52a7861b1f4405726bb8218f6c54a4a0e42988e2a66e021bdda0c9119d5f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5672.590167000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-let.js",
+      "sha256": "39e61da69e9cd940034fd678a264be0888662babbcd152d1366b44ab69e4856b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5702.432334000012
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-let.js",
+      "sha256": "39e61da69e9cd940034fd678a264be0888662babbcd152d1366b44ab69e4856b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6082.093500000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-var.js",
+      "sha256": "2b67712fb6b28a5830f650db2195892ecb741c49a238fcc4751e8af7fb0b1fa7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6883.812333000009
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/fn-scope-var-name-redeclaration-attempt-with-var.js",
+      "sha256": "2b67712fb6b28a5830f650db2195892ecb741c49a238fcc4751e8af7fb0b1fa7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 6429.14516700001
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-declaration-attempt-to-redeclare-with-var-declaration-nested-in-function.js",
+      "sha256": "25c4da212be83c96656e59cb45ff19cc828f265898f8f62804cfeace42ac9662",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 6202.051875000005
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-declaration-attempt-to-redeclare-with-var-declaration-nested-in-function.js",
+      "sha256": "25c4da212be83c96656e59cb45ff19cc828f265898f8f62804cfeace42ac9662",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5625.915709000023
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "df77ca5e1c105506670c69cb789a2d5f33d0899ba677114006cc2a5a4b7e7cd0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5642.457082999987
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "df77ca5e1c105506670c69cb789a2d5f33d0899ba677114006cc2a5a4b7e7cd0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5246.390375000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "684bbd0ba3e736ec95c35a1a186e1062b1d7572f9902d9611eac5a9a635d1067",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5581.562916999974
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "684bbd0ba3e736ec95c35a1a186e1062b1d7572f9902d9611eac5a9a635d1067",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5122.399665999983
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-class.js",
+      "sha256": "075209669277f1a74c6c512a86cf8421e34b24fe1d007bdd4f79b2c1af130f1a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5285.146999999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-class.js",
+      "sha256": "075209669277f1a74c6c512a86cf8421e34b24fe1d007bdd4f79b2c1af130f1a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5011.339249999961
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-const.js",
+      "sha256": "74d22e2709a32cca0356f85f19664243ccbc98cb0c78241da5474ea31004b978",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5433.024207999988
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-const.js",
+      "sha256": "74d22e2709a32cca0356f85f19664243ccbc98cb0c78241da5474ea31004b978",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5341.563416999998
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-function.js",
+      "sha256": "84bdc0294cf54ec63d473962f2c41411677b1888b71f8095d60941f9f399cd30",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5320.134250000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "sha256": "1e75e9d66de8ffb254cb7823056634c04bdedd7cf914940acc599845f0328bb0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5074.693624999956
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-generator.js",
+      "sha256": "1e75e9d66de8ffb254cb7823056634c04bdedd7cf914940acc599845f0328bb0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4989.834334000014
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-let.js",
+      "sha256": "b0779ce9b1f10aaa3c396619bed59b24f2e1a5375fcc0a3df6c872eba9d08a3f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4504.772000000055
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-let.js",
+      "sha256": "b0779ce9b1f10aaa3c396619bed59b24f2e1a5375fcc0a3df6c872eba9d08a3f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4989.3429999999935
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-var.js",
+      "sha256": "43bfab095b333129c010cfb42acde3878a3f0dbdd18a40f0c1c135e40f277c8f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4681.096416999993
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/function-name-redeclaration-attempt-with-var.js",
+      "sha256": "43bfab095b333129c010cfb42acde3878a3f0dbdd18a40f0c1c135e40f277c8f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4984.256374999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "be14fcc4a4dcf4e385a9b61285188aa88ea58f23893e8ec7a3b7425ac49a8b19",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions",
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5436.800999999978
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "be14fcc4a4dcf4e385a9b61285188aa88ea58f23893e8ec7a3b7425ac49a8b19",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions",
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5216.77816700004
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "a24127f8f6f1716411928a443e52b5f62d8ad0a6c84ba58dd903f4249a1e232e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration",
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4578.4228329999605
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "a24127f8f6f1716411928a443e52b5f62d8ad0a6c84ba58dd903f4249a1e232e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration",
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4758.103000000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "sha256": "33c667e5208275cb646a73de6b386b43212c68fc444682ddabcd3724601d856c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4713.4277090000105
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-class.js",
+      "sha256": "33c667e5208275cb646a73de6b386b43212c68fc444682ddabcd3724601d856c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4692.851332999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "sha256": "9bddae60718ad4c242c174ffd2daeb300c054119fd2d4d3d9990531b53425db6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5324.890458000009
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-const.js",
+      "sha256": "9bddae60718ad4c242c174ffd2daeb300c054119fd2d4d3d9990531b53425db6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5625.107625000062
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "sha256": "a6004a1cbc44d6e78f20602ada7b4b15a4d4d38c6bfccda135dce984cc479d7f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4930.552250000066
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-function.js",
+      "sha256": "a6004a1cbc44d6e78f20602ada7b4b15a4d4d38c6bfccda135dce984cc479d7f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5249.021291999961
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "sha256": "43cbf5493b5c96517751d94fbefb74acc2ef3cc9b9d02d488cb97ee173bcaa52",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4768.181291999994
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-generator.js",
+      "sha256": "43cbf5493b5c96517751d94fbefb74acc2ef3cc9b9d02d488cb97ee173bcaa52",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4865.64525000006
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "sha256": "4db97a649ebdb29df0c490a855552a255ccc0f1f8846b297561289dbe80b610c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4897.0492080000695
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-let.js",
+      "sha256": "4db97a649ebdb29df0c490a855552a255ccc0f1f8846b297561289dbe80b610c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4501.141333000036
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "sha256": "5bfab4eccf026d253a6946c133f157ac6ae54f43dc6708a036c6667960aad4e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4632.373208999983
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/generator-name-redeclaration-attempt-with-var.js",
+      "sha256": "5bfab4eccf026d253a6946c133f157ac6ae54f43dc6708a036c6667960aad4e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4880.189624999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "56705f7e2739f40fffa65a38444a077fa2e49e44284c0b9af994ab0c89016345",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4668.794041999965
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "56705f7e2739f40fffa65a38444a077fa2e49e44284c0b9af994ab0c89016345",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4868.668332999921
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "2d8e251edb1ea3bcd731b20eacb406df85f35275ccce84aa9511e4b618cba690",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4842.325542000006
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "2d8e251edb1ea3bcd731b20eacb406df85f35275ccce84aa9511e4b618cba690",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5627.519124999992
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-class.js",
+      "sha256": "7ec06bf58fd18753a17d529f9da0f6efe699b85e45fd109c170dec35e1e89d51",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5126.679334000102
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-class.js",
+      "sha256": "7ec06bf58fd18753a17d529f9da0f6efe699b85e45fd109c170dec35e1e89d51",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5061.134083000012
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-const.js",
+      "sha256": "039bf9b9ed77c102d72d263bf8ec7de6168c68d5cacbc73025bdf20f66292349",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5070.323249999899
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-const.js",
+      "sha256": "039bf9b9ed77c102d72d263bf8ec7de6168c68d5cacbc73025bdf20f66292349",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5217.057790999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-function.js",
+      "sha256": "c10d19c1981e59be28117a4bf880171ec92da44a7b180d9afc4af5ef95d93ee1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5243.783792000031
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-function.js",
+      "sha256": "c10d19c1981e59be28117a4bf880171ec92da44a7b180d9afc4af5ef95d93ee1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5305.4241659999825
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "9d05dbc0208511e79cb2cce1d268baa92c8d73a6df1ea3ca93672bfe9a89f546",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4696.123499999987
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "9d05dbc0208511e79cb2cce1d268baa92c8d73a6df1ea3ca93672bfe9a89f546",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4603.841791999992
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-let.js",
+      "sha256": "f0011641a45f03e3edf41dabe9327dedaaedf9bb464e3040c8f6d1e79e92f73a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4883.359416999971
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-let.js",
+      "sha256": "f0011641a45f03e3edf41dabe9327dedaaedf9bb464e3040c8f6d1e79e92f73a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4639.451915999991
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-var.js",
+      "sha256": "ab40ced0e13d26fb38ab8aa7fc4a1fb72f5b64e69bdaeda3b089202807cbe0c5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5258.901958000031
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-name-redeclaration-attempt-with-var.js",
+      "sha256": "ab40ced0e13d26fb38ab8aa7fc4a1fb72f5b64e69bdaeda3b089202807cbe0c5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4957.621042000013
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-async-function.js",
+      "sha256": "5a914e2739b03a4420913a22b5e149450dd10cb3fa9df0c4cd3e2e40db325839",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4662.180374999996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-async-function.js",
+      "sha256": "5a914e2739b03a4420913a22b5e149450dd10cb3fa9df0c4cd3e2e40db325839",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4577.222375000012
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-async-generator.js",
+      "sha256": "8cf36cea26f48998ad7ca825711f1027109fcd24f445ade8813f102233a4ca59",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5172.649916999973
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-async-generator.js",
+      "sha256": "8cf36cea26f48998ad7ca825711f1027109fcd24f445ade8813f102233a4ca59",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4921.221750000026
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-class.js",
+      "sha256": "5c2851b8ca4cb3dfe157a173171f79662e32806182b3383169d6a31e0354c7ac",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4938.69524999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-class.js",
+      "sha256": "5c2851b8ca4cb3dfe157a173171f79662e32806182b3383169d6a31e0354c7ac",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5320.13279199996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-const.js",
+      "sha256": "0a9be2b4c91ebb5a0626ed5579f7dfd7450ef11ef536cd70185a58d3e9dd3174",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11333.989249999984
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-const.js",
+      "sha256": "0a9be2b4c91ebb5a0626ed5579f7dfd7450ef11ef536cd70185a58d3e9dd3174",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5342.659749999992
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-function.js",
+      "sha256": "3f7201e224a85c09686b6af36e01f897bea99aba1943a17757db5742e8891551",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5410.821457999991
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-function.js",
+      "sha256": "3f7201e224a85c09686b6af36e01f897bea99aba1943a17757db5742e8891551",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4909.637875000015
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-generator.js",
+      "sha256": "09d2300d8b66fc6f9d65412dc6af1924567d9fa2f98e5eb8fdff028bc26b1823",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4513.105208000052
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-generator.js",
+      "sha256": "09d2300d8b66fc6f9d65412dc6af1924567d9fa2f98e5eb8fdff028bc26b1823",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5961.7067910000915
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-let.js",
+      "sha256": "9b1299ee96e7c0ed7fcac6f741003416f90c17d5e2f9012504b84c976f6249dc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5204.320416999981
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/inner-block-var-redeclaration-attempt-after-let.js",
+      "sha256": "9b1299ee96e7c0ed7fcac6f741003416f90c17d5e2f9012504b84c976f6249dc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5249.800042000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "e94023a7d1e4f050e3d755995a7bd8babe7b5e176424bfbab6e12eba02caee47",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5562.76345800003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "e94023a7d1e4f050e3d755995a7bd8babe7b5e176424bfbab6e12eba02caee47",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5349.85699999996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "083aee6c4c1cb7987b31c33b53aa56b8bda5f4cf206abdfd2f186ea91cd8ff9a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5497.662707999931
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "083aee6c4c1cb7987b31c33b53aa56b8bda5f4cf206abdfd2f186ea91cd8ff9a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4916.866500000004
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-class.js",
+      "sha256": "82abad6c1028e63a0f6d5128fff913f529d8b6ee87f5684127526e17b6a1c158",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5744.700583000085
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-class.js",
+      "sha256": "82abad6c1028e63a0f6d5128fff913f529d8b6ee87f5684127526e17b6a1c158",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5896.2345000000205
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-const.js",
+      "sha256": "45fa8716f3f8ac171f4201f5e6d18d55f929e46c84f2de815cdaf5d9c910bf69",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10152.078291999991
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-const.js",
+      "sha256": "45fa8716f3f8ac171f4201f5e6d18d55f929e46c84f2de815cdaf5d9c910bf69",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5783.402292000013
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-function.js",
+      "sha256": "deb9cff7aedb774094ddb76562041886fbd25309226aa2ab0437c4889ee673ba",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5540.936583000002
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-function.js",
+      "sha256": "deb9cff7aedb774094ddb76562041886fbd25309226aa2ab0437c4889ee673ba",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5002.440667000017
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "sha256": "93aa78276e0da8d98d23ba00ad29aeb87b862506576f43ff9042e063d5dd38c5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4597.248291999917
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-generator.js",
+      "sha256": "93aa78276e0da8d98d23ba00ad29aeb87b862506576f43ff9042e063d5dd38c5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4773.180374999996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-let.js",
+      "sha256": "5ea96370981eed6312096533c6ef50e5874f700d216ac7015ba888dfbc6b72a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4866.605582999997
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-let.js",
+      "sha256": "5ea96370981eed6312096533c6ef50e5874f700d216ac7015ba888dfbc6b72a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5041.826457999996
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-var.js",
+      "sha256": "8226ecd2019f627518d00b756d30c32cb6877529d496f56c743cc4571fb97785",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5689.208875000011
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/let-name-redeclaration-attempt-with-var.js",
+      "sha256": "8226ecd2019f627518d00b756d30c32cb6877529d496f56c743cc4571fb97785",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5873.566708000028
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "ce871b836ef7344884440c041e36bb8f789aa5a34219d7d941154f86f68ce931",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5081.13058300002
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-async-function.js",
+      "sha256": "ce871b836ef7344884440c041e36bb8f789aa5a34219d7d941154f86f68ce931",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5476.021708999993
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "a2a758efc48f660736a7f56eb6ca0f42c4990e225f80383985bc21703ad2151f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5032.430083999992
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-async-generator.js",
+      "sha256": "a2a758efc48f660736a7f56eb6ca0f42c4990e225f80383985bc21703ad2151f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5562.18533300003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-class.js",
+      "sha256": "8b3a8789f6d0e4d717442c71bd82e4861cb2ff9f5480ac5a6b9fb03b5780ec4b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4938.484834000003
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-class.js",
+      "sha256": "8b3a8789f6d0e4d717442c71bd82e4861cb2ff9f5480ac5a6b9fb03b5780ec4b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4584.149583999999
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-const.js",
+      "sha256": "5a78d62f6b8a8631e67af35706d02d47bb2e5332b353934e386303de22fc3bf5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4710.6582909999415
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-const.js",
+      "sha256": "5a78d62f6b8a8631e67af35706d02d47bb2e5332b353934e386303de22fc3bf5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4693.014959000051
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-function.js",
+      "sha256": "aab2e29f132ea86b3abaf5eba6ef49369f93478121d07ba632645c2c8e6d1691",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4813.610916999984
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-function.js",
+      "sha256": "aab2e29f132ea86b3abaf5eba6ef49369f93478121d07ba632645c2c8e6d1691",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5064.302916000015
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "b58bbc17b74478304044c1da9ebca36b148f997346d6247073504fff2005a244",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4714.674500000081
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-generator.js",
+      "sha256": "b58bbc17b74478304044c1da9ebca36b148f997346d6247073504fff2005a244",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4442.981125000049
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-let.js",
+      "sha256": "ee6605ef5b3fa2204b0380f89e77123eb296792b15cf20354b944d85946b879d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4831.585666000028
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-let.js",
+      "sha256": "ee6605ef5b3fa2204b0380f89e77123eb296792b15cf20354b944d85946b879d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4620.620417000027
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-var.js",
+      "sha256": "2adda177a83455eb79ff31f8e1dd4619784b029a9ef730e4c8a4fa64b289028f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5264.434917000006
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-name-redeclaration-attempt-with-var.js",
+      "sha256": "2adda177a83455eb79ff31f8e1dd4619784b029a9ef730e4c8a4fa64b289028f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 5231.881792000029
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-async-function.js",
+      "sha256": "f12adac44bf68bc428313ff2ab6d3b851aacd1c67c9829d3f5b2d0090e2c4e8d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4841.959875000059
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-async-function.js",
+      "sha256": "f12adac44bf68bc428313ff2ab6d3b851aacd1c67c9829d3f5b2d0090e2c4e8d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-functions"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4914.379958000034
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-async-generator.js",
+      "sha256": "ddc6e82fa99b3c3ee6aef08d0e265d9eacfee38da3359a27e966431a3d4f76cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5279.669333000085
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-async-generator.js",
+      "sha256": "ddc6e82fa99b3c3ee6aef08d0e265d9eacfee38da3359a27e966431a3d4f76cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5118.202666999889
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-class.js",
+      "sha256": "ab7f98f960515f03acd4c4fc37f51f72725b0f726cf69978d37e453c0fa15d5d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5414.509499999927
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-class.js",
+      "sha256": "ab7f98f960515f03acd4c4fc37f51f72725b0f726cf69978d37e453c0fa15d5d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5590.214916000026
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-const.js",
+      "sha256": "b6ab7370347633171e93c4fb93012d9498d69c39455edd245fae6ebdf4238dd9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5040.505999999936
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-const.js",
+      "sha256": "b6ab7370347633171e93c4fb93012d9498d69c39455edd245fae6ebdf4238dd9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5185.636875000084
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-function.js",
+      "sha256": "e97c5f231c6502e801fb5b3dde54ee5461caf5b4eaeded920cda50a17e19f410",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5200.294875000021
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-function.js",
+      "sha256": "e97c5f231c6502e801fb5b3dde54ee5461caf5b4eaeded920cda50a17e19f410",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5299.981875000056
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-generator.js",
+      "sha256": "6f7e84d540bc390fb3d4462fb6cb68f815a7735280a88431ada824900e03f74b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4876.401249999995
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-generator.js",
+      "sha256": "6f7e84d540bc390fb3d4462fb6cb68f815a7735280a88431ada824900e03f74b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4654.059583000024
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-let.js",
+      "sha256": "8f3109ec860bd76e5e7d11ee52be736b064b9cb902e441ca424063980f0be267",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4973.931957999943
+    },
+    {
+      "path": "language/block-scope/syntax/redeclaration/var-redeclaration-attempt-after-let.js",
+      "sha256": "8f3109ec860bd76e5e7d11ee52be736b064b9cb902e441ca424063980f0be267",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 4842.57512500009
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "environment": {
+    "TZ": null
+  },
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cef50788bd7c534df2436584c79aad4fd2f0f1dc7e6a0d7f95f013af64f18c15",
+      "files": 417
+    },
+    "imageSha256": "a8563414a0c578dd5290883022f735705e69829c6499e49b41c22500c1c9304b",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const other=$262.createRealm().global;const a=new other.Array();let caught=false;try{a.length=4294967296;}catch(e){caught=e instanceof RangeError&&!(e instanceof other.RangeError);}if(!caught)throw 1;caught=false;try{other.Object.defineProperty(a,\"length\",{value:4294967296});}catch(e){caught=e instanceof other.RangeError&&!(e instanceof RangeError);}if(!caught)throw 2;",
+        "sha256": "10f0ee382ad74fae00f876348caf0d972c3fd0bc2a810f48335be35911d7373e"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "bada82364b706c02aee2191ad494aa9ad9b7712115f6f4823638885e098be4cb",
+      "files": 416
+    },
+    "imageSha256": "9d97309ed74f022ebab0324d2bc280effe43db21c9c947596a5cece9ec04ce2c",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=Date.now(),d=new Date(),b=Date.now();if(!Number.isInteger(a)||a<1700000000000||a>2200000000000||d.getTime()<a||d.getTime()>b)throw 1;const child=$262.createRealm();const now=child.global.Date.now();if(Math.abs(now-b)>10000)throw 2;",
+        "sha256": "a311470abbf1710177b1d3b7ab8c5f2f904d08e0920ecb0f191cadf29e3ce14a"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date();if(!Number.isFinite(d.getTime()))throw 1;const p=Object.getPrototypeOf(d);if(p!==Date.prototype)throw 2;if(new Date(undefined).getTime()===0)throw 3;",
+        "sha256": "84bfc49198b0e621bd7f54a1134fb070d0b53380cdb44fcc8150dc5716fffaf4"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

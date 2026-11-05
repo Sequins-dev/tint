@@ -1,0 +1,38 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cb63692fa72e9d74e8582997713479bbabbf54414a63ea5f82975bdafb76b5b7",
+      "files": 413
+    },
+    "imageSha256": "d7a9caf8c2d4717a9e8710cda485c62407698fabceed32fecff7e080afd10f59",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "Array.fromAsync({length:4096},async(_,i)=>i).then(a=>{if(a.length!==4096)throw 1;for(let i=0;i<a.length;i++){if(a[i]!==i)throw 2;}}).then(()=>print(\"Test262:AsyncTestComplete\"),e=>print(\"Test262:AsyncTestFailure:Test262Error:\"+String(e)));",
+        "sha256": "455b5d981f2c85a0c945d5e43326a9c05b6d41d0fd4925c804cec44aadaaade0"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

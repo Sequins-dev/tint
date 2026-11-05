@@ -1,0 +1,29 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T09:21:05.652335+00:00",
+  "sourceSnapshot": {
+    "sha256": "4b43ac307ad5885a40f1cdf3db40c62216bd2ca213da8b3a4a8476b07b53fad6",
+    "files": 492
+  },
+  "frozenSources": ".tint-bootstrap/source-managed-invocation-v1.json",
+  "scope": "AOT/generated/AOT allocating and throwing managed callback bridge; no Script source execution",
+  "proof": "native-managed-invocation-v3.json",
+  "fixture": ".tint-bootstrap/native-managed-invocation-v3/build.json",
+  "checks": [
+    "canonical imported function brand and signature descriptors",
+    "raw rooted callback reference ABI",
+    "normal object, number and undefined returns",
+    "object and primitive thrown payloads caught by AOT caller",
+    "fresh object result identity after allocation churn",
+    "nested managed invocation",
+    "root chain restored after normal, abrupt and nested completion",
+    "20MiB allocation churn per callback against an8MiB semispace"
+  ],
+  "workspaceTests": {
+    "total": 3434,
+    "passed": 3434,
+    "log": "/tmp/tint-managed-invocation-workspace-tests-v1.log"
+  },
+  "earlierResourceFailures": "native-managed-invocation-resource-diagnosis-v1.json",
+  "limitations": "Copying GC only. Generational write proofs, general Function/eval body compilation, ESM loading and code unloading are not implemented by this slice."
+}

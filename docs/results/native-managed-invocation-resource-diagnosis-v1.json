@@ -1,0 +1,27 @@
+{
+  "kind": "native-fixture-resource-diagnosis",
+  "createdAt": "2026-11-03T09:19:26.377407+00:00",
+  "scope": "managed invocation fixture exits70 during copying-runtime initialization",
+  "reports": [
+    "native-managed-invocation-v1.json",
+    "native-managed-invocation-v2.json"
+  ],
+  "sourceSnapshot": {
+    "sha256": "4b43ac307ad5885a40f1cdf3db40c62216bd2ca213da8b3a4a8476b07b53fad6",
+    "files": 492
+  },
+  "configuration": {
+    "managedBytes": 16777216,
+    "semispaceBytes": 8388608,
+    "allocationCapacity": 131072,
+    "metadataWords": 393312,
+    "requiredForwardingWords": 524288,
+    "requiredBitmapWords": 16384,
+    "requiredTotalWords": 540672
+  },
+  "evidence": "initializeCopyingRuntime rejects metadata.length < units + words before returning an allocator. The hosted runtime-failure exit is70. An outer fixture catch cannot run before successful runtime initialization.",
+  "nextFixture": ".tint-bootstrap/native-managed-invocation-v3/build.json",
+  "nextAllocationCapacity": 262144,
+  "buildPolicyRegression": "packages/compiler-driver/test/capabilities.test.ts",
+  "limitations": "Does not establish managed invocation correctness; subsequent native proof required."
+}

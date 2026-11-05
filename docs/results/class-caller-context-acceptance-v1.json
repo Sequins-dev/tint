@@ -1,0 +1,19 @@
+{
+  "kind": "native-constructor-completion-realm-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "147e4c854408c18427508c99dce38ab99f575075ff94ac21b89e4ab44e4f9949",
+    "files": 565
+  },
+  "nativeCases": 8,
+  "nativeReport": "class-caller-context-native-validation-v1.json",
+  "nodeRegression": "class-caller-context-node-regression-v1.json",
+  "workspaceTests": 4297,
+  "selfBuild": "bootstrap-class-caller-context-v1.json",
+  "artifacts": "class-caller-context-selfbuild-artifact-validation-v1.json",
+  "stageBytes": 71847842,
+  "byteIdentical": true,
+  "semantics": "Derived constructor completion errors are produced after restoring the caller; body errors and direct-call class errors retain the defining realm.",
+  "nodeDivergence": "V8 missing-super ReferenceError uses the callee realm; ECMA-262 10.2.2 steps 9,15 and 9.1.1.3.3 require the restored caller."
+}

@@ -1,0 +1,332 @@
+{
+  "kind": "script-root-canary-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "runIdentity": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+  "expected": [
+    {
+      "selection": "language/expressions/dynamic-import/reuse-namespace-object-from-script.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/reuse-namespace-object-from-script.js",
+          "sha256": "833b2a04d3fa699dbeba639f4e9a512a0488166ea68e381c2e9d3abdfb59cf4e",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "empty_FIXTURE.js",
+              "sha256": "0ab7d92aae402cec319b314aea522348290e14d5fa64dc3baecb8bd21723c675"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/reuse-namespace-object-from-script.js",
+          "sha256": "833b2a04d3fa699dbeba639f4e9a512a0488166ea68e381c2e9d3abdfb59cf4e",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "empty_FIXTURE.js",
+              "sha256": "0ab7d92aae402cec319b314aea522348290e14d5fa64dc3baecb8bd21723c675"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/catch/top-level-import-catch-file-does-not-exist.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-file-does-not-exist.js",
+          "sha256": "da4d4db00afa88dc9da64cb5ca1b0e966108bdaadf9ee992a699ee14286f7d4a",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "absent": [
+            "THIS_FILE_DOES_NOT_EXIST.js"
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-file-does-not-exist.js",
+          "sha256": "da4d4db00afa88dc9da64cb5ca1b0e966108bdaadf9ee992a699ee14286f7d4a",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "absent": [
+            "THIS_FILE_DOES_NOT_EXIST.js"
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/eval-self-once-script.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/eval-self-once-script.js",
+          "sha256": "1ade26b3249019856801749bdb12f555eb7244b2cf82a789a79ebbbcbd09e2dd",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            },
+            {
+              "name": "fnGlobalObject.js",
+              "sha256": "c1cdfdd80333c70a2567377331788555c10fefc50c4cb0c573170baa8864ac1a"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "eval-self-once-script.js",
+              "sha256": "1ade26b3249019856801749bdb12f555eb7244b2cf82a789a79ebbbcbd09e2dd"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/eval-self-once-script.js",
+          "sha256": "1ade26b3249019856801749bdb12f555eb7244b2cf82a789a79ebbbcbd09e2dd",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            },
+            {
+              "name": "fnGlobalObject.js",
+              "sha256": "c1cdfdd80333c70a2567377331788555c10fefc50c4cb0c573170baa8864ac1a"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "eval-self-once-script.js",
+              "sha256": "1ade26b3249019856801749bdb12f555eb7244b2cf82a789a79ebbbcbd09e2dd"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/syntax/valid/top-level-empty-str-is-valid-assign-expr.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-empty-str-is-valid-assign-expr.js",
+          "sha256": "fa2edf62bc74e3bb8f25236b685c70e180a1c7a469bb56d7f5a03bda922650b3",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-empty-str-is-valid-assign-expr.js",
+          "sha256": "fa2edf62bc74e3bb8f25236b685c70e180a1c7a469bb56d7f5a03bda922650b3",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/catch/top-level-import-catch-instn-iee-err-circular.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-instn-iee-err-circular.js",
+          "sha256": "fa1f220f0670c55e91c2ed71d008a95819c8b60bcd086689d87ac4a6aac7d2df",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "instn-iee-err-circular-1_FIXTURE.js",
+              "sha256": "f3d52560345ad01a0c807f058693aff3e20f408244a6f8d2f41b432b8ed28e78"
+            },
+            {
+              "name": "instn-iee-err-circular-2_FIXTURE.js",
+              "sha256": "0d72ddc0d664318d8e0e2e0f066ea7cac0947e0566236bb030f6f4da94bdc912"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-instn-iee-err-circular.js",
+          "sha256": "fa1f220f0670c55e91c2ed71d008a95819c8b60bcd086689d87ac4a6aac7d2df",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "instn-iee-err-circular-1_FIXTURE.js",
+              "sha256": "f3d52560345ad01a0c807f058693aff3e20f408244a6f8d2f41b432b8ed28e78"
+            },
+            {
+              "name": "instn-iee-err-circular-2_FIXTURE.js",
+              "sha256": "0d72ddc0d664318d8e0e2e0f066ea7cac0947e0566236bb030f6f4da94bdc912"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/catch/top-level-import-catch-eval-rqstd-abrupt-typeerror.js",
+      "cases": [
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-eval-rqstd-abrupt-typeerror.js",
+          "sha256": "e7e9db4743b15ae87276f28851e6667ca8dc8480b27f4171963e1a129c753183",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "eval-rqstd-abrupt-err-type_FIXTURE.js",
+              "sha256": "ce3ebfa86081c793bf36a681e6f1e4faca99e529b338bfbfc433b550e1bf27e8"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-eval-rqstd-abrupt-typeerror.js",
+          "sha256": "e7e9db4743b15ae87276f28851e6667ca8dc8480b27f4171963e1a129c753183",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "doneprintHandle.js",
+              "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+            }
+          ],
+          "fixtures": [
+            {
+              "name": "eval-rqstd-abrupt-err-type_FIXTURE.js",
+              "sha256": "ce3ebfa86081c793bf36a681e6f1e4faca99e529b338bfbfc433b550e1bf27e8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

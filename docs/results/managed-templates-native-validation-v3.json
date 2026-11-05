@@ -1,0 +1,124 @@
+{
+  "kind": "native-managed-templates-validation",
+  "conformance": false,
+  "accepted": false,
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "repeated function calls retain one frozen template object",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-0-v3.json"
+    },
+    {
+      "selectedCase": 1,
+      "name": "fresh eval parses sharing a referrer keep distinct sites",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-1-v3.json"
+    },
+    {
+      "selectedCase": 2,
+      "name": "equal text at distinct sites never merges identity",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-2-v3.json"
+    },
+    {
+      "selectedCase": 3,
+      "name": "Function caches its own sites and separates function objects",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-3-v3.json"
+    },
+    {
+      "selectedCase": 4,
+      "name": "undefined cooked segments and exact raw text survive compilation",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-4-v3.json"
+    },
+    {
+      "selectedCase": 5,
+      "name": "tag getter and substitutions preserve source order",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-5-v3.json"
+    },
+    {
+      "selectedCase": 6,
+      "name": "constructed bodies create template arrays in their own realm",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-6-v3.json"
+    },
+    {
+      "selectedCase": 7,
+      "name": "returned JIT callbacks retain sites across allocation churn",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-managed-templates-case-7-v3.json"
+    },
+    {
+      "selectedCase": 8,
+      "name": "template identity survives suspension and continuation loops",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "report": "docs/results/native-managed-templates-case-8-v3.json"
+    }
+  ],
+  "workspaceLog": ".tint-bootstrap/managed-template-workspace-check-v2.log",
+  "compilerGraph": "docs/results/managed-template-bootstrap-graph-node-v1.json",
+  "compilerReuse": "The complete 220-module bootstrap compiler graph and its AST are unchanged from the accepted byte-identical native self-build. The changed JS entry lowering and issued helper surface are exercised in-image by these native cases.",
+  "priorAttempt": "docs/results/managed-templates-native-validation-v1.json",
+  "launchControl": "docs/results/managed-template-selector-startup-diagnostic-v1.json",
+  "additionalPriorAttempt": "docs/results/managed-templates-native-validation-v2.json",
+  "executionPathProtocol": "Execute the verified already-published artifact with the direct debugserver protocol that returned expected selector-only status 99 for this exact image.",
+  "serialization": {
+    "parent": 21898,
+    "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts",
+    "pause": ".tint-bootstrap/direct-eval-current-conformance.pause",
+    "pid": 21082
+  }
+}

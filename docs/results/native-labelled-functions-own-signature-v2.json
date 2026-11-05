@@ -1,0 +1,38 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-labelled-functions.ts",
+  "fixtureSha256": "05986e1bb9e0216728149664ea784f806348277136682a20c5bc6f5de96e8285",
+  "imageSha256": "9d031ef1c204152a3c9360d78c7bb36f0cc567e636cef474dc196cd3ff55d281",
+  "signer": "Tint embedded ad-hoc signature; no host signing or rewriting",
+  "entitlement": "com.apple.security.get-task-allow (XML and DER)",
+  "signatureVerification": {
+    "status": 0,
+    "stderr": ""
+  },
+  "executableWriteback": "atomic-rename-after-fsync",
+  "debuggerLaunch": "debugserver-direct",
+  "cases": 3,
+  "passed": 3,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

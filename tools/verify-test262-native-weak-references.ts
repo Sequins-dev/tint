@@ -1,0 +1,11 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    `for(const C of [WeakRef,FinalizationRegistry]){if(C.length!==1||C.prototype.constructor!==C)throw 1;let caught=false;try{C({});}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;const tag=C===WeakRef?'WeakRef':'FinalizationRegistry';if(C.prototype[Symbol.toStringTag]!==tag)throw 3;}const d=Object.getOwnPropertyDescriptor(WeakRef.prototype,'deref');if(d.enumerable||!d.writable||!d.configurable||d.value.length!==0||d.value.name!=='deref')throw 4;`,
+    `const key={},r=new WeakRef(key),symbol=Symbol('key'),s=new WeakRef(symbol);if(r.deref()!==key||r.deref()!==r.deref()||s.deref()!==symbol)throw 1;for(const target of [undefined,null,1,'x',false,Symbol.for('registered')]){let caught=false;try{new WeakRef(target);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}for(const receiver of [undefined,null,WeakRef.prototype,Object.create(r),new Proxy(r,{})]){let caught=false;try{WeakRef.prototype.deref.call(receiver);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;}`,
+    `const f=new FinalizationRegistry(()=>{throw 1;}),key={},token={};if(f.register(key,19,token)!==undefined||f.register(key,23,token)!==undefined)throw 2;if(!f.unregister(token)||f.unregister(token))throw 3;for(const action of [()=>f.register(key,key),()=>f.register(1,19),()=>f.register(key,19,null),()=>f.unregister(undefined),()=>new FinalizationRegistry(undefined)]){let caught=false;try{action();}catch(e){caught=e instanceof TypeError;}if(!caught)throw 4;}`,
+    `const symbol=Symbol('target'),token=Symbol('token'),f=new FinalizationRegistry(()=>{});f.register(symbol,42,token);if(!f.unregister(token))throw 1;let caught=false;try{f.register(Symbol.for('registered'),42);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;`,
+    `const foreign=$262.createRealm().global,key={},ref=new foreign.WeakRef(key);if(WeakRef.prototype.deref.call(ref)!==key)throw 1;const F=new foreign.Function();F.prototype=null;if(Object.getPrototypeOf(Reflect.construct(WeakRef,[key],F))!==foreign.WeakRef.prototype)throw 2;if(Object.getPrototypeOf(Reflect.construct(FinalizationRegistry,[()=>{}],F))!==foreign.FinalizationRegistry.prototype)throw 3;`,
+  ],
+  { nodeReference: false },
+);

@@ -1,0 +1,293 @@
+{
+  "kind": "json-language-target-preparation-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "7b7c6a94e85409238f21898db0c216896eb0a66b5fb6703fc15346c62ad751ff",
+    "files": 568
+  },
+  "baseline": "docs/results/language-preparation-inventory-node-v4.json",
+  "total": 35,
+  "prepared": 24,
+  "cases": [
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "variant": "sloppy",
+      "route": "script",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "variant": "strict",
+      "route": "script",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+      "variant": "sloppy",
+      "route": "script",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+      "variant": "strict",
+      "route": "script",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-array.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-object.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-idempotency.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-invalid.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-named-bindings.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-array.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-boolean.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-null.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-number.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-object.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-string.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-via-namespace.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-empty.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-javascript.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-self.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-string.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-via-namespace.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-empty.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-js.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-json.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-png.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-txt.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/json-module.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": false,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/json-module.js: {\"start\":1074,\"end\":1151,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-identifiername.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-double.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-single.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-many.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-newlines.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-trlng-comma.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-double.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-single.js",
+      "variant": "module",
+      "route": "module",
+      "prepared": true,
+      "jsonFactories": 0
+    }
+  ]
+}

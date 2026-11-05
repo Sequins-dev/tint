@@ -1,0 +1,13 @@
+{
+  "kind": "native-fixture-diagnostic",
+  "fixture": "tools/verify-hosted-checker.ts",
+  "exitStatus": 42,
+  "expectedExitStatus": 42,
+  "entryStopAssertionPassed": false,
+  "manualSignals": [
+    "SIGSTOP",
+    "SIGCONT"
+  ],
+  "scope": "Diagnostic only. The process exited before LLDB connected; does not establish the normal stopped-at-entry runner contract.",
+  "conformance": false
+}

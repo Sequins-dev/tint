@@ -1,0 +1,17 @@
+{
+  "kind": "native-managed-template-unsupported-analysis",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "nativeObservation": "docs/results/native-managed-templates-case-8-v3.json",
+  "nodeDiagnostic": "docs/results/managed-template-async-compilation-diagnostic-node-v1.json",
+  "maximumScriptCodeBytes": 262144,
+  "originalEmittedBytes": 273248,
+  "originalStage": "budget",
+  "boundedEmittedBytes": 241008,
+  "finding": "The original async identity fixture exceeds the existing per-entry code cap. Its native unsupported result agrees with the Node budget result. A smaller bespoke loop retains the same tagged site across await while remaining below that cap.",
+  "limits": "The diagnostic 1 MiB limit was used only with modeled Node storage to measure bytes; no native resource or Test262 policy was raised. The smaller fixture must pass its own native observation. Original Test262 sources are unchanged.",
+  "next": "Retain the eight already passing native cases at the identical portable source. Run the revised async identity case and the previously unrun missing-tag case against the new fixture image, with explicit per-case image/fixture provenance."
+}

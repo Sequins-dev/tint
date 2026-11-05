@@ -1,0 +1,116 @@
+{
+  "schema": "tint-shared-atomic-backing-validation-v1",
+  "status": "implemented-all-node-gates-green-native-execution-pending-parent",
+  "sourceSnapshot": {
+    "sha256": "c2febdbf039693495b6cea406f97d661f4440245a8e146f42999492be87aec69",
+    "files": 505
+  },
+  "sourceAtReport": {
+    "sha256": "c2febdbf039693495b6cea406f97d661f4440245a8e146f42999492be87aec69",
+    "files": 505
+  },
+  "scope": {
+    "portableContract": "SharedBlockService.atomics optional readonly SharedBlockAtomics | undefined; compareExchangeUnsigned returns SharedResult<number>; compareExchangeWord64 returns SharedStatus and observed lo/hi through caller scratch",
+    "nativeAuthority": "createNativeSharedBlockService(host, policy, atomicHost?) and attachNativeSharedBlockService(host, registry, atomicHost?) accept separate explicit NativeSharedAtomicMemoryHost. Two-argument services expose atomics undefined even when the base object has an unsigned CAS method.",
+    "trustedFactory": "nativeSharedAtomicMemoryHost() returns only compareExchangeSharedUnsigned. Base factory remains exactly seven leaves and default native project grants stay unchanged.",
+    "semantics": "always seq-cst, complete width-aware unsigned CAS or bit-exact Word64 CAS, registry lookup and current ordered length bounds, exact operand validation, per-operation metadata scratch and unchanged output on failure",
+    "adapters": "NodeSharedBlockService uses genuine SharedArrayBuffer/Atomics; NodeSharedMemoryHost implements raw narrow CAS with exact validation",
+    "retention": "native mappings and scalar registry authority retain existing bounded engine lifetime; no managed pointers in mapped control/payload; no service finalizer, worker, realm, wait or thread API additions"
+  },
+  "tests": [
+    {
+      "kind": "TDD red",
+      "result": "6 expected missing-feature failures",
+      "log": ".tint-bootstrap/shared-atomic-backing-red-v1.log"
+    },
+    {
+      "kind": "focused authority/aliases/widths/grow/bounds/quotas/Word64/scratch/fixture capability closure plus existing service/storage regressions",
+      "result": "24 passed, 0 failed",
+      "log": ".tint-bootstrap/shared-atomic-backing-focused-v3.log"
+    },
+    {
+      "kind": "full Node suite",
+      "result": "3596 passed, 0 failed",
+      "log": ".tint-bootstrap/shared-atomic-backing-full-node-v1.log"
+    },
+    {
+      "kind": "complete self-host source checks/linked emission",
+      "result": "16 passed, 0 failed",
+      "log": ".tint-bootstrap/shared-atomic-backing-selfhost-v1.log"
+    },
+    {
+      "kind": "production build",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-atomic-backing-build-v3.log"
+    },
+    {
+      "kind": "test types",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-atomic-backing-test-types-v2.log"
+    },
+    {
+      "kind": "host types",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-atomic-backing-host-types-v1.log"
+    },
+    {
+      "kind": "boundaries",
+      "result": "passed; 57 portable packages",
+      "log": ".tint-bootstrap/shared-atomic-backing-boundaries-v1.log"
+    },
+    {
+      "kind": "workspace formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/shared-atomic-backing-workspace-format-v1.log"
+    },
+    {
+      "kind": "original base7-only native fixture build",
+      "result": "passed with its unchanged seven bindings; no unsigned CAS authority needed",
+      "log": ".tint-bootstrap/shared-atomic-backing-base7-build-v1.log"
+    },
+    {
+      "kind": "final debug native atomic facet matrix build only",
+      "result": "passed; exact before/after source identity equal",
+      "log": ".tint-bootstrap/shared-atomic-backing-fixture-build-v5.log"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "log": ".tint-bootstrap/shared-atomic-backing-build-v1.log",
+      "diagnosis": "exactOptionalPropertyTypes rejects explicitly undefined optional field unless its declared union includes undefined; corrected optional contract."
+    },
+    {
+      "log": ".tint-bootstrap/shared-atomic-backing-focused-v1.log",
+      "diagnosis": "Scratch test wrongly forbade caller reuse of its own output. Corrected test records internal metadata scratch and proves a new buffer per operation, distinct from caller output."
+    },
+    {
+      "log": ".tint-bootstrap/shared-atomic-backing-fixture-build-v1.log",
+      "diagnosis": "Native checker loses narrowing of captured optional atomicHost across location/metadata calls. Capture and guard a local authority immediately before leaf dispatch; service checks then pass."
+    },
+    {
+      "log": ".tint-bootstrap/shared-atomic-backing-fixture-build-v2.log",
+      "diagnosis": "Fixture loop variable width:number did not satisfy SharedUnsignedWidth at native checking. Expanded exact 1/2/4 literal cases without loosening the public contract."
+    }
+  ],
+  "nativeArtifact": {
+    "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-atomic-backing-v1-ZdeZiC/shared-atomic-backing-v1",
+    "sourceSnapshot": {
+      "sha256": "c2febdbf039693495b6cea406f97d661f4440245a8e146f42999492be87aec69",
+      "files": 505
+    },
+    "expectedExitStatus": 42,
+    "imageSha256": "7b8c0d37c6efb8cc4438d82e0ade80f3843a5a4a89fb27430cfbd612c0cef792",
+    "fixture": "tools/build-shared-atomic-backing-fixture.ts",
+    "fixtureSha256": "0054e089294374f1c5b5350290102349d610b3372cb29bc0c38db434cbfacf7f",
+    "buildOnly": true,
+    "debugSymbols": true,
+    "explicitTrustedBindingsOnly": true,
+    "semanticChecks": "base7-only facade absent facet; explicit create/attach authority, registry aliases/quotas/zero-length bounds; exact unsigned and Word64 CAS success/mismatch/equality/invalid guards; delayed moving-GC pressure",
+    "sourceBeforeAfterEqual": true
+  },
+  "limits": [
+    "No generated native process executed by this agent. Parent owns serial LLDB execution and immutable observation report.",
+    "Node host adapters and single-agent native fixture do not prove genuine multithreaded races, cross-realm shared heaps, hardware ordering or concurrent collector correctness.",
+    "No ordinary-object/Script Atomics semantics, default host permissions, catalog regeneration or frozen snapshot edits in this slice."
+  ]
+}

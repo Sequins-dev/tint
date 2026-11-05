@@ -1,0 +1,130 @@
+{
+  "kind": "native-language-reference-checkpoints",
+  "conformance": true,
+  "wholeSuite": false,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "needsTriage": true,
+  "results": [
+    {
+      "selection": "language/expressions/call",
+      "report": "docs/results/test262-language-call-tail-transfers-v1.json",
+      "totals": {
+        "total": 171,
+        "passed": 171,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/super",
+      "report": "docs/results/test262-language-super-reference-core-v1.json",
+      "totals": {
+        "total": 184,
+        "passed": 184,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/assignment",
+      "report": "docs/results/test262-language-assignment-reference-core-v1.json",
+      "totals": {
+        "total": 850,
+        "passed": 848,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9976470588235294
+      },
+      "nonPasses": [
+        {
+          "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+          "sha256": "0ee7a0193a4661f5f4bc50e6b8f19f937c60fc89d0ecde986a623a30bf19fd72",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": [
+              "propertyHelper.js"
+            ]
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "propertyHelper.js",
+              "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+            }
+          ],
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "Test262Error",
+            "message": "native Script threw"
+          },
+          "status": "fail",
+          "elapsedMs": 128094.65350000001,
+          "batch": 62
+        },
+        {
+          "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+          "sha256": "0ee7a0193a4661f5f4bc50e6b8f19f937c60fc89d0ecde986a623a30bf19fd72",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": [
+              "propertyHelper.js"
+            ]
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            },
+            {
+              "name": "propertyHelper.js",
+              "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+            }
+          ],
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "Test262Error",
+            "message": "native Script threw"
+          },
+          "status": "fail",
+          "elapsedMs": 128336.3862920003,
+          "batch": 62
+        }
+      ]
+    }
+  ]
+}

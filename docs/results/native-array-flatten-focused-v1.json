@@ -1,0 +1,13 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-array-flatten.ts",
+  "fixtureSha256": "1d1ba37600bbe7d60323fc343ef9bf5496c0eaed713819d2dcf6b93a2acd8657",
+  "runner": "tools/native-script-fixture.ts",
+  "runnerSha256": "6b3b36c30fa028d45b59d11ae44f74e03dcba486d3c46ac6a096645ad133bd52",
+  "cases": 5,
+  "passed": 5,
+  "nativeValidation": "Isolated LLDB-controlled native processes, expected exit 42; Node reference sources also completed.",
+  "scope": "flat/flatMap holes, depth, mapper ordering, species, abrupt completion and 1000 nested arrays without recursive native calls."
+}

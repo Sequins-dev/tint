@@ -1,0 +1,26 @@
+{
+  "kind": "native-run-interruption",
+  "createdAt": "2026-11-04T20:48:24.724Z",
+  "pid": 28307,
+  "quietCheckpoint": {
+    "pid": 28307,
+    "state": "between-variants"
+  },
+  "journal": "docs/results/test262-full-suite-native-v9.jsonl",
+  "journalSha256": "a38e8cc60b34b0eedd28f8b9d1e8ec381abe7b847ddafe2d60b188c1ba226909",
+  "sourceSnapshot": {
+    "sha256": "438d7748be1da9064d98fbb2f8d8640c1fa73bd9adf4ac43c73469d06d12e0f4",
+    "files": 506
+  },
+  "observedVariants": 10814,
+  "partialCounts": {
+    "pass": 9853,
+    "unsupported": 705,
+    "crash": 31,
+    "fail": 1,
+    "harness-error": 224
+  },
+  "reason": "Replace the old 506-file full-suite snapshot with the current 552-file compiler/runtime, including evalScript, indirect eval, ordinary Function fallback and validated caller-site plumbing. Preserve every older observation.",
+  "replacementReport": "docs/results/test262-full-suite-native-v10.json",
+  "wholeSuiteNativePassFraction": null
+}

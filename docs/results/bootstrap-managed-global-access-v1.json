@@ -1,0 +1,41 @@
+{
+  "kind": "native-self-hosting-checkpoint",
+  "sourceSnapshot": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "packages": 49,
+  "snapshot": ".tint-bootstrap/source-managed-global-access-v1",
+  "stage1": ".tint-bootstrap/stage1-managed-global-access-v1",
+  "stage2": ".tint-bootstrap/stage2-managed-global-access-v1",
+  "bytes": 61700770,
+  "sha256": "b1ac0504f8b2d4afc72ec1a333a504ce2184b2811ff40cc6a7f287870f68b9bb",
+  "nativeExitStatus": 0,
+  "initialStopVerified": true,
+  "byteIdentical": true,
+  "elapsedMs": 528060,
+  "launch": "debugserver-connected",
+  "relatedReports": [
+    "bootstrap-managed-global-access-local-attempt-v1.json"
+  ],
+  "debugSections": {
+    "stage1": {
+      "__debug_info": 1793047,
+      "__debug_line": 15794530
+    },
+    "stage2": {
+      "__debug_info": 1793047,
+      "__debug_line": 15794530
+    }
+  },
+  "dwarfVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "signatureVerified": [
+    "stage1",
+    "stage2"
+  ],
+  "log": ".tint-bootstrap/managed-global-access-selfbuild-connected-v2.log",
+  "scope": "Frozen 49-package/507-source snapshot verifies explicit managed global/property access compilation and typed indexed callback facades alongside the existing compiler and runtime composition. This is self-hosting correctness evidence, not Test262 conformance."
+}

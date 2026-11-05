@@ -1,0 +1,27 @@
+{
+  "kind": "runtime-provider-layout-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1a302ac3269a7654f57f647b4a23c72abf9e290bf188eb23f4ef127779e3179a",
+    "files": 537
+  },
+  "nativeLayout": "docs/results/native-runtime-layout-v1.json",
+  "nativeImportedArgument": "docs/results/native-function-entry-argument-v1.json",
+  "nodeScriptSurface": {
+    "test": "tools/script-runtime-surface.test.ts",
+    "providers": 41,
+    "slots": 355,
+    "physicalABIs": 43,
+    "log": ".tint-bootstrap/runtime-layout-abi-count-v1.log"
+  },
+  "workspaceGate": {
+    "tests": 3847,
+    "log": ".tint-bootstrap/runtime-layout-workspace-check-v1.log"
+  },
+  "scope": "Layout-only compilation derives every provider ABI from lowered functions without emitting or initializing that program. Directory encoding/publication remains version2. No Test262 passes or current fixed point are claimed.",
+  "doesNotCover": [
+    "B8 member-only signature imports introduced afterward",
+    "Directory v3 producer/reader integration",
+    "General eval or Function execution"
+  ]
+}

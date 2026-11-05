@@ -1,0 +1,19 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-html-dda.ts",
+  "fixtureSha256": "6413e847ec76038c1d38d41aae23605b4697a26272c8f45a9d1c4fa0ecd2642e",
+  "imageSha256": "996278d09a37b895775c342577f159f01dc8149fa4bc5d54db100bce6506df3f",
+  "cases": 1,
+  "diagnosticReason": "Prior case 0 failed LLDB attach before execution; original observation retained",
+  "passed": 1,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

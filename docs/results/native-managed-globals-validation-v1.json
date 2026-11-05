@@ -1,0 +1,48 @@
+{
+  "kind": "native-feature-validation",
+  "createdAt": "2026-11-03T09:42:31.106568+00:00",
+  "sourceSnapshot": {
+    "sha256": "7f8b12a5703eef464f018ccbf076cf3906df476c00a4adef3833c931e237f348",
+    "files": 492
+  },
+  "frozenToolchain": "frozen-node-toolchain-managed-globals-v1.json",
+  "scope": "Ordinary dynamic Function bodies returning one unbound global identifier, compiled through shared typed native pipeline",
+  "nativeFixtures": {
+    "total": 9,
+    "passed": 9,
+    "reports": [
+      "native-managed-globals-case-0-v2.json",
+      "native-managed-globals-case-1-v2.json",
+      "native-managed-globals-case-2-v2.json",
+      "native-managed-globals-case-3-v2.json",
+      "native-managed-globals-case-4-v2.json",
+      "native-managed-globals-case-5-v2.json",
+      "native-managed-globals-case-6-v2.json",
+      "native-managed-globals-case-7-v2.json",
+      "native-managed-globals-case-8-v2.json"
+    ]
+  },
+  "separateConformanceSelections": [
+    "test262-function-global-late-binding-native-v1.json",
+    "test262-function-global-missing-native-v1.json"
+  ],
+  "semantics": [
+    "fresh lookup observes creation/mutation/deletion",
+    "caller-local shadowing does not replace constructor-realm globals",
+    "global lexical TDZ and mutation",
+    "getter-thrown object identity",
+    "decoded Unicode identifier",
+    "formal shadows remain in the existing closed profile",
+    "foreign constructor realm and distinct new.target prototype"
+  ],
+  "workspaceGates": {
+    "tests": 3441,
+    "passed": 3441,
+    "log": "/tmp/tint-managed-globals-workspace-tests-v1.log",
+    "types": "passed (build/tests/host)",
+    "boundaries": "94 portable packages",
+    "formatting": "passed"
+  },
+  "earlierPreEntryObservation": "native-managed-globals-case-0-v1.json",
+  "limitations": "No general statements, multiple global dependencies, class bodies, parameter initializers or string eval. Async/generator global-reading bodies remain unsupported. The full Function family rerun is separate and incomplete at this checkpoint."
+}

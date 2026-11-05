@@ -1,0 +1,32 @@
+{
+  "kind": "retained-node-ownership-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "7f80d9d574d73af7010dabb64e192f42531214cd2aeb67291d42c8182ce33a89",
+    "files": 526
+  },
+  "selfBuild": "docs/results/bootstrap-retained-node-ownership-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-retained-node-ownership-compiler-v1.json",
+    "docs/results/native-retained-node-ownership-runtime-v1.json"
+  ],
+  "workspaceTests": 3786,
+  "bytes": 65492146,
+  "sha256": "fb25d396537f98630c7c0f96afb65df6864a81002a636af8bd930dd0454cfbde",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/retained-node-ownership-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/retained-node-ownership-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "Canonical contracts, physical layouts and digest",
+    "Managed publication and general eval/Function"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "kind": "native-focused-known-gap-checkpoints",
+  "conformance": true,
+  "wholeSuite": false,
+  "wholeFamily": false,
+  "compiler": "docs/results/module-await-assignment-native-compiler-acceptance-v1.json",
+  "limits": "Three variants across two narrow selections. Full assignment, for-of and module top-level-await reruns remain pending; do not replace their earlier full-group reports.",
+  "results": [
+    {
+      "report": "docs/results/test262-language-assignment-cover-name-fixed-v1.json",
+      "selection": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "sourceSnapshot": {
+        "sha256": "620076ef36c07bc72b97fec283efeb398d6e254c1b4513826364e9cf6d41d83a",
+        "files": 566
+      },
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-language-for-of-await-using-canary-v1.json",
+      "selection": "language/statements/for-of/head-await-using-fresh-binding-per-iteration.js",
+      "sourceSnapshot": {
+        "sha256": "620076ef36c07bc72b97fec283efeb398d6e254c1b4513826364e9cf6d41d83a",
+        "files": 566
+      },
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ]
+}

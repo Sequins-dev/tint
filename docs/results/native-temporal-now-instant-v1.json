@@ -1,0 +1,76 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "0a4cb8fa48346bf3e0c4ed63ea38412c939e0faa35f6e71d4021a83bf99bdcd6",
+      "files": 427
+    },
+    "imageSha256": "cd24ebc53b6dac0f8242069d86032236f161491cbd65e9c0744ecdb53f777114",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const before=Date.now(),a=Temporal.Now.instant(),b=Temporal.Now.instant.call(null,{valueOf(){throw 1;}}),after=Date.now();if(a===b||Object.getPrototypeOf(a)!==Temporal.Instant.prototype||a.epochMilliseconds<before||b.epochMilliseconds>after||a.epochNanoseconds!==BigInt(a.epochMilliseconds)*1000000n)throw 2;",
+        "sha256": "b8f90c78e32624d0a09a622d11240a67cee5948322afaf5855e63061f93b014d"
+      },
+      {
+        "index": 1,
+        "source": "const other=$262.createRealm().global;const result=other.Temporal.Now.instant.call(Temporal.Now);if(Object.getPrototypeOf(result)!==other.Temporal.Instant.prototype||result instanceof Temporal.Instant)throw 1;",
+        "sha256": "0b6d850f18c2af95a3a469ef9de85434566e396de81ae87f5f81bb43610b4ac5"
+      },
+      {
+        "index": 2,
+        "source": "for(const ms of [-8640000000000000,-1,0,1,8640000000000000]){const a=new Date(ms).toTemporalInstant(),b=Temporal.Instant.fromEpochMilliseconds(ms);if(a.epochNanoseconds!==b.epochNanoseconds||a.epochMilliseconds!==ms)throw 1;}",
+        "sha256": "2fb8bcc411ff760ac5ef3e317a40dadbf459241fb2a5416b4738807bf0a753d1"
+      },
+      {
+        "index": 3,
+        "source": "for(let i=0;i<2048;i++){const a=Temporal.Now.instant();if(a.epochNanoseconds!==BigInt(a.epochMilliseconds)*1000000n)throw 1;}",
+        "sha256": "9d1456a9a0a4b3c9e7ae6aa4745d6ead210222c01648ac5c2109b032955d184d"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "module-direct-eval-selfbuild-launch-analysis",
+  "conformance": false,
+  "observation": "docs/results/bootstrap-module-direct-eval-v1.json",
+  "confirmed": {
+    "initial": {
+      "stopped": false,
+      "pid": 0
+    },
+    "nativeCompilationStarted": false,
+    "connectionLogCreated": false,
+    "debugserverLogBytes": 0,
+    "privateStubAlive": false,
+    "signatureExitStatus": 0
+  },
+  "interpretation": "The debugger never established an inferior. This is pre-entry launch infrastructure evidence, not a compiler semantic failure or a fixed-point result. The exact cause is unproven.",
+  "next": "A separate launch-only control of the same signed frozen compiler with no source arguments, expected usage exit 64, a 300 s startup budget and remote protocol/process traces. No self-build is automatically retried."
+}

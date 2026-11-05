@@ -1,0 +1,37 @@
+{
+  "kind": "frozen-compiler-fixed-point",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "0f0e29f02bc3cf81a4cbeb78b33fd27a869cca4f544fe131d2d09763e413645e",
+    "files": 532
+  },
+  "baselineSource": {
+    "sha256": "3c5019a367795740f1b975abc5584d6286a177367863f75923a791f64b767416",
+    "files": 530
+  },
+  "sourcePolicy": "D5 frozen source with project heap default changed to3.75GiB; two unreachable newer files included to satisfy the Node bootstrap input catalog. Native compiler retains the frozen530-file catalog.",
+  "sourceAndBootstrapManagedBytes": 4026531840,
+  "selfBuild": "docs/results/bootstrap-compiler-capacity-v3.json",
+  "bytes": 67144146,
+  "sha256": "7813702e7259368491d6feaa6f03afe8d453b78d4ed538d6539b8ceb17148095",
+  "byteIdentical": true,
+  "smokeCompile": "docs/results/bootstrap-capacity-smoke-v1.json",
+  "smokeExecution": "docs/results/native-capacity-smoke-v1.json",
+  "smokeBytes": 2132578,
+  "smokeSha256": "f7ea508323a6a2e136feb1d2d28629aaa7471498a5a34cff1b684dfa640c1692",
+  "verification": {
+    "signature": ".tint-bootstrap/compiler-capacity-signature-v3.log",
+    "dwarf": ".tint-bootstrap/compiler-capacity-dwarf-v3.log",
+    "nonemptyDebugSections": ".tint-bootstrap/compiler-capacity-dwarf-sections-v3.log"
+  },
+  "covers": [
+    "Automatic managed directory publication and D5 reader frozen source",
+    "Native fixed point with matched3.75GiB bootstrap/output budgets",
+    "Stage2-produced smoke matching Node output and executing with expected42"
+  ],
+  "doesNotCover": [
+    "D6a/D6b/D6c source changes introduced after the frozen D5 source",
+    "Whole-suite Test262 behavior coverage"
+  ],
+  "previousCheckpoint": "docs/results/managed-surface-materialization-checkpoint-v1.json"
+}

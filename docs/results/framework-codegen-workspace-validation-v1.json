@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "scope": "AArch64 codegen ownership consolidation; no ABI/emission algorithm changes",
+  "sourceIdentity": {
+    "sha256": "c30fe21e192bfb77f08ad16d828e504e4cd55edd133828ed652255224ff9e6da",
+    "files": 494,
+    "importGrants": 452,
+    "packages": 72
+  },
+  "publicEntries": [
+    "@tint/codegen/aarch64/isa",
+    "@tint/codegen/aarch64/cell",
+    "@tint/codegen/aarch64/scalar",
+    "@tint/codegen/aarch64/barrier"
+  ],
+  "movedTestFiles": 17,
+  "movedFixtureHelpers": 1,
+  "newEntryGraphTests": 3,
+  "checks": [
+    {
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-build-v2.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-testtypes-v1.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.host.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-hosttypes-v1.log"
+    },
+    {
+      "command": "node --test tools/codegen-framework.test.ts packages/codegen/test/*.test.ts tools/selfhost-linked.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-focused-v2.log"
+    },
+    {
+      "command": "node --test packages/*/test/*.test.ts tools/*.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-alltests-v1.log"
+    },
+    {
+      "command": "node tools/check-boundaries.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-boundaries-v1.log"
+    },
+    {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check packages tools types *.json pnpm-workspace.yaml",
+      "exitCode": 0,
+      "log": "/tmp/tint-codegen-formatcheck-v2.log"
+    }
+  ],
+  "implementationParity": {
+    "baseline": ".tint-bootstrap/node-toolchain-abi-function-v2",
+    "files": 16,
+    "equalAfterOnlyImportRebindingAndFormatting": true,
+    "details": "/tmp/tint-codegen-implementation-parity-v1.json"
+  },
+  "testSummary": "\u2139 tests 3472\n\u2139 suites 0\n\u2139 pass 3472\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 17083.790125",
+  "nativeExecution": "not performed by this agent; parent owns frozen native validation",
+  "limitations": [
+    "Darwin host policy/context ABI remain in scalar implementation unchanged.",
+    "nativeSignatureTypeCode remains the ScalarType adapter; ABI/function constants stay data-only."
+  ],
+  "retainedDocs": [
+    "packages/codegen/isa.md",
+    "packages/codegen/cell.md",
+    "packages/codegen/scalar.md"
+  ],
+  "retainedFailedChecks": [
+    "/tmp/tint-codegen-build-v1.log",
+    "/tmp/tint-codegen-focused-v1.log",
+    "/tmp/tint-codegen-formatcheck-v1.log"
+  ]
+}

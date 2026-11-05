@@ -1,0 +1,15 @@
+{
+  "kind": "validation-gate-consolidation",
+  "conformance": false,
+  "stoppedWaitingController": {
+    "pid": 27467,
+    "command": "node .tint-bootstrap/run-managed-suspension-selfbuild-v1.mjs"
+  },
+  "evidence": "docs/results/engine-only-compiler-graph-agreement-v1.json",
+  "retainedCompilerGate": "docs/results/bootstrap-eval-private-v1.json",
+  "retainedEngineGates": [
+    "docs/results/native-managed-suspension-validation-v1.json",
+    "native async-body and finally fixtures after that"
+  ],
+  "reason": "Compiler graph source is byte-for-byte unchanged since the private-binder snapshot. Engine-only changes need native engine execution, not another identical standalone compiler fixed point. No native observation was dropped."
+}

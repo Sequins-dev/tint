@@ -1,0 +1,13 @@
+{
+  "kind": "bootstrap-host-build-attempt",
+  "snapshot": ".tint-bootstrap/source-named-time-zones-v1",
+  "stage1": null,
+  "nativeExecution": false,
+  "stage": "check",
+  "errors": [
+    "packages/scalar-lowering/src/index.ts:2747: parameter count does not match context",
+    "Workspace linked-check gate also found numeric length expressions incorrectly receiving array contextual types"
+  ],
+  "observations": "/tmp/tint-named-time-zones-bootstrap-v1.log",
+  "scope": "Failure before native emission. New numeric typed-array source overload required narrowing contextual typing to array literals and matching the existing callback arity contract. Frozen snapshot and original logs retained."
+}

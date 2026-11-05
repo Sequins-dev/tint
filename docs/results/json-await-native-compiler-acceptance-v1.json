@@ -1,0 +1,20 @@
+{
+  "kind": "native-compiler-feature-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "workspace": {
+    "tests": 4384,
+    "log": ".tint-bootstrap/await-chain-workspace-check-v1.log"
+  },
+  "nativeJSONHost": "docs/results/json-module-host-native-validation-v1.json",
+  "nativeAwaitChains": "docs/results/await-chain-native-validation-v1.json",
+  "nodeJSONAgreement": "docs/results/json-host-await-change-agreement-node-v1.json",
+  "nativeSelfBuild": "docs/results/bootstrap-json-await-chains-v1.json",
+  "artifactValidation": "docs/results/json-await-chains-selfbuild-artifact-validation-v1.json",
+  "scope": "Synthetic/JSON module runtime and import-attribute host factories, plus bounded nested-await continuation lowering. Native observations retain their source snapshots; eleven JSON prepared programs are byte-identical after the sole lowering change.",
+  "conformanceStatus": "Unchanged selection reruns pending. A subsequent bare-specifier resolver correction is tools-only and has its own native gate; compiler source is unchanged."
+}

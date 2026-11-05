@@ -1,0 +1,564 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v12-module-dynamic-import",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module variants use the captured dynamic-import runtime, checked referrer views, per-module import.meta and the sibling table loader. Native fixture syntax checks remain lazy at load. Script-root dynamic imports, JSON, attributes, top-level await and proposal phases remain unsupported.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-dynamic-import-v1/source-snapshot.json",
+  "frozenToolchainSha256": "f568e19314f10b9b94ce411832000d5afcb6703c71e761f736ff3dc447e38acb",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 7,
+        "kind": "execution",
+        "compileMs": 114230.595666,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 113700.697666,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/module-code/ambiguous-export-bindings",
+  "totals": {
+    "total": 10,
+    "passed": 9,
+    "failed": 0,
+    "unsupported": 1,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9
+  },
+  "observations": [
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named-as.js",
+      "sha256": "c452c5a92118f31ab760a99dbcbd2b5d99ab0821e912696e56d49f7d9e0bda4d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "error-export-from-named-1_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-export-from-named-2_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-export-from-named_FIXTURE.js",
+          "sha256": "345c8dd8431229e81d844d5aa06730e086feb5f1279dffa507adbba214b5ab02"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 125914.56620799999,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named.js",
+      "sha256": "84dd88f3b8763b876e6c3c9ea9002e96ac73408da42b57f71755e4f8c85c0be4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "error-export-from-named-1_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-export-from-named-2_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-export-from-named_FIXTURE.js",
+          "sha256": "345c8dd8431229e81d844d5aa06730e086feb5f1279dffa507adbba214b5ab02"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 126262.29770899999,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-import-named-as.js",
+      "sha256": "d11b12e97e194b58c509d49ecf108afb6e8286670f9497eeec8c0a57efd2fbf6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "error-import-named-1_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-import-named-2_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-import-named_FIXTURE.js",
+          "sha256": "d11dfe21d5ae49e9a0c0b6dcee6fb4db9c7e32b518f4b53d45d29c5376fc5a10"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 126498.29812499999,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-import-named.js",
+      "sha256": "bc41cd042f5cd3e7ed1e36f5bdf88055d39007e7b5a048ac0127705693dcc82a",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "error-import-named-1_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-import-named-2_FIXTURE.js",
+          "sha256": "9aa5fa497acfa81ac1193d3683793a04e534e27685e9a32440ae0ff41fa18b32"
+        },
+        {
+          "name": "error-import-named_FIXTURE.js",
+          "sha256": "d11dfe21d5ae49e9a0c0b6dcee6fb4db9c7e32b518f4b53d45d29c5376fc5a10"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 126736.8805,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/import-and-export-propagates-binding.js",
+      "sha256": "44d8ad8add9310a30b2fde6f35d6fb6293ec90668b20270c44f0fcf3a7efa8dd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "import-and-export-propagates-binding_FIXTURE.js",
+          "sha256": "f8c69435a3150fd7c5ac78ea45ae91452e9ab08163a2adec37d21badbe1a1290"
+        },
+        {
+          "name": "import-and-export-propagates-binding_export-from_FIXTURE.js",
+          "sha256": "7d98214a7ae54bff77a34973745ee08f25c50020eddf9fd6f3e1afa813f2b860"
+        },
+        {
+          "name": "import-and-export-propagates-binding_import-and-export_FIXTURE.js",
+          "sha256": "b20ec8a71f432be4f7970440225e69c9734fae030a27d16be8d44e2968ea9346"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126972.47150000001,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-export-star-as-from-and-import-star-as-and-export.js",
+      "sha256": "f5782faf95462f0c86a25933748f6d922eed70071a1ed5938a1f2d20a68562bf",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "namespace-empty-module_FIXTURE.js",
+          "sha256": "425ff42d9eaa5e52fdb0089d0c4c2fc1c439103ae4fb55ce371f1f2072b237db"
+        },
+        {
+          "name": "namespace-export-star-as-from-1_FIXTURE.js",
+          "sha256": "c5a114cec1e8fe73f012189ce917ef5d37efd35dcf5447b4bcb4e52a945aea02"
+        },
+        {
+          "name": "namespace-import-star-as-and-export-1_FIXTURE.js",
+          "sha256": "f559c4093e873a81c24a18b250d77bb11a907df89e202acaa0b8964373f1d7a6"
+        },
+        {
+          "name": "namespace-import-star-as-and-export-2_FIXTURE.js",
+          "sha256": "f559c4093e873a81c24a18b250d77bb11a907df89e202acaa0b8964373f1d7a6"
+        },
+        {
+          "name": "namespace-unambiguous-if-import-star-as-and-export.js",
+          "sha256": "4d8292c64d37b57dc249fc48a7a69d779ffdb5f2e3e61253b91cc8d01a316b85"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127208.136125,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-export-star-as-from.js",
+      "sha256": "6aa45c19ae5774bbc1dfa7484e116559a2d5966039907c0a04ce7fb73828d881",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "namespace-empty-module_FIXTURE.js",
+          "sha256": "425ff42d9eaa5e52fdb0089d0c4c2fc1c439103ae4fb55ce371f1f2072b237db"
+        },
+        {
+          "name": "namespace-export-star-as-from-1_FIXTURE.js",
+          "sha256": "c5a114cec1e8fe73f012189ce917ef5d37efd35dcf5447b4bcb4e52a945aea02"
+        },
+        {
+          "name": "namespace-export-star-as-from-2_FIXTURE.js",
+          "sha256": "c5a114cec1e8fe73f012189ce917ef5d37efd35dcf5447b4bcb4e52a945aea02"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127442.952958,
+      "batch": 0
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js",
+      "sha256": "262a7f1476e6ce7dafcc821f51ed091dda7ff092481fea419ef511711e54148d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "source-phase-imports",
+          "source-phase-imports-module-source"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "namespace-import-source-and-export-1_FIXTURE.js",
+          "sha256": "56a9c112c00e013c993beed9588e631baa574e035ad9a972be0baaeef6a9f44b"
+        },
+        {
+          "name": "namespace-import-source-and-export-2_FIXTURE.js",
+          "sha256": "56a9c112c00e013c993beed9588e631baa574e035ad9a972be0baaeef6a9f44b"
+        },
+        {
+          "name": "namespace-import-source-and-export-reexport_FIXTURE.js",
+          "sha256": "dae6a5e4580ee3c81aebdf3625fe306ffae627865ccf2aac67f80cf1c3b90b53"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "namespace-import-source-and-export-1_FIXTURE.js: {\"start\":128,\"end\":169,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 127441.91345800001
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-star-as-and-export.js",
+      "sha256": "4d8292c64d37b57dc249fc48a7a69d779ffdb5f2e3e61253b91cc8d01a316b85",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "namespace-empty-module_FIXTURE.js",
+          "sha256": "425ff42d9eaa5e52fdb0089d0c4c2fc1c439103ae4fb55ce371f1f2072b237db"
+        },
+        {
+          "name": "namespace-import-star-as-and-export-1_FIXTURE.js",
+          "sha256": "f559c4093e873a81c24a18b250d77bb11a907df89e202acaa0b8964373f1d7a6"
+        },
+        {
+          "name": "namespace-import-star-as-and-export-2_FIXTURE.js",
+          "sha256": "f559c4093e873a81c24a18b250d77bb11a907df89e202acaa0b8964373f1d7a6"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119406.56825000001,
+      "batch": 1
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/omitted-from-namespace.js",
+      "sha256": "47239d1ac289c855e372dcfd86e15ddaa57be453cec4d32cc1edc45e2f8217e1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "omitted-from-namespace-1_FIXTURE.js",
+          "sha256": "da063d7cea6c2ddfb33c462850ed97c90ade8d57bda9655debc8acc6d4cd63e2"
+        },
+        {
+          "name": "omitted-from-namespace-2_FIXTURE.js",
+          "sha256": "865336830a521eb03d82ef1579dba5fb7fb04fbc617fdba2259b90562c43364a"
+        },
+        {
+          "name": "omitted-from-namespace_FIXTURE.js",
+          "sha256": "dfdb499dcdedf15de650ad013f4ee0ce265ce58cc8a1cd23cedbd1778d91ae93"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121252.696042,
+      "batch": 1
+    }
+  ]
+}

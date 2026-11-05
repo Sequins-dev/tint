@@ -1,0 +1,32 @@
+{
+  "kind": "runtime-surface-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "6b07608ccbb045545dcda47949f7f0e19cad8f28507927a9d471dcd328c09dea",
+    "files": 523
+  },
+  "selfBuild": "docs/results/bootstrap-runtime-surface-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-runtime-surface-lowering-v1.json",
+    "docs/results/native-runtime-surface-script-v1.json"
+  ],
+  "workspaceTests": 3763,
+  "bytes": 64031426,
+  "sha256": "44aec8350721e4b2b80329c91a9c77839622b5ffa699a5d523abc413b044b19c",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/runtime-surface-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/runtime-surface-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Retained helper directory and descriptor identities",
+    "General managed Script publication",
+    "General eval and Function execution"
+  ]
+}

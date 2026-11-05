@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v1",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Modules, async execution, unverified parser rejections and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/function/name.js",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/expressions/function/name.js",
+      "sha256": "017c87887a8ccd8b50fa3faf5454cdb4f2951111782a1d32cadba99684a5febd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/harness/propertyHelper.js: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected ;\",\"start\":4814,\"end\":4816,\"position\":{\"line\":153,\"column\":16}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 9.442124999999976
+    },
+    {
+      "path": "language/expressions/function/name.js",
+      "sha256": "017c87887a8ccd8b50fa3faf5454cdb4f2951111782a1d32cadba99684a5febd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/harness/propertyHelper.js: {\"code\":\"SYNTAX_ERROR\",\"message\":\"expected ;\",\"start\":4814,\"end\":4816,\"position\":{\"line\":153,\"column\":16}}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5.369208000000015
+    }
+  ]
+}

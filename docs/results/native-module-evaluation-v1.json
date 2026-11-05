@@ -1,0 +1,23 @@
+{
+  "startedAt": "2026-11-05T02:21:45.212Z",
+  "containmentTimeoutMs": 300000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-module-evaluation-NJkg9I/module-evaluation",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-module-evaluation-NJkg9I/module-evaluation.source.ts",
+  "fixtureSha256": "22bc0cede077c3c6fe11062626ae5069916b44302362a51f6e3f6609beda57fd",
+  "imageSha256": "4e75496bd216fc11650bc302b842a41e78b95d74aaacc55f66112664eb6bf09d",
+  "sourceSnapshot": {
+    "sha256": "f3009b5f416063ad85e11d05900a6929b097d1ec31e51f511704d1ae797415a3",
+    "files": 559
+  },
+  "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-module-evaluation-NJkg9I/module-evaluation.manifest.json",
+  "debuggerLaunch": "debugserver-connected",
+  "debuggerStdio": "disabled",
+  "debuggerTracing": false,
+  "elapsedMs": 50400.548917,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: rver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3AF8qO/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-7LlOxv/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3AF8qO/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3AF8qO/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3AF8qO/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+  }
+}

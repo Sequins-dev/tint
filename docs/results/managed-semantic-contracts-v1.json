@@ -1,0 +1,24 @@
+{
+  "kind": "managed-semantic-contract-regressions",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "918b4e8d9fe9924a69078c8b206b909bbf1c968b35f6807a0cf8a7f1278dc5c0",
+    "files": 523
+  },
+  "nativeFixtures": [
+    "docs/results/native-managed-contracts-compiler-v1.json",
+    "docs/results/native-managed-contracts-runtime-v1.json"
+  ],
+  "workspaceTests": 3758,
+  "testLog": ".tint-bootstrap/managed-contract-workspace-tests-v1.log",
+  "formatLog": ".tint-bootstrap/managed-contract-final-format-v1.log",
+  "previousSelfBuild": "docs/results/managed-entry-checkpoint-v1.json",
+  "selfBuildMatchesThisSource": false,
+  "scope": "Exact recursive ordered contract comparison, explicit semantic membership planning, source/type-to-native remapping through pruning, native boolean Map/Set encodings, native compiler execution and AOT metadata inspection under GC.",
+  "remaining": [
+    "Physical directory integration and contract digest",
+    "Automatic helper retention and source selection",
+    "Function-flow/variance coverage beyond exact membership",
+    "General managed publication and eval execution"
+  ]
+}

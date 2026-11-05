@@ -1,0 +1,121 @@
+{
+  "kind": "native-module-direct-eval-validation",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "901ec69a234b3ddd94d1e5149ee7f59378fef76987569d3073b22f355e71473e",
+    "files": 566
+  },
+  "workspace": {
+    "tests": 4366,
+    "log": ".tint-bootstrap/module-direct-eval-workspace-check-v1.log"
+  },
+  "isolation": "One immutable host image reused; each selected case launches a fresh inferior. All launches serialized behind the language runner checkpoint.",
+  "gates": [
+    {
+      "kind": "context",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-context-v1.json"
+    },
+    {
+      "kind": "lowering",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-lowering-v1.json"
+    }
+  ],
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "eval retains Script grammar inside modules",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-0-v1.json"
+    },
+    {
+      "selectedCase": 1,
+      "name": "eval reads module locals and live imports without leaking strict vars",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-1-v1.json"
+    },
+    {
+      "selectedCase": 2,
+      "name": "hoisted source functions evaluate in their defining module",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-2-v1.json"
+    },
+    {
+      "selectedCase": 3,
+      "name": "module eval survives top-level suspension",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-3-v1.json"
+    },
+    {
+      "selectedCase": 4,
+      "name": "private method eval keeps its module site",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-4-v1.json"
+    },
+    {
+      "selectedCase": 5,
+      "name": "generator eval keeps the module environment after resume",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-5-v1.json"
+    },
+    {
+      "selectedCase": 6,
+      "name": "indirect eval stays global in module code",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-6-v1.json"
+    },
+    {
+      "selectedCase": 7,
+      "name": "module eval preserves TDZ errors and completion after initialization",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-module-direct-eval-host-case-7-v1.json"
+    }
+  ],
+  "compilerGate": "Pending combined frozen self-build; unchanged module Test262 selections not yet counted"
+}

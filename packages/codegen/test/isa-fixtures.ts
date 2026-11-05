@@ -1,0 +1,804 @@
+// Independent golden bytes: Homebrew LLVM 22.1.8 llvm-mc --triple=aarch64 --show-encoding.
+// See README for Arm reference provenance. This is test data, not encoder output.
+import type { Instruction } from "@tint/codegen/aarch64/isa";
+export interface Fixture {
+  readonly assembly: string;
+  readonly instruction: Instruction;
+  readonly bytes: readonly number[];
+}
+export const fixtures: readonly Fixture[] = [
+  {
+    assembly: "scvtf d0, x0",
+    instruction: { op: "scvtf-d-x", rd: 0, rn: 0 },
+    bytes: [0, 0, 98, 158],
+  },
+  {
+    assembly: "fcvtzs x0, d0",
+    instruction: { op: "fcvtzs-x-d", rd: 0, rn: 0 },
+    bytes: [0, 0, 120, 158],
+  },
+  {
+    assembly: "nop",
+    instruction: {
+      op: "nop",
+    },
+    bytes: [31, 32, 3, 213],
+  },
+  {
+    assembly: "movz x0, #42",
+    instruction: {
+      op: "movz",
+      width: 64,
+      rd: 0,
+      immediate: 42,
+      shift: 0,
+    },
+    bytes: [64, 5, 128, 210],
+  },
+  {
+    assembly: "movz w30, #65535, lsl #16",
+    instruction: {
+      op: "movz",
+      width: 32,
+      rd: 30,
+      immediate: 65535,
+      shift: 16,
+    },
+    bytes: [254, 255, 191, 82],
+  },
+  {
+    assembly: "movk x9, #4660, lsl #48",
+    instruction: {
+      op: "movk",
+      width: 64,
+      rd: 9,
+      immediate: 4660,
+      shift: 48,
+    },
+    bytes: [137, 70, 226, 242],
+  },
+  {
+    assembly: "movk wzr, #0",
+    instruction: {
+      op: "movk",
+      width: 32,
+      rd: "zr",
+      immediate: 0,
+      shift: 0,
+    },
+    bytes: [31, 0, 128, 114],
+  },
+  {
+    assembly: "add sp, sp, #32",
+    instruction: {
+      op: "add-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: 32,
+      shift: 0,
+      setFlags: false,
+    },
+    bytes: [255, 131, 0, 145],
+  },
+  {
+    assembly: "sub x29, sp, #4095, lsl #12",
+    instruction: {
+      op: "sub-imm",
+      width: 64,
+      rd: 29,
+      rn: "sp",
+      immediate: 4095,
+      shift: 12,
+      setFlags: false,
+    },
+    bytes: [253, 255, 127, 209],
+  },
+  {
+    assembly: "adds w1, w2, #7",
+    instruction: {
+      op: "add-imm",
+      width: 32,
+      rd: 1,
+      rn: 2,
+      immediate: 7,
+      shift: 0,
+      setFlags: true,
+    },
+    bytes: [65, 28, 0, 49],
+  },
+  {
+    assembly: "subs xzr, x0, #1",
+    instruction: {
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    },
+    bytes: [31, 4, 0, 241],
+  },
+  {
+    assembly: "add x0, x1, x2, lsl #3",
+    instruction: {
+      op: "add-reg",
+      width: 64,
+      rd: 0,
+      rn: 1,
+      rm: 2,
+      shift: "lsl",
+      amount: 3,
+      setFlags: false,
+    },
+    bytes: [32, 12, 2, 139],
+  },
+  {
+    assembly: "subs w3, w4, w5, asr #31",
+    instruction: {
+      op: "sub-reg",
+      width: 32,
+      rd: 3,
+      rn: 4,
+      rm: 5,
+      shift: "asr",
+      amount: 31,
+      setFlags: true,
+    },
+    bytes: [131, 124, 133, 107],
+  },
+  {
+    assembly: "adds xzr, xzr, x18, lsr #63",
+    instruction: {
+      op: "add-reg",
+      width: 64,
+      rd: "zr",
+      rn: "zr",
+      rm: 18,
+      shift: "lsr",
+      amount: 63,
+      setFlags: true,
+    },
+    bytes: [255, 255, 82, 171],
+  },
+  {
+    assembly: "ldr x16, [sp, #24]",
+    instruction: {
+      op: "ldr",
+      width: 64,
+      rt: 16,
+      rn: "sp",
+      offset: 24,
+    },
+    bytes: [240, 15, 64, 249],
+  },
+  {
+    assembly: "str w0, [x1, #16380]",
+    instruction: {
+      op: "str",
+      width: 32,
+      rt: 0,
+      rn: 1,
+      offset: 16380,
+    },
+    bytes: [32, 252, 63, 185],
+  },
+  {
+    assembly: "ldr wzr, [x30]",
+    instruction: {
+      op: "ldr",
+      width: 32,
+      rt: "zr",
+      rn: 30,
+      offset: 0,
+    },
+    bytes: [223, 3, 64, 185],
+  },
+  {
+    assembly: "str xzr, [x2, #32760]",
+    instruction: {
+      op: "str",
+      width: 64,
+      rt: "zr",
+      rn: 2,
+      offset: 32760,
+    },
+    bytes: [95, 252, 63, 249],
+  },
+  {
+    assembly: "stp x29, x30, [sp, #-16]!",
+    instruction: {
+      op: "stp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: -16,
+      mode: "pre",
+    },
+    bytes: [253, 123, 191, 169],
+  },
+  {
+    assembly: "ldp x29, x30, [sp], #16",
+    instruction: {
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: 16,
+      mode: "post",
+    },
+    bytes: [253, 123, 193, 168],
+  },
+  {
+    assembly: "stp w0, w1, [x2, #-256]",
+    instruction: {
+      op: "stp",
+      width: 32,
+      rt: 0,
+      rt2: 1,
+      rn: 2,
+      offset: -256,
+      mode: "offset",
+    },
+    bytes: [64, 4, 32, 41],
+  },
+  {
+    assembly: "ldp w3, w4, [x5, #252]!",
+    instruction: {
+      op: "ldp",
+      width: 32,
+      rt: 3,
+      rt2: 4,
+      rn: 5,
+      offset: 252,
+      mode: "pre",
+    },
+    bytes: [163, 144, 223, 41],
+  },
+  {
+    assembly: "stp x0, x0, [x1], #504",
+    instruction: {
+      op: "stp",
+      width: 64,
+      rt: 0,
+      rt2: 0,
+      rn: 1,
+      offset: 504,
+      mode: "post",
+    },
+    bytes: [32, 128, 159, 168],
+  },
+  {
+    assembly: "ldp x2, x3, [x2, #-512]",
+    instruction: {
+      op: "ldp",
+      width: 64,
+      rt: 2,
+      rt2: 3,
+      rn: 2,
+      offset: -512,
+      mode: "offset",
+    },
+    bytes: [66, 12, 96, 169],
+  },
+  {
+    assembly: "b #16",
+    instruction: {
+      op: "b",
+      displacement: 16,
+    },
+    bytes: [4, 0, 0, 20],
+  },
+  {
+    assembly: "bl #-4",
+    instruction: {
+      op: "bl",
+      displacement: -4,
+    },
+    bytes: [255, 255, 255, 151],
+  },
+  {
+    assembly: "b.eq #1048572",
+    instruction: {
+      op: "b.cond",
+      condition: "eq",
+      displacement: 1048572,
+    },
+    bytes: [224, 255, 127, 84],
+  },
+  {
+    assembly: "b.ne #-1048576",
+    instruction: {
+      op: "b.cond",
+      condition: "ne",
+      displacement: -1048576,
+    },
+    bytes: [1, 0, 128, 84],
+  },
+  {
+    assembly: "cbz w0, #8",
+    instruction: {
+      op: "cbz",
+      width: 32,
+      rt: 0,
+      displacement: 8,
+    },
+    bytes: [64, 0, 0, 52],
+  },
+  {
+    assembly: "cbnz xzr, #-8",
+    instruction: {
+      op: "cbnz",
+      width: 64,
+      rt: "zr",
+      displacement: -8,
+    },
+    bytes: [223, 255, 255, 181],
+  },
+  {
+    assembly: "br x16",
+    instruction: {
+      op: "br",
+      rn: 16,
+    },
+    bytes: [0, 2, 31, 214],
+  },
+  {
+    assembly: "blr x17",
+    instruction: {
+      op: "blr",
+      rn: 17,
+    },
+    bytes: [32, 2, 63, 214],
+  },
+  {
+    assembly: "ret x30",
+    instruction: {
+      op: "ret",
+      rn: 30,
+    },
+    bytes: [192, 3, 95, 214],
+  },
+  {
+    assembly: "ret x9",
+    instruction: {
+      op: "ret",
+      rn: 9,
+    },
+    bytes: [32, 1, 95, 214],
+  },
+  {
+    assembly: "fadd\td0, d1, d2",
+    instruction: { op: "fadd", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 40, 98, 30],
+  },
+  {
+    assembly: "fsub\td0, d1, d2",
+    instruction: { op: "fsub", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 56, 98, 30],
+  },
+  {
+    assembly: "fmul\td0, d1, d2",
+    instruction: { op: "fmul", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 8, 98, 30],
+  },
+  {
+    assembly: "fdiv\td0, d1, d2",
+    instruction: { op: "fdiv", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 24, 98, 30],
+  },
+  {
+    assembly: "fneg\td0, d1",
+    instruction: { op: "fneg", rd: 0, rn: 1 },
+    bytes: [32, 64, 97, 30],
+  },
+  {
+    assembly: "fcmp\td1, d2",
+    instruction: { op: "fcmp", rn: 1, rm: 2 },
+    bytes: [32, 32, 98, 30],
+  },
+  {
+    assembly: "fmov\tx9, d1",
+    instruction: { op: "fmov-x-d", rd: 9, rn: 1 },
+    bytes: [0x29, 0x00, 0x66, 0x9e],
+  },
+  {
+    assembly: "fmov\td1, x9",
+    instruction: { op: "fmov-d-x", rd: 1, rn: 9 },
+    bytes: [33, 1, 103, 158],
+  },
+  {
+    assembly: "ldr\td1, [sp, #24]",
+    instruction: { op: "ldr-d", rt: 1, rn: "sp", offset: 24 },
+    bytes: [225, 15, 64, 253],
+  },
+  {
+    assembly: "str\td2, [sp, #32]",
+    instruction: { op: "str-d", rt: 2, rn: "sp", offset: 32 },
+    bytes: [226, 19, 0, 253],
+  },
+  {
+    assembly: "cset\tw9, eq",
+    instruction: { op: "cset", rd: 9, condition: "eq" },
+    bytes: [233, 23, 159, 26],
+  },
+  {
+    assembly: "fcvtzs\tw0, d0",
+    instruction: { op: "fcvtzs-w-d", rd: 0, rn: 0 },
+    bytes: [0, 0, 120, 30],
+  },
+  {
+    assembly: "scvtf\td1, w0",
+    instruction: { op: "scvtf-d-w", rd: 1, rn: 0 },
+    bytes: [1, 0, 98, 30],
+  },
+  {
+    assembly: "mrs\tx9, FPCR",
+    instruction: { op: "mrs-fpcr", rt: 9 },
+    bytes: [9, 68, 59, 213],
+  },
+  {
+    assembly: "msr\tFPCR, x9",
+    instruction: { op: "msr-fpcr", rt: 9 },
+    bytes: [9, 68, 27, 213],
+  },
+  {
+    assembly: "fabs\td0, d1",
+    instruction: { op: "fabs", rd: 0, rn: 1 },
+    bytes: [32, 192, 96, 30],
+  },
+  {
+    assembly: "fmov\td2, d0",
+    instruction: { op: "fmov-d-d", rd: 2, rn: 0 },
+    bytes: [2, 64, 96, 30],
+  },
+  {
+    assembly: "ucvtf\td0, w9",
+    instruction: { op: "ucvtf-d-w", rd: 0, rn: 9 },
+    bytes: [32, 1, 99, 30],
+  },
+  {
+    assembly: "ubfx\tx10, x9, #52, #11",
+    instruction: { op: "ubfm", width: 64, rd: 10, rn: 9, immr: 52, imms: 62 },
+    bytes: [42, 249, 116, 211],
+  },
+  {
+    assembly: "ubfx\tx11, x9, #0, #52",
+    instruction: { op: "ubfm", width: 64, rd: 11, rn: 9, immr: 0, imms: 51 },
+    bytes: [43, 205, 64, 211],
+  },
+  {
+    assembly: "lsl\tw11, w9, w10",
+    instruction: { op: "lslv", width: 32, rd: 11, rn: 9, rm: 10 },
+    bytes: [43, 33, 202, 26],
+  },
+  {
+    assembly: "lsr\tx11, x11, x10",
+    instruction: { op: "lsrv", width: 64, rd: 11, rn: 11, rm: 10 },
+    bytes: [107, 37, 202, 154],
+  },
+  {
+    assembly: "asr\tw9, w13, w9",
+    instruction: { op: "asrv", width: 32, rd: 9, rn: 13, rm: 9 },
+    bytes: [169, 41, 201, 26],
+  },
+  {
+    assembly: "and\tw9, w13, w9",
+    instruction: { op: "and-reg", width: 32, rd: 9, rn: 13, rm: 9 },
+    bytes: [169, 1, 9, 10],
+  },
+  {
+    assembly: "orr\tx11, x11, x12",
+    instruction: { op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 },
+    bytes: [107, 1, 12, 170],
+  },
+  {
+    assembly: "eor\tw9, w13, w9",
+    instruction: { op: "eor-reg", width: 32, rd: 9, rn: 13, rm: 9 },
+    bytes: [169, 1, 9, 74],
+  },
+  {
+    assembly: "mvn\tw9, w9",
+    instruction: { op: "orn-reg", width: 32, rd: 9, rn: "zr", rm: 9 },
+    bytes: [233, 3, 41, 42],
+  },
+  // Baseline acquire/release and exclusive primitives, independently assembled.
+  {
+    assembly: "ldarb w0, [x0]",
+    instruction: {
+      op: "ldar",
+      width: 8,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 223, 8],
+  },
+  {
+    assembly: "ldarh w0, [x0]",
+    instruction: {
+      op: "ldar",
+      width: 16,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 223, 72],
+  },
+  {
+    assembly: "ldar w0, [x0]",
+    instruction: {
+      op: "ldar",
+      width: 32,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 223, 136],
+  },
+  {
+    assembly: "ldar x0, [x0]",
+    instruction: {
+      op: "ldar",
+      width: 64,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 223, 200],
+  },
+  {
+    assembly: "ldar xzr, [sp]",
+    instruction: {
+      op: "ldar",
+      width: 64,
+      rt: "zr",
+      rn: "sp",
+    },
+    bytes: [255, 255, 223, 200],
+  },
+  {
+    assembly: "stlrb w0, [x0]",
+    instruction: {
+      op: "stlr",
+      width: 8,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 159, 8],
+  },
+  {
+    assembly: "stlrh w0, [x0]",
+    instruction: {
+      op: "stlr",
+      width: 16,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 159, 72],
+  },
+  {
+    assembly: "stlr w0, [x0]",
+    instruction: {
+      op: "stlr",
+      width: 32,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 159, 136],
+  },
+  {
+    assembly: "stlr x0, [x0]",
+    instruction: {
+      op: "stlr",
+      width: 64,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 159, 200],
+  },
+  {
+    assembly: "stlr xzr, [sp]",
+    instruction: {
+      op: "stlr",
+      width: 64,
+      rt: "zr",
+      rn: "sp",
+    },
+    bytes: [255, 255, 159, 200],
+  },
+  {
+    assembly: "ldaxrb w0, [x0]",
+    instruction: {
+      op: "ldaxr",
+      width: 8,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 95, 8],
+  },
+  {
+    assembly: "ldaxrh w0, [x0]",
+    instruction: {
+      op: "ldaxr",
+      width: 16,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 95, 72],
+  },
+  {
+    assembly: "ldaxr w0, [x0]",
+    instruction: {
+      op: "ldaxr",
+      width: 32,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 95, 136],
+  },
+  {
+    assembly: "ldaxr x0, [x0]",
+    instruction: {
+      op: "ldaxr",
+      width: 64,
+      rt: 0,
+      rn: 0,
+    },
+    bytes: [0, 252, 95, 200],
+  },
+  {
+    assembly: "ldaxr xzr, [sp]",
+    instruction: {
+      op: "ldaxr",
+      width: 64,
+      rt: "zr",
+      rn: "sp",
+    },
+    bytes: [255, 255, 95, 200],
+  },
+  {
+    assembly: "stlxrb w1, w0, [x0]",
+    instruction: {
+      op: "stlxr",
+      width: 8,
+      rt: 0,
+      rn: 0,
+      rs: 1,
+    },
+    bytes: [0, 252, 1, 8],
+  },
+  {
+    assembly: "stlxrh w1, w0, [x0]",
+    instruction: {
+      op: "stlxr",
+      width: 16,
+      rt: 0,
+      rn: 0,
+      rs: 1,
+    },
+    bytes: [0, 252, 1, 72],
+  },
+  {
+    assembly: "stlxr w1, w0, [x0]",
+    instruction: {
+      op: "stlxr",
+      width: 32,
+      rt: 0,
+      rn: 0,
+      rs: 1,
+    },
+    bytes: [0, 252, 1, 136],
+  },
+  {
+    assembly: "stlxr w1, x0, [x0]",
+    instruction: {
+      op: "stlxr",
+      width: 64,
+      rt: 0,
+      rn: 0,
+      rs: 1,
+    },
+    bytes: [0, 252, 1, 200],
+  },
+  {
+    assembly: "stlxr w30, xzr, [sp]",
+    instruction: {
+      op: "stlxr",
+      width: 64,
+      rt: "zr",
+      rn: "sp",
+      rs: 30,
+    },
+    bytes: [255, 255, 30, 200],
+  },
+  {
+    assembly: "stlxrb wzr, w0, [sp]",
+    instruction: {
+      op: "stlxr",
+      width: 8,
+      rt: 0,
+      rn: "sp",
+      rs: "zr",
+    },
+    bytes: [224, 255, 31, 8],
+  },
+  {
+    assembly: "stlxrh wzr, w0, [sp]",
+    instruction: {
+      op: "stlxr",
+      width: 16,
+      rt: 0,
+      rn: "sp",
+      rs: "zr",
+    },
+    bytes: [224, 255, 31, 72],
+  },
+  {
+    assembly: "stlxr wzr, w0, [sp]",
+    instruction: {
+      op: "stlxr",
+      width: 32,
+      rt: 0,
+      rn: "sp",
+      rs: "zr",
+    },
+    bytes: [224, 255, 31, 136],
+  },
+  {
+    assembly: "stlxr wzr, x0, [sp]",
+    instruction: {
+      op: "stlxr",
+      width: 64,
+      rt: 0,
+      rn: "sp",
+      rs: "zr",
+    },
+    bytes: [224, 255, 31, 200],
+  },
+  {
+    assembly: "dmb ish",
+    instruction: {
+      op: "dmb",
+      domain: "ish",
+    },
+    bytes: [191, 59, 3, 213],
+  },
+  {
+    assembly: "dmb ishld",
+    instruction: {
+      op: "dmb",
+      domain: "ishld",
+    },
+    bytes: [191, 57, 3, 213],
+  },
+  {
+    assembly: "dmb ishst",
+    instruction: {
+      op: "dmb",
+      domain: "ishst",
+    },
+    bytes: [191, 58, 3, 213],
+  },
+  {
+    assembly: "dmb sy",
+    instruction: {
+      op: "dmb",
+      domain: "sy",
+    },
+    bytes: [191, 63, 3, 213],
+  },
+  {
+    assembly: "clrex",
+    instruction: {
+      op: "clrex",
+    },
+    bytes: [95, 63, 3, 213],
+  },
+  {
+    assembly: "yield",
+    instruction: {
+      op: "yield",
+    },
+    bytes: [63, 32, 3, 213],
+  },
+];

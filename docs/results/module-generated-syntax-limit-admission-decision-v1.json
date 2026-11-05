@@ -1,0 +1,11 @@
+{
+  "kind": "compiler-limit-admission-decision",
+  "conformance": false,
+  "retainedExperiment": "docs/results/module-await-nested-rewrite-checkpoint-v1.json",
+  "retainedResourceFailure": "docs/results/native-module-await-nested-rewrite-v1.json",
+  "reason": "Increasing only the rewriter bound admitted generated continuations beyond the unchanged checker bound. A later check failure could affect other variants sharing a native batch.",
+  "chosenBehavior": "Keep the shared 256-level bound. Catch only the known rewrite-limit signal at the module-lowering boundary and return ScriptLoweringResult LIMIT. Unsupported roots and fixtures are isolated during preparation; arbitrary invariants still propagate.",
+  "nativeGate": "docs/results/module-generated-syntax-limit-native-validation-v1.json",
+  "nodeBoundaryRegression": ".tint-bootstrap/module-generated-syntax-limit-tool-focused-v1.log",
+  "remainingCapability": "Flatten generated continuation nesting before supporting the three repeated-await loop cases. No native conformance pass is claimed for them."
+}

@@ -1,0 +1,327 @@
+{
+  "schemaVersion": 1,
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": ".",
+  "kind": "syntax-inventory-summary",
+  "files": 53751,
+  "variants": 103264,
+  "counts": {
+    "accepted": 60456,
+    "rejected": 13364,
+    "unsupported": 23864,
+    "negative-rejected-unverified": 5038,
+    "negative-accepted": 542
+  },
+  "modes": {
+    "sloppy": 52200,
+    "strict": 50191,
+    "raw": 30,
+    "module": 843
+  },
+  "fullInventory": {
+    "path": ".tint-bootstrap/test262-full-syntax-loop-bindings.json",
+    "sha256": "bf4f8cb8b7f5ec5820bc2c9d781f254034ed5bbdf5bf4c408d86bda6384181ea"
+  },
+  "positiveSyntaxGaps": [
+    {
+      "diagnostic": "expected identifier",
+      "variants": 7618,
+      "samples": [
+        "annexB/language/statements/const/dstr/array-pattern-emulates-undefined.js",
+        "annexB/language/statements/const/dstr/array-pattern-emulates-undefined.js",
+        "built-ins/Array/fromAsync/mapfn-async-iterable-sync.js"
+      ]
+    },
+    {
+      "diagnostic": "bigint-literals",
+      "variants": 4392,
+      "samples": [
+        "annexB/built-ins/escape/argument_bigint.js",
+        "annexB/built-ins/escape/argument_bigint.js",
+        "annexB/built-ins/unescape/argument_bigint.js"
+      ]
+    },
+    {
+      "diagnostic": "class async methods are not implemented",
+      "variants": 4288,
+      "samples": [
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression-static.js",
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression-static.js",
+        "built-ins/Function/prototype/toString/async-generator-method-class-expression.js"
+      ]
+    },
+    {
+      "diagnostic": "expected semicolon or supported statement boundary",
+      "variants": 4164,
+      "samples": [
+        "annexB/language/statements/for-await-of/iterator-close-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/statements/for-await-of/iterator-close-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/statements/labeled/function-declaration.js"
+      ]
+    },
+    {
+      "diagnostic": "generator class elements are not implemented",
+      "variants": 3082,
+      "samples": [
+        "built-ins/Set/prototype/difference/allows-set-like-class.js",
+        "built-ins/Set/prototype/difference/allows-set-like-class.js",
+        "built-ins/Set/prototype/intersection/allows-set-like-class.js"
+      ]
+    },
+    {
+      "diagnostic": "expected supported expression",
+      "variants": 2193,
+      "samples": [
+        "annexB/built-ins/RegExp/legacy-accessors/index/this-not-regexp-constructor.js",
+        "annexB/built-ins/RegExp/legacy-accessors/index/this-not-regexp-constructor.js",
+        "annexB/built-ins/RegExp/legacy-accessors/input/this-not-regexp-constructor.js"
+      ]
+    },
+    {
+      "diagnostic": "generator-functions",
+      "variants": 2175,
+      "samples": [
+        "annexB/language/expressions/yield/star-iterable-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/expressions/yield/star-iterable-return-emulates-undefined-throws-when-called.js",
+        "annexB/language/expressions/yield/star-iterable-throw-emulates-undefined-throws-when-called.js"
+      ]
+    },
+    {
+      "diagnostic": "identifier escape must be Unicode",
+      "variants": 1677,
+      "samples": [
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js",
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-class-range.js",
+        "annexB/built-ins/RegExp/RegExp-decimal-escape-not-capturing.js"
+      ]
+    },
+    {
+      "diagnostic": "expected )",
+      "variants": 1298,
+      "samples": [
+        "built-ins/Array/fromAsync/async-iterable-async-mapped-awaits-once.js",
+        "built-ins/Array/fromAsync/async-iterable-async-mapped-awaits-once.js",
+        "built-ins/Array/fromAsync/async-iterable-input-does-not-await-input.js"
+      ]
+    },
+    {
+      "diagnostic": "expected }",
+      "variants": 608,
+      "samples": [
+        "annexB/language/expressions/assignment/dstr/object-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignment/dstr/object-pattern-emulates-undefined.js",
+        "built-ins/AsyncDisposableStack/prototype/use/returns-value.js"
+      ]
+    },
+    {
+      "diagnostic": "import declarations require module source",
+      "variants": 531,
+      "samples": [
+        "language/expressions/dynamic-import/assign-expr-get-value-abrupt-throws.js",
+        "language/expressions/dynamic-import/assign-expr-get-value-abrupt-throws.js",
+        "language/expressions/dynamic-import/assignment-expression/unary-expr.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid assignment target",
+      "variants": 479,
+      "samples": [
+        "annexB/language/expressions/assignment/dstr/array-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignment/dstr/array-pattern-emulates-undefined.js",
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-compound-assignment.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ;",
+      "variants": 450,
+      "samples": [
+        "annexB/language/expressions/assignmenttargettype/callexpression-as-for-of-lhs.js",
+        "annexB/language/statements/for-in/nonstrict-initializer.js",
+        "built-ins/Proxy/enumerate/removed-does-not-trigger.js"
+      ]
+    },
+    {
+      "diagnostic": "statement form not implemented",
+      "variants": 369,
+      "samples": [
+        "built-ins/Proxy/has/call-with.js",
+        "built-ins/Proxy/has/null-handler-using-with.js",
+        "built-ins/Proxy/has/return-false-target-not-extensible-using-with.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ]",
+      "variants": 208,
+      "samples": [
+        "built-ins/Temporal/PlainMonthDay/from/fields-object.js",
+        "built-ins/Temporal/PlainMonthDay/from/fields-object.js",
+        "intl402/ListFormat/constructor/constructor/locales-valid.js"
+      ]
+    },
+    {
+      "diagnostic": "function declaration requires a block",
+      "variants": 182,
+      "samples": [
+        "annexB/language/function-code/if-decl-else-decl-a-func-block-scoping.js",
+        "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-no-init.js",
+        "annexB/language/function-code/if-decl-else-decl-a-func-existing-block-fn-update.js"
+      ]
+    },
+    {
+      "diagnostic": "expected ,",
+      "variants": 88,
+      "samples": [
+        "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+        "language/import/import-defer/deferred-namespace-object/identity.js",
+        "language/import/import-defer/deferred-namespace-object/json-module.js"
+      ]
+    },
+    {
+      "diagnostic": "unsupported export form",
+      "variants": 82,
+      "samples": [
+        "language/expressions/class/elements/class-name-static-initializer-default-export.js",
+        "language/expressions/dynamic-import/eval-export-dflt-cls-anon.js",
+        "language/expressions/dynamic-import/eval-export-dflt-cls-name-meth.js"
+      ]
+    },
+    {
+      "diagnostic": "expected of",
+      "variants": 64,
+      "samples": [
+        "language/statements/for/dstr/const-ary-init-iter-close.js",
+        "language/statements/for/dstr/const-ary-init-iter-close.js",
+        "language/statements/for/dstr/const-ary-init-iter-get-err-array-prototype.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid escaped identifier character",
+      "variants": 54,
+      "samples": [
+        "built-ins/RegExp/S15.10.2.10_A4.1_T1.js",
+        "built-ins/RegExp/S15.10.2.10_A4.1_T1.js",
+        "built-ins/RegExp/named-groups/non-unicode-property-names-valid.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid character",
+      "variants": 46,
+      "samples": [
+        "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+        "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+        "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js"
+      ]
+    },
+    {
+      "diagnostic": "expected (",
+      "variants": 12,
+      "samples": [
+        "language/module-code/top-level-await/syntax/for-await-await-expr-array-literal.js",
+        "language/module-code/top-level-await/syntax/for-await-await-expr-func-expression.js",
+        "language/module-code/top-level-await/syntax/for-await-await-expr-identifier.js"
+      ]
+    },
+    {
+      "diagnostic": "lexical declaration requires a block",
+      "variants": 10,
+      "samples": [
+        "language/statements/for/let-block-with-newline.js",
+        "language/statements/for/let-identifier-with-newline.js",
+        "language/statements/for-in/let-block-with-newline.js"
+      ]
+    },
+    {
+      "diagnostic": "imports must be top-level",
+      "variants": 8,
+      "samples": [
+        "language/expressions/dynamic-import/catch/nested-arrow-import-catch-eval-script-code-target.js",
+        "language/expressions/dynamic-import/catch/nested-block-import-catch-eval-script-code-target.js",
+        "language/expressions/dynamic-import/catch/nested-do-while-eval-script-code-target.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid or unsupported numeric suffix",
+      "variants": 6,
+      "samples": [
+        "annexB/built-ins/RegExp/RegExp-control-escape-russian-letter.js",
+        "annexB/built-ins/RegExp/RegExp-control-escape-russian-letter.js",
+        "annexB/built-ins/RegExp/RegExp-invalid-control-escape-character-class.js"
+      ]
+    },
+    {
+      "diagnostic": "legacy numeric escapes are not permitted in modules",
+      "variants": 6,
+      "samples": [
+        "annexB/language/expressions/template-literal/legacy-octal-escape-sequence-non-strict.js",
+        "language/literals/string/legacy-non-octal-escape-sequence-8-non-strict.js",
+        "language/literals/string/legacy-non-octal-escape-sequence-9-non-strict.js"
+      ]
+    },
+    {
+      "diagnostic": "star export requires a source module",
+      "variants": 6,
+      "samples": [
+        "language/module-code/eval-rqstd-once.js",
+        "language/module-code/eval-rqstd-order.js",
+        "language/module-code/eval-self-once.js"
+      ]
+    },
+    {
+      "diagnostic": "private identifier requires an identifier name",
+      "variants": 4,
+      "samples": [
+        "built-ins/RegExp/lookBehind/start-of-line.js",
+        "built-ins/RegExp/lookBehind/start-of-line.js",
+        "language/identifiers/start-unicode-17.0.0-class.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid update target",
+      "variants": 2,
+      "samples": [
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-postfix-update.js",
+        "annexB/language/expressions/assignmenttargettype/callexpression-in-prefix-update.js"
+      ]
+    },
+    {
+      "diagnostic": "unterminated string",
+      "variants": 2,
+      "samples": [
+        "built-ins/RegExp/S15.10.2.7_A4_T1.js",
+        "built-ins/RegExp/S15.10.2.7_A4_T1.js"
+      ]
+    },
+    {
+      "diagnostic": "duplicate prototype setter",
+      "variants": 2,
+      "samples": [
+        "language/expressions/assignment/destructuring/obj-prop-__proto__dup.js",
+        "language/expressions/assignment/destructuring/obj-prop-__proto__dup.js"
+      ]
+    },
+    {
+      "diagnostic": "legacy leading-zero numbers are not supported",
+      "variants": 2,
+      "samples": [
+        "language/literals/numeric/legacy-octal-integer.js",
+        "language/literals/numeric/non-octal-decimal-integer.js"
+      ]
+    },
+    {
+      "diagnostic": "invalid for-in assignment target",
+      "variants": 1,
+      "samples": [
+        "annexB/language/expressions/assignmenttargettype/callexpression-as-for-in-lhs.js"
+      ]
+    }
+  ],
+  "comparison": {
+    "previous": "test262-full-syntax-summary-v19.json",
+    "newlyAccepted": 324,
+    "formerlyAcceptedLost": 0,
+    "newlyParsedNegative": 0
+  }
+}

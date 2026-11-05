@@ -1,0 +1,20 @@
+{
+  "kind": "language-module-first-blocker",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+    "files": 566
+  },
+  "path": "language/statements/for-of/head-await-using-fresh-binding-per-iteration.js",
+  "sha256": "33beffff5aac61f577496deaa9868cae956454f110aa7f257d08c0013212bd43",
+  "variant": "module",
+  "moduleHostPreparation": {
+    "ok": false,
+    "outcome": {
+      "kind": "unsupported",
+      "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/statements/for-of/head-await-using-fresh-binding-per-iteration.js: {\"start\":545,\"end\":627,\"code\":\"UNSUPPORTED\",\"message\":\"top-level await requires HOST-ESM M4\"}"
+    }
+  },
+  "dependency": "HOST-ESM top-level await; await-using disposal is suspending module execution"
+}

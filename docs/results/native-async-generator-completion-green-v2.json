@@ -1,0 +1,117 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "mode": "debugserver-connected",
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "8be0429ecf2041c99b15741238a1144c2e9476ca41bdf6e3c96db7699a5f8341",
+      "files": 446
+    },
+    "imageSha256": "0aa394b2c33154b26358ccafd4f5ab6fbc6445ec50fe14dc9b05d5f00752a3fa",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor;for(const args of [[\"await 1;\"],[\"x\",\"yield x;\"],[\"{x}\",\"y=1\",\"...rest\",\"yield missingGlobal;\"]]){const f=AsyncGeneratorFunction(...args);if(f.name!==\"anonymous\"||Object.getPrototypeOf(f)!==AsyncGeneratorFunction.prototype||!f.hasOwnProperty(\"prototype\"))throw 1;}if(AsyncGeneratorFunction(\"{x}\",\"y=1\",\"yield 1;\").length!==1)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "13cdbef4a6fd8403783512525b449f1834693159fdf983bf675c5ee5103bbad4"
+      },
+      {
+        "index": 1,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"value\",\"yield value;\");let count=0;const input={then(resolve){count++;resolve(42);}},g=f(19);if(g[Symbol.asyncIterator]()!==g||count!==0)throw 1;const pending=g.return(input);if(count!==0)throw 2;const result=await pending;if(result.value!==42||!result.done||count!==1)throw 3;const next=await g.next();if(next.value!==undefined||!next.done)throw 4;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "a016dc1d429a4e8d5118174a2cb02bf7fbfbe3e6b7961cedd61255925e3c498f"
+      },
+      {
+        "index": 2,
+        "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"yield missingGlobal;\");const marker={};let caught;try{await f().throw(marker);}catch(e){caught=e;}if(caught!==marker)throw 1;let construct=false;try{new f();}catch(e){construct=e instanceof TypeError;}if(!construct)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "84a9eb593632d38cb440055a69e86d7f1cfdbb3523d6721c5fa8030aba5bb326"
+      },
+      {
+        "index": 3,
+        "source": "(async()=>{const other=$262.createRealm().global,target=other.Function(\"\");target.prototype=null;const AsyncGeneratorFunction=(async function*(){}).constructor,f=Reflect.construct(AsyncGeneratorFunction,[\"yield missingGlobal;\"],target),prototype=Object.getPrototypeOf(f);if(prototype===AsyncGeneratorFunction.prototype||Object.getPrototypeOf(prototype)!==other.Function.prototype)throw 1;const result=await f().return(42);if(result.value!==42||!result.done)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "2d3bdf106d6d1472861d2269a8f2c9aebc700d6191204f4d59ec140df65f475f"
+      },
+      {
+        "index": 4,
+        "source": "(async()=>{const C=(async function*(){}).constructor,events=[];C(\"\")().next().then(r=>{if(r.value!==undefined||!r.done)throw 1;events.push(\"empty\");});C(\"return;\")().next().then(r=>{if(r.value!==undefined||!r.done)throw 2;events.push(\"bare\");});C(\"return undefined;\")().next().then(r=>{if(r.value!==undefined||!r.done)throw 4;events.push(\"return\");});Promise.resolve().then(()=>events.push(\"promise\"));await Promise.resolve();await Promise.resolve();if(events.join(\",\")!==\"empty,bare,promise,return\")throw 3;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "4eb12522965afd628082892ce7bc01e574ac060a215ba391b9cb319562a2b68e"
+      },
+      {
+        "index": 5,
+        "source": "(async()=>{const C=(async function*(){}).constructor,f=C(\"value\",\"return value;\");let called=0;const g=f({then(resolve){called++;resolve(42);}});if(called!==0)throw 1;const pending=g.next();if(called!==0)throw 2;const result=await pending;if(result.value!==42||!result.done||called!==1)throw 3;for(const value of [null,Symbol(),0n,{}]){const r=await f(value).next();if(r.value!==value||!r.done)throw 4;}const marker={};let caught;try{await f({get then(){throw marker;}}).next();}catch(e){caught=e;}if(caught!==marker)throw 5;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+        "sha256": "d750baf6d350852b5c06e1d104325daeec593f95df983b30aca6801511ed1b24"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "expected": "completed",
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7f8o6b/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"0\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UsB5rD/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7f8o6b/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7f8o6b/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7f8o6b/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "index": 1,
+      "expected": "completed",
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hiuTYj/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"1\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UsB5rD/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hiuTYj/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hiuTYj/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hiuTYj/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "index": 2,
+      "expected": "completed",
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pXxXip/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"2\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UsB5rD/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pXxXip/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pXxXip/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pXxXip/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "index": 3,
+      "expected": "completed",
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hn6oet/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"3\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UsB5rD/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hn6oet/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hn6oet/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hn6oet/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "index": 4,
+      "expected": "completed",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "expected": "completed",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

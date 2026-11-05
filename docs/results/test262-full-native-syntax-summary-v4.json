@@ -1,0 +1,35 @@
+{
+  "kind": "native-syntax-validation",
+  "conformance": false,
+  "testSourcesExecuted": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": ".",
+  "target": "macos-arm64",
+  "variants": 103264,
+  "counts": {
+    "accepted": 94565,
+    "negative-rejected": 8699
+  },
+  "nativeExitStatus": 42,
+  "resources": {
+    "managedBytes": 3221225472,
+    "allocationCapacity": 100663296,
+    "rootCapacity": 1048576,
+    "stackBytes": 268435456
+  },
+  "scope": "Every pinned variant parsed and checked for declaration/context early errors by one native executable. Sources are data and never evaluated. This measures syntax coverage for the pinned population, not behavior/API conformance.",
+  "fullReport": {
+    "path": ".tint-bootstrap/native-syntax-labelled-v4/results.json",
+    "sha256": "d63606348d91d93f7b32ece7515047c620c6b96a6023ae7e799d08773e01884a"
+  },
+  "nativeImage": {
+    "path": ".tint-bootstrap/native-syntax-labelled-v4/parser",
+    "sha256": "4f8d728a1423718c1e0ffd88293e2cdfc690885e64c6d40345b13a6db62a70df"
+  },
+  "earlierAttempts": [
+    "docs/results/test262-full-native-syntax-incomplete-v1.json",
+    "docs/results/test262-full-native-syntax-incomplete-v2.json"
+  ],
+  "resourceCorrections": "The first fixture stack was 1 MiB and overflowed on 32 nested functions. The second fixture heap was 256 MiB and trapped while building the 3.2 MB Unicode-table AST. Both focused cases pass with the standard compiler-host resources used here."
+}

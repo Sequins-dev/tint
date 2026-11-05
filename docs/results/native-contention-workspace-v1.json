@@ -1,0 +1,190 @@
+{
+  "schema": "tint-native-contention-t1-validation-v1",
+  "status": "build-only-and-node-gates-pass-native-execution-pending-parent",
+  "sourceSnapshot": {
+    "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+    "files": 505
+  },
+  "scope": "Fixture-only TS-generated AArch64/Mach-O two-thread contention; no portable package, encoder, Script API, runtime context, job, waiter, default grant or catalog edits.",
+  "files": [
+    "tools/native-contention-fixture.ts",
+    "tools/native-contention-leaf-audit.ts",
+    "tools/native-contention-machine.ts",
+    "tools/native-contention.test.ts",
+    "tools/build-native-contention-fixture.ts"
+  ],
+  "nativeArtifacts": [
+    {
+      "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u8",
+      "metadata": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u8.build.json",
+      "expectedExitStatus": 42,
+      "imageSha256": "eca81cf443ff705989f9719ae37ff177ea95f0b141f28a49d406e38053d14301",
+      "imageBytes": 50478,
+      "sourceSnapshot": {
+        "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+        "files": 505
+      },
+      "codeSha256": "77652ac0c9369db91e9a2668417c2fea551c1189b293aadc477e42dfdcd75423",
+      "width": 1
+    },
+    {
+      "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u16",
+      "metadata": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u16.build.json",
+      "expectedExitStatus": 42,
+      "imageSha256": "7c5f4e1e51b6e5d11936d0607430e0399549239a0870ce9690ca79ad8a5ac820",
+      "imageBytes": 50479,
+      "sourceSnapshot": {
+        "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+        "files": 505
+      },
+      "codeSha256": "38a5781d20ba68e4e894f1dd151276283ea14744e05270958bf282a765c27049",
+      "width": 2
+    },
+    {
+      "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u32",
+      "metadata": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v1/contention-u32.build.json",
+      "expectedExitStatus": 42,
+      "imageSha256": "0da18e4e97262ecd44639f72e5aec6435e73bf5458dfad719f4dcbdc008e0217",
+      "imageBytes": 50479,
+      "sourceSnapshot": {
+        "sha256": "8e925d20a4fea2fd3cb05d945e5be593b2ff7a5da72f6115aa20b507fadc5a95",
+        "files": 505
+      },
+      "codeSha256": "e6db3bc74736dff697accfc3a5ba765cd40a74aa7baf3292871483116d27b4d4",
+      "width": 4
+    }
+  ],
+  "sourceFreeze": {
+    "workspace": ".tint-bootstrap/native-contention-artifacts-v1/workspace.sources.json",
+    "toolSources": ".tint-bootstrap/native-contention-artifacts-v1/tools/",
+    "manifest": ".tint-bootstrap/native-contention-artifacts-v1/manifest.json",
+    "beforeAfterIdentityEqual": true
+  },
+  "abiEvidence": {
+    "sdk": {
+      "root": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "version": "26.2",
+      "files": [
+        {
+          "path": "SDKSettings.json",
+          "sha256": "95882a9cea02396e76f3e406a5728269b2a1a11bcd241430a84c9e63d09a6cd3"
+        },
+        {
+          "path": "usr/include/pthread/pthread.h",
+          "sha256": "9d621c730d1d96b600893b0e3e4c45822a24d565e7b6b166973c41a6a2eb02e7"
+        },
+        {
+          "path": "usr/include/sys/_pthread/_pthread_types.h",
+          "sha256": "741433612525badf767d48b1924d4c7ba564ccc5c1bab5cb7045c238850fa86b"
+        }
+      ]
+    },
+    "platform": {
+      "main": "ordinary platform main ABI; argc/argv ignored;96-byte16-aligned save frame; x19..x29/x30 restored",
+      "create": "x0=&raw pthread_t, x1=NULL attrs, x2=PC-relative generated worker bridge, x3=scalar record; w0 int status",
+      "worker": "x0 void* record on pthread-provided stack, return x0 null success/(void*)1 failure; no Tint context/function/general-value ABI",
+      "join": "x0 raw opaque pthread_t, x1=&raw void* result, w0 int status; no FP/integer boxing of handles",
+      "calleeSaved": "x19..x29 and original x30/SP restored; x18 and d8..d15 never touched"
+    },
+    "helper": {
+      "construction": "Public bindHostOperations verifies explicit six-number shared-compare-exchange-unsigned binding; public emitModule returns one NativeHelper with that kind, bounded offset/byteLength, no imports/managed imports. Public wrapper signature is six FP number parameters with no stack overflow slots; that wrapper is deliberately NOT used as a pthread entry.",
+      "bridge": "Generated worker supplies raw x0..x5 according to the helper contract. Byte audit verifies arg moves x3→x8(width),x4→x14(expected),x5→x13(replacement), payload address x10=x0+x2, and observed x11→x0 result.",
+      "audit": {
+        "bytes": 328,
+        "instructions": 82,
+        "internalBranches": 23,
+        "widths": [
+          1,
+          2,
+          4
+        ],
+        "contextAccesses": 0,
+        "externalRelocations": 0,
+        "rawArguments": "x0=base,x1=extent,x2=offset,x3=width,x4=expected,x5=replacement; x0=observed or -1",
+        "preserved": "x16..x29 and FP/SIMD; x0..x15 and flags clobbered",
+        "memory": "only LDAXR/STLXR payload accesses through x10=base+offset; no literal loads, stack/context/GC/managed memory accesses"
+      },
+      "sha256": "e60d0444598d8f34212b930d22f60e82153a8ece772c67de92acec7ef2efd05c",
+      "negativeAuditTests": "Reject out-of-range branch, BL call and ordinary context-like memory load at offset72."
+    }
+  },
+  "protocol": {
+    "control": "one zero-initialized16KiB mmap; scalar records, raw thread/result words, start/abort/ready/loaded flags, counter and neighboring canaries",
+    "contention": "controller waits for two ready flags; release start; each worker acquire-loads initial0 and publishes loaded; each waits for peer loaded before CAS. At least one semantic CAS mismatch is required for exit42.",
+    "work": "1000 successful increments per worker; actual existing width-aware CAS leaf; modular byte/halfword counter; bounded spin/mismatch budgets; both thread return/status/completed counts and adjacent bytes checked",
+    "cleanup": "partial create failure publishes abort/start and joins every created worker; successful joins precede munmap; join failure retains mapping to process exit; explicit1..10 failure exits"
+  },
+  "gates": [
+    {
+      "kind": "TDD missing-feature red",
+      "result": "3 expected failures before fixture existed",
+      "log": ".tint-bootstrap/native-contention-red-v1.log"
+    },
+    {
+      "kind": "leaf-audit red",
+      "result": "new audit test failed before audit implementation",
+      "log": ".tint-bootstrap/native-contention-audit-red-v1.log"
+    },
+    {
+      "kind": "focused ABI/model/audit/abort/policy checks",
+      "result": "6 passed,0 failed",
+      "log": ".tint-bootstrap/native-contention-focused-v7.log"
+    },
+    {
+      "kind": "full Node suite",
+      "result": "3630 passed,0 failed",
+      "log": ".tint-bootstrap/native-contention-full-node-v1.log"
+    },
+    {
+      "kind": "production build types",
+      "result": "passed",
+      "log": ".tint-bootstrap/native-contention-build-types-v1.log"
+    },
+    {
+      "kind": "test types",
+      "result": "passed",
+      "log": ".tint-bootstrap/native-contention-test-types-v3.log"
+    },
+    {
+      "kind": "host types",
+      "result": "passed",
+      "log": ".tint-bootstrap/native-contention-host-types-v1.log"
+    },
+    {
+      "kind": "boundaries",
+      "result": "passed,52 portable packages",
+      "log": ".tint-bootstrap/native-contention-boundaries-v1.log"
+    },
+    {
+      "kind": "workspace formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/native-contention-workspace-format-v1.log"
+    },
+    {
+      "kind": "three native image builds only",
+      "result": "passed; same frozen source/tooling and expected42; no native execution",
+      "log": ".tint-bootstrap/native-contention-build-v1.log"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "log": ".tint-bootstrap/native-contention-focused-v1.log",
+      "diagnosis": "Encoder correctly rejected fixture add-immediate16384 with shift0. Encode4 shifted12 instead; no encoder change."
+    },
+    {
+      "log": ".tint-bootstrap/native-contention-focused-v3.log",
+      "diagnosis": "Fail-closed leaf verifier initially omitted non-flag SUB-register guard instruction; added the existing integer-only form to its whitelist."
+    },
+    {
+      "log": ".tint-bootstrap/native-contention-focused-v5.log",
+      "diagnosis": "New abort regression caught fixture compareImm overwriting x9 when x9 itself was compared. Use a distinct scratch; this fixes both worker abort checks and affected controller guards before any native build."
+    }
+  ],
+  "limits": [
+    "No generated native binary has been launched by this agent. Root must verify stopped-at-entry and actual exit42 for each image under serial LLDB containment.",
+    "The cooperative model tests the generated worker bridge and CAS call contract, not hardware weak memory, native pthread behavior or the copied exclusive loop; the latter retains existing shared-leaf regression coverage.",
+    "These fixtures do not implement wait/notify, Script agents, shared moving heaps or concurrent GC.",
+    "OS pthread_create/join failures have cleanup paths but were not fault-injected natively. pthread_join is not timed; independent debugger/process containment remains required.",
+    "Finite worker budgets can fail on an excessively stalled system; failures must be retained, not retried away. CAS leaf progress/fairness is not guaranteed by these model checks."
+  ]
+}

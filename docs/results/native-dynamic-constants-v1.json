@@ -1,0 +1,136 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "1dd8f538abbb327665c7962391d3b289db227bcdf1f6c44ff7786612da7307ea",
+      "files": 446
+    },
+    "imageSha256": "74cdeb1bdcc8da094b6033005bd11fa442220e1379755f64167c53123796d21c",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(Function(\"return undefined;\")()!==undefined||Function(\"return Infinity;\")()!==Infinity||!Number.isNaN(Function(\"return NaN;\")()))throw 1;for(const name of [\"undefined\",\"NaN\",\"Infinity\"]){if(Function(name,\"return \"+name+\";\")(42)!==42)throw 2;}",
+        "sha256": "08d6cf84411264db7174eaafd26e375f7a399d3d96feb7f405eb929f1f29dc23"
+      },
+      {
+        "index": 1,
+        "source": "const f=Function(\"ignored\",\"value\",\"return value;\");for(const value of [undefined,null,false,42,\"text\",Symbol(),{}])if(f(1,value)!==value)throw 1;if(f.length!==2||f(1)!==undefined)throw 2;const g=Function(\"value\",\"value\",\"return value;\");if(g(1,42)!==42||g(1)!==undefined)throw 3;",
+        "sha256": "cfb303ca00fb41edaf4856235e78097f44235a9daee493a3f36054c050f80dbf"
+      },
+      {
+        "index": 2,
+        "source": "const f=Function(\"unused\",\"return this;\");const receiver={};if(f.length!==1||f.call(receiver,42)!==receiver)throw 1;const g=Function(\"$tint$receiver\",\"return $tint$receiver;\");if(g(42)!==42)throw 2;",
+        "sha256": "bb2b89074d6b2b8ed2ce82c3f941e89051a038ed5c6214dba6795ba55312d780"
+      },
+      {
+        "index": 3,
+        "source": "const f=Function(\"return this;\");if(f()!==globalThis||f.call(null)!==globalThis||f.call(undefined)!==globalThis)throw 1;const receiver={};if(f.call(receiver)!==receiver)throw 2;if(typeof f.call(42)!==\"object\"||f.call(42).valueOf()!==42)throw 3;",
+        "sha256": "9cb41261ea1dc23c22890fb7ef8d1383841024c9d4b826638d6cb1acde115d3f"
+      },
+      {
+        "index": 4,
+        "source": "const f=Function(\"'use strict';return this;\");for(const value of [undefined,null,false,42,\"text\",{}])if(f.call(value)!==value)throw 1;",
+        "sha256": "e9e358105a8259051c712a126ce57e0e5bfcf76609f265e3cb4a1a1f5fca5cf6"
+      },
+      {
+        "index": 5,
+        "source": "for(const body of [\"\",\"return;\"]){const f=Function(body);if(f()!==undefined)throw 1;}if(Function(\"return 42;\")()!==42||Function(\"return true;\")()!==true||Function(\"return null;\")()!==null)throw 2;",
+        "sha256": "a9a985ac372419bc49b195df615f8cff9d85505c772ff2c47ca6cb46d031b506"
+      },
+      {
+        "index": 6,
+        "source": "const f=Function(\"return this;\");if(f.name!==\"anonymous\"||f.length!==0||Object.getPrototypeOf(f)!==Function.prototype)throw 1;const value=new f();if(Object.getPrototypeOf(value)!==f.prototype||!(value instanceof f))throw 2;if(Function.prototype.toString.call(f)!==\"function anonymous(\\n) {\\nreturn this;\\n}\")throw 3;",
+        "sha256": "4ccd1d7bf8a6e77400c9a4c00d09a21ac654492a40643d562c712b97fa26dcea"
+      },
+      {
+        "index": 7,
+        "source": "let count=0;const target=new Proxy(function(){},{get(t,key,r){if(key===\"prototype\"){count++;return null;}return Reflect.get(t,key,r);}});const f=Reflect.construct(Function,[\"return this;\"],target);if(count!==1||Object.getPrototypeOf(f)!==Function.prototype||f()!==globalThis)throw 1;",
+        "sha256": "885e35083fe175ec0667bb8578f7a05c4f15f75bc51d73cdc3c86c31a333d0af"
+      },
+      {
+        "index": 8,
+        "source": "const f=Function(\"return this;\");if(Reflect.ownKeys(Function.prototype)[0]!==\"length\"||Reflect.ownKeys(Function.prototype)[1]!==\"name\")throw 1;",
+        "sha256": "a6c0b00a1855baf82fa21f4d635fc56ba06e021a77eab6061bc91e0683717806"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import * as abi from "../src/function.ts";
+const values = abi as Readonly<Record<string, number>>;
+test("function and signature wire constants match independent literal goldens", () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(values)), {
+    nativeFunctionByteLength: 48,
+    nativeFunctionDescriptorOffset: 0,
+    nativeFunctionFlagsOffset: 8,
+    nativeFunctionEntryOffset: 16,
+    nativeFunctionEnvironmentOffset: 24,
+    nativeFunctionSignatureOffset: 32,
+    nativeFunctionReservedOffset: 40,
+    nativeFunctionReferenceCount: 1,
+    nativeFunctionGeneralCount: 0,
+    nativeSignatureVersion: 1,
+    nativeSignatureHeaderByteLength: 32,
+    nativeSignatureVersionOffset: 0,
+    nativeSignatureByteLengthOffset: 8,
+    nativeSignatureParameterCountOffset: 16,
+    nativeSignatureResultOffset: 24,
+    nativeSignatureParametersOffset: 32,
+    nativeSignatureParameterByteLength: 8,
+    nativeSignatureVoidCode: 0,
+    nativeSignatureGeneralCode: 1,
+    nativeSignatureOptionalBooleanCode: 2,
+    nativeSignaturePrimitiveCode: 3,
+    nativeSignatureStringCode: 4,
+    nativeSignatureReferenceCode: 5,
+    nativeSignatureOptionalReferenceCode: 6,
+    nativeSignatureOptionalStringCode: 7,
+    nativeSignatureNumberCode: 8,
+    nativeSignatureBooleanCode: 9,
+    nativeSignatureUint8ArrayCode: 10,
+    nativeSignatureUint16ArrayCode: 11,
+    nativeSignatureUint32ArrayCode: 12,
+    nativeSignatureFloat64ArrayCode: 13,
+    nativeSignatureOptionalNumberCode: 14,
+  });
+});

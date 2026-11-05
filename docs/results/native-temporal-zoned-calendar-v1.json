@@ -1,0 +1,89 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "e8010474401c1b64280b370365428870d17bdd86780e6ea5cf15c32e82e23386",
+    "files": 437
+  },
+  "imageSha256": "99cbdcfd4bb4f0aeecf1012ee4932896b97417250ce28a1671c13729ed53065a",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "for(const [one,two,days,hours,minutes] of [[\"2024-03-09T12:00[America/New_York]\",\"2024-03-10T12:00[America/New_York]\",1,0,0],[\"2024-03-09T12:00[America/New_York]\",\"2024-03-10T11:00[America/New_York]\",0,22,0],[\"2024-11-02T12:00[America/New_York]\",\"2024-11-03T12:00[America/New_York]\",1,0,0],[\"2024-11-03T01:30-04:00[America/New_York]\",\"2024-11-03T01:15-05:00[America/New_York]\",0,0,45]]){const a=Temporal.ZonedDateTime.from(one),b=Temporal.ZonedDateTime.from(two),d=a.until(b,{largestUnit:\"day\"}),s=a.since(b,{largestUnit:\"day\"});if(d.days!==days||d.hours!==hours||d.minutes!==minutes||s.days!==-days||s.hours!==-hours||s.minutes!==-minutes)throw 1;}",
+      "sha256": "8bd80b06930c3a1e2092cb4995b24e8ee95e40985382ac07aa2455c5ffe69439"
+    },
+    {
+      "index": 1,
+      "source": "const a=Temporal.ZonedDateTime.from(\"2024-02-09T12:00[America/New_York]\"),b=Temporal.ZonedDateTime.from(\"2024-03-10T12:00[America/New_York]\");const d=a.until(b,{largestUnit:\"month\"}),r=new Temporal.Duration(0,1,0,1).round({largestUnit:\"month\",relativeTo:a});if(d.months!==1||d.days!==1||d.hours!==0||r.months!==1||r.days!==1||r.hours!==0)throw 1;",
+      "sha256": "83dbe56bbdfbb7575196c279aa4af0b82170d71da98a981b0d4dac84cf20a3d2"
+    },
+    {
+      "index": 2,
+      "source": "const d=new Temporal.Duration(0,0,0,1);for(const relativeTo of [\"2024-03-09T12:00[America/New_York]\",\"2024-11-02T12:00[America/New_York]\"]){if(d.total({unit:\"day\",relativeTo})!==1)throw 1;}const relativeTo=\"2024-03-10T00:00[America/New_York]\";if(new Temporal.Duration(0,0,0,0,12).total({unit:\"day\",relativeTo})!==12/23)throw 2;for(const [duration,unit] of [[{years:1},\"year\"],[{months:1},\"month\"],[{weeks:1},\"week\"],[{days:-1},\"day\"]]){const result=Temporal.Duration.from(duration).total({unit,relativeTo});if(result!==(unit===\"day\"?-1:1))throw 3;}",
+      "sha256": "78b7a1c85a194d1440d4c7b34848e46c7409f0d76234c7330bc8b1a92a70e1ea"
+    },
+    {
+      "index": 3,
+      "source": "for(const [relativeTo,hours,days] of [[\"2024-03-09T12:00[America/New_York]\",11,0],[\"2024-03-09T12:00[America/New_York]\",12,1],[\"2024-11-02T12:00[America/New_York]\",12,0],[\"2024-11-02T12:00[America/New_York]\",13,1]]){const d=Temporal.Duration.from({hours}).round({smallestUnit:\"day\",relativeTo});if(d.days!==days||d.hours!==0)throw 1;}const a=Temporal.ZonedDateTime.from(\"2024-03-09T12:00[America/New_York]\"),b=a.add({hours:24});if(a.until(b,{largestUnit:\"day\",smallestUnit:\"day\",roundingIncrement:2,roundingMode:\"halfExpand\"}).days!==2||a.since(b,{largestUnit:\"day\",smallestUnit:\"day\",roundingIncrement:2,roundingMode:\"ceil\"}).days!==0)throw 2;",
+      "sha256": "27c65892e42c92f9f52611af5d15a0dd76bff41030d5a396c1f932602324c7ff"
+    },
+    {
+      "index": 4,
+      "source": "const a=new Temporal.ZonedDateTime(8640000000000000000000n,\"America/New_York\");if(a.until(a,{largestUnit:\"day\",smallestUnit:\"day\"}).sign!==0||a.since(a,{largestUnit:\"year\",smallestUnit:\"year\"}).sign!==0)throw 1;",
+      "sha256": "eddcf95a4a61167ff4e37218ecc1982a1b60421050e5e31ce20bceb62af5b230"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

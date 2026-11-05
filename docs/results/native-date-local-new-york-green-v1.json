@@ -1,0 +1,118 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "environment": {
+    "TZ": "America/New_York"
+  },
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "2a21b7745a1ab2d95c03050298de1b36c5b22b06645876cd770e3aee2a04695d",
+      "files": 417
+    },
+    "imageSha256": "779c8b266871c6ff528581bb9933097a5819478055b4f162115425d8c2698d22",
+    "asynchronous": false,
+    "nodeReference": true,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(0),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1969,11,31,3,19,0,0,0,300];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "08ccb66287b054794905bfcefdaf4e44f05de490931160acb75fbaeb845ed3f6"
+      },
+      {
+        "index": 1,
+        "source": "const d=new Date(946684800000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1999,11,31,5,19,0,0,0,300];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "1a48caf9c2a4626b315cd50dc455e2e94eea607e8e6c7623024a95b603fc1fc5"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(1735689600000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,11,31,2,19,0,0,0,300];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "f064bd9c6de283da02e3cbfde954e721cf899ae3d2f27b13643976d45484ce61"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Date(1720000000000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,6,3,3,5,46,40,0,240];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "31a191b3a3454472948f8e5b97b7022e9db25f3bdcf9c873f4c163ef980a8be8"
+      },
+      {
+        "index": 4,
+        "source": "const d=new Date(1710053999000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,2,10,0,1,59,59,0,300];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "32f83476b07126c3bb1e2ed901fe984a40504624a0008731dab793fa5c07528a"
+      },
+      {
+        "index": 5,
+        "source": "const d=new Date(1710054000000),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[2024,2,10,0,3,0,0,0,240];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "1e6f33ff1098ddab032f51df9d7bded2d526baeaa5deae28df659cf8e17d2c29"
+      },
+      {
+        "index": 6,
+        "source": "const d=new Date(-1),actual=[d.getFullYear(),d.getMonth(),d.getDate(),d.getDay(),d.getHours(),d.getMinutes(),d.getSeconds(),d.getMilliseconds(),d.getTimezoneOffset()],expected=[1969,11,31,3,18,59,59,999,300];for(let i=0;i<expected.length;i++)if(actual[i]!==expected[i])throw i+1;",
+        "sha256": "67613c5fa55972f190fa19113c4c428dbf00d625d5138302c18eb0370a09285b"
+      },
+      {
+        "index": 7,
+        "source": "if(!Number.isNaN(new Date(NaN).getTimezoneOffset()))throw 1;let caught=false;try{Date.prototype.getHours.call(new Proxy(new Date(0),{}));}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;",
+        "sha256": "f0ee53766cd531c92fa0d0179ac14ec119fd9411bbad91f625a090c82a9a2c9a"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "076b00193e9a40e83d5d8fdbc8305039c69a77de9777cbd0b235251b0ff6d63c",
+    "files": 444
+  },
+  "imageSha256": "afac0cf34c6cafd28c9ab1fb5e3fd2b3795080f651cdd06eef02d957554e20c6",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let log=\"\",i=0;for(using x={[Symbol.dispose](){log+=\"d\";}};i<3;i++){log+=i;if(i===0)continue;if(i===1)break;}if(log!==\"01d\")throw 1;let caught;try{for(using a={[Symbol.dispose](){log+=\"a\";}},b={get [Symbol.dispose](){throw 19;}};false;){}}catch(e){caught=e;}if(caught!==19||log!==\"01da\")throw 2;",
+      "sha256": "a82fcca6e2e8aaa548e86883f10d1bc641df05f4e9f63d049cb659cef31222ac"
+    },
+    {
+      "index": 1,
+      "source": "let log=\"\",i=0;for(using x={[Symbol.dispose](){log+=\"d\";}};i<3;i++){log+=i;}if(log!==\"012d\")throw 1;",
+      "sha256": "83db55a370c285176e46e7cfc3c86867dea09a5a083faa4aee8b88d86e219bf5"
+    },
+    {
+      "index": 2,
+      "source": "let log=\"\";outer:for(let i=0;i<2;i++){for(using x={[Symbol.dispose](){log+=\"d\";}};true;){log+=\"b\";continue outer;}}if(log!==\"bdbd\")throw 1;",
+      "sha256": "6ef7372217802e6da02b90dbd3cee6bf8f6a1c25fa8bdfd007011c99e04777fa"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

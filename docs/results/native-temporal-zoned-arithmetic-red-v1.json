@@ -1,0 +1,38 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "fixture": "tools/verify-test262-native-temporal-zoned-arithmetic.ts",
+  "fixtureSha256": "cc780729243b29afe83f9f781c1a7bd7334a4b1380dcadad1c75bd860b9d8ac7",
+  "imageSha256": "a2b5092c0c8d025c5aa1130f5eaabc5358837e80e9265610ec5e769c0899830b",
+  "cases": 3,
+  "completed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

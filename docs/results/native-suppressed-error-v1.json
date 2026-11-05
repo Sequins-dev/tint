@@ -1,0 +1,56 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "9d01a650b537c3fc5d76073dcefe5b501570d5b9c9782ea0c121ede8ca343ff6",
+    "files": 437
+  },
+  "imageSha256": "b4c3007903e320f024c5bc593cd125f22c484b3ff96548dc40ec922171aaf715",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "const error={},suppressed={};let log=\"\";const message={toString(){log+=\"m\";return \"cleanup failed\";}};const result=new SuppressedError(error,suppressed,message,{get cause(){throw 1;}});if(log!==\"m\"||result.error!==error||result.suppressed!==suppressed||result.message!==\"cleanup failed\"||Object.getOwnPropertyNames(result).slice(Object.getOwnPropertyNames(result).indexOf(\"message\"),Object.getOwnPropertyNames(result).indexOf(\"message\")+3).join(\",\")!==\"message,error,suppressed\"||\"cause\" in result||!(result instanceof Error)||!Error.isError(result))throw 2;for(const name of [\"message\",\"error\",\"suppressed\"]){const d=Object.getOwnPropertyDescriptor(result,name);if(d.enumerable||!d.writable||!d.configurable)throw 3;}",
+      "sha256": "21cd0c2860453845ff389ee6897123a62344511e665f880ff29b29fadb9e3e57"
+    },
+    {
+      "index": 1,
+      "source": "const value=SuppressedError(19,42);if(value.error!==19||value.suppressed!==42||Object.hasOwn(value,\"message\")||Object.getPrototypeOf(value)!==SuppressedError.prototype||Object.getPrototypeOf(SuppressedError)!==Error)throw 1;class Derived extends SuppressedError{}const derived=new Derived(19,42,\"nested\");if(!(derived instanceof Derived)||!Error.isError(derived)||derived.message!==\"nested\")throw 2;let caught=false;try{new SuppressedError(19,42,Symbol());}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;",
+      "sha256": "574ad0fd28399bbdf7120ef273fa7621eb6b37db9d12f7ad1bdeee4c032fd071"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

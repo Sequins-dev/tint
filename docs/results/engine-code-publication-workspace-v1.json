@@ -1,0 +1,32 @@
+{
+  "kind": "engine-code-publication-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "1e18133b5233571dd4f0eebf5394dac44679f1ece67429797f4b8a4df4f6ee7d",
+    "files": 508,
+    "packages": 49,
+    "schemaVersion": 2
+  },
+  "workspace": {
+    "tests": 3664,
+    "passed": 3664,
+    "types": true,
+    "hostTypes": true,
+    "boundaries": true,
+    "format": true
+  },
+  "nativeEvidence": [
+    "engine-publication-native-v1.json",
+    "engine-publication-extraction-native-v1.json"
+  ],
+  "contract": {
+    "publicEntry": "@tint/js-engine/native/code-storage",
+    "ownership": "process-lifetime bounded executable arena",
+    "publicEntries": "captured and fingerprinted independently of dependency import grants",
+    "legacySnapshots": "schema 1 remains readable with original identity"
+  },
+  "limitations": [
+    "No executable code reclamation or concurrent publication",
+    "Native self-build for this snapshot not yet measured"
+  ]
+}

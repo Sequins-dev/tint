@@ -1,0 +1,242 @@
+{
+  "kind": "module-fixture-syntax-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "sourceSnapshot": {
+    "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+    "files": 562
+  },
+  "toolchainSha256": "0ca7cfed3d7f20ffc3e2f292a217d71a5503030a4a51b5522e830f2eb48c0942",
+  "cases": [
+    {
+      "selection": "language/module-code/instn-resolve-empty-export.js",
+      "path": "language/module-code/instn-resolve-empty-export.js",
+      "sha256": "bf31ec4c14ee0db34f218b4ab77af2efcbb96997a432b89fa6a5bdc8fdc31b6a",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-empty-export_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-empty-export.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-empty-export_FIXTURE.js",
+          "verdict": true
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    },
+    {
+      "selection": "language/module-code/instn-resolve-empty-import.js",
+      "path": "language/module-code/instn-resolve-empty-import.js",
+      "sha256": "88161e79a99ef0372dddb122e6dc2e545961bf0d4775f53ba48531b3fcc3fadb",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-empty-import_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-empty-import.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-empty-import_FIXTURE.js",
+          "verdict": true
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    },
+    {
+      "selection": "language/module-code/instn-resolve-err-syntax-1.js",
+      "path": "language/module-code/instn-resolve-err-syntax-1.js",
+      "sha256": "f3140ef3b4dd185b9d034e0d525a9fd34bedbeba3b1f52182fa4c5d9eed54075",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-err-syntax-1_FIXTURE.js",
+          "sha256": "622c5b04e3d615cf970fd2b96548a9a1ee75aad879d3933cf13a43be3137ca25"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-err-syntax-1.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-err-syntax-1_FIXTURE.js",
+          "verdict": true
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    },
+    {
+      "selection": "language/module-code/instn-resolve-err-syntax-2.js",
+      "path": "language/module-code/instn-resolve-err-syntax-2.js",
+      "sha256": "7bd714bc6bf20123d96b37b4375977431c5576634ce07f6d9643a019352e1167",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-err-syntax-2_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-err-syntax-2.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-err-syntax-2_FIXTURE.js",
+          "verdict": true
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    },
+    {
+      "selection": "language/module-code/instn-resolve-order-depth.js",
+      "path": "language/module-code/instn-resolve-order-depth.js",
+      "sha256": "d6c9cdc83fddc62086874da0090135cf163f162a5166e6269db2f9b87dc2b7ee",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-order-depth-child_FIXTURE.js",
+          "sha256": "1d1c46a6831ae315ac1099bd23525c7c9b476074a928ff8de374c56c85e6869e"
+        },
+        {
+          "name": "instn-resolve-order-depth-reference_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        },
+        {
+          "name": "instn-resolve-order-depth-syntax_FIXTURE.js",
+          "sha256": "622c5b04e3d615cf970fd2b96548a9a1ee75aad879d3933cf13a43be3137ca25"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-order-depth.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-order-depth-child_FIXTURE.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-order-depth-reference_FIXTURE.js",
+          "verdict": true
+        },
+        {
+          "name": "instn-resolve-order-depth-syntax_FIXTURE.js",
+          "verdict": true
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    },
+    {
+      "selection": "language/module-code/instn-resolve-order-src.js",
+      "path": "language/module-code/instn-resolve-order-src.js",
+      "sha256": "608ccd08e98c2c60a4495bd8570cabdf793ccd0cea7c863ec449bf71b7499bbc",
+      "variant": "module",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "instn-resolve-order-src-reference_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        },
+        {
+          "name": "instn-resolve-order-src-syntax_FIXTURE.js",
+          "sha256": "622c5b04e3d615cf970fd2b96548a9a1ee75aad879d3933cf13a43be3137ca25"
+        },
+        {
+          "name": "instn-resolve-order-src-valid_FIXTURE.js",
+          "sha256": "2d326e77199c7b7def6df453731bddee1732fba0635344e7e47d161d7aa17dba"
+        }
+      ],
+      "entries": [
+        {
+          "name": "instn-resolve-order-src.js",
+          "verdict": false
+        },
+        {
+          "name": "instn-resolve-order-src-reference_FIXTURE.js",
+          "verdict": true
+        },
+        {
+          "name": "instn-resolve-order-src-syntax_FIXTURE.js",
+          "verdict": true
+        },
+        {
+          "name": "instn-resolve-order-src-valid_FIXTURE.js",
+          "verdict": false
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba"
+    }
+  ]
+}

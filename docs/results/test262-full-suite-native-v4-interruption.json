@@ -1,0 +1,18 @@
+{
+  "kind": "native-full-suite-interruption",
+  "pid": 31863,
+  "quietCheckpoint": {
+    "pid": 31863,
+    "state": "between-variants"
+  },
+  "journal": "docs/results/test262-full-suite-native-v4.jsonl",
+  "partialCounts": {
+    "pass": 8104,
+    "fail": 1279,
+    "unsupported": 857,
+    "timeout": 15,
+    "harness-error": 224
+  },
+  "reason": "Replace the obsolete 411-source survey with a complete pinned-suite run against the frozen current 444-source compiler after API and binding expansion. Original observations are preserved; no old failures are converted to passes.",
+  "replacementReport": "docs/results/test262-full-suite-native-v5.json"
+}

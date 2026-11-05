@@ -1,0 +1,31 @@
+{
+  "kind": "surface-physical-facts-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "2793aab92ede1f24f7a061676dfaa5370e18f0ff9a90679f634eb0fbebf56057",
+    "files": 526
+  },
+  "selfBuild": "docs/results/bootstrap-surface-physical-facts-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-surface-physical-facts-compiler-v1.json"
+  ],
+  "workspaceTests": 3778,
+  "bytes": 64968178,
+  "sha256": "07d327e0b217f2de1df00cc8a0c643de611dc8365f8b9cdecc71d4ee682f4fad",
+  "byteIdentical": true,
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/surface-physical-facts-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/surface-physical-facts-dwarf-v1.log"
+    }
+  },
+  "remaining": [
+    "Compiler-request directory integration and bound-stub retention",
+    "Canonical contracts, physical layouts and digest",
+    "Managed publication and general eval/Function"
+  ]
+}

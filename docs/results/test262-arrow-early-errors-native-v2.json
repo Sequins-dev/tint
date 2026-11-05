@@ -1,0 +1,1106 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v3-batched",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0"
+  },
+  "scope": "Selected variants only. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts with parsed strictness; harness sources unchanged in their own Script modes. Parse-negative tests use the native JavaScript parser without evaluation. Module execution, agents, parser limitations and missing syntax/runtime operations remain unsupported. Harness paths requiring missing builtins may fail. No whole-suite coverage claim.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "managedBytes": 67108864,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000
+  },
+  "compilation": {
+    "batchSize": 16,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 16,
+        "kind": "syntax",
+        "compileMs": 3527.204042,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 16,
+        "kind": "syntax",
+        "compileMs": 2925.7001660000024,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 11,
+        "kind": "syntax",
+        "compileMs": 2622.9230420000094,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/arrow-function/syntax/early-errors",
+  "totals": {
+    "total": 43,
+    "passed": 43,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-identifier-futurereservedword.js",
+      "sha256": "7b00697fe83c14b6d73f3cfbdbd2a3262f232f27235bfce68fcfa98edf0cd25c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6122.178958,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-identifier-futurereservedword.js",
+      "sha256": "7b00697fe83c14b6d73f3cfbdbd2a3262f232f27235bfce68fcfa98edf0cd25c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8550.390791,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-identifier-strict-futurereservedword.js",
+      "sha256": "814c4605ca9f24430b3e341ea566f816b9c21a6d1d277bdea983d7f51e4ecf20",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10960.73775,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-identifier.js",
+      "sha256": "3c49e42dc81d1f0b26117985e5c935fce0e4fbbcfe581b014db253bda281edf2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13382.365709,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-identifier.js",
+      "sha256": "3c49e42dc81d1f0b26117985e5c935fce0e4fbbcfe581b014db253bda281edf2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15789.47925,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-no-arguments.js",
+      "sha256": "8eafc76f49c37b3942d510222f1fdb916aa728fabc2dfb4a48289dde20968f54",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18197.303249999997,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-no-eval.js",
+      "sha256": "55d722b9ef41ed9d253ffbe92a30f630d93ee76efaeb9112841bf7bc45747b57",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20694.754500000003,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-no-yield.js",
+      "sha256": "c9ab18407ef6f84ed2c1c56c2ec752a5645dc5058a1585c4b4830325b748eb94",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23356.632290999998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-rest.js",
+      "sha256": "5f35a01bd4266342619ac8e00013b72b8bfada381c08c1e8791f55e21368e89d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25754.62225,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-bindingidentifier-rest.js",
+      "sha256": "5f35a01bd4266342619ac8e00013b72b8bfada381c08c1e8791f55e21368e89d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 28408.988292000002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-arguments.js",
+      "sha256": "d92a9d591854b2b7efca8b5d6572d3017da8e4b4eb1fba2c39da54e9d8e499c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 31057.310459,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-1.js",
+      "sha256": "d475af1a050fd50909e055b0d2a0677305fe834a8f761d6fdf999ee57fe5a8f9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 33713.872667,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-1.js",
+      "sha256": "d475af1a050fd50909e055b0d2a0677305fe834a8f761d6fdf999ee57fe5a8f9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 36384.029375,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-2.js",
+      "sha256": "cd724e795ed0d54047ff20db6797d5e6e6763bc039671507440e4413e985ec4a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 39029.499792,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-2.js",
+      "sha256": "cd724e795ed0d54047ff20db6797d5e6e6763bc039671507440e4413e985ec4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 41696.736832999995,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-3.js",
+      "sha256": "f4fee050260600f50e4ca058ae4b315fd22c89a606afa711fd816b9f780148f0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 44125.804334,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-array-3.js",
+      "sha256": "f4fee050260600f50e4ca058ae4b315fd22c89a606afa711fd816b9f780148f0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5532.861834000003,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-1.js",
+      "sha256": "0b6f73d06cea72729adfc1bd7d8b11188375a197e039f9b871b10fe8198f0cc8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7956.465333,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-1.js",
+      "sha256": "0b6f73d06cea72729adfc1bd7d8b11188375a197e039f9b871b10fe8198f0cc8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10384.286916000005,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-2.js",
+      "sha256": "1829f0410215e5f3228a4a8039e9f115c7d9a7e52cc7b913671e3c2714c6f79c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12917.395916000001,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-2.js",
+      "sha256": "1829f0410215e5f3228a4a8039e9f115c7d9a7e52cc7b913671e3c2714c6f79c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15339.165458000003,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-3.js",
+      "sha256": "ce860fcf53d404a3171149d317498f02fd5f9284e6452da6d2f3a574bf503914",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17752.705541000003,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-3.js",
+      "sha256": "ce860fcf53d404a3171149d317498f02fd5f9284e6452da6d2f3a574bf503914",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20337.933042000004,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-4.js",
+      "sha256": "4d05677946cdaf70e1edeb7879fbda435465472bd324fb51ceb3bdcc3860601b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22795.554417,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-4.js",
+      "sha256": "4d05677946cdaf70e1edeb7879fbda435465472bd324fb51ceb3bdcc3860601b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25244.215958,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-5.js",
+      "sha256": "aa75b6a1519776660637f83167f1389bf3dee26608e0858b6675acd84d2560e0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27677.559916000006,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-5.js",
+      "sha256": "aa75b6a1519776660637f83167f1389bf3dee26608e0858b6675acd84d2560e0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30106.666125000003,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-6.js",
+      "sha256": "bd4dfa035f6a2fa48df75331672720857b135dff764367454857f38d7a1fb32c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32554.206790999997,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-binding-object-6.js",
+      "sha256": "bd4dfa035f6a2fa48df75331672720857b135dff764367454857f38d7a1fb32c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 34991.223249999995,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-rest.js",
+      "sha256": "9285de3361d143614b95911b40978c21efbb96be0c4016c8afb0943e2fbefc70",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 37804.975667,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates-rest.js",
+      "sha256": "9285de3361d143614b95911b40978c21efbb96be0c4016c8afb0943e2fbefc70",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 40592.271958,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates.js",
+      "sha256": "e831a18b32346999bd0864001738f93157c6121c2f4b0acd1b05f7f6b5717cb5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 43346.443083000006,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-duplicates.js",
+      "sha256": "e831a18b32346999bd0864001738f93157c6121c2f4b0acd1b05f7f6b5717cb5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5712.737374999997,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-eval.js",
+      "sha256": "4ceb10909b7dc70a67a42eb8b3db51ead9619afbfcae00842f2932d2b37a4b01",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8222.929583000005,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/arrowparameters-cover-no-yield.js",
+      "sha256": "d340abe73b61f7b999ed7abc41586d339ace9cb6214d54e3552d8067011bfe23",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10950.395625000005,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid-parenless-parameters-expression-body.js",
+      "sha256": "191364858dad8c58848f448786062298396832b2e451f7270f69777f03ed99ee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13662.449709000008,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid-parenless-parameters-expression-body.js",
+      "sha256": "191364858dad8c58848f448786062298396832b2e451f7270f69777f03ed99ee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16379.1005,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid-parenless-parameters.js",
+      "sha256": "da190c7fd56f1b6fb2c684dc81ff6b6a9418e4f688a13b80bfd11cf80fbba99d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19090.806083999996,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid-parenless-parameters.js",
+      "sha256": "da190c7fd56f1b6fb2c684dc81ff6b6a9418e4f688a13b80bfd11cf80fbba99d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21842.937791999997,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid.js",
+      "sha256": "4e8b48a0b94932286b7363ff5592ad28c941396a377b16ace3672812a7e12c95",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24515.570624999993,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/asi-restriction-invalid.js",
+      "sha256": "4e8b48a0b94932286b7363ff5592ad28c941396a377b16ace3672812a7e12c95",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26900.751334,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/use-strict-with-non-simple-param.js",
+      "sha256": "866a43c4099e9ca4f38170340f7eb0079770d80d6cac0283a0113d661f90bc13",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29298.329499999993,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/arrow-function/syntax/early-errors/use-strict-with-non-simple-param.js",
+      "sha256": "866a43c4099e9ca4f38170340f7eb0079770d80d6cac0283a0113d661f90bc13",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 31692.924333000003,
+      "batch": 2
+    }
+  ]
+}

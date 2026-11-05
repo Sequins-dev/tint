@@ -1,0 +1,46 @@
+{
+  "kind": "typed-engine-and-receiver-write-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "29b9de218bc83fdb86512bf08d851b5c74a4cd5ef993765d4fc0fb44ebb1887c",
+    "files": 509
+  },
+  "packages": 49,
+  "nodeTests": {
+    "passed": 3673,
+    "failed": 0,
+    "log": ".tint-bootstrap/receiver-write-full-node-v3.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "productionEntries": [
+    "@tint/js-engine/lowering",
+    "@tint/js-engine/native/code-storage",
+    "@tint/js-engine/dynamic-function"
+  ],
+  "changes": [
+    "Typed dynamic Function compiler extracted from Test262 source template with explicit realm, storage, invocation and reflection authority",
+    "Distinct native receiver-write callback contract with per-invocation receiver closures",
+    "Shared managed callback witness and linking validation preserve the existing read-only profiles"
+  ],
+  "nativeCompilation": {
+    "managedAccessCases": 8,
+    "kindCases": 4,
+    "receiverWriteCases": 8
+  },
+  "nativeExecution": {
+    "status": "pending successful execution; observed launches failed before entry",
+    "reports": [
+      "engine-dynamic-managed-access-native-v1-0.json",
+      "engine-dynamic-managed-access-local-diagnostic-v2-0.json",
+      "engine-dynamic-kinds-native-v1-0.json",
+      "receiver-write-native-v1-0.json"
+    ]
+  },
+  "selfHosting": "New-source self-build not yet verified; latest completed fixed point remains bootstrap-managed-global-access-v1.json"
+}

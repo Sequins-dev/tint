@@ -1,0 +1,101 @@
+{
+  "schema": "tint-cpu-pause-validation-v1",
+  "status": "implemented-focused-gates-green-native-execution-pending-parent",
+  "sourceSnapshot": {
+    "sha256": "f39299040106b53e0db3e18bf64488f0c97a0106e247cf71fbfd37e354f1702a",
+    "files": 505
+  },
+  "scope": {
+    "facade": "@tint/native-process/spin-hint cpuPause(): void",
+    "hostOperation": "cpu-pause",
+    "machineInstruction": "AArch64 YIELD (0xd503203f), existing ISA encoder unchanged",
+    "authority": "explicit trusted binding only; no project default grants",
+    "effects": "unknown/observable host effect retained even without SSA result",
+    "allocation": "no runtime allocation, managed pointers, syscall, OS yield, C or linker"
+  },
+  "changes": [
+    "Result-less host calls carry id: undefined; verifier rejects invented void results and missing value results. Existing number/general host operations preserve their result contract.",
+    "Host binding requires zero arguments and void result for cpu-pause.",
+    "Emitter emits one existing YIELD encoding; no imports or helper dependencies.",
+    "Native source checker requires capturing optional result id before helper calls; value-returning emission now uses that local."
+  ],
+  "tests": [
+    {
+      "kind": "TDD red",
+      "result": "failed before implementation",
+      "log": ".tint-bootstrap/cpu-pause-red-v1.log"
+    },
+    {
+      "kind": "focused semantic/contracts/emitter/default-capabilities",
+      "result": "21 passed, 0 failed on final source",
+      "command": "node --test packages/ir/test/scalar-cpu-pause.test.ts packages/ir/test/scalar-host.test.ts packages/ir/test/scalar-shared-host.test.ts packages/codegen/test/scalar-cpu-pause.test.ts tools/cpu-pause.test.ts",
+      "log": ".tint-bootstrap/cpu-pause-focused-v4.log"
+    },
+    {
+      "kind": "self-host source checks and linked emission",
+      "result": "16 passed, 0 failed after resultId narrowing correction",
+      "log": ".tint-bootstrap/cpu-pause-selfhost-checks-v2.log"
+    },
+    {
+      "kind": "production TypeScript build",
+      "result": "passed",
+      "log": ".tint-bootstrap/cpu-pause-build-v3.log"
+    },
+    {
+      "kind": "test TypeScript checks",
+      "result": "passed",
+      "log": ".tint-bootstrap/cpu-pause-test-types-v3.log"
+    },
+    {
+      "kind": "scoped formatting",
+      "result": "passed",
+      "log": ".tint-bootstrap/cpu-pause-format-check-v1.log"
+    },
+    {
+      "kind": "final debug native fixture build only",
+      "result": "passed; exact source identity unchanged before/after build",
+      "log": ".tint-bootstrap/cpu-pause-fixture-build-v2.log"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "log": ".tint-bootstrap/cpu-pause-focused-v1.log",
+      "diagnosis": "Test expected an omitted return value property; IR explicitly carries value: undefined. Test expectation corrected."
+    },
+    {
+      "log": ".tint-bootstrap/cpu-pause-test-types-v1.log",
+      "diagnosis": "Test fixtures omitted required return value property and pre-existing numeric host contract assertion needed explicit id narrowing after optional void results were introduced."
+    },
+    {
+      "log": ".tint-bootstrap/cpu-pause-selfhost-checks-v1.log",
+      "diagnosis": "Portable native checker loses optional op.id narrowing across helper calls. Capture resultId once after cpu-pause early exit; native source checks then pass."
+    }
+  ],
+  "nativeArtifact": {
+    "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-cpu-pause-v1-SJ6Nu2/cpu-pause-v1",
+    "sourceSnapshot": {
+      "sha256": "f39299040106b53e0db3e18bf64488f0c97a0106e247cf71fbfd37e354f1702a",
+      "files": 505
+    },
+    "expectedExitStatus": 42,
+    "imageSha256": "74c030a078cf2855d25d854a624e3ea87c70fd6e4acba35dc0d615d694ffa5ee",
+    "fixture": "tools/build-cpu-pause-fixture.ts",
+    "fixtureSha256": "ebfd68bfd5eed0002bd645af58ae0f710604cb851a17adddf843a71b71e034b5",
+    "buildOnly": true,
+    "debugSymbols": true,
+    "hostBindings": [
+      {
+        "module": "packages/native-process/src/spin-hint.ts",
+        "name": "cpuPause",
+        "operation": "cpu-pause"
+      }
+    ],
+    "semanticChecks": "three calls to trusted void cpuPause followed by integer exit 42",
+    "sourceBeforeAfterEqual": true
+  },
+  "limits": [
+    "No generated native process executed by this agent. Parent owns serial LLDB validation and immutable execution report.",
+    "Whole workspace combined gates and catalog regeneration are parent-owned; parent reported final catalog 505 sources /347 grants and workspace build/test types green.",
+    "YIELD is a CPU hint. This slice establishes no scheduling, wait/notify, fairness, timing or concurrency guarantee."
+  ]
+}

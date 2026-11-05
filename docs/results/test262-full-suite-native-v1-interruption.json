@@ -1,0 +1,43 @@
+{
+  "kind": "runtime-execution-interruption",
+  "complete": false,
+  "originalHeader": {
+    "kind": "start",
+    "schemaVersion": 1,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": ".",
+    "batchSize": 64,
+    "sourceSnapshot": {
+      "sha256": "7941b788274e9387db1bf8c6ea799bfcfe51aa269bec08d1281fd52252c92b49",
+      "files": 399
+    },
+    "engine": "native-script-v4-shared-image",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executionResources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    }
+  },
+  "journal": "docs/results/test262-full-suite-native-v1.jsonl",
+  "journalSha256": "bfd97bff41ae65db8bc8374d58e1db09c8974fb43b323c028c97865ef8b8a6f8",
+  "plannedSuiteVariants": 103264,
+  "observedVariants": 1577,
+  "notObserved": 101687,
+  "observedOutcomeCounts": {
+    "pass": 680,
+    "fail": 211,
+    "unsupported": 639,
+    "crash": 45,
+    "timeout": 2
+  },
+  "interruptionBoundary": "No active child process; last observation already journaled; next native batch compiling.",
+  "reason": "Replaced after fsync-before-launch staging fixed reproduced pre-entry hangs; six cold images and a complete 124-variant Annex B RegExp run had no infrastructure failures. Earlier failures remain in the original journal. No observations are merged into the new run.",
+  "replacement": "test262-full-suite-native-v2.json"
+}

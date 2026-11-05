@@ -1,0 +1,12 @@
+{
+  "kind": "native-regression-analysis",
+  "conformance": false,
+  "observation": "docs/results/native-member-signature-v1.json",
+  "phase": "link preflight, before JIT publication",
+  "nativeExit": 3,
+  "rootCause": "The member-only signature request omitted NativeManagedPointerImport.witness. resolveManagedPointers requires a concrete ABI representative for signature imports, so it rejected the request before metadata reads or publication.",
+  "nodeReproducer": ".tint-bootstrap/member-signature-link-red-v1.log",
+  "fix": "Keep the link invariant. Emitted metadata uses the first validated local member as ABI representative when input configuration has no indirect-call witness. Explicit semantic membership and exact ABI validation remain mandatory.",
+  "recheck": "docs/results/native-member-signature-v2.json",
+  "originalImageSha256": "cc1c36e790f79a01391d84ab92cfd5dcf3b06e011a699c7370c43378086aa53a"
+}

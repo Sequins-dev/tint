@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-11-03T17:22:33.956Z",
+  "containmentTimeoutMs": 60000,
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "binary": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v2/contention-u32",
+  "fixture": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v2/contention-u32.build.json",
+  "fixtureSha256": "b54752a4e2472af4998b93fddc105e6c950c7aa620a434c97ac89486d070a14d",
+  "imageSha256": "73bfd70eb356f90be833eabd153c16b65fb1300a2722ac215dc9bf4ee8975dab",
+  "sourceSnapshot": {
+    "sha256": "c7a560da7a2d52d94b8d899852e2fdc6203e508460b00bbb4aa8667bf95b6fa2",
+    "files": 507
+  },
+  "debuggerLaunch": "lldb-local",
+  "debuggerTracing": false,
+  "elapsedMs": 30207.52525,
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v2/contention-u32\"\nCurrent executable set to '/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/native-contention-artifacts-v2/contention-u32' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --no-stdio --stop-at-entry\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

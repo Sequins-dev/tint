@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "scope": "Node-only frozen compiler role/catalog prerequisite before ownership merge",
+  "historicalLayoutPreserved": true,
+  "currentAndNewLayoutTests": true,
+  "catalogLocations": [
+    "packages/compiler-cli/src/catalog.ts",
+    "packages/compiler/src/catalog.ts"
+  ],
+  "rejections": [
+    "missing role/catalog",
+    "ambiguous role/catalog",
+    "escaping role source",
+    "symlink catalog",
+    "nonregular catalog",
+    "catalog ownership mismatch"
+  ],
+  "checks": [
+    {
+      "command": "node --test tools/captured-compiler-roles.test.ts tools/frozen-source-exports.test.ts tools/frozen-graph-loader.test.ts tools/frozen-node-toolchain.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-roles-focused-v2.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tests.json",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-roles-types-v1.log"
+    },
+    {
+      "command": "prettier check changed prerequisite tools",
+      "exitCode": 0,
+      "log": "/tmp/tint-compiler-roles-formatcheck-v1.log"
+    }
+  ],
+  "testSummary": "\u2139 tests 9\n\u2139 suites 0\n\u2139 pass 9\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 236.762417",
+  "nativeExecution": "none"
+}

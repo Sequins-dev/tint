@@ -1,0 +1,9 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases(
+  [
+    String.raw`const d=Temporal.PlainDate.from({year:2020,month:2,day:31});if(d.toString()!=="2020-02-29")throw 1;const c=Temporal.PlainDate.from(d);if(c===d||c.toString()!==d.toString())throw 2;if(Temporal.PlainDate.from({year:2020,monthCode:"M12",day:2}).month!==12)throw 3;for(const text of ["2020-02-29","0000-01-01","-000001-01-01","+010000-01-01"]){if(Temporal.PlainDate.from(text).toString()!==text)throw 4;}if(Temporal.PlainDate.compare(d,c)!==0||Temporal.PlainDate.compare("2020-01-01",d)!==-1||Temporal.PlainDate.compare(d,"2019-01-01")!==1)throw 5;`,
+    String.raw`let log="";const bag={get calendar(){log+="c";return undefined;},get day(){log+="d";return {valueOf(){log+="D";return 2;}};},get month(){log+="m";return 5;},get monthCode(){log+="C";return undefined;},get year(){log+="y";return 2000;}};const options={get overflow(){log+="o";return "reject";}};if(Temporal.PlainDate.from(bag,options).day!==2||log!=="cdDmCyo")throw 1;log="";let caught=false;try{Temporal.PlainDate.from({},options);}catch(e){caught=e instanceof TypeError;}if(!caught||log!=="o")throw 2;`,
+    String.raw`for(const bag of [{year:2021,month:2,day:29},{year:2020,month:13,day:1},{year:2020,month:1,monthCode:"M02",day:1}]){let caught=false;try{Temporal.PlainDate.from(bag,{overflow:"reject"});}catch(e){caught=e instanceof RangeError;}if(!caught)throw 1;}const d=new Temporal.PlainDate(2020,1,1);for(const option of [null,1,true]){let caught=false;try{Temporal.PlainDate.from(d,option);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}for(const value of [null,undefined,1,true,1n,Symbol()]){let caught=false;try{Temporal.PlainDate.from(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;}`,
+  ],
+  { nodeReference: false },
+);

@@ -1,0 +1,54 @@
+{
+  "kind": "native-fault-diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-lowering-6KBOo5/script-lowering",
+  "sourceSnapshot": {
+    "sha256": "dc12f3382a0fda2bb54c6d1c4a22da16cfc533f9f3886b88c08594372eda78fb",
+    "files": 566
+  },
+  "debuggerStatus": 0,
+  "error": null,
+  "initial": {
+    "stopped": true,
+    "pid": 83332
+  },
+  "fault": {
+    "state": "5",
+    "pc": 4352891412,
+    "function": "program:packages/typescript/src/syntax/rewrite.ts:statement [@28:value:15$2431]",
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x10373da14)",
+    "registers": {
+      "x0": 1,
+      "x1": 4471819432,
+      "x2": 1,
+      "x3": 4378014968,
+      "x4": 0,
+      "x5": 0,
+      "x6": 4471818760,
+      "x7": 0,
+      "x8": 0,
+      "x9": 0,
+      "x10": 4476976736,
+      "x11": 0,
+      "x12": 1,
+      "x13": 1,
+      "x14": 48,
+      "x15": 17335329,
+      "x16": 4343399488,
+      "x17": 22804,
+      "x18": 0,
+      "x19": 6124873376,
+      "x20": 4375756800,
+      "x21": 4455989248,
+      "x22": 4460183552,
+      "x23": 1,
+      "x24": 6124875120,
+      "x25": 71,
+      "x26": 4342006768,
+      "x27": 0,
+      "x28": 0
+    }
+  },
+  "log": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/module-await-rewrite-trap-v1/debugger.log",
+  "original": "docs/results/native-module-await-nested-rewrite-v1.json"
+}

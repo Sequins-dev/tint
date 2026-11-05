@@ -1,0 +1,74 @@
+{
+  "kind": "json-host-await-change-agreement",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "before": {
+    "sha256": "7b7c6a94e85409238f21898db0c216896eb0a66b5fb6703fc15346c62ad751ff",
+    "files": 568
+  },
+  "after": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "changedPortableFiles": [
+    "packages/js-engine/src/lowering/index.ts"
+  ],
+  "cases": [
+    {
+      "name": "static JSON default, identity and proto key",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "5139723ae6a35e9e4f376b0cfc34bbf9d12ec8333ec2c5345910884e091aa6f4"
+    },
+    {
+      "name": "invalid JSON fails while loading",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "637c8600c31f28ea9b565d70598ede477e50e6d7001df3c3f7d7d9d7b8b6dbe4"
+    },
+    {
+      "name": "JSON requires the json type",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "f142841dffbf046327527801bb8d0d1465cdb77111cb7046482068a55086900b"
+    },
+    {
+      "name": "unsupported type cannot select JSON",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "2b7ff4b866ecdd6817a0cbba7345cd9b9718946eef1adcea1e74e604023e7103"
+    },
+    {
+      "name": "JSON has no named exports",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "669c31b47588fd3d99113b739f5ab2abd70bd135c5b8f73ca29d4176a43ba9e9"
+    },
+    {
+      "name": "unsupported attribute key fails during graph loading",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "cf4a0048f46369631af63a6830eb99489da32ee003ea4486b573b659d59a97a6"
+    },
+    {
+      "name": "JavaScript refuses json type",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "806a68eb4893e07f5aec98dc9525b32638f7c2777dbf68288a3a7532d34c040a"
+    },
+    {
+      "name": "JSON cache never bypasses request validation",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "ae07f196b1d80421b0ff144ca6b56d29978c75abe7ef2f9fdc5130d3568b07f5"
+    },
+    {
+      "name": "Script dynamic JSON returns a shared namespace on fresh promises",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "d7b855582718462553d09bbf8da8b4b5ea62b4dedde9e4dd5e182317162ab8be"
+    },
+    {
+      "name": "text module proposals stay sticky unsupported",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "09cb0cd4ed4470262cc7bd20d9b94a58010af843cb51ca9a799368b914209f40"
+    },
+    {
+      "name": "dynamic invalid JSON rejects with SyntaxError",
+      "byteIdenticalPreparedProgram": true,
+      "sha256": "fceb8ff37648beccac25ecc6983d2763decc549091fd2e347004a4033c1a9a87"
+    }
+  ],
+  "interpretation": "Only await-chain lowering changed. Every prepared program of the eleven-case JSON host fixture, including dependency maps and source spans, is byte-identical. This is a Node equivalence check; native observations retain their original source identity."
+}

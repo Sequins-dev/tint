@@ -1,0 +1,11 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+verifyNativeScriptCases([
+  `const f=Function('this.touched=true;return this;');for(const value of [{},new Number(19),function(){}]){if(f.call(value)!==value||value.touched!==true)throw 1;}for(const value of [19,true,'x',Symbol(),0n]){const result=f.call(value);if(typeof result!=='object'||result.valueOf()!==value||result.touched!==true)throw 2;}if(f.call(null)!==globalThis||f.call(undefined)!==globalThis||globalThis.touched!==true)throw 3;`,
+  `const f=Function('this["touched"]=true;');const value={};if(f.call(value)!==undefined||value.touched!==true)throw 1;const C=Function('this.touched=true;return this;'),instance=new C();if(instance.touched!==true||!(instance instanceof C))throw 2;`,
+  `const f=Function('"use strict";this.touched=true;return this;');for(const value of [null,undefined,19,true,'x',Symbol(),0n,Object.preventExtensions({}),Object.defineProperty({},'touched',{value:false,writable:false})]){let caught=false;try{f.call(value);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 1;}`,
+  `const f=Function('this.touched=true;return this;'),inner={},outer={set touched(value){if(value!==true||this!==outer)throw 1;if(f.call(inner)!==inner)throw 2;}};if(f.call(outer)!==outer||inner.touched!==true)throw 3;`,
+  `const f=Function('this.touched=true;return this;'),marker={},value={get touched(){throw 1;},set touched(v){if(v!==true)throw 2;throw marker;}};let caught;try{f.call(value);}catch(e){caught=e;}if(caught!==marker)throw 3;`,
+  `let receiver,seen=0;Object.defineProperty(Number.prototype,'touched',{configurable:true,set(value){'use strict';receiver=this;seen++;if(value!==true)throw 1;}});const f=Function('"use strict";this.touched=true;return this;');if(f.call(19)!==19||receiver!==19||seen!==1)throw 2;`,
+  `const f=Function('this.touched=true;return this;'),value={set touched(v){if(v!==true)throw 1;for(let i=0;i<60000;i++){const garbage={x:i,a:[i,i+1]};if(garbage.x!==i)throw 2;}}};if(f.call(value)!==value||f.call(value)!==value)throw 3;`,
+  `const f=Function('"use strict";this.touched=true;return this;'),marker={},target={},proxy=new Proxy(target,{set(t,key,value,receiver){if(t!==target||key!=='touched'||value!==true||receiver!==proxy)throw 1;throw marker;}});let caught;try{f.call(proxy);}catch(e){caught=e;}if(caught!==marker)throw 2;`,
+]);

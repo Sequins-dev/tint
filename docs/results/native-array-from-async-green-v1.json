@@ -1,0 +1,99 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "0b07a92e3ea4f08370cb0a2cc043543cdc8c7393a9501a6c61f8cd916d29b912",
+      "files": 413
+    },
+    "imageSha256": "191f0a5c0f86a9ca2b5e195b55645e61218477bbc82318ab48d3adb6a06c4453",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "Array.fromAsync([Promise.resolve(19),23],async(v,i)=>v+i).then(a=>{if(a.length!==2||a[0]!==19||a[1]!==24)throw 1;}).then(()=>$DONE(),$DONE);",
+        "sha256": "a0e3ff7151444e81952482d41bd82cd80e10f9d28ecdbc0773f667f0502c0cac"
+      },
+      {
+        "index": 1,
+        "source": "const value=Promise.resolve(19);let i=0;const source={[Symbol.asyncIterator](){return this;},next(){return Promise.resolve(i++===0?{done:false,value}:{done:true});}};Array.fromAsync(source).then(a=>{if(a.length!==1||a[0]!==value)throw 1;}).then(()=>$DONE(),$DONE);",
+        "sha256": "3a17c400aaaf3b1103c440f8902b032f2f7f98a4341623e2a040b64e4ef645ee"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const source={get length(){log+=\"L\";return 2;},get 0(){log+=\"0\";return Promise.resolve(19);},get 1(){log+=\"1\";return 23;}};Array.fromAsync(source,(v,i)=>{log+=\"M\";return Promise.resolve(v+i);}).then(a=>{if(a[0]!==19||a[1]!==24||log!==\"L0M1M\")throw 1;}).then(()=>$DONE(),$DONE);",
+        "sha256": "235098a9a727248dc38ded5383115b6ed7cdf2b613bbcfd447019926c95f2a8f"
+      },
+      {
+        "index": 3,
+        "source": "const marker={};let closed=false;const source={[Symbol.asyncIterator](){return this;},next(){return Promise.resolve({done:false,value:19});},return(){closed=true;return Promise.resolve({done:true});}};Array.fromAsync(source,()=>Promise.reject(marker)).then(()=>{throw 1;},e=>{if(e!==marker||!closed)throw 2;}).then(()=>$DONE(),$DONE);",
+        "sha256": "e9b837ddc3c40b9dadd919dc408a2c5aa0ba52900584dadb56a10363fcded36e"
+      },
+      {
+        "index": 4,
+        "source": "const marker={};let closed=false;const source={[Symbol.asyncIterator](){return this;},next(){throw marker;},return(){closed=true;return {done:true};}};Array.fromAsync(source).then(()=>{throw 1;},e=>{if(e!==marker||closed)throw 2;}).then(()=>$DONE(),$DONE);",
+        "sha256": "d75e0aa28da3f2c9daa802feaac39eed5f9a4df04d4ed77881c0d9cf1e872fb2"
+      }
+    ]
+  },
+  "cases": 5,
+  "completed": 0,
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

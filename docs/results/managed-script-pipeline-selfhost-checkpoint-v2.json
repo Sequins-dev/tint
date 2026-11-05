@@ -1,0 +1,24 @@
+{
+  "kind": "native-selfhost-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "db20a344d31debf9f3256e6632a562584b8fde2bb4f2975c52f9eeb04239bd7b",
+    "files": 546
+  },
+  "stageImages": {
+    "bytes": 69977810,
+    "sha256": "7e38461f6184c99d4d116ef0050e86bb02510aba70ddf6c1cd93133e4499af84",
+    "byteIdentical": true
+  },
+  "managedBytes": 4294966272,
+  "selfbuild": "bootstrap-managed-script-pipeline-v2.json",
+  "smokeBuild": "bootstrap-managed-script-pipeline-smoke-connected-v2.json",
+  "smokeExecution": "native-managed-script-pipeline-smoke-v2.json",
+  "validation": {
+    "codesignStrict": true,
+    "dwarfVerifyLog": ".tint-bootstrap/managed-script-pipeline-dwarf-v2.log",
+    "debugInfoBytes": 2128513,
+    "debugLineBytes": 18081770
+  },
+  "scope": "Retained surface forwarders, managed Script assembly and exact surface-record identity partitioning. Predates evaluator service, public engine frame promotion, public compiler entry export and the default record-interning fast path."
+}

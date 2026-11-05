@@ -1,0 +1,24 @@
+{
+  "kind": "native-selfhost-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "f712b107b5eda9b2c15162ae767517872c5aa26568a556d157c59b4299afe9bc",
+    "files": 541
+  },
+  "stageImages": {
+    "bytes": 69795666,
+    "sha256": "c0f9ab9a11d58741926a61eec57c5b194b067417971c9f8cf573e0a58a788afb",
+    "byteIdentical": true
+  },
+  "managedBytes": 4294966272,
+  "selfbuild": "bootstrap-runtime-link-budget-v1.json",
+  "smokeBuild": "bootstrap-runtime-link-budget-smoke-connected-v2.json",
+  "smokeExecution": "native-runtime-link-budget-smoke-direct-v3.json",
+  "validation": {
+    "codesignStrict": true,
+    "dwarfVerifyLog": ".tint-bootstrap/runtime-link-budget-stage2-dwarf-v1.log",
+    "debugInfoBytes": 2127240,
+    "debugLineBytes": 18048995
+  },
+  "scope": "Directory v3, runtime layout and matched compiler resource budget; predates ScriptRecord lowering and host-frame adapter."
+}

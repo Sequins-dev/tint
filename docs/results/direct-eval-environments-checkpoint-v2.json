@@ -1,0 +1,38 @@
+{
+  "kind": "direct-eval-environment-preparation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "b6606ae0d3abf0977ce3f26009080591d962b33762eb2b2d1472fb301acd8926",
+    "files": 550
+  },
+  "nativeReport": "docs/results/native-test262-direct-eval-environments-validation-v1.json",
+  "expectedOutcomes": {
+    "completed": 8,
+    "unsupported": 1
+  },
+  "workspaceGate": {
+    "tests": 4046,
+    "log": ".tint-bootstrap/direct-eval-environments-workspace-check-v2.log",
+    "checks": [
+      "types",
+      "tests",
+      "dependency boundaries",
+      "formatting"
+    ]
+  },
+  "scope": [
+    "shared syntactic direct-eval predicate",
+    "function and parameter-phase ownership metadata",
+    "sloppy body lexical/variable separation",
+    "parameter-phase outer variable record",
+    "closures, TDZ, mapped arguments and Annex B semantics",
+    "native runtime compilation of candidate-bearing functions"
+  ],
+  "notEnabled": "direct string eval",
+  "pending": [
+    "typed site carrier choice",
+    "general direct eval declaration instantiation",
+    "caller-state plumbing and context parsing"
+  ],
+  "previousCheckpoint": "docs/results/direct-eval-environments-checkpoint-v1.json"
+}

@@ -1,0 +1,35 @@
+{
+  "kind": "tooling-node-checkpoint",
+  "conformance": false,
+  "nativeValidated": false,
+  "sourceSnapshot": {
+    "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+    "files": 565
+  },
+  "tests": 4290,
+  "workspaceGate": ".tint-bootstrap/fixture-binding-verdict-workspace-check-v1.log",
+  "red": ".tint-bootstrap/fixture-binding-verdict-red-v1.log",
+  "census": "docs/results/fixture-binding-verdict-census-node-v1.json",
+  "tooling": [
+    {
+      "path": "tools/test262-native.ts",
+      "sha256": "61be8827aee885752e9160a6328892991ced4cf57480ce1739800a7357900113"
+    },
+    {
+      "path": "tools/test262-native-run.ts",
+      "sha256": "dd68e13df3e46f0690ed2cbc17052fa19c776add311eb8b03341f091a0b34aa9"
+    },
+    {
+      "path": "tools/test262-module-preparation.test.ts",
+      "sha256": "8396ae56549dd7dbe45fbfcc3ef836d699bf416e8ebced64dcf30ab7802bd2fd"
+    },
+    {
+      "path": "tools/test262-dynamic-import-host.test.ts",
+      "sha256": "78c585b5563c8550de6a9ab7bbae6a4fbd6734b2ea86a9a388fca85bcb4afd04"
+    },
+    {
+      "path": "tools/verify-test262-native-modules.ts",
+      "sha256": "c8664d6a48d0a3698fe47e0ee7363ebaf4cb292eb36a850fb5522a3a0d435a60"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "c79dd427f0969e81af225549f184a7e02ca1632ccd7089df5070f0ffe3bf83a2",
+      "files": 425
+    },
+    "imageSha256": "6471556c3714f10123067f1003c952bc30c0ee76fd487fba63a6928233c173dd",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const d=new Date(-1);if(d.getTime()!==-1||d.getUTCFullYear()!==1969||d.getUTCMonth()!==11||d.getUTCDate()!==31||d.getUTCDay()!==3||d.getUTCHours()!==23||d.getUTCMinutes()!==59||d.getUTCSeconds()!==59||d.getUTCMilliseconds()!==999)throw 1;if(Object.prototype.toString.call(d)!==\"[object Date]\")throw 2;",
+        "sha256": "dbd475ec5eba23334d40a781a4a358c4efee74e56adfa319d2c951006d987a89"
+      },
+      {
+        "index": 1,
+        "source": "if(Date.UTC(99,12,0,24)!==Date.UTC(2000,0,1))throw 1;const d=new Date(8640000000000000);if(d.getUTCFullYear()!==275760||d.getUTCMonth()!==8||d.getUTCDate()!==13)throw 2;if(!Number.isNaN(new Date(8640000000000001).valueOf()))throw 3;",
+        "sha256": "34c83c6c9155a58bff9ca75cbcbc09b12b2b60d722650248b32e9aa1397884b1"
+      },
+      {
+        "index": 2,
+        "source": "const d=new Date(-0.5);if(!Object.is(d.getTime(),0))throw 1;d.valueOf=()=>{throw 2;};const e=new Date(d);if(e.getTime()!==0)throw 3;let caught=false;try{Date.prototype.getTime.call(new Proxy(e,{}));}catch(e){caught=e instanceof TypeError;}if(!caught)throw 4;caught=false;try{Date.prototype.getTime();}catch(e){caught=e instanceof TypeError;}if(!caught)throw 5;",
+        "sha256": "d21e3fa3f74e222470079af73130f5535410765ce1914922455f60464169f786"
+      },
+      {
+        "index": 3,
+        "source": "const d=new Date(0);if(d.setTime(1.9)!==1||d.getTime()!==1)throw 1;let order=\"\";const n={valueOf(){order+=\"y\";return NaN;}},m={valueOf(){order+=\"m\";return 0;}};if(!Number.isNaN(Date.UTC(n,m))||order!==\"ym\")throw 2;",
+        "sha256": "481fedc963e914d8b2eb412f3cb772a58a79ba982e581c48ade1bebb613a1f32"
+      },
+      {
+        "index": 4,
+        "source": "const d=new Date(NaN);if(!Number.isNaN(d.setUTCMonth(1)))throw 1;if(d.setUTCFullYear(2000,1,29)!==Date.UTC(2000,1,29))throw 2;if(d.setUTCDate(0)!==Date.UTC(2000,0,31))throw 3;if(d.setUTCHours(25,61,61,1001)!==Date.UTC(2000,1,1,2,2,2,1))throw 4;",
+        "sha256": "a5704965e63b57ac52940eb158cc3a1c1e3b342fc27f2f5621cbfa3795806c67"
+      },
+      {
+        "index": 5,
+        "source": "const d=new Date(0);const x={valueOf(){d.setTime(1000000000000);return 2;}};if(d.setUTCSeconds(x)!==2000||d.getTime()!==2000)throw 1;let order=\"\";d.setTime(NaN);d.setUTCHours({valueOf(){order+=\"h\";return NaN;}},{valueOf(){order+=\"m\";return 1;}});if(order!==\"hm\")throw 2;d.setTime(NaN);const change={valueOf(){d.setTime(123);return 0;}};if(!Number.isNaN(d.setUTCMonth(change))||d.getTime()!==123)throw 3;",
+        "sha256": "bb931fb50abe6b5ab798b4d57037e4369db2511a22dde2feebc7e095d517629b"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

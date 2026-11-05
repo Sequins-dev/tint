@@ -1,0 +1,51 @@
+{
+  "kind": "node-managed-entry-suspension-profile-analysis",
+  "conformance": false,
+  "native": false,
+  "sourceSnapshot": {
+    "sha256": "09a4ced692b0bd083afa1d16a30fee7198b374e4c7f2bbf3ffa29752f6835881",
+    "files": 552
+  },
+  "observations": [
+    {
+      "source": "function*g(){yield 1}",
+      "result": {
+        "ok": false,
+        "error": {
+          "stage": "profile",
+          "message": "profile: callback variance crosses surface classes"
+        }
+      }
+    },
+    {
+      "source": "function*g(){yield eval(yield 1)}",
+      "result": {
+        "ok": false,
+        "error": {
+          "stage": "profile",
+          "message": "profile: callback variance crosses surface classes"
+        }
+      }
+    },
+    {
+      "source": "async function h(){return await 7}",
+      "result": {
+        "ok": false,
+        "error": {
+          "stage": "profile",
+          "message": "profile: callback variance crosses surface classes"
+        }
+      }
+    },
+    {
+      "source": "async function h(){return eval(await 7)}",
+      "result": {
+        "ok": false,
+        "error": {
+          "stage": "profile",
+          "message": "profile: callback variance crosses surface classes"
+        }
+      }
+    }
+  ]
+}

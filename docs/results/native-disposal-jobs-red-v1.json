@@ -1,0 +1,63 @@
+{
+  "kind": "native-script-fixture",
+  "conformance": false,
+  "purpose": "Characterize possible extra lexical disposal Promise-job boundary before changing the implementation",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "290c4a3cb74772e1e6e211b899f5891419e4155e180d1a5593221128a23cce9e",
+    "files": 444
+  },
+  "imageSha256": "edf06019c673b93bb8877f8ff9b96684c8a9efffda762cd4db5ebd6184caa1d6",
+  "asynchronous": true,
+  "nodeReference": false,
+  "resources": {
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "let done=false;async function f(){{await using x=null;}done=true;}const result=f();Promise.resolve().then(()=>{if(!done)throw 1;return result;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "05a1489a3ec2b3b8dbf2096b80a476485c0ca071a8ff60002946e2fa612d6d56"
+    },
+    {
+      "index": 1,
+      "source": "let log=\"\";async function f(){{await using x={[Symbol.asyncDispose](){log+=\"d\";}};}log+=\"f\";}const result=f();if(log!==\"d\")throw 1;Promise.resolve().then(()=>{if(log!==\"df\")throw 2;return result;}).then(()=>print(\"Test262:AsyncTestComplete\"),error=>print(\"Test262:AsyncTestFailure:Error:\"+String(error)));",
+      "sha256": "49a04c583f6de6be4c962a5242b81ccf8ef938b4d45f3f932d9e58b6e4aa2f6c"
+    }
+  ],
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Error",
+        "message": "native $DONE reported failure"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Error",
+        "message": "native $DONE reported failure"
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "kind": "managed-semantic-contracts-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "918b4e8d9fe9924a69078c8b206b909bbf1c968b35f6807a0cf8a7f1278dc5c0",
+    "files": 523
+  },
+  "selfBuild": "docs/results/bootstrap-managed-contracts-v1.json",
+  "nativeFixtures": [
+    "docs/results/native-managed-contracts-runtime-v1.json",
+    "docs/results/native-managed-contracts-compiler-v1.json"
+  ],
+  "bytes": 64031426,
+  "sha256": "30a5590cd7ec0cbd33c944a037236d6a861c663107a804e79e7e4a944422d420",
+  "byteIdentical": true,
+  "workspaceTests": 3758,
+  "gateLogs": [
+    {
+      "path": ".tint-bootstrap/managed-contract-workspace-tests-v1.log",
+      "sha256": "c68bacf0e83b60966dcf2b187822bfa5859d7ccb5ef9be6b6d741a6ae09de15e"
+    },
+    {
+      "path": ".tint-bootstrap/managed-signature-lowering-green-v1.log",
+      "sha256": "90948b1b39597162d588229a958ba073fdaf532394e8419e11d290be77e2a5fd"
+    },
+    {
+      "path": ".tint-bootstrap/managed-contract-final-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "verification": {
+    "signature": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-contracts-signature-v1.log"
+    },
+    "dwarf": {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/managed-contracts-dwarf-v1.log"
+    }
+  },
+  "previousCheckpoint": "docs/results/managed-entry-checkpoint-v1.json",
+  "remaining": [
+    "Two independently live contexts/heaps",
+    "Automatic AOT helper retention and semantic membership",
+    "Physical identity directory and serialization",
+    "General managed entry and eval/Function execution"
+  ]
+}

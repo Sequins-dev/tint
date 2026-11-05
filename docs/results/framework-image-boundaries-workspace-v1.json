@@ -1,0 +1,28 @@
+{
+  "kind": "framework-image-boundaries-workspace-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "08df6850cbb6e16524efd14474fdd4af35c2967cd54b5d5cbe1b8133f495720c",
+    "files": 506
+  },
+  "packages": 14,
+  "nodeTests": {
+    "passed": 3656,
+    "failed": 0,
+    "log": ".tint-bootstrap/image-relocations-full-node-v2.log"
+  },
+  "gates": [
+    "workspace types",
+    "test types",
+    "host types",
+    "public boundaries",
+    "format"
+  ],
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "unchangedAcrossConsolidation": true
+  },
+  "scope": "Image serialization delegates target encoding through a format-neutral ABI; codegen supplies AArch64 relocation metadata and snapshots.",
+  "nativeSelfBuild": "Latest verified fixed point remains bootstrap-managed-global-access-v1.json. New-source attempts and pre-entry observations are separate."
+}

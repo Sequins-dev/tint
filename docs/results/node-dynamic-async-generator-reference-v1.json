@@ -1,0 +1,41 @@
+{
+  "kind": "node-reference-fixture",
+  "conformance": false,
+  "cases": [
+    {
+      "index": 0,
+      "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor;for(const args of [[\"await 1;\"],[\"x\",\"yield x;\"],[\"{x}\",\"y=1\",\"...rest\",\"yield missingGlobal;\"]]){const f=AsyncGeneratorFunction(...args);if(f.name!==\"anonymous\"||Object.getPrototypeOf(f)!==AsyncGeneratorFunction.prototype||!f.hasOwnProperty(\"prototype\"))throw 1;}if(AsyncGeneratorFunction(\"{x}\",\"y=1\",\"yield 1;\").length!==1)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+      "sha256": "13cdbef4a6fd8403783512525b449f1834693159fdf983bf675c5ee5103bbad4"
+    },
+    {
+      "index": 1,
+      "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"value\",\"yield value;\");let count=0;const input={then(resolve){count++;resolve(42);}},g=f(19);if(g[Symbol.asyncIterator]()!==g||count!==0)throw 1;const pending=g.return(input);if(count!==0)throw 2;const result=await pending;if(result.value!==42||!result.done||count!==1)throw 3;const next=await g.next();if(next.value!==undefined||!next.done)throw 4;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+      "sha256": "a016dc1d429a4e8d5118174a2cb02bf7fbfbe3e6b7961cedd61255925e3c498f"
+    },
+    {
+      "index": 2,
+      "source": "(async()=>{const AsyncGeneratorFunction=(async function*(){}).constructor,f=AsyncGeneratorFunction(\"yield missingGlobal;\");const marker={};let caught;try{await f().throw(marker);}catch(e){caught=e;}if(caught!==marker)throw 1;let construct=false;try{new f();}catch(e){construct=e instanceof TypeError;}if(!construct)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:dynamic-async-generator\"));",
+      "sha256": "84a9eb593632d38cb440055a69e86d7f1cfdbb3523d6721c5fa8030aba5bb326"
+    }
+  ],
+  "observations": [
+    {
+      "index": 0,
+      "printed": [
+        "Test262:AsyncTestComplete"
+      ]
+    },
+    {
+      "index": 1,
+      "printed": [
+        "Test262:AsyncTestComplete"
+      ]
+    },
+    {
+      "index": 2,
+      "printed": [
+        "Test262:AsyncTestComplete"
+      ]
+    }
+  ]
+}

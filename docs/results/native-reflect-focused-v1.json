@@ -1,0 +1,13 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "target": "macos-arm64",
+  "fixture": "tools/verify-test262-native-reflect.ts",
+  "fixtureSha256": "d6e1a0053d87a28def48480f3d8264c71b728b55a91a9a5988585e8912c92c79",
+  "runner": "tools/native-script-fixture.ts",
+  "runnerSha256": "b28381f61a6e15b76b1e5b7fe1c49d88cdef132ea5ffa0f8326657cf9df2a58f",
+  "cases": 6,
+  "passed": 6,
+  "nativeValidation": "One staged executable, fresh LLDB-controlled process per case, expected exit 42. Node reference cases also completed.",
+  "scope": "Reflect property/prototype/extensibility APIs, descriptors, keys, apply/construct, exact receivers, conversion order and false mutation results."
+}

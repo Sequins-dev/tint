@@ -1,0 +1,98 @@
+{
+  "kind": "bespoke-native-regression",
+  "conformance": false,
+  "debuggerLaunch": "debugserver-connected",
+  "debuggerTracing": true,
+  "build": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "227fbf382925cee3bd317282a2e787ada657cbde782a87714f300baa7f79b676",
+      "files": 449
+    },
+    "imageSha256": "dc826b37800dc8793d2d20deadeee09bd215020bd0ab11c3de7a7e22cf698364",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 1048576,
+      "maxDynamicCodeBytes": 65536,
+      "managedBytes": 67108864,
+      "arrayBufferBytes": 16777216,
+      "allocationCapacity": 1048576,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "(async()=>{const f=Function(\"return arguments[0];\");for(const value of [undefined,null,false,42,\"text\",{},Symbol(),0n]){if(f(value)!==value)throw 1;}if(f.length!==0)throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:indexed-arguments\"));",
+        "sha256": "b67a7af51e2375f3e52224bab698cdcd12b50f335881cb2ed4631b12a9bad067"
+      },
+      {
+        "index": 1,
+        "source": "(async()=>{const f=Function(\"a\",\"a\",\"return arguments[0];\"),g=Function(\"a\",\"a\",\"return arguments[1];\");if(f(17,29)!==17||g(17,29)!==29)throw 1;const h=Function(\"a\",\"return arguments[0]===a;\");if(!h({}))throw 2;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:indexed-arguments\"));",
+        "sha256": "1af935c8deeedc85b623c4b5c80e88c7152d25bc2d9e5b2ae73e5a5734053f98"
+      },
+      {
+        "index": 2,
+        "source": "(async()=>{const f=Function(\"a\",\"'use strict';return arguments[1];\");if(f(17,29)!==29||f.length!==1)throw 1;Object.prototype[0]=99;try{if(Function(\"return arguments[0];\")(undefined)!==undefined)throw 2;}finally{delete Object.prototype[0];}})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:indexed-arguments\"));",
+        "sha256": "217c901ee89ad5bf3053c929d38fc96e2071b8951da16ee1efb312b87d146b45"
+      },
+      {
+        "index": 3,
+        "source": "(async()=>{const G=(function*(){}).constructor,A=(async function(){}).constructor,AG=(async function*(){}).constructor;const value={};const result=G(\"return arguments[0];\")(value).next();if(!result.done||result.value!==value)throw 1;if(await A(\"return arguments[0];\")(value)!==value)throw 2;const r=await AG(\"return arguments[0];\")(value).next();if(!r.done||r.value!==value)throw 3;})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:indexed-arguments\"));",
+        "sha256": "ba60478e72260f8293cfe5177ca94d093f90b16b980f4b18ad64feb390d8d20a"
+      },
+      {
+        "index": 4,
+        "source": "(async()=>{Object.prototype[0]=42;Function(\"return arguments[0];\")();})().then(()=>print(\"Test262:AsyncTestComplete\"),()=>print(\"Test262:AsyncTestFailure:Error:indexed-arguments\"));",
+        "sha256": "199158005e8c7b4fa1ed89eabd8c9e0e07dc1500a72caa9c84b59c3cf948e734"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

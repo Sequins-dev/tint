@@ -1,0 +1,50 @@
+{
+  "kind": "native-plural-rules-validation",
+  "generatedAt": "2026-11-03T01:57:40.468Z",
+  "sourceSnapshot": {
+    "sha256": "1cd8061011e988c8d0b4ceeb7ed281da7d82ab7b6ede12a1cc791bae9bc97ada",
+    "files": 476
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-plural-rules-v1.json",
+  "nativeTest262": {
+    "report": "docs/results/test262-plural-rules-native-v1.json",
+    "totals": {
+      "total": 106,
+      "passed": 104,
+      "failed": 2,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 0.9811320754716981
+    },
+    "remaining": "Both variants of undefined-newtarget-throws.js call shared testWithIntlConstructors, which constructs missing Intl.Collator/NumberFormat/DateTimeFormat services."
+  },
+  "boundaries": [
+    "docs/results/native-plural-rules-case-0-v1.json",
+    "docs/results/native-plural-rules-case-1-v1.json",
+    "docs/results/native-plural-rules-case-2-v1.json",
+    "docs/results/native-plural-rules-case-3-v1.json",
+    "docs/results/native-plural-rules-case-4-v1.json",
+    "docs/results/native-plural-rules-case-5-v1.json"
+  ],
+  "portableEvidence": {
+    "officialPluralSamples": 3907,
+    "compactProfileComparisons": 41000,
+    "exactRoundingComparisons": 8640,
+    "workspaceTests": {
+      "passed": 3328,
+      "failed": 0
+    },
+    "types": true,
+    "boundaries": true,
+    "formatting": true
+  },
+  "numericalNativeReports": [
+    "docs/results/native-intl-numeric-decimal-v1.json",
+    "docs/results/native-intl-numeric-plural-rules-v1.json",
+    "docs/results/native-intl-mathematical-value-bound-v2.json"
+  ],
+  "retainedFailedObservation": "docs/results/native-intl-numeric-intl-mathematical-value-v1.json",
+  "scope": "Complete PluralRules selection and separate bespoke regressions; not a whole-suite native behavior percentage."
+}

@@ -1,0 +1,128 @@
+{
+  "kind": "managed-surface-measurement",
+  "conformance": false,
+  "native": false,
+  "reason": "Dynamic request caches on ModuleRecord, ScriptRecord and RealmReferrer share one new LoadedModuleRequest list class. Existing ABI partition checks passed in the probe.",
+  "probe": ".tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts",
+  "log": ".tint-bootstrap/module-referrer-context-surface-measure-v1.log",
+  "differences": [
+    {
+      "actual": 92,
+      "expected": 89,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:337:3)"
+    },
+    {
+      "actual": 48,
+      "expected": 47,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:338:3)"
+    },
+    {
+      "actual": [
+        40,
+        2,
+        6
+      ],
+      "expected": [
+        39,
+        2,
+        6
+      ],
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:339:3)"
+    },
+    {
+      "actual": 406,
+      "expected": 398,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:346:3)"
+    },
+    {
+      "actual": 50,
+      "expected": 49,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:379:3)"
+    },
+    {
+      "actual": 429,
+      "expected": 421,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:391:3)"
+    },
+    {
+      "actual": 92,
+      "expected": 89,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:539:3)"
+    },
+    {
+      "actual": 50,
+      "expected": 49,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:577:7"
+    },
+    {
+      "actual": 381,
+      "expected": 373,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:578:7"
+    },
+    {
+      "actual": 429,
+      "expected": 421,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:585:7"
+    },
+    {
+      "actual": 424,
+      "expected": 416,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:586:7"
+    },
+    {
+      "actual": 381,
+      "expected": 373,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:587:7"
+    },
+    {
+      "actual": 429,
+      "expected": 421,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:596:7"
+    },
+    {
+      "actual": 50,
+      "expected": 49,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:577:7"
+    },
+    {
+      "actual": 381,
+      "expected": 373,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:578:7"
+    },
+    {
+      "actual": 429,
+      "expected": 421,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:585:7"
+    },
+    {
+      "actual": 424,
+      "expected": 416,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:586:7"
+    },
+    {
+      "actual": 381,
+      "expected": 373,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:587:7"
+    },
+    {
+      "actual": 429,
+      "expected": 421,
+      "site": "    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:596:7"
+    },
+    {
+      "actual": 92,
+      "expected": 89,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:640:3)"
+    },
+    {
+      "actual": 42,
+      "expected": 41,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:641:3)"
+    },
+    {
+      "actual": 358,
+      "expected": 350,
+      "site": "    at TestContext.<anonymous> (file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-runtime-surface-referrer-measure-v1.ts:645:3)"
+    }
+  ]
+}

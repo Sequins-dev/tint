@@ -1,0 +1,63 @@
+{
+  "kind": "native-managed-script-allocation-diagnostic",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-pc82Wi/managed-script",
+  "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-managed-script-pc82Wi/managed-script.manifest.json",
+  "sourceSnapshot": {
+    "sha256": "588736f87f2ef4ebab5a4edc81833cc6c76aaddfe305e767e91003cb2d4a7244",
+    "files": 546
+  },
+  "elapsedMs": 25246.5265,
+  "debuggerStatus": 0,
+  "error": null,
+  "initial": {
+    "stopped": true,
+    "pid": 91490
+  },
+  "final": null,
+  "diagnostic": {
+    "sp": 4781379104,
+    "pc": 4376515172,
+    "instruction": [
+      96,
+      0,
+      32,
+      212
+    ],
+    "context": 4781473376,
+    "allocationState": 4697495024,
+    "words": [
+      33554416,
+      33554432,
+      0,
+      0,
+      272237184,
+      1,
+      0,
+      0
+    ],
+    "regionBase": 4558766080,
+    "rootHeader": [
+      5,
+      1,
+      16384,
+      4697359376
+    ],
+    "roots": [
+      2,
+      33554416,
+      144,
+      0,
+      0,
+      0,
+      0
+    ],
+    "error": "success",
+    "stopped": true,
+    "reason": "EXC_BREAKPOINT (code=1, subcode=0x104dc5264)"
+  },
+  "log": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/e4-alloc-v3/debugger.log",
+  "relatedReports": [
+    "docs/results/native-managed-script-v2.json"
+  ]
+}

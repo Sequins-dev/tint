@@ -1,0 +1,196 @@
+{
+  "scope": "S1b native shared block service implemented; focused contracts/ABI/capability tests and root-owned single-agent native fixture pass. Full combined workspace gates remain root-owned.",
+  "baseline": {
+    "sourceIdentity": "aa0108f950822cdebd2e6a12fe8d45ead137d3324027f2e52dcd0da45bc55086",
+    "packages": 62,
+    "sources": 497,
+    "nodeTests": 3530
+  },
+  "combinedWorkspace": {
+    "sha256": "df0d9242b0d8ab17f91de8daceb93a20ca371eec18ba7040af42371e8d31cf3b",
+    "files": 502,
+    "packages": 62,
+    "note": "Root concurrently implements portable SAB/DataView/TypedArray routing. This report does not attribute those source changes or claim their native validation."
+  },
+  "ownedSourceFiles": [
+    {
+      "path": "packages/abi/src/shared-block.ts",
+      "sha256": "008ade7078bbdee963c6f9404efef44d89dd6f72ffd0f5015cac9cdaad3296f7"
+    },
+    {
+      "path": "packages/native-memory/src/shared-block-service.ts",
+      "sha256": "063dd4e2ab2a750795e057e2dfe8e1864bded40ac6690ce8d1b91cbbb43d99dd"
+    }
+  ],
+  "publicEntries": [
+    "@tint/abi/shared-block",
+    "@tint/native-memory/shared-block-service"
+  ],
+  "serviceAPI": [
+    "nativeSharedMemoryHost() selects explicitly bound raw primitives; no automatic host permission",
+    "createNativeSharedBlockService(host,{pageSize,maxBlocks,maxReservedBytes}) returns SharedResult<NativeSharedBlockService>",
+    "attachNativeSharedBlockService(host,service.registry) creates another moving facade for the same trusted live registry",
+    "NativeSharedBlockService extends S0 SharedBlockService and exposes readonly trusted registry capability"
+  ],
+  "authority": {
+    "representation": "Normal mapped scalar-only registry: 64-byte header, 48-byte descriptors; all uint64 cells aligned; no managed references in registry or payload",
+    "identity": "Control-mapping-derived engine-lifetime process identity plus positive never-reused descriptor index; wrapper identity is irrelevant; raw addresses remain trusted runtime metadata",
+    "creation": "Native 64-bit seq-cst CAS lock serializes quota reservation and publication. Read count/quota from native header, map maximum once, write immutable descriptor, then publish count and release lock. No managed allocation/callback while lock held; actual raw host leaves satisfy this contract.",
+    "budget": "Payload quota charges page-rounded maximum, at least one page even for zero-length blocks; registry mapping separately bounded by maxBlocks. Invalid page policy is rejected before mapping.",
+    "rollback": "Failed maps publish nothing or consume no count/quota. Owned misaligned mappings are unmapped before publication; rollback failure is fatal rather than silently losing ownership.",
+    "growth": "Authoritative per-block 64-bit seq-cst length CAS loop, including equality. A failed CAS observes newer length; if target is now smaller, return invalid-length. Reserve once, no copying, zero-filled untouched new bytes.",
+    "payload": "1/2/4-byte integer operations remain whole-width; Word64 uses lo/hi and caller output scratch. Metadata conversion to Number is only for explicitly bounded safe-integer metadata.",
+    "scratch": "Each operation owns a fresh metadata scratch; grow/create reuse only their own scratch inside retry loops. Caller Word64 output is separate and preserved on validation failure.",
+    "lifetime": "Successful mappings retained through engine/process lifetime; no finalizer/refcount/destroy claims, no registerExternalMemory grant, no premature unmap"
+  },
+  "checks": [
+    {
+      "name": "initial contract red",
+      "result": "expected failure: missing native shared service implementation",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-red-v1.log",
+        "sha256": "5e084a4d1dd3ff2fd32993d6cb799814b9c1fde8c9c48747e03e0fd4f3abb505"
+      }
+    },
+    {
+      "name": "policy validation red",
+      "result": "expected failure: non-power-of-two page accepted until host mapping; fixed to validate before map",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-policy-red-v1.log",
+        "sha256": "55b38e6a4c71c9c0a80d4bdf5f79be403eabc0c282cb9babb4cd5d95d1811a68"
+      }
+    },
+    {
+      "name": "focused contract/capability/ABI tests",
+      "result": "9 passed, 0 failed",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-focused-final-v1.log",
+        "sha256": "83a0cabff5576d88ea033fb1b03be25e92b4c21d201eec706e1d7ef6f0c830f8"
+      }
+    },
+    {
+      "name": "workspace build while iterating",
+      "result": "passed; final combined whole-workspace gates owned by root",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-build-v8.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "genuine Node low-level host",
+      "result": "Node-only mapped SharedArrayBuffer with actual Atomics metadata and CAS; no portable Node fallback",
+      "path": "tools/node-shared-memory-host.ts"
+    }
+  ],
+  "semanticCoverage": [
+    "Distinct moving facade/storage aliases, stable identity and engine separation",
+    "Byte preservation/zero extension and fixed/growable/zero-length blocks",
+    "Authoritative count/byte quotas across aliases, failed map rollback without consuming handle",
+    "Bit-exact all-ones Word64 transport, width/range/alignment/scratch validation",
+    "Real CAS equality publication and deterministic competing larger grow before smaller CAS",
+    "Per-operation scratch isolation",
+    "Native scalar publication lock visible during map, unpublished handle remains invalid",
+    "Page rounding of maximum, zero-block reservation and policy validation before mapping",
+    "Capability closure of all seven actual factory leaves: explicit host binding, owning runtime and own retained export",
+    "Separate ABI entries have no dependencies; all shared scalar offsets aligned, unique within records and bounded by extent"
+  ],
+  "preservedFailedBuilds": [
+    {
+      "result": "Portable parser rejects class implements",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v1.log",
+        "sha256": "61d96a5ea309d18b34e00427002c76565b64f993e8b364784133bc8e512c7627"
+      }
+    },
+    {
+      "result": "Portable parser rejects readonly class field modifiers",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v2.log",
+        "sha256": "4f8f26a071fc4720f6a372c04c3d2adbd7fb9bb0d912a098c4f790b06a5ea2b1"
+      }
+    },
+    {
+      "result": "Native class instance did not adapt to returned service interface; replaced with established immutable closure-backed facade",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v3.log",
+        "sha256": "ac4074489a016fb7d543073d1e2ad4ca2b1ab892dd47a86e94240992dac336ba"
+      }
+    },
+    {
+      "result": "Native profile rejects dynamic exponent operator; replaced width bound with exact constants",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v4.log",
+        "sha256": "05d285e9be6634dc30e2cd7e23332f679001fdaeb2490c92d299ff0b02dc04e0"
+      }
+    },
+    {
+      "result": "S0 read error ternary needed native contextual typing; root corrected S0 owner",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v5.log",
+        "sha256": "e1ef1f35d551b642e23c5563b5ce668fe01ae600b1c10e4ec95f47ab96764cca"
+      }
+    },
+    {
+      "result": "Named function values require managed hoisted initialization; use explicit arrow callbacks as established by native-tracing",
+      "log": {
+        "path": ".tint-bootstrap/shared-block-service-s1b-fixture-build-v6.log",
+        "sha256": "382176810518ac72bc6e51f2ef9404cec1927500d7215918e70bdf84789fd1cc"
+      }
+    }
+  ],
+  "native": {
+    "executedByChild": false,
+    "owner": "root",
+    "originalArtifact": {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-block-service-s1b-v1-Q22Qog/shared-block-service-s1b-v1",
+      "sourceSnapshot": {
+        "sha256": "4cd2de09d97c5a8fc6a01e62d428acb3996b2db6cdade530480f9421182634bc",
+        "files": 502
+      },
+      "expectedExitStatus": 42,
+      "imageSha256": "989b946b49a450d1f31826df23163f43e44d40193cddeebee894ef19a0e9c495",
+      "fixture": "tools/build-shared-block-service-fixture.ts"
+    },
+    "failedObservation": "docs/results/shared-block-service-s1b-native-v1.json",
+    "diagnosticLog": ".tint-bootstrap/shared-block-service-s1b-trap-diagnostic-v2.log",
+    "diagnostic": "Original 16KiB managed / 512 metadata fixture exhausted live-set budget during second facade construction. Identical semantic checks passed under 256KiB managed / 8192 metadata, with pressure delayed until after service/facade/block setup and exceeding the 128KiB semispace.",
+    "largerControl": {
+      "kind": "shared-block-service-s1b-larger-heap-control",
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-block-service-s1b-large-v1-1eHy9t/shared-block-service-s1b-large-v1",
+      "artifact": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shared-block-service-s1b-large-v1-1eHy9t/shared-block-service-s1b-large-v1",
+      "sourceSnapshot": {
+        "sha256": "45ef0ab3c203b42fb434ea3e5b9d6a9952aec4195066a3f4bf5740ad543b7c9c",
+        "files": 502
+      },
+      "expectedExitStatus": 42,
+      "expectedExit": 42,
+      "imageSha256": "55c0389b307ff7e9b12ed8adc8c07f37ee712cc0a797ec72e752bbdb1820e9fc",
+      "fixture": "tools/build-shared-block-service-fixture.ts",
+      "fixtureSha256": "9068dd3ceed4c6b088d8621c807cd252fd6d621d67e5f04eab5f4c71d972441d",
+      "managedBytes": 262144,
+      "allocationCapacity": 8192,
+      "controlBytes": 65536,
+      "rootCapacity": 4096,
+      "stackBytes": 1048576,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "semanticChecks": "Identical fixture text/checks to original; only managed/metadata capacities and image name differ. Pressure loop follows initial service/facade/block setup and allocates 256 numeric arrays of 128 uint32 elements (>128KiB semispace including headers).",
+      "priorFailedObservation": "docs/results/shared-block-service-s1b-native-v1.json",
+      "diagnostic": "Allocator optional-present guard trapped during second facade creation; larger heap distinguishes insufficient live-set budget from later collection/rooting failure.",
+      "builtOnly": true
+    },
+    "successfulObservation": "docs/results/shared-block-service-s1b-native-v2.json",
+    "successfulObservationSha256": "db574e8d9b962829cfe28ad1711df282527db59db8b3bd5398cc184cdda6fe74",
+    "successfulOutcome": {
+      "kind": "completed"
+    },
+    "validationScope": "Root-owned actual post-entry native execution completed expected exit42; fixed/grow/zero/aliases/multiple-block/quota/invalid-handle/Word64 checks plus copying-GC pressure. Single agent; no public SAB constructor/installer, JavaScript Atomics, workers or cross-agent progress claim from this slice."
+  },
+  "integration": "Root owns catalog regeneration (502 current sources), full workspace gates and all native execution/status documents. No child full-suite contention or native launches.",
+  "deferred": [
+    "Script SAB installer/publication by root after native storage/view proof",
+    "Cross-agent contention/progress harness before worker claims",
+    "Engine destroy after joining agents and excluding outstanding operations"
+  ],
+  "supersedes": ".tint-bootstrap/shared-block-service-s1b-validation-v1.json",
+  "supersessionReason": "The immutable v1 report was captured while the larger native control was pending; root provided passing result immediately afterward."
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "framework-ownership-migration",
+  "before": {
+    "sha256": "0cc3058420a907697329b65058ec8518f5e0fffd9804e4f7c9505f654dd4ff91",
+    "files": 507
+  },
+  "after": {
+    "sha256": "8c3b48290cd97f470f033e9724f31bd376bc7cbd2affcb164a780573d7b94481",
+    "files": 507
+  },
+  "packages": 49,
+  "portableNonGeneratedBodiesByteIdentical": 506,
+  "movedImplementationFiles": 2,
+  "movedTestBodies": 1,
+  "publicEntry": "@tint/js-engine/lowering",
+  "aliasesRetained": false,
+  "runtimeCapabilitiesEqual": true,
+  "smoke": {
+    "bytes": 1321778,
+    "sha256": "0dae04bb1977de90581f7b7993e70567cb29d082ba35ca52ca32f4539c660044",
+    "byteIdentical": true,
+    "before": ".tint-bootstrap/framework-js-engine-smoke-before-v1/manifest.json",
+    "after": ".tint-bootstrap/framework-js-engine-smoke-after-v1/manifest.json"
+  },
+  "scope": "Pure Script-lowering ownership move. No runtime algorithms, dynamic compiler extraction, host grants or JS semantics changed. Native execution and native self-hosting retain separate evidence."
+}

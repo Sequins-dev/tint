@@ -1,0 +1,10 @@
+{
+  "kind": "native-bootstrap-build-failure",
+  "conformance": false,
+  "snapshot": ".tint-bootstrap/source-debug-entitlements-v1",
+  "output": ".tint-bootstrap/stage1-debug-entitlements-v1",
+  "stage": "check",
+  "error": "packages/apple-signature/src/index.ts:1918:1937: invalid property read",
+  "cause": "Optional array parameter narrowing was not retained by the conservative loop analysis. Replaced the mutable parameter view with a guarded immutable local alias.",
+  "log": "/tmp/tint-debug-entitlements-bootstrap-v1.log"
+}
