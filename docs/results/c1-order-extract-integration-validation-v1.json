@@ -1,0 +1,12 @@
+{
+  "kind": "c1-native-order-and-extraction-integration-validation",
+  "conformance": false,
+  "base": "1258d52fead683240336f42cc0e19518b110881a",
+  "command": "node --test --test-concurrency=2 tools/native-selection-order.test.ts tools/test262-native-extract.test.ts",
+  "exitStatus": 0,
+  "tests": 2,
+  "passed": 2,
+  "failed": 0,
+  "log": "docs/results/c1-order-extract-integration-focused-v1.txt",
+  "scope": "Focused tests for merged syntax grouping and fixture-aware journal extraction. Existing frozen direct-file run keeps its original ordering. Next fresh toolchain will adopt main grouping. Full resource-capped workspace gate v10 remains queued; no new native observations created."
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "c1-native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/*.js",
+  "phase": "compiling batch 6 (64 variants)",
+  "runnerPid": 81217,
+  "completedVariants": 26,
+  "passed": 26,
+  "firstStallElapsedMs": 167288,
+  "cpuObservations": [
+    "21:39.17",
+    "22:31.84",
+    "22:37.47"
+  ],
+  "inferiorLaunched": false,
+  "sample": "docs/results/c1-direct-statements-v3-batch6-stall-sample.txt",
+  "interpretation": "CPU-active synchronous bootstrap compilation, sampled at first observed STALL; continued without interruption or retry."
+}
