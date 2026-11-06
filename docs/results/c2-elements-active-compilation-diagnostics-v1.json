@@ -1,0 +1,171 @@
+{
+  "kind": "c2-elements-active-compilation-diagnostics",
+  "conformance": false,
+  "toolchain": "docs/results/c2-frozen-toolchain-v9.json",
+  "runnerPid": 38740,
+  "batchSize": 64,
+  "profiles": [
+    {
+      "batch": 12,
+      "profile": ".tint-bootstrap/c2/elements-batch12-compilation.cpuprofile",
+      "sha256": "32eb5d7982c7b877a52deccc8470d2d04ce8909029b7ee39b3e68d9a97d1ddd2",
+      "samples": 788,
+      "topFrames": [
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 193
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 92
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 70
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 55
+        },
+        {
+          "function": "construct",
+          "file": "packages/ts-native/dist/closure/lowering/records.js",
+          "line": 762,
+          "samples": 47
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 41
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 38
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 38
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 32
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 23
+        },
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 21
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 21
+        }
+      ]
+    },
+    {
+      "batch": 15,
+      "profile": ".tint-bootstrap/c2/elements-batch15-compilation.cpuprofile",
+      "sha256": "1513033790cc691e8512e983ba3ee9939784a4b0e6dfae37b067589617b718be",
+      "samples": 336,
+      "topFrames": [
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 97
+        },
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 68
+        },
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 33
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 26
+        },
+        {
+          "function": "typeOf",
+          "file": "packages/typescript/dist/checker/closures.js",
+          "line": 558,
+          "samples": 20
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 18
+        },
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 18
+        },
+        {
+          "function": "position",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 16,
+          "samples": 8
+        },
+        {
+          "function": "expression",
+          "file": "packages/typescript/dist/checker/closures.js",
+          "line": 1818,
+          "samples": 7
+        },
+        {
+          "function": "expression",
+          "file": "packages/typescript/dist/checker/closures.js",
+          "line": 1818,
+          "samples": 7
+        },
+        {
+          "function": "set",
+          "file": "packages/foundation/dist/collections/key-index.js",
+          "line": 69,
+          "samples": 7
+        },
+        {
+          "function": "typeOf",
+          "file": "packages/typescript/dist/checker/closures.js",
+          "line": 558,
+          "samples": 7
+        }
+      ]
+    }
+  ],
+  "interpretation": "Short samples document active compiler stages, not a statistically controlled benchmark. Batch 12 profile concentrated in record-lowering key-index lookup; a later inspector pause was already in emitModule, so no key-index cardinality or collision cause was established. Batch 15 OS sample also shows JavaScript execution, without I/O or debugger wait. General compiler performance remains with cluster P; no further algorithm changes made.",
+  "note": "Batch 12 contained two remaining runtime variants in its family, despite run configured at batch size 64. No conformance outcomes are inferred from these profiles."
+}
