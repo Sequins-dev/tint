@@ -1,0 +1,514 @@
+{
+  "kind": "directory-inventory",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "variantPolicy": "syntaxVariants; fixture files excluded; recursive directory counts overlap and must not be summed",
+  "scopeRoots": [
+    "language/module-code",
+    "language/import",
+    "language/export",
+    "language/expressions/dynamic-import",
+    "language/expressions/import.meta"
+  ],
+  "directories": [
+    {
+      "selection": "language/export",
+      "files": 3,
+      "variants": 3,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import",
+      "files": 1005,
+      "variants": 1900,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-script-dynamic-import-directory-v1.json",
+          "totals": {
+            "total": 1900,
+            "passed": 1559,
+            "failed": 0,
+            "unsupported": 341,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.8205263157894737
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          },
+          "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11"
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/assignment-expression",
+      "files": 28,
+      "variants": 53,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/catch",
+      "files": 176,
+      "variants": 336,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-attributes",
+      "files": 23,
+      "variants": 44,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-language-dynamic-import-attributes-json-v2.json",
+          "totals": {
+            "total": 44,
+            "passed": 42,
+            "failed": 0,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9545454545454546
+          },
+          "sourceSnapshot": {
+            "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+            "files": 568
+          },
+          "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-defer",
+      "files": 5,
+      "variants": 5,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-defer/import-defer-async-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module",
+      "files": 2,
+      "variants": 2,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-defer/sync",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/import-defer/sync-dependency-of-deferred-async-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/namespace",
+      "files": 67,
+      "variants": 116,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/syntax",
+      "files": 566,
+      "variants": 1080,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/syntax/invalid",
+      "files": 374,
+      "variants": 714,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/syntax/valid",
+      "files": 192,
+      "variants": 366,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/dynamic-import/usage",
+      "files": 108,
+      "variants": 216,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/import.meta",
+      "files": 22,
+      "variants": 27,
+      "completeReports": []
+    },
+    {
+      "selection": "language/expressions/import.meta/syntax",
+      "files": 18,
+      "variants": 23,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import",
+      "files": 129,
+      "variants": 135,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-attributes",
+      "files": 17,
+      "variants": 17,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-language-import-attributes-json-v2.json",
+          "totals": {
+            "total": 17,
+            "passed": 12,
+            "failed": 0,
+            "unsupported": 5,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.7058823529411765
+          },
+          "sourceSnapshot": {
+            "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+            "files": 568
+          },
+          "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+        }
+      ]
+    },
+    {
+      "selection": "language/import/import-bytes",
+      "files": 5,
+      "variants": 5,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer",
+      "files": 103,
+      "variants": 109,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/deferred-namespace-object",
+      "files": 5,
+      "variants": 5,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors",
+      "files": 12,
+      "variants": 12,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-other-while-dep-evaluating",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-other-while-dep-evaluating-async",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-other-while-evaluating",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-other-while-evaluating-async",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-self-while-defer-evaluating",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/get-self-while-evaluating-async",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/module-throws",
+      "files": 3,
+      "variants": 3,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/resolution-error",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/errors/syntax-error",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-sync",
+      "files": 2,
+      "variants": 2,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await",
+      "files": 5,
+      "variants": 5,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await/flattening-order",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await/import-defer-async-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module",
+      "files": 1,
+      "variants": 1,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/evaluation-triggers",
+      "files": 70,
+      "variants": 70,
+      "completeReports": []
+    },
+    {
+      "selection": "language/import/import-defer/syntax",
+      "files": 9,
+      "variants": 15,
+      "completeReports": []
+    },
+    {
+      "selection": "language/module-code",
+      "files": 599,
+      "variants": 602,
+      "completeReports": []
+    },
+    {
+      "selection": "language/module-code/ambiguous-export-bindings",
+      "files": 10,
+      "variants": 10,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-dynamic-import-ambiguous-regression-v1.json",
+          "totals": {
+            "total": 10,
+            "passed": 9,
+            "failed": 0,
+            "unsupported": 1,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          },
+          "frozenToolchainSha256": "f568e19314f10b9b94ce411832000d5afcb6703c71e761f736ff3dc447e38acb"
+        },
+        {
+          "path": "docs/results/test262-module-ambiguous-export-bindings-native-v1.json",
+          "totals": {
+            "total": 10,
+            "passed": 9,
+            "failed": 0,
+            "unsupported": 1,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9
+          },
+          "sourceSnapshot": {
+            "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+            "files": 562
+          },
+          "frozenToolchainSha256": "c8838a921cf8cdd704fbb72b71acae1a07a9afaf57299bf4974519383ba14223"
+        },
+        {
+          "path": "docs/results/test262-module-fixture-syntax-ambiguous-regression-v3.json",
+          "totals": {
+            "total": 10,
+            "passed": 9,
+            "failed": 0,
+            "unsupported": 1,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9
+          },
+          "sourceSnapshot": {
+            "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+            "files": 562
+          },
+          "frozenToolchainSha256": "2a57a89bb32b5f5805e0a4a845a58b7c0c36352063e3ed828343a1b2da6c79f3"
+        }
+      ]
+    },
+    {
+      "selection": "language/module-code/import-attributes",
+      "files": 13,
+      "variants": 13,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-language-module-import-attributes-json-v2.json",
+          "totals": {
+            "total": 13,
+            "passed": 13,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+            "files": 568
+          },
+          "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+        }
+      ]
+    },
+    {
+      "selection": "language/module-code/namespace",
+      "files": 38,
+      "variants": 38,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-dynamic-import-namespace-regression-v1.json",
+          "totals": {
+            "total": 38,
+            "passed": 38,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          },
+          "frozenToolchainSha256": "f568e19314f10b9b94ce411832000d5afcb6703c71e761f736ff3dc447e38acb"
+        },
+        {
+          "path": "docs/results/test262-module-fixture-syntax-namespace-regression-v3.json",
+          "totals": {
+            "total": 38,
+            "passed": 38,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+            "files": 562
+          },
+          "frozenToolchainSha256": "2a57a89bb32b5f5805e0a4a845a58b7c0c36352063e3ed828343a1b2da6c79f3"
+        },
+        {
+          "path": "docs/results/test262-module-namespace-native-v1.json",
+          "totals": {
+            "total": 38,
+            "passed": 38,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "2c72f4c9259c030517ee80d1c06ebcd820ab05b7f08287f9b103b39d86ec810c",
+            "files": 562
+          },
+          "frozenToolchainSha256": "c8838a921cf8cdd704fbb72b71acae1a07a9afaf57299bf4974519383ba14223"
+        }
+      ]
+    },
+    {
+      "selection": "language/module-code/namespace/internals",
+      "files": 36,
+      "variants": 36,
+      "completeReports": []
+    },
+    {
+      "selection": "language/module-code/source-phase-import",
+      "files": 3,
+      "variants": 4,
+      "completeReports": []
+    },
+    {
+      "selection": "language/module-code/top-level-await",
+      "files": 251,
+      "variants": 253,
+      "completeReports": [
+        {
+          "path": "docs/results/test262-language-module-top-level-await-bounded-v2.json",
+          "totals": {
+            "total": 253,
+            "passed": 253,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+            "files": 568
+          },
+          "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+        }
+      ]
+    },
+    {
+      "selection": "language/module-code/top-level-await/syntax",
+      "files": 211,
+      "variants": 211,
+      "completeReports": []
+    }
+  ]
+}

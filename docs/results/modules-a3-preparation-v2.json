@@ -1,0 +1,4393 @@
+{
+  "kind": "preparation-only",
+  "conformance": false,
+  "executed": 0,
+  "counts": {
+    "prepared": 458,
+    "blocked": 111,
+    "syntax-only": 198
+  },
+  "blockers": {
+    "{\"kind\":\"unsupported\",\"reason\":\"namespace-import-source-and-export-1_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":169,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"import-source-newlines_FIXTURE.js: {\\\"start\\\":962,\\\"end\\\":1008,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 2,
+    "{\"kind\":\"unsupported\",\"reason\":\"reexport-source-binding_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":167,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 2,
+    "{\"kind\":\"unsupported\",\"reason\":\"text and bytes modules require their proposal slices\"}": 10,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js: {\\\"start\\\":858,\\\"end\\\":903,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/identity.js: {\\\"start\\\":1029,\\\"end\\\":1083,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/json-module.js: {\\\"start\\\":1074,\\\"end\\\":1151,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"deferred_ns_export_FIXTURE.js: {\\\"start\\\":157,\\\"end\\\":203,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/to-string-tag.js: {\\\"start\\\":811,\\\"end\\\":856,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"dep-1_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":177,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"dep-1.1.1_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":179,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"dep_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":168,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"dep-1.1_FIXTURE.js: {\\\"start\\\":222,\\\"end\\\":273,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-defer-evaluating/main.js: {\\\"start\\\":1531,\\\"end\\\":1576,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-evaluating-async/main.js: {\\\"start\\\":1875,\\\"end\\\":1920,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-evaluating.js: {\\\"start\\\":1531,\\\"end\\\":1592,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"import-defer-throws_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":176,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js: {\\\"start\\\":910,\\\"end\\\":958,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/module-throws/trigger-evaluation.js: {\\\"start\\\":900,\\\"end\\\":948,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"main_FIXTURE.js: {\\\"start\\\":128,\\\"end\\\":186,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js: {\\\"start\\\":534,\\\"end\\\":588,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js: {\\\"start\\\":1376,\\\"end\\\":1424,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js: {\\\"start\\\":2077,\\\"end\\\":2125,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"middle_FIXTURE.js: {\\\"start\\\":126,\\\"end\\\":170,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/flattening-order/main.js: {\\\"start\\\":2391,\\\"end\\\":2439,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js: {\\\"start\\\":2366,\\\"end\\\":2411,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js: {\\\"start\\\":2377,\\\"end\\\":2430,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js: {\\\"start\\\":2379,\\\"end\\\":2441,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js: {\\\"start\\\":1280,\\\"end\\\":1330,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js: {\\\"start\\\":1120,\\\"end\\\":1170,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js: {\\\"start\\\":1193,\\\"end\\\":1243,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js: {\\\"start\\\":1132,\\\"end\\\":1182,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js: {\\\"start\\\":1152,\\\"end\\\":1202,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js: {\\\"start\\\":1217,\\\"end\\\":1267,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js: {\\\"start\\\":1156,\\\"end\\\":1206,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js: {\\\"start\\\":1173,\\\"end\\\":1223,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js: {\\\"start\\\":1763,\\\"end\\\":1813,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js: {\\\"start\\\":3498,\\\"end\\\":3548,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js: {\\\"start\\\":418,\\\"end\\\":463,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-isExtensible.js: {\\\"start\\\":413,\\\"end\\\":458,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js: {\\\"start\\\":1288,\\\"end\\\":1333,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js: {\\\"start\\\":1128,\\\"end\\\":1173,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js: {\\\"start\\\":1201,\\\"end\\\":1246,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js: {\\\"start\\\":1140,\\\"end\\\":1185,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js: {\\\"start\\\":1160,\\\"end\\\":1205,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js: {\\\"start\\\":1225,\\\"end\\\":1270,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js: {\\\"start\\\":1164,\\\"end\\\":1209,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js: {\\\"start\\\":1181,\\\"end\\\":1226,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js: {\\\"start\\\":1771,\\\"end\\\":1816,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js: {\\\"start\\\":3506,\\\"end\\\":3551,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js: {\\\"start\\\":418,\\\"end\\\":463,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-private-name-access.js: {\\\"start\\\":896,\\\"end\\\":941,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js: {\\\"start\\\":459,\\\"end\\\":504,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js: {\\\"start\\\":467,\\\"end\\\":512,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js: {\\\"start\\\":424,\\\"end\\\":469,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js: {\\\"start\\\":1300,\\\"end\\\":1345,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js: {\\\"start\\\":1140,\\\"end\\\":1185,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js: {\\\"start\\\":1213,\\\"end\\\":1258,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js: {\\\"start\\\":1152,\\\"end\\\":1197,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js: {\\\"start\\\":1172,\\\"end\\\":1217,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js: {\\\"start\\\":1237,\\\"end\\\":1282,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js: {\\\"start\\\":1176,\\\"end\\\":1221,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js: {\\\"start\\\":1193,\\\"end\\\":1238,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js: {\\\"start\\\":1783,\\\"end\\\":1828,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js: {\\\"start\\\":3518,\\\"end\\\":3563,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js: {\\\"start\\\":1269,\\\"end\\\":1314,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js: {\\\"start\\\":1109,\\\"end\\\":1154,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js: {\\\"start\\\":1182,\\\"end\\\":1227,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js: {\\\"start\\\":1121,\\\"end\\\":1166,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js: {\\\"start\\\":1141,\\\"end\\\":1186,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js: {\\\"start\\\":1206,\\\"end\\\":1251,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js: {\\\"start\\\":1145,\\\"end\\\":1190,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js: {\\\"start\\\":1162,\\\"end\\\":1207,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js: {\\\"start\\\":1752,\\\"end\\\":1797,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js: {\\\"start\\\":3487,\\\"end\\\":3532,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js: {\\\"start\\\":1273,\\\"end\\\":1318,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js: {\\\"start\\\":1113,\\\"end\\\":1158,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js: {\\\"start\\\":1186,\\\"end\\\":1231,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js: {\\\"start\\\":1125,\\\"end\\\":1170,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js: {\\\"start\\\":1145,\\\"end\\\":1190,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js: {\\\"start\\\":1210,\\\"end\\\":1255,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js: {\\\"start\\\":1149,\\\"end\\\":1194,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js: {\\\"start\\\":1166,\\\"end\\\":1211,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js: {\\\"start\\\":1756,\\\"end\\\":1801,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js: {\\\"start\\\":3491,\\\"end\\\":3536,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js: {\\\"start\\\":1281,\\\"end\\\":1326,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js: {\\\"start\\\":1121,\\\"end\\\":1166,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js: {\\\"start\\\":1194,\\\"end\\\":1239,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js: {\\\"start\\\":1133,\\\"end\\\":1178,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js: {\\\"start\\\":1153,\\\"end\\\":1198,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js: {\\\"start\\\":1218,\\\"end\\\":1263,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js: {\\\"start\\\":1157,\\\"end\\\":1202,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js: {\\\"start\\\":1174,\\\"end\\\":1219,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js: {\\\"start\\\":1764,\\\"end\\\":1809,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js: {\\\"start\\\":3499,\\\"end\\\":3544,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js: {\\\"start\\\":462,\\\"end\\\":507,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js: {\\\"start\\\":465,\\\"end\\\":510,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js: {\\\"start\\\":457,\\\"end\\\":502,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/syntax/import-attributes.js: {\\\"start\\\":510,\\\"end\\\":564,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1,
+    "{\"kind\":\"unsupported\",\"reason\":\"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/syntax/valid-defer-namespace.js: {\\\"start\\\":474,\\\"end\\\":519,\\\"message\\\":\\\"import phases require their proposal slice\\\",\\\"code\\\":\\\"UNSUPPORTED\\\"}\"}": 1
+  },
+  "observations": [
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-import-named-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-import-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/import-and-export-propagates-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-export-star-as-from-and-import-star-as-and-export.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-export-star-as-from.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "namespace-import-source-and-export-1_FIXTURE.js: {\"start\":128,\"end\":169,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-star-as-and-export.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/ambiguous-export-bindings/omitted-from-namespace.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/comment-multi-line-html-close.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/comment-single-line-html-close.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/comment-single-line-html-open.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-as-star-as.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-dflt-id.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-dflt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-id-as.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-id.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-export-star-as-dflt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-lables.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-lex.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-top-function-async-generator.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-top-function-async.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-top-function-generator.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-dup-top-function.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-export-global.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-export-ill-formed-string.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-export-unresolvable.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-import-arguments.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-import-as-arguments.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-import-as-eval.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-import-eval.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-lex-and-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-new-target.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-strict-mode.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-super.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-undef-break.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/early-undef-continue.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/eval-export-cls-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-cls-anon-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-cls-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-cls-name-meth.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-cls-named-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-cls-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-cls-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-cls-name-meth.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-cls-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-err-eval.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-err-get-value.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-fn-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-fn-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-gen-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-gen-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-in.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-fun-anon-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-fun-named-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-gen-anon-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-gen-named-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-fun-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-export-gen-semi.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-indirect-trlng-comma.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-indirect-update-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-indirect-update-dflt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-indirect-update.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-local-bndng-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-local-bndng-const.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-local-bndng-let.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-local-bndng-var.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-rqstd-abrupt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-rqstd-once.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-rqstd-order.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-self-abrupt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-self-once.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/eval-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-default-asyncfunction-declaration-binding-exists.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-default-asyncfunction-declaration-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-default-asyncgenerator-declaration-binding-exists.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-default-asyncgenerator-declaration-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-default-function-declaration-binding-exists.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-default-function-declaration-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-default-generator-declaration-binding-exists.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-default-generator-declaration-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-binding-index.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-binding-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-as-unpaired-surrogate.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-expname-from-binding-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-star-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-star-unpaired-surrogate.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-expname-from-star.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-string-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-string-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-from-unpaired-surrogate.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-expname-import-string-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/export-expname-import-unpaired-surrogate.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-expname-string-binding.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-expname-unpaired-surrogate.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/export-star-as-dflt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/allow-nlt-before-with.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-export.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-import-nobinding.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/import-attributes/early-dup-attribute-key-import-withbinding.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-empty.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-identifiername.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-double.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-key-string-single.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-many.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-newlines.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-trlng-comma.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-double.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/import-attributes/import-attribute-value-string-single.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-const.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-fun.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-gen.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-let.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-var.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-circular-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-circular.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-dflt-thru-star-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-dflt-thru-star.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-not-found-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-iee-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-star-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-iee-trlng-comma.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-const.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-const.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-fun.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-gen.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-let.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-var.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-for-dup.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-for.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-fun.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-gen.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-let.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-var-dup.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-var.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-const.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-cls.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-fun-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-fun-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-gen-anon.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-gen-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-named.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-star.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-fun.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-gen.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-let.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-trlng-comma.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-var.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-err-dflt-thru-star-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-err-dflt-thru-star-dflt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-err-not-found-as.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-err-not-found-dflt.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-err-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-id-name.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-iee-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-named-star-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-once.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-empty-export.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-empty-import.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-err-syntax-1.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-err-syntax-2.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-order-depth.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-resolve-order-src.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-same-global.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-as-props-dflt-skip.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-equality.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-err-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-id-name.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-iee-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-iee-multi-cycle-same-name.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-iee-single-cycle-same-name.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-props-circular.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-props-dflt-keep-indirect.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-props-dflt-keep-local.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-props-dflt-skip.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-props-nrml.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-star-star-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/instn-uniq-env-rec.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/invalid-private-names-call-expression-bad-reference.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/invalid-private-names-call-expression-this.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/invalid-private-names-member-expression-bad-reference.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/invalid-private-names-member-expression-this.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/namespace/Symbol.iterator.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/Symbol.toStringTag.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/define-own-property.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/delete-exported-init.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/delete-exported-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/delete-non-exported.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/enumerate-binding-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-nested-namespace-dflt-skip.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-nested-namespace-props-nrml.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-own-property-str-found-init.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-own-property-str-found-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-own-property-str-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-own-property-sym.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-prototype-of.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-str-found-init.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-str-found-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-str-initialize.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-str-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-str-update.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-sym-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/get-sym-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/has-property-str-found-init.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/has-property-str-found-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/has-property-str-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/has-property-sym-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/has-property-sym-not-found.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/is-extensible.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/object-hasOwnProperty-binding-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/object-keys-binding-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/object-propertyIsEnumerable-binding-uninit.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/own-property-keys-binding-types.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/own-property-keys-sort.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/prevent-extensions.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/set-prototype-of-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/set-prototype-of.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/set.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/super-access-to-tdz-binding.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/namespace/internals/super-set-to-tdz-binding-with-accessor.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-arrow-function.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-block-stmt-list.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-block-stmt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-decl-meth-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-decl-meth.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-decl-method-gen-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-decl-method-gen.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-expr-meth-gen-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-expr-meth-gen.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-expr-meth-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-class-expr-meth.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-do-while.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-in-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-in-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-in-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-in-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-of-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-of-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-of-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-of-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-function-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-function-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-generator-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-generator-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-if-else.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-if-if.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-labeled.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-object-gen-method.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-object-getter.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-object-method.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-object-setter.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-switch-case-dflt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-switch-case.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-switch-dftl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-try-catch-finally.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-try-catch.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-try-finally.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-try-try.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-while.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-arrow-function.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-block-stmt-list.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-block-stmt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-decl-meth-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-decl-meth.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-decl-method-gen-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-decl-method-gen.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-expr-meth-gen-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-expr-meth-gen.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-expr-meth-static.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-expr-meth.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-do-while.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-in-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-in-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-in-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-in-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-of-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-of-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-of-lhs.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-of-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-function-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-function-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-generator-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-generator-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-if-else.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-if-if.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-labeled.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-object-gen-method.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-object-getter.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-object-method.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-object-setter.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-switch-case-dflt.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-switch-case.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-switch-dftl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-try-catch-finally.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-try-catch.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-try-finally.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-try-try.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-while.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-export-dflt-const.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-export-dflt-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-export-dflt-let.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-export-dflt-var.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-hoist-lex-fun.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-hoist-lex-gen.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-invoke-anon-fun-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-invoke-anon-gen-decl.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-return.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-semi-dflt-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-semi-export-star.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-semi-name-space-export.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-semi-named-export-from.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-semi-named-export.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-syntax-1.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-syntax-2.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-err-yield.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/parse-export-empty.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/private-identifiers-not-empty.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-1.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-2.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-3.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-4.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-5.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-6.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-7.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-not-valid-earlyerr-module-8.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/privatename-valid-no-earlyerr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/source-phase-import/import-source.js",
+      "variant": "sloppy",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "import-source-newlines_FIXTURE.js: {\"start\":962,\"end\":1008,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/source-phase-import/import-source.js",
+      "variant": "strict",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "import-source-newlines_FIXTURE.js: {\"start\":962,\"end\":1008,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/source-phase-import/reexport-source-binding-named-import.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "reexport-source-binding_FIXTURE.js: {\"start\":128,\"end\":167,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/source-phase-import/reexport-source-binding-namespace-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "reexport-source-binding_FIXTURE.js: {\"start\":128,\"end\":167,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/module-code/top-level-await/async-module-does-not-block-sibling-modules.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-awaits-thenable-not-callable.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-awaits-thenables-that-throw.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-awaits-thenables.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-dynamic-import-rejection.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-dynamic-import-resolution.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-new-expr-reject.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-reject-throws.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-expr-resolution.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/await-void-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/dfs-invariant.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/dynamic-import-of-waiting-module.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/dynamic-import-of-waiting-module.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/dynamic-import-rejection.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/dynamic-import-resolution.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/early-errors-await-not-simple-assignment-target.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/fulfillment-order.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/if-await-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-async-import-async-resolution-ticks.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-graphs-does-not-hang.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-import-rejection-body.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-import-rejection-tick.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-import-rejection.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-import-resolution.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-import-unwrapped.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-self-import-async-resolution-ticks.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/module-sync-import-async-resolution-ticks.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/new-await-parens.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/new-await-script-code.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/new-await-script-code.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/new-await.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/no-operand.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/pending-async-dep-from-cycle.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/rejection-order.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/await-expr-dyn-import.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/block-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/catch-parameter.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/early-does-not-propagate-to-fn-declaration-body.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/early-does-not-propagate-to-fn-declaration-params.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/early-does-not-propagate-to-fn-expr-body.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/early-does-not-propagate-to-fn-expr-params.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/early-no-escaped-await.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-class-decl-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dflt-assign-expr-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-dft-class-decl-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-lex-decl-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/export-var-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-in-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/for-of-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-block-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/if-expr-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/top-level-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/try-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/typeof-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/void-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-array-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-func-expression.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-identifier.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-literal-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-literal-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-nested.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-new-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-obj-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-regexp.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-template-literal.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/syntax/while-await-expr-this.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/top-level-ticks-2.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/top-level-ticks.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/unobservable-global-async-evaluation-count-reset.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/void-await-expr.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/top-level-await/while-dynamic-evaluation.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/module-code/verify-dfs.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/dup-bound-names.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/escaped-as-import-specifier.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/escaped-as-namespace-import.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/escaped-from.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-array.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-object.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-idempotency.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-invalid.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-named-bindings.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-array.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-boolean.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-null.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-number.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-object.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-value-string.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/json-via-namespace.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-attributes/text-empty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-javascript.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-self.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-string.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-attributes/text-via-namespace.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-empty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-js.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-json.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-png.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-txt.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "text and bytes modules require their proposal slices"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js: {\"start\":858,\"end\":903,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/identity.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/identity.js: {\"start\":1029,\"end\":1083,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/json-module.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/json-module.js: {\"start\":1074,\"end\":1151,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/reexport-deferred-ns-evaluation.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "deferred_ns_export_FIXTURE.js: {\"start\":157,\"end\":203,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/to-string-tag.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/deferred-namespace-object/to-string-tag.js: {\"start\":811,\"end\":856,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-dep-evaluating/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "dep-1_FIXTURE.js: {\"start\":128,\"end\":177,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-dep-evaluating-async/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "dep-1.1.1_FIXTURE.js: {\"start\":128,\"end\":179,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-evaluating/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "dep_FIXTURE.js: {\"start\":128,\"end\":168,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-evaluating-async/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "dep-1.1_FIXTURE.js: {\"start\":222,\"end\":273,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-defer-evaluating/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-defer-evaluating/main.js: {\"start\":1531,\"end\":1576,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-evaluating-async/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-evaluating-async/main.js: {\"start\":1875,\"end\":1920,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-evaluating.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/get-self-while-evaluating.js: {\"start\":1531,\"end\":1592,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/defer-import-after-evaluation.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "import-defer-throws_FIXTURE.js: {\"start\":128,\"end\":176,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js: {\"start\":910,\"end\":958,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/trigger-evaluation.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/module-throws/trigger-evaluation.js: {\"start\":900,\"end\":948,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/resolution-error/import-defer-of-missing-module-fails.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "main_FIXTURE.js: {\"start\":128,\"end\":186,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js: {\"start\":534,\"end\":588,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js: {\"start\":1376,\"end\":1424,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js: {\"start\":2077,\"end\":2125,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "middle_FIXTURE.js: {\"start\":126,\"end\":170,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/flattening-order/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/flattening-order/main.js: {\"start\":2391,\"end\":2439,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js: {\"start\":2366,\"end\":2411,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js: {\"start\":2377,\"end\":2430,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js: {\"start\":2379,\"end\":2441,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js: {\"start\":1280,\"end\":1330,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js: {\"start\":1120,\"end\":1170,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js: {\"start\":1193,\"end\":1243,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js: {\"start\":1132,\"end\":1182,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js: {\"start\":1152,\"end\":1202,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js: {\"start\":1217,\"end\":1267,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js: {\"start\":1156,\"end\":1206,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js: {\"start\":1173,\"end\":1223,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js: {\"start\":1763,\"end\":1813,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js: {\"start\":3498,\"end\":3548,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js: {\"start\":418,\"end\":463,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-isExtensible.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-isExtensible.js: {\"start\":413,\"end\":458,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js: {\"start\":1288,\"end\":1333,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js: {\"start\":1128,\"end\":1173,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js: {\"start\":1201,\"end\":1246,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js: {\"start\":1140,\"end\":1185,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js: {\"start\":1160,\"end\":1205,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js: {\"start\":1225,\"end\":1270,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js: {\"start\":1164,\"end\":1209,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js: {\"start\":1181,\"end\":1226,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js: {\"start\":1771,\"end\":1816,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js: {\"start\":3506,\"end\":3551,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js: {\"start\":418,\"end\":463,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-private-name-access.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-private-name-access.js: {\"start\":896,\"end\":941,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js: {\"start\":459,\"end\":504,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js: {\"start\":467,\"end\":512,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js: {\"start\":424,\"end\":469,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js: {\"start\":1300,\"end\":1345,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js: {\"start\":1140,\"end\":1185,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js: {\"start\":1213,\"end\":1258,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js: {\"start\":1152,\"end\":1197,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js: {\"start\":1172,\"end\":1217,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js: {\"start\":1237,\"end\":1282,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js: {\"start\":1176,\"end\":1221,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js: {\"start\":1193,\"end\":1238,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js: {\"start\":1783,\"end\":1828,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js: {\"start\":3518,\"end\":3563,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js: {\"start\":1269,\"end\":1314,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js: {\"start\":1109,\"end\":1154,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js: {\"start\":1182,\"end\":1227,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js: {\"start\":1121,\"end\":1166,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js: {\"start\":1141,\"end\":1186,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js: {\"start\":1206,\"end\":1251,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js: {\"start\":1145,\"end\":1190,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js: {\"start\":1162,\"end\":1207,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js: {\"start\":1752,\"end\":1797,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js: {\"start\":3487,\"end\":3532,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js: {\"start\":1273,\"end\":1318,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js: {\"start\":1113,\"end\":1158,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js: {\"start\":1186,\"end\":1231,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js: {\"start\":1125,\"end\":1170,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js: {\"start\":1145,\"end\":1190,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js: {\"start\":1210,\"end\":1255,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js: {\"start\":1149,\"end\":1194,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js: {\"start\":1166,\"end\":1211,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js: {\"start\":1756,\"end\":1801,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js: {\"start\":3491,\"end\":3536,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js: {\"start\":1281,\"end\":1326,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js: {\"start\":1121,\"end\":1166,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js: {\"start\":1194,\"end\":1239,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js: {\"start\":1133,\"end\":1178,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js: {\"start\":1153,\"end\":1198,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js: {\"start\":1218,\"end\":1263,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js: {\"start\":1157,\"end\":1202,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js: {\"start\":1174,\"end\":1219,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js: {\"start\":1764,\"end\":1809,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js: {\"start\":3499,\"end\":3544,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js: {\"start\":462,\"end\":507,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js: {\"start\":465,\"end\":510,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js: {\"start\":457,\"end\":502,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/syntax/import-attributes.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/syntax/import-attributes.js: {\"start\":510,\"end\":564,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-default-and-defer-namespace.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-default-and-defer-namespace.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-as-with-no-asterisk.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-as-with-no-asterisk.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default-and-namespace.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default-and-namespace.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-named.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-named.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-export-defer-namespace.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-export-defer-namespace.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/import/import-defer/syntax/valid-default-binding-named-defer.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/import/import-defer/syntax/valid-defer-namespace.js",
+      "variant": "module",
+      "status": "blocked",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262/test/language/import/import-defer/syntax/valid-defer-namespace.js: {\"start\":474,\"end\":519,\"message\":\"import phases require their proposal slice\",\"code\":\"UNSUPPORTED\"}"
+      }
+    },
+    {
+      "path": "language/export/escaped-as-export-specifier.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/export/escaped-default.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/export/escaped-from.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/distinct-for-each-module.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/import-meta-is-an-ordinary-object.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/not-accessible-from-direct-eval.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/same-object-returned.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/escape-sequence-import.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/escape-sequence-meta.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-function-params-or-body.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-function-params-or-body.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-generator-params-or-body.js",
+      "variant": "sloppy",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-generator-params-or-body.js",
+      "variant": "strict",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-module-nested-function.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-module.js",
+      "variant": "module",
+      "status": "prepared"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-script.js",
+      "variant": "sloppy",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-script.js",
+      "variant": "strict",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-array-destructuring-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-array-rest-destructuring-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-assignment-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-await-of-loop.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-in-loop.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-of-loop.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-object-destructuring-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-object-rest-destructuring-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-update-expr.js",
+      "variant": "module",
+      "status": "syntax-only"
+    }
+  ]
+}

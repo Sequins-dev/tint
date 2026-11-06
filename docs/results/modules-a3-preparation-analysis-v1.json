@@ -1,0 +1,486 @@
+{
+  "kind": "preparation-analysis",
+  "conformance": false,
+  "executed": 0,
+  "compilerRevision": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "preparationReport": "modules-a3-preparation-v2.json",
+  "toolchainSha256": "27aaa601aafb1efb22e383cfcc6c91594515ffbdb8365478e87054685725c541",
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "method": {
+    "modules": true,
+    "jsonModules": true,
+    "runtimeImportCalls": true,
+    "syntaxNegatives": "counted separately without evaluation",
+    "script": "import {readFileSync,writeFileSync} from 'node:fs';\nimport {basename,join} from 'node:path';\nimport {test262Checkout,test262Source} from '../../tools/test262-checkout.ts';\nimport {testMetadata,syntaxVariants} from '../../tools/test262.ts';\nimport {executionPlan} from '../../tools/test262-execution.ts';\nimport {prepareNativeModuleProgram,prepareNativeScriptProgram} from '../../tools/test262-native.ts';\nconst checkout='/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262';\nconst observations=[];let last=Date.now();\nfor(const selection of ['language/module-code','language/import','language/export','language/expressions/import.meta']){\n console.log('Preparing '+selection);\n for(const f of test262Checkout(checkout,selection).files){\n const {source}=test262Source(f.filename),m=testMetadata(source);\n for(const variant of syntaxVariants(m)){\n if(m.negative?.phase==='parse'||m.negative?.phase==='early'){observations.push({path:f.path,variant,status:'syntax-only'});continue;}\n const plan=executionPlan(source,variant,m);const harness=plan.harness.map(filename=>({filename,source:readFileSync(join(checkout,'harness',filename),'utf8')}));\n const r=plan.goal==='module'?prepareNativeModuleProgram(plan,harness,f.filename,undefined,true):prepareNativeScriptProgram(plan,variant,harness,f.filename,undefined,true,true);\n observations.push({path:f.path,variant,status:r.ok?'prepared':'blocked',...(!r.ok?{outcome:r.outcome}:{})});\n if(Date.now()-last>15000){console.log('prepared observations '+observations.length+' at '+f.path);last=Date.now();}\n }\n }\n}\nconst counts={};const blockers={};for(const r of observations){counts[r.status]=(counts[r.status]??0)+1;if(r.status==='blocked'){const key=JSON.stringify(r.outcome);blockers[key]=(blockers[key]??0)+1;}}\nwriteFileSync('docs/results/modules-a3-preparation-v2.json',JSON.stringify({kind:'preparation-only',conformance:false,executed:0,counts,blockers,observations},null,2)+'\\n');console.log({counts});\n"
+  },
+  "blockers": [
+    {
+      "group": "source-and-defer",
+      "variants": 101,
+      "authority": "packages/js-engine/src/lowering/module-shape.ts:53; packages/js-engine/src/lowering (dynamic import phase checks)",
+      "missing": "ModuleRequest phase metadata, phase-aware binding instantiation and loading, deferred namespace evaluation triggers and async dependency coordination. Removing the explicit guard would eagerly evaluate deferred graphs and change semantics.",
+      "cases": [
+        {
+          "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "sloppy"
+        },
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "strict"
+        },
+        {
+          "path": "language/module-code/source-phase-import/reexport-source-binding-named-import.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/module-code/source-phase-import/reexport-source-binding-namespace-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/identity.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/json-module.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/reexport-deferred-ns-evaluation.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/to-string-tag.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-dep-evaluating/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-dep-evaluating-async/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-evaluating/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-evaluating-async/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-defer-evaluating/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-evaluating-async/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-evaluating.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/defer-import-after-evaluation.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/trigger-evaluation.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/resolution-error/import-defer-of-missing-module-fails.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/flattening-order/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-isExtensible.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-private-name-access.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/syntax/import-attributes.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-defer/syntax/valid-defer-namespace.js",
+          "variant": "module"
+        }
+      ]
+    },
+    {
+      "group": "text-and-bytes",
+      "variants": 10,
+      "authority": "tools/test262-native.ts:320 and loadEntry; tools/test262-module-graph.ts:69",
+      "missing": "Byte-preserving fixture inputs (PNG cannot use fatal UTF-8 decoding), per-request-type module identity, text/bytes synthetic factories, immutable ArrayBuffer support for byte module defaults. A raw source string or ordinary mutable Uint8Array does not satisfy the pinned suite.",
+      "cases": [
+        {
+          "path": "language/import/import-attributes/text-empty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-attributes/text-javascript.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-attributes/text-self.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-attributes/text-string.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-attributes/text-via-namespace.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-empty.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-js.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-json.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-png.js",
+          "variant": "module"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-txt.js",
+          "variant": "module"
+        }
+      ]
+    }
+  ],
+  "discardedDraft": {
+    "file": ".tint-bootstrap/a3/preparation-invalid-script-arguments-v1.json",
+    "reason": "Temporary census passed incorrect arguments to Script preparation; its harness-input errors are not compiler blockers. The corrected census retains all 767 variants."
+  }
+}

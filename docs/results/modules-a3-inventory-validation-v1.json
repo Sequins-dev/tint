@@ -1,0 +1,37 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "compilerRevision": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "changes": "Documentation-only module scope inventory and preparation/blocker analysis. No portable compiler/runtime changes; native self-build is not applicable to this checkpoint.",
+  "commands": [
+    {
+      "command": "pnpm install && pnpm build",
+      "exitStatus": 0
+    },
+    {
+      "command": "node --test --test-concurrency=2 tools/test262-module-preparation.test.ts tools/test262-module-graph.test.ts tools/test262-module-host.test.ts",
+      "exitStatus": 1,
+      "tests": 39,
+      "passed": 38,
+      "failed": 1,
+      "diagnostic": "\u2714 module discovery terminates cycles and retains sorted unique siblings (20.260833ms)\n\u2714 self-import preserves the root file's byte hash (0.790875ms)\n\u2714 discovery includes comment paths but does not invent missing fixtures (1.792709ms)\n\u2714 discovery ignores non-sibling paths and special host specifiers (0.669125ms)\n\u2714 JSON fixtures are edgeless even when their strings name other siblings (0.957083ms)\n\u2714 unparsed fixtures retain their source and contribute literal edges without a syntax verdict (1.209042ms)\n\u2714 static requests use decoded specifiers and fixture changes update their own hashes (2.339667ms)\n\u2716 pinned module fixtures include resolution errors, computed imports and sibling tests (0.494958ms)\n\u2714 discovery records only absent single-segment sibling literals (1.352375ms)\n\u2714 Script self-import is retained as a module fixture with original bytes (0.969208ms)\n\u2714 module capability follows captured public exports including re-exports (1010.376167ms)\n\u2714 older snapshots without the module contract remain unsupported (39.313042ms)\n\u2714 an incomplete captured module contract is a setup error (4017.655916ms)\n\u2714 module resolution exits preserve negative-test phases and host faults stay crashes (1.192292ms)\n\u2714 the v9 Script runtime text and batch remain byte-identical without the module gate (42.410125ms)\n\u2714 module journals use a distinct adapter only with the complete v9 evaluation contract (0.395541ms)\n\u2714 module runner shares the realm protocol and checks sticky unsupported before phase results (0.429041ms)\n\u2714 the module gate only prefixes imports and appends a runner with the shared host fragments (0.585667ms)\n\u2714 only a certified native fixture error becomes a load SyntaxError (0.24275ms)\n\u2714 JSON module capability requires the captured parser and synthetic export contracts (4599.276ms)\n\u2714 JSON host validates the request type before cache lookup and invokes factories only at load (12228.275417ms)\n\u2714 JSON support keeps text and bytes module proposals explicitly unsupported (5469.7855ms)\n\u2714 module preparation lowers the root once and preserves named fixture identities (9.762083ms)\n\u2714 module preparation screens attributes and unsupported root syntax before discovery (1.489792ms)\n\u2714 module preparation keeps JSON and import attributes unsupported (2.549167ms)\n\u2714 module harnesses use the same Script lowering and validate plan inputs (4.760042ms)\n\u2714 module preparation discovers unchanged cyclic sibling fixtures and hashes their source (3.724208ms)\n\u2714 module preparation rejects requests outside the closed graph with a precise unsupported reason (0.698375ms)\n\u2714 a fixture byte mismatch is unsupported and retains its discovered identity (0.218958ms)\n\u2714 parse and early negatives always route to native syntax validation (0.144ms)\n\u2714 unparsed JavaScript fixtures become native verdict entries without a bootstrap verdict (3.542ms)\n\u2714 parsed fixtures with binding early errors require a native syntax verdict (3.035042ms)\n\u2714 native fixture proofs do not convert unsupported syntax into early errors (0.535042ms)\n\u2714 module preparation accepts async roots and fixtures through the continuation factory (1.176708ms)\n\u2714 generated syntax limits stay unsupported per module and preserve fixture hashes (6.971083ms)\n\u2714 module direct eval prepares existing sites in both root and hoisted fixture functions (2.17775ms)\n\u2714 JSON-enabled module preparation emits a native parser factory and retains fixture identity (0.828583ms)\n\u2714 JSON-enabled preparation preserves invalid JSON for a native load-time verdict (0.865625ms)\n\u2714 JSON support screens binary and text proposals before fixture discovery (0.150292ms)\n\u2139 tests 39\n\u2139 suites 0\n\u2139 pass 38\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 27700.724375\n\n\u2716 failing tests:\n\ntest at tools/test262-module-graph.test.ts:147:1\n\u2716 pinned module fixtures include resolution errors, computed imports and sibling tests (0.494958ms)\n  Error: ENOENT: no such file or directory, open '.tint-bootstrap/test262/test/language/module-code/instn-resolve-order-src.js'\n      at readFileSync (node:fs:440:20)\n      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/tools/test262-module-graph.test.ts:172:34)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    errno: -2,\n    code: 'ENOENT',\n    syscall: 'open',\n    path: '.tint-bootstrap/test262/test/language/module-code/instn-resolve-order-src.js'\n  }\n",
+      "cause": "Fresh worktree lacked .tint-bootstrap/test262; created a symlink to the unchanged pinned checkout."
+    },
+    {
+      "command": "node --test --test-concurrency=2 tools/test262-module-preparation.test.ts tools/test262-module-host.test.ts tools/test262-module-graph.test.ts",
+      "exitStatus": 0,
+      "tests": 39,
+      "passed": 39,
+      "failed": 0
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check",
+      "exitStatus": 0,
+      "tests": 4504,
+      "passed": 4504,
+      "failed": 0,
+      "logSha256": "e7bcb31e356d26b73e7980a4902a96554b6e6ffbd4e8f7076c824cc67136770b",
+      "tail": "\u2139 tests 4504\n\u2139 suites 0\n\u2139 pass 4504\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 308098.56525\n[tint-check] boundaries\n\n> tint-workspace@ boundaries /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322\n> node tools/check-boundaries.ts\n\nVerified public imports, dependency contracts and acyclic graph for 14 portable packages.\n[tint-check] format:check\n\n> tint-workspace@ format:check /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322\n> prettier --check packages tools types *.json pnpm-workspace.yaml\n\nChecking formatting...\nAll matched files use Prettier code style!\n[tint-check] all gates passed\n"
+    }
+  ]
+}
