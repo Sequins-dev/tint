@@ -61,7 +61,11 @@ test("partial-date equality and year-month comparison have intrinsic method cont
       { object: prototype, name: "toPlainDate", length: 1 },
     ];
     if (name === "PlainYearMonth")
-      targets.push({ object: constructor, name: "compare", length: 2 });
+      targets.push(
+        { object: constructor, name: "compare", length: 2 },
+        { object: prototype, name: "add", length: 1 },
+        { object: prototype, name: "subtract", length: 1 },
+      );
     else
       assert.equal(objects.getOwnProperty(constructor, "compare"), undefined);
     for (const target of targets) {

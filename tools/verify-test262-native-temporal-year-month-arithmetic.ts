@@ -1,0 +1,13 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+// https://tc39.es/proposal-temporal/#sec-temporal-adddurationtoyearmonth
+// Node's bootstrap runtime does not provide Temporal.
+verifyNativeScriptCases(
+  [
+    String.raw`const x=new Temporal.PlainYearMonth(2023,1,"iso8601",31);const a=x.add({years:1,months:2},{overflow:"reject"}),b=x.subtract("P1Y2M");if(a.year!==2024||a.month!==3||!a.equals(new Temporal.PlainYearMonth(2024,3))||b.year!==2021||b.month!==11||x.month!==1)throw 1;const feb=x.add({months:1},{overflow:"reject"});if(!feb.equals(new Temporal.PlainYearMonth(2023,2)))throw 2;`,
+    String.raw`const x=new Temporal.PlainYearMonth(2000,1);for(const field of["weeks","days","hours","minutes","seconds","milliseconds","microseconds","nanoseconds"]){for(const name of["add","subtract"]){let ok=false;try{x[name]({[field]:1});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;}}if(!x.add({seconds:-0}).equals(x))throw 2;`,
+    String.raw`const x=new Temporal.PlainYearMonth(2000,1),log=[];const d={get months(){log.push("months");return 1;}};const options={get overflow(){log.push("overflow");return{toString(){log.push("string");return"reject";}};}};if(x.add(d,options).month!==2||log.join()!=="months,overflow,string")throw 1;try{x.add({days:1},{get overflow(){throw 42;}});throw 2;}catch(e){if(e!==42)throw 3;}let touched=false;try{x.add({months:Infinity},{get overflow(){touched=true;return"constrain";}});throw 4;}catch(e){if(!(e instanceof RangeError)||touched)throw 5;}`,
+    String.raw`const lo=new Temporal.PlainYearMonth(-271821,4,"iso8601",30),hi=new Temporal.PlainYearMonth(275760,9,"iso8601",30);for(const name of["add","subtract"]){let ok=false;try{lo[name](new Temporal.Duration());}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;}const result=hi.add({months:-1});if(result.year!==275760||result.month!==8||!result.equals(new Temporal.PlainYearMonth(275760,8)))throw 2;let ok=false;try{hi.add({months:1});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 3;`,
+    String.raw`class YM extends Temporal.PlainYearMonth{}const x=new YM(2023,1,"iso8601",31);for(const key of["constructor","calendar","year","month","monthCode"])Object.defineProperty(x,key,{get(){throw 1;}});const result=x.add({months:-1});if(result instanceof YM||Object.getPrototypeOf(result)!==Temporal.PlainYearMonth.prototype||result.year!==2022||result.month!==12)throw 2;for(const name of["add","subtract"]){let touched=false,ok=false;try{Temporal.PlainYearMonth.prototype[name].call({}, {get months(){touched=true;return 1;}});}catch(e){ok=e instanceof TypeError;}if(!ok||touched)throw 3;}`,
+  ],
+  { nodeReference: false },
+);

@@ -1,0 +1,27 @@
+{
+  "kind": "temporal-arithmetic-validation-checkpoint",
+  "conformance": false,
+  "mergeReady": false,
+  "implementation": "ISO PlainYearMonth add/subtract via shared date arithmetic, first-day derivation and lower-unit rejection",
+  "nativeRed": "docs/results/native-temporal-year-month-arithmetic-red-h-v1.json",
+  "nativeGreen": "docs/results/native-temporal-year-month-arithmetic-green-h-v1.json",
+  "focusedTests": {
+    "red": {
+      "exitStatus": 1,
+      "pass": 1,
+      "fail": 4
+    },
+    "green": {
+      "exitStatus": 0,
+      "pass": 5,
+      "total": 5
+    }
+  },
+  "buildExitStatus": 0,
+  "pending": [
+    "Cumulative frozen native self-build and smoke on toolchain v5",
+    "Workspace gates for cumulative partial-date slice",
+    "Complete affected Test262 selections"
+  ],
+  "note": "Native fixtures are bespoke semantic evidence and do not count as Test262 coverage."
+}

@@ -1,4 +1,6 @@
 import { partialDateFrom } from "./temporal-partial-date-conversion.ts";
+import { plainYearMonthArithmetic } from "./temporal-date-arithmetic.ts";
+import { durationFrom } from "./temporal-duration-conversion.ts";
 import {
   epochDayFromGregorian,
   daysInGregorianMonth,
@@ -126,6 +128,49 @@ export function installTemporalPartialDates(
       hooks,
     );
     builtinFunctionMetadata(constructor, name, 2, hooks);
+    if (yearMonth)
+      for (const method of ["add", "subtract"]) {
+        if (method === undefined)
+          throw "YEAR_MONTH_ARITHMETIC_METHOD_INVARIANT";
+        builtinProperty(
+          prototype,
+          method,
+          builtinFunction(
+            realm.functionPrototype,
+            method,
+            1,
+            (receiver, args): unknown => {
+              const date = extract(receiver);
+              const duration = durationFrom(args[0], realm, hooks);
+              const policy = temporalStringOption(
+                args[1],
+                "overflow",
+                "constrain",
+                ["constrain", "reject"],
+                realm,
+                hooks,
+              );
+              const result = plainYearMonthArithmetic(
+                date,
+                duration,
+                method === "subtract",
+                policy,
+                realm,
+              );
+              const object = createObject<ScriptPropertyKey, unknown>(
+                prototype,
+              );
+              object.internalTemporalPlainYearMonth = result;
+              object.internalTemporalCalendar = "iso8601";
+              return object;
+            },
+            hooks,
+          ),
+          true,
+          true,
+          hooks,
+        );
+      }
     if (yearMonth)
       builtinProperty(
         constructor,

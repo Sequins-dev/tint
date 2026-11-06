@@ -59,6 +59,34 @@ export function plainDateArithmetic(
     throw createRuntimeError(realm, "range");
   return result;
 }
+/** YearMonth addition operates on the first day, independently of its stored
+ * reference day. Lower units are rejected before deriving that date. */
+export function plainYearMonthArithmetic(
+  date: GregorianDate,
+  duration: Duration,
+  subtract: boolean,
+  policy: string,
+  realm: ErrorRealm,
+): GregorianDate {
+  if (
+    duration.weeks !== 0 ||
+    duration.days !== 0 ||
+    duration.hours !== 0 ||
+    duration.minutes !== 0 ||
+    duration.seconds !== 0 ||
+    duration.milliseconds !== 0 ||
+    duration.microseconds !== 0 ||
+    duration.nanoseconds !== 0
+  )
+    throw createRuntimeError(realm, "range");
+  return plainDateArithmetic(
+    { year: date.year, month: date.month, day: 1 },
+    duration,
+    subtract,
+    policy,
+    realm,
+  );
+}
 export function plainDateTimeArithmetic(
   dateTime: ISODateTime,
   duration: Duration,
