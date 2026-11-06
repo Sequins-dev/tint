@@ -1,0 +1,214 @@
+{
+  "kind": "native-execution-only-benchmark",
+  "scope": "Bespoke operation benchmark, not Test262 coverage. Monotonic timestamps surround LLDB continue; inferior interval includes debugger resume/exit handling but excludes launch.",
+  "inputs": [
+    {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-q4lLF1/register-copies",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "5dd97f5fd5f46759faf13f9637efdb89cbb47a0df52d2e932f4dddcbb76ac26c",
+          "files": 568
+        },
+        "imageSha256": "0fd03cd660116f47404e15fedfd4bf0c2fcf651c44f6e86142a53a78a0771a1d",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-q4lLF1/register-copies.source.ts",
+        "fixtureSha256": "a37be770c1debb79b496ea05d87f68f30b225835bda279bac6a4c0d1d0795e8d",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/tools/verify-native-register-copies.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      }
+    },
+    {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-Xha6To/register-copies",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "9565c9ef04b03863af08a07112b63bd02e85271a2bc06e91ffc374cb46de6938",
+          "files": 568
+        },
+        "imageSha256": "3e52ac64600159ffc62512fd1be20cd6a10f9a55133149659a23bbb994fe7158",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-Xha6To/register-copies.source.ts",
+        "fixtureSha256": "a37be770c1debb79b496ea05d87f68f30b225835bda279bac6a4c0d1d0795e8d",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/tools/verify-native-register-copies.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 5636.762167,
+      "inferiorWallMs": 3107.660958,
+      "debuggerOverheadMs": 2529.101209,
+      "initial": {
+        "state": "stopped",
+        "pid": 84288,
+        "monotonicNs": 2477736375
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 5585397333
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 3850.803167,
+      "inferiorWallMs": 1034.547458,
+      "debuggerOverheadMs": 2816.255709,
+      "initial": {
+        "state": "stopped",
+        "pid": 84543,
+        "monotonicNs": 2769079000
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 3803626458
+      }
+    },
+    {
+      "pair": 1,
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 1912.1316669999997,
+      "inferiorWallMs": 874.275959,
+      "debuggerOverheadMs": 1037.8557079999996,
+      "initial": {
+        "state": "stopped",
+        "pid": 84606,
+        "monotonicNs": 992937916
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 1867213875
+      }
+    },
+    {
+      "pair": 1,
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 3013.2292500000003,
+      "inferiorWallMs": 2142.459833,
+      "debuggerOverheadMs": 870.7694170000004,
+      "initial": {
+        "state": "stopped",
+        "pid": 84637,
+        "monotonicNs": 821616833
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 2964076666
+      }
+    },
+    {
+      "pair": 2,
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 5781.573540999998,
+      "inferiorWallMs": 4040.120542,
+      "debuggerOverheadMs": 1741.4529989999978,
+      "initial": {
+        "state": "stopped",
+        "pid": 85249,
+        "monotonicNs": 1694418583
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 5734539125
+      }
+    },
+    {
+      "pair": 2,
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 7003.756916999999,
+      "inferiorWallMs": 2052.302959,
+      "debuggerOverheadMs": 4951.453957999998,
+      "initial": {
+        "state": "stopped",
+        "pid": 85662,
+        "monotonicNs": 4905105666
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 6957408625
+      }
+    },
+    {
+      "pair": 3,
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 4445.878124999999,
+      "inferiorWallMs": 2093.324667,
+      "debuggerOverheadMs": 2352.5534579999994,
+      "initial": {
+        "state": "stopped",
+        "pid": 86092,
+        "monotonicNs": 2294121833
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 4387446500
+      }
+    },
+    {
+      "pair": 3,
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "debuggerWallMs": 4970.837334,
+      "inferiorWallMs": 3570.471917,
+      "debuggerOverheadMs": 1400.365417,
+      "initial": {
+        "state": "stopped",
+        "pid": 86379,
+        "monotonicNs": 1353252708
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 4923724625
+      }
+    }
+  ]
+}

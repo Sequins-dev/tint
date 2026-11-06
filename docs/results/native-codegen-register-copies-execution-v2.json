@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-performance-measurement",
+  "supersedesTimingScope": "native-codegen-register-copies-v1.json includes launch; this report adds separate execution-only intervals. Neither report claims CPU timing or whole-suite speed.",
+  "branchCommit": "4f7893d",
+  "nativeBenchmark": {
+    "sameSource": true,
+    "pairedRuns": 4,
+    "completed": 8,
+    "medianInferiorWallMs": {
+      "before": 3339.0664374999997,
+      "after": 1543.4252085
+    },
+    "speedup": 2.163413179408362,
+    "reductionFraction": 0.5377674456649681,
+    "timingMethod": "Python monotonic_ns recorded by LLDB immediately before continue and after stopped/exited return. Includes resume/exit handling; excludes debugger launch. Same 20M-query workload, fresh process per run, initial stop + final exit 42 asserted.",
+    "limitations": "Shared-host scheduling varies; no inferior CPU accounting and no matched whole-suite projection.",
+    "artifact": "native-codegen-register-copies-execution-v2-register-copies-execution-v2.json"
+  },
+  "supersededExperimentSelfbuild": {
+    "status": "interrupted intentionally after native attribution; not a successful self-build",
+    "reason": "JIT provider-body-elision experiment was discarded after the coordinator directed generated-code optimization. Continuing its validation blocked codegen validation in the machine-wide slot pool.",
+    "initial": {
+      "state": "stopped",
+      "pid": 14768
+    },
+    "final": {
+      "state": "5",
+      "exitStatus": -1
+    },
+    "interruption": "SIGINT to LLDB did not stop the inferior. SIGSTOP to the owned self-build inferior returned control to LLDB; the existing script recorded the stopped state and killed it through SBProcess.Kill. This was not a Test262 variant.",
+    "lastObservedCPU": "28:38.38 at 36:52 elapsed before interruption; not a completed build timing.",
+    "stage1Bytes": 71914034,
+    "stage1Sha256": "004e3712d9f163f912976766394de582ca1b86d29f12476db07201cede4e2ca0",
+    "stage2Produced": false,
+    "stageImagesCompared": false,
+    "log": "native-codegen-register-copies-execution-v2-selfbuild-v4.log"
+  },
+  "validation": {
+    "workspaceTests": "check-codegen-v2: 4492 passed, 0 failed; typecheck and boundaries passed; final formatting failed on a newly created future-slice test. slot-limited format-only recheck passed after formatting that test. All original failures retained.",
+    "frozenCodegenSelfbuild": "Still queued through slot selfbuild 2 at report creation. Toolchain 17c019fae4b12984cacc3ff573d1163a9a11bda82c98ffbadb8d9d495a547f1b.",
+    "Test262": "Copy-only addition A1 rerun in progress, same original 300000 ms containment budget."
+  }
+}

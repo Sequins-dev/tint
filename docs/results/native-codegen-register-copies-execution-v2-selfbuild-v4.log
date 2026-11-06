@@ -1,0 +1,119 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild/slot-2 after 0s
+2026-11-06T16:51:37.741Z [Test262] selection="performance import declarations selfbuild" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:51:37.745Z [Test262] selection="performance import declarations selfbuild" phase="building frozen stage1" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+[0.0s] sources
+[0.1s] parse
+[0.9s] allocator
+[1.1s] runtime
+[2.2s] program
+2026-11-06T16:52:07.803Z [Test262] selection="performance import declarations selfbuild" phase="building frozen stage1" elapsed=30058ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:52:37.803Z [Test262] selection="performance import declarations selfbuild" phase="building frozen stage1" elapsed=60058ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:53:07.805Z [Test262] selection="performance import declarations selfbuild" phase="building frozen stage1" elapsed=90060ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:53:37.813Z [Test262] selection="performance import declarations selfbuild" phase="building frozen stage1" elapsed=120068ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+[126.7s] startup
+[126.7s] image
+[129.2s] wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/stage1 (71914034 bytes)
+2026-11-06T16:53:47.241Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/debugger/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/debugger/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/debugger/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/stage1\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/source\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/stage2\",\"--debug-symbols\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/debugger/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/debugger/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+34
+(lldb) continue
+2026-11-06T16:54:07.816Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=20575ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:54:37.819Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=50578ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:55:07.821Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=80580ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:55:37.823Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=110582ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:56:07.825Z [Test262] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=140584ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T16:56:37.827Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=170586ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:57:07.829Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=200588ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:57:37.829Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=230588ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:58:07.832Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=260591ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:58:37.834Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=290593ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:59:07.836Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=320595ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T16:59:37.838Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=350597ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:00:07.839Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=380598ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:00:37.841Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=410600ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:01:07.844Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=440603ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:01:37.845Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=470604ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:02:07.846Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=500605ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:02:37.848Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=530607ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:03:07.849Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=560608ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:03:37.850Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=590609ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:04:07.851Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=620610ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:04:37.853Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=650612ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:05:07.855Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=680614ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:05:37.857Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=710616ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:06:07.859Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=740618ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:06:37.862Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=770621ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:07:07.863Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=800622ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:07:37.867Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=830626ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:08:07.869Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=860628ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:08:37.871Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=890630ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:09:07.873Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=920632ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:09:37.876Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=950635ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:10:07.878Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=980637ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:10:37.879Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1010638ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:11:07.881Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1040640ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:11:37.883Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1070642ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:12:07.883Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1100642ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:12:37.884Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1130643ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:13:07.885Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1160644ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:13:37.886Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1190645ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:14:07.887Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1220646ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:14:37.888Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1250647ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:15:07.889Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1280648ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:15:37.891Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1310650ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:16:07.892Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1340651ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:16:37.896Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1370655ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:17:07.898Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1400657ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:17:37.899Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1430658ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:18:07.902Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1460661ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:18:37.904Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1490663ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:19:07.905Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1520664ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:19:37.906Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1550665ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:20:07.906Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1580665ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:20:37.907Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1610666ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:21:07.908Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1640667ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:21:37.909Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1670668ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:22:07.910Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1700669ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:22:37.912Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1730671ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:23:07.912Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1760671ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:23:37.914Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1790673ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:24:07.916Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1820675ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:24:37.917Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1850676ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:25:07.919Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1880678ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:25:37.896Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1910655ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:26:07.893Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1940652ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:26:37.894Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=1970653ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:27:07.895Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2000654ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:27:37.896Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2030655ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:28:07.897Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2060656ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:28:37.898Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2090657ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:29:07.899Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2120658ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:29:37.900Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2150659ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:30:07.900Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2180659ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:30:37.901Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2210660ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+2026-11-06T17:31:07.902Z [Test262 STALL] selection="performance import declarations selfbuild" phase="native stage2 under LLDB" elapsed=2240661ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=9136 child/inferior=14567,14767,14768
+Process 14768 resuming
+Process 14768 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+Target 0: (stage1) stopped.
+
+... Interrupted.
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-v4/final.json",'w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); p.Kill() if p.GetState()!=lldb.eStateExited else None
+Process 14768 exited with status = 9 (0x00000009) killed
+32
+success
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild.ts:28
+  if(second.status!==0||start.state!=='stopped'||end.state!=='exited'||end.exitStatus!==0)throw Error('native stage2 failed: '+JSON.stringify(end));
+                                                                                                ^
+
+Error: native stage2 failed: {"state":"5","exitStatus":-1}
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild.ts:28:97
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0
