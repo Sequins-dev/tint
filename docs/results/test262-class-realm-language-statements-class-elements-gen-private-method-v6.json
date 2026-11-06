@@ -1,0 +1,733 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "08b02d1c42927382cf9995053a115388b3542164ec4396934e664c2d3877eaf7",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1/source-snapshot.json",
+  "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 10063.585917000002
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 2839376.956417
+    }
+  ],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 14,
+        "kind": "syntax",
+        "compileMs": 4920.836459,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 6,
+        "kind": "execution",
+        "compileMs": 131742.02037500002,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/statements/class/elements/gen-private-method",
+  "totals": {
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-binding-identifier-escaped.js",
+      "sha256": "d44d5ba35b69f8979469aa2a9ddb50243d34dd0473b6da9b67c34deff5eae81e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15782.639208,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-binding-identifier-escaped.js",
+      "sha256": "d44d5ba35b69f8979469aa2a9ddb50243d34dd0473b6da9b67c34deff5eae81e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16107.405250000002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-binding-identifier.js",
+      "sha256": "2aeb2017849a36bc6fdb7dede4fd3f14418b71897ae856ad093037c8e2c0296b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16446.0075,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-binding-identifier.js",
+      "sha256": "2aeb2017849a36bc6fdb7dede4fd3f14418b71897ae856ad093037c8e2c0296b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16767.575958,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-identifier-reference-escaped.js",
+      "sha256": "6960663dfea9223c675a617250b4fa5aef1d66cc93a39a0e8099665bfd9724d5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17087.409541,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-identifier-reference-escaped.js",
+      "sha256": "6960663dfea9223c675a617250b4fa5aef1d66cc93a39a0e8099665bfd9724d5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17419.040292,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-identifier-reference.js",
+      "sha256": "8fe1760ba09d0a9fd39b4ca923eae0ed9cf8bb44f7abf0d3ad5a1489df73e225",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17741.456459,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-identifier-reference.js",
+      "sha256": "8fe1760ba09d0a9fd39b4ca923eae0ed9cf8bb44f7abf0d3ad5a1489df73e225",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18064.218291999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-label-identifier-escaped.js",
+      "sha256": "ff1fd3adfa0c01b32602dc33c89b7279143b248cb0769f5eeebe8c0ebc7019d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18385.137749999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-label-identifier-escaped.js",
+      "sha256": "ff1fd3adfa0c01b32602dc33c89b7279143b248cb0769f5eeebe8c0ebc7019d1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18701.204041999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-label-identifier.js",
+      "sha256": "b19a25329b6f2dd04317e2e1f9a729cf1071270381c539a47a28a8f2df9cfabe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19016.750625,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-as-label-identifier.js",
+      "sha256": "b19a25329b6f2dd04317e2e1f9a729cf1071270381c539a47a28a8f2df9cfabe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19321.728499999997,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-identifier-spread-strict.js",
+      "sha256": "c24265f9560999212be6c2ce123e775dd9c0274f9f0b5a32ecc3d99556286159",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "onlyStrict"
+        ],
+        "features": [
+          "object-spread",
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19640.870042000002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-identifier-strict.js",
+      "sha256": "6ae029e3c7c5368d6821a59bc2a62910e77e7674bd429451d2f55fa46559c766",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "onlyStrict"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19948.139542,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-arr-multiple.js",
+      "sha256": "1ec4f9fe70ad22e7c4113d8950628e9997040897f5609439891ae22abcae0839",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2993514.631917,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-arr-multiple.js",
+      "sha256": "1ec4f9fe70ad22e7c4113d8950628e9997040897f5609439891ae22abcae0839",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2973865.568625,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-arr-single.js",
+      "sha256": "a7424e32a88d8c890a01083e6ac8fcc86fb6f5b41c526ce377682507fb967ab8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2974150.8352079997,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-arr-single.js",
+      "sha256": "a7424e32a88d8c890a01083e6ac8fcc86fb6f5b41c526ce377682507fb967ab8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2974444.766,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-obj.js",
+      "sha256": "dfc697cb61c11a22eb92f197f0f33f197323a19116e40aed75dbdd698358c232",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread",
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2974735.466667,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/elements/gen-private-method/yield-spread-obj.js",
+      "sha256": "dfc697cb61c11a22eb92f197f0f33f197323a19116e40aed75dbdd698358c232",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "object-spread",
+          "generators",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2975026.384583,
+      "batch": 1
+    }
+  ]
+}

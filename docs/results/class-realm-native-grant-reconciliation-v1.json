@@ -1,0 +1,420 @@
+{
+ "kind": "native-class-realm-grant-reconciliation",
+ "conformance": false,
+ "source": "controller-v3..v7 logs (v6 stopped with SIGKILL holding no lease; its grants exist only in its log)",
+ "protocolLineage": [
+  "v3-v5: one batch per grant",
+  "v6-v7: parallel-coverage-option1 (caps 64 execution + 64 syntax per grant)"
+ ],
+ "grants": [
+  {
+   "controller": "v3",
+   "grantedAt": "2026-11-06T04:08:48.480Z",
+   "purpose": "fixture",
+   "batches": [
+    {
+     "selection": "native-class-construction-realm fixture",
+     "kind": "fixture",
+     "variants": 7
+    }
+   ],
+   "releasedAt": "2026-11-06T04:11:09.642Z",
+   "counts": {
+    "execution": 0,
+    "syntax": 0,
+    "fixture": 7
+   }
+  },
+  {
+   "controller": "v4",
+   "grantedAt": "2026-11-06T04:41:08.310Z",
+   "purpose": "built-ins/Function/internals batch 0",
+   "batches": [
+    {
+     "selection": "built-ins/Function/internals",
+     "id": 0,
+     "kind": "execution",
+     "variants": 16
+    }
+   ],
+   "releasedAt": "2026-11-06T04:44:35.738Z",
+   "counts": {
+    "execution": 16,
+    "syntax": 0,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v5",
+   "grantedAt": "2026-11-06T05:33:01.601Z",
+   "purpose": "language/expressions/super/realm.js batch 0",
+   "batches": [
+    {
+     "selection": "language/expressions/super/realm.js",
+     "id": 0,
+     "kind": "execution",
+     "variants": 2
+    }
+   ],
+   "releasedAt": "2026-11-06T05:33:10.010Z",
+   "counts": {
+    "execution": 2,
+    "syntax": 0,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v6",
+   "grantedAt": "2026-11-06T06:20:28.412Z",
+   "purpose": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm.js batch 0",
+   "batches": [
+    {
+     "selection": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm.js",
+     "runner": 6470,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:21:43.326Z"
+    },
+    {
+     "selection": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+     "runner": 6471,
+     "id": 0,
+     "kind": "execution",
+     "variants": 2,
+     "completedAt": "2026-11-06T06:23:58.660Z"
+    },
+    {
+     "selection": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-realm.js",
+     "runner": 6472,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:25:08.531Z"
+    },
+    {
+     "selection": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+     "runner": 85034,
+     "id": 0,
+     "kind": "execution",
+     "variants": 2,
+     "completedAt": "2026-11-06T06:27:26.916Z"
+    },
+    {
+     "selection": "language/expressions/class/private-setter-brand-check-multiple-evaluations-of-class-realm.js",
+     "runner": 92898,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:28:36.037Z"
+    },
+    {
+     "selection": "language/expressions/class/private-setter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+     "runner": 98484,
+     "id": 0,
+     "kind": "execution",
+     "variants": 2,
+     "completedAt": "2026-11-06T06:30:54.904Z"
+    },
+    {
+     "selection": "language/expressions/class/private-static-field-multiple-evaluations-of-class-realm.js",
+     "runner": 7526,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:32:03.522Z"
+    },
+    {
+     "selection": "language/expressions/class/private-static-getter-multiple-evaluations-of-class-realm.js",
+     "runner": 12613,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:33:20.012Z"
+    },
+    {
+     "selection": "language/expressions/class/private-static-method-brand-check-multiple-evaluations-of-class-realm.js",
+     "runner": 22815,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:34:32.421Z"
+    },
+    {
+     "selection": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-realm.js",
+     "runner": 28494,
+     "id": 0,
+     "kind": "execution",
+     "variants": 1,
+     "completedAt": "2026-11-06T06:35:42.068Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T06:35:42.375Z",
+   "counts": {
+    "execution": 13,
+    "syntax": 0,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v6",
+   "grantedAt": "2026-11-06T07:36:47.398Z",
+   "purpose": "language/statements/class/elements/private-methods batch 0",
+   "batches": [
+    {
+     "selection": "language/statements/class/elements/private-methods",
+     "runner": 35916,
+     "id": 0,
+     "kind": "execution",
+     "variants": 10,
+     "completedAt": "2026-11-06T07:36:57.321Z"
+    },
+    {
+     "selection": "language/statements/class/elements/private-accessor-name",
+     "runner": 41249,
+     "id": 0,
+     "kind": "execution",
+     "variants": 40,
+     "completedAt": "2026-11-06T07:37:14.065Z"
+    },
+    {
+     "selection": "language/statements/class/elements/evaluation-error",
+     "runner": 45635,
+     "id": 0,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T07:37:21.235Z"
+    },
+    {
+     "selection": "language/statements/class/elements/gen-private-method",
+     "runner": 66396,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 14,
+     "completedAt": "2026-11-06T07:37:26.484Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T07:37:26.787Z",
+   "counts": {
+    "execution": 62,
+    "syntax": 14,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v6",
+   "grantedAt": "2026-11-06T08:26:57.334Z",
+   "purpose": "language/statements/class/elements/gen-private-method batch 1",
+   "batches": [
+    {
+     "selection": "language/statements/class/elements/gen-private-method",
+     "runner": 66396,
+     "id": 1,
+     "kind": "execution",
+     "variants": 6,
+     "completedAt": "2026-11-06T08:27:01.474Z"
+    },
+    {
+     "selection": "language/statements/class/elements/gen-private-method-static",
+     "runner": 67433,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 14,
+     "completedAt": "2026-11-06T08:27:06.374Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T08:27:06.679Z",
+   "counts": {
+    "execution": 6,
+    "syntax": 14,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v7",
+   "grantedAt": "2026-11-06T09:17:19.333Z",
+   "purpose": "language/statements/class/elements/gen-private-method-static batch 1",
+   "batches": [
+    {
+     "selection": "language/statements/class/elements/gen-private-method-static",
+     "runner": 67433,
+     "id": 1,
+     "kind": "execution",
+     "variants": 6,
+     "completedAt": "2026-11-06T09:17:24.228Z"
+    },
+    {
+     "selection": "language/statements/class/elements/async-private-method",
+     "runner": 68044,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:17:28.418Z"
+    },
+    {
+     "selection": "language/statements/class/elements/async-private-method-static",
+     "runner": 45415,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:17:33.113Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/private-methods",
+     "runner": 81061,
+     "id": 0,
+     "kind": "execution",
+     "variants": 10,
+     "completedAt": "2026-11-06T09:17:40.578Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T09:17:40.892Z",
+   "counts": {
+    "execution": 16,
+    "syntax": 24,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v7",
+   "grantedAt": "2026-11-06T09:30:21.954Z",
+   "purpose": "language/statements/class/elements/async-private-method batch 1",
+   "batches": [
+    {
+     "selection": "language/statements/class/elements/async-private-method",
+     "runner": 68044,
+     "id": 1,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:30:27.603Z"
+    },
+    {
+     "selection": "language/statements/class/elements/async-private-method-static",
+     "runner": 45415,
+     "id": 1,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:30:34.064Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/private-accessor-name",
+     "runner": 26014,
+     "id": 0,
+     "kind": "execution",
+     "variants": 40,
+     "completedAt": "2026-11-06T09:30:48.579Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T09:30:48.886Z",
+   "counts": {
+    "execution": 64,
+    "syntax": 0,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v7",
+   "grantedAt": "2026-11-06T09:48:30.420Z",
+   "purpose": "language/expressions/class/elements/evaluation-error batch 0",
+   "batches": [
+    {
+     "selection": "language/expressions/class/elements/evaluation-error",
+     "runner": 27180,
+     "id": 0,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:48:35.818Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/gen-private-method",
+     "runner": 74944,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 14,
+     "completedAt": "2026-11-06T09:48:41.020Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/gen-private-method-static",
+     "runner": 75531,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 14,
+     "completedAt": "2026-11-06T09:48:46.827Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/async-private-method",
+     "runner": 76447,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:48:52.524Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/async-private-method-static",
+     "runner": 49746,
+     "id": 0,
+     "kind": "syntax",
+     "variants": 12,
+     "completedAt": "2026-11-06T09:48:58.479Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T09:48:58.785Z",
+   "counts": {
+    "execution": 12,
+    "syntax": 52,
+    "fixture": 0
+   }
+  },
+  {
+   "controller": "v7",
+   "grantedAt": "2026-11-06T10:00:47.238Z",
+   "purpose": "language/expressions/class/elements/gen-private-method batch 1",
+   "batches": [
+    {
+     "selection": "language/expressions/class/elements/gen-private-method",
+     "runner": 74944,
+     "id": 1,
+     "kind": "execution",
+     "variants": 6,
+     "completedAt": "2026-11-06T10:00:55.657Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/gen-private-method-static",
+     "runner": 75531,
+     "id": 1,
+     "kind": "execution",
+     "variants": 6,
+     "completedAt": "2026-11-06T10:00:59.088Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/async-private-method",
+     "runner": 76447,
+     "id": 1,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T10:01:04.285Z"
+    },
+    {
+     "selection": "language/expressions/class/elements/async-private-method-static",
+     "runner": 49746,
+     "id": 1,
+     "kind": "execution",
+     "variants": 12,
+     "completedAt": "2026-11-06T10:01:09.234Z"
+    }
+   ],
+   "releasedAt": "2026-11-06T10:01:09.545Z",
+   "counts": {
+    "execution": 36,
+    "syntax": 0,
+    "fixture": 0
+   }
+  }
+ ],
+ "totals": {
+  "grants": 10,
+  "execution": 227,
+  "syntax": 104,
+  "fixture": 7
+ }
+}

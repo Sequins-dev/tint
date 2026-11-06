@@ -1,0 +1,1193 @@
+{
+  "kind": "native-class-realm-selection-controller",
+  "conformance": true,
+  "wholeSuite": false,
+  "protocol": {
+    "version": "parallel-coverage-option1",
+    "lineage": [
+      "v2-v5: one batch per grant",
+      "v6: consecutive ready batches per grant, caps 64 execution + 64 syntax variants; next batch count/type read from the runner journal compilation record before release",
+      "v7: same caps; while the current runner compiles, a ready batch of another prefetched runner may use the grant (per-runner batch order unchanged); adopts v6 runners parked on their own pause"
+    ],
+    "caps": {
+      "execution": 64,
+      "syntax": 64
+    }
+  },
+  "prior": [
+    {
+      "selection": "built-ins/Function/internals",
+      "report": "docs/results/test262-class-realm-built-ins-function-internals-v4.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-getter-brand-check-multiple-evaluations-of-class-realm-function-ctor-v6.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-getter-brand-check-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-method-brand-check-multiple-evaluations-of-class-realm-function-ctor-v6.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-method-brand-check-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-setter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-setter-brand-check-multiple-evaluations-of-class-realm-function-ctor-v6.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-setter-brand-check-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-setter-brand-check-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-static-field-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-static-field-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-static-getter-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-static-getter-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-static-method-brand-check-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-static-method-brand-check-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-class-private-static-setter-multiple-evaluations-of-class-realm-v6.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/super/realm.js",
+      "report": "docs/results/test262-class-realm-language-expressions-super-realm-v5.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/statements/class/elements/evaluation-error",
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-evaluation-error-v6.json",
+      "totals": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/statements/class/elements/gen-private-method",
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-gen-private-method-v6.json",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/statements/class/elements/private-accessor-name",
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-private-accessor-name-v6.json",
+      "totals": {
+        "total": 40,
+        "passed": 40,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/statements/class/elements/private-methods",
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-private-methods-v6.json",
+      "totals": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "controllerLogs": [
+    ".tint-bootstrap/class-realm/controller-v4.log",
+    ".tint-bootstrap/class-realm/controller-v5.log",
+    ".tint-bootstrap/class-realm/controller-v6.log",
+    ".tint-bootstrap/class-realm/controller-v7.log"
+  ],
+  "sourceSnapshot": {
+    "sha256": "08b02d1c42927382cf9995053a115388b3542164ec4396934e664c2d3877eaf7",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1/source-snapshot.json",
+  "frozenHost": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-class-realm-v1/source-snapshot.json",
+    "sha256": "5978b697a2216f58fe603af768dd04253afa1f74d4c38c4ae70e785edc41f196"
+  },
+  "frozenHostRunIdentity": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+  "frozenHostRecord": "docs/results/frozen-node-toolchain-class-realm-v1.json",
+  "compilerGraph": "docs/results/class-realm-bootstrap-graph-node-v1.json",
+  "suite": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+  "results": [
+    {
+      "selection": "language/statements/class/elements/gen-private-method-static",
+      "label": "language-statements-class-elements-gen-private-method-static",
+      "runnerVersion": "v6",
+      "adopted": true,
+      "started": "(v6) 67433",
+      "finished": "2026-11-06T09:17:24.531Z",
+      "result": {
+        "code": 0,
+        "signal": null,
+        "inferred": true
+      },
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-gen-private-method-static-v6.json",
+      "journal": "docs/results/test262-class-realm-language-statements-class-elements-gen-private-method-static-v6.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-statements-class-elements-gen-private-method-static-v6.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/statements/class/elements/gen-private-method-static",
+          "runner": 67433,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:19.334Z",
+          "completedAt": "2026-11-06T09:17:24.228Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/private-methods",
+      "label": "language-expressions-class-elements-private-methods",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:06:23.985Z",
+      "finished": "2026-11-06T09:17:40.880Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-private-methods-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-private-methods-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-private-methods-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/private-methods",
+          "runner": 81061,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 10,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:33.416Z",
+          "completedAt": "2026-11-06T09:17:40.578Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/statements/class/elements/async-private-method",
+      "label": "language-statements-class-elements-async-private-method",
+      "runnerVersion": "v6",
+      "adopted": true,
+      "started": "(v6) 68044",
+      "finished": "2026-11-06T09:30:27.905Z",
+      "result": {
+        "code": 0,
+        "signal": null,
+        "inferred": true
+      },
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-async-private-method-v6.json",
+      "journal": "docs/results/test262-class-realm-language-statements-class-elements-async-private-method-v6.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-statements-class-elements-async-private-method-v6.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/statements/class/elements/async-private-method",
+          "runner": 68044,
+          "runnerVersion": "v6",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:24.535Z",
+          "completedAt": "2026-11-06T09:17:28.418Z"
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method",
+          "runner": 68044,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:21.956Z",
+          "completedAt": "2026-11-06T09:30:27.603Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/statements/class/elements/async-private-method-static",
+      "label": "language-statements-class-elements-async-private-method-static",
+      "runnerVersion": "v6",
+      "adopted": true,
+      "started": "(v6) 45415",
+      "finished": "2026-11-06T09:30:34.364Z",
+      "result": {
+        "code": 0,
+        "signal": null,
+        "inferred": true
+      },
+      "report": "docs/results/test262-class-realm-language-statements-class-elements-async-private-method-static-v6.json",
+      "journal": "docs/results/test262-class-realm-language-statements-class-elements-async-private-method-static-v6.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-statements-class-elements-async-private-method-static-v6.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/statements/class/elements/async-private-method-static",
+          "runner": 45415,
+          "runnerVersion": "v6",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:28.721Z",
+          "completedAt": "2026-11-06T09:17:33.113Z"
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method-static",
+          "runner": 45415,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:27.908Z",
+          "completedAt": "2026-11-06T09:30:34.064Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/private-accessor-name",
+      "label": "language-expressions-class-elements-private-accessor-name",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:17:24.535Z",
+      "finished": "2026-11-06T09:30:48.881Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-private-accessor-name-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-private-accessor-name-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-private-accessor-name-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/private-accessor-name",
+          "runner": 26014,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 40,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:34.367Z",
+          "completedAt": "2026-11-06T09:30:48.579Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 40,
+        "passed": 40,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/evaluation-error",
+      "label": "language-expressions-class-elements-evaluation-error",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:17:40.889Z",
+      "finished": "2026-11-06T09:48:36.120Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-evaluation-error-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-evaluation-error-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-evaluation-error-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/evaluation-error",
+          "runner": 27180,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:30.424Z",
+          "completedAt": "2026-11-06T09:48:35.818Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/gen-private-method",
+      "label": "language-expressions-class-elements-gen-private-method",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:30:27.908Z",
+      "finished": "2026-11-06T10:00:55.959Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-gen-private-method-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-gen-private-method-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-gen-private-method-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/gen-private-method",
+          "runner": 74944,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 14,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:36.128Z",
+          "completedAt": "2026-11-06T09:48:41.020Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method",
+          "runner": 74944,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:47.239Z",
+          "completedAt": "2026-11-06T10:00:55.657Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/gen-private-method-static",
+      "label": "language-expressions-class-elements-gen-private-method-static",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:30:34.366Z",
+      "finished": "2026-11-06T10:00:59.391Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-gen-private-method-static-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-gen-private-method-static-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-gen-private-method-static-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/gen-private-method-static",
+          "runner": 75531,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 14,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:41.325Z",
+          "completedAt": "2026-11-06T09:48:46.827Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method-static",
+          "runner": 75531,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:55.960Z",
+          "completedAt": "2026-11-06T10:00:59.088Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/async-private-method",
+      "label": "language-expressions-class-elements-async-private-method",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:30:48.884Z",
+      "finished": "2026-11-06T10:01:04.590Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-async-private-method-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-async-private-method-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-async-private-method-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/async-private-method",
+          "runner": 76447,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:47.130Z",
+          "completedAt": "2026-11-06T09:48:52.524Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method",
+          "runner": 76447,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:59.392Z",
+          "completedAt": "2026-11-06T10:01:04.285Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/class/elements/async-private-method-static",
+      "label": "language-expressions-class-elements-async-private-method-static",
+      "runnerVersion": "v7",
+      "adopted": false,
+      "started": "2026-11-06T09:48:36.128Z",
+      "finished": "2026-11-06T10:01:09.536Z",
+      "result": {
+        "code": 0,
+        "signal": null
+      },
+      "report": "docs/results/test262-class-realm-language-expressions-class-elements-async-private-method-static-v7.json",
+      "journal": "docs/results/test262-class-realm-language-expressions-class-elements-async-private-method-static-v7.jsonl",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/test262-language-expressions-class-elements-async-private-method-static-v7.json.log",
+      "batchesUnderV7": [
+        {
+          "selection": "language/expressions/class/elements/async-private-method-static",
+          "runner": 49746,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:52.827Z",
+          "completedAt": "2026-11-06T09:48:58.479Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method-static",
+          "runner": 49746,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:01:04.592Z",
+          "completedAt": "2026-11-06T10:01:09.234Z"
+        }
+      ],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "frozenToolchainSha256": "2cd70304f26216815fc29fc86e681fd51e42494829a09055d48285269bae7be3",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": []
+    }
+  ],
+  "grants": [
+    {
+      "lease": {
+        "pid": 80993,
+        "thread": "class-private-realm-baseline-validation",
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6",
+        "purpose": "language/statements/class/elements/gen-private-method-static batch 1",
+        "acquiredAt": "2026-11-06T09:16:44.199Z"
+      },
+      "purpose": "language/statements/class/elements/gen-private-method-static batch 1",
+      "cooperatingRunners": [
+        {
+          "pid": 699,
+          "ppid": 694,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 6622,
+          "ppid": 93679,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 9810,
+          "ppid": 2849,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 33875,
+          "ppid": 69783,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 67040,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+      },
+      "borrowedRunner": 21082,
+      "grantedAt": "2026-11-06T09:17:19.333Z",
+      "releasedAt": "2026-11-06T09:17:40.889Z",
+      "batches": [
+        {
+          "selection": "language/statements/class/elements/gen-private-method-static",
+          "runner": 67433,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:19.334Z",
+          "completedAt": "2026-11-06T09:17:24.228Z"
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method",
+          "runner": 68044,
+          "runnerVersion": "v6",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:24.535Z",
+          "completedAt": "2026-11-06T09:17:28.418Z"
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method-static",
+          "runner": 45415,
+          "runnerVersion": "v6",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:28.721Z",
+          "completedAt": "2026-11-06T09:17:33.113Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/private-methods",
+          "runner": 81061,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 10,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:17:33.416Z",
+          "completedAt": "2026-11-06T09:17:40.578Z"
+        }
+      ],
+      "counts": {
+        "execution": 16,
+        "syntax": 24
+      },
+      "protocol": "parallel-coverage-option1"
+    },
+    {
+      "lease": {
+        "pid": 80993,
+        "thread": "class-private-realm-baseline-validation",
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6",
+        "purpose": "language/statements/class/elements/async-private-method batch 1",
+        "acquiredAt": "2026-11-06T09:29:47.844Z"
+      },
+      "purpose": "language/statements/class/elements/async-private-method batch 1",
+      "cooperatingRunners": [
+        {
+          "pid": 699,
+          "ppid": 694,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 6622,
+          "ppid": 93679,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 9810,
+          "ppid": 2849,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 33875,
+          "ppid": 69783,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 67040,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+      },
+      "borrowedRunner": 21082,
+      "grantedAt": "2026-11-06T09:30:21.954Z",
+      "releasedAt": "2026-11-06T09:30:48.884Z",
+      "batches": [
+        {
+          "selection": "language/statements/class/elements/async-private-method",
+          "runner": 68044,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:21.956Z",
+          "completedAt": "2026-11-06T09:30:27.603Z"
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method-static",
+          "runner": 45415,
+          "runnerVersion": "v6",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:27.908Z",
+          "completedAt": "2026-11-06T09:30:34.064Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/private-accessor-name",
+          "runner": 26014,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 40,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:30:34.367Z",
+          "completedAt": "2026-11-06T09:30:48.579Z"
+        }
+      ],
+      "counts": {
+        "execution": 64,
+        "syntax": 0
+      },
+      "protocol": "parallel-coverage-option1"
+    },
+    {
+      "lease": {
+        "pid": 80993,
+        "thread": "class-private-realm-baseline-validation",
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6",
+        "purpose": "language/expressions/class/elements/evaluation-error batch 0",
+        "acquiredAt": "2026-11-06T09:47:54.287Z"
+      },
+      "purpose": "language/expressions/class/elements/evaluation-error batch 0",
+      "cooperatingRunners": [
+        {
+          "pid": 6622,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 33875,
+          "ppid": 69783,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 34499,
+          "ppid": 2849,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 46832,
+          "ppid": 694,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 67040,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+      },
+      "borrowedRunner": 21082,
+      "grantedAt": "2026-11-06T09:48:30.420Z",
+      "releasedAt": "2026-11-06T09:48:58.782Z",
+      "batches": [
+        {
+          "selection": "language/expressions/class/elements/evaluation-error",
+          "runner": 27180,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:30.424Z",
+          "completedAt": "2026-11-06T09:48:35.818Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method",
+          "runner": 74944,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 14,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:36.128Z",
+          "completedAt": "2026-11-06T09:48:41.020Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method-static",
+          "runner": 75531,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 14,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:41.325Z",
+          "completedAt": "2026-11-06T09:48:46.827Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method",
+          "runner": 76447,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:47.130Z",
+          "completedAt": "2026-11-06T09:48:52.524Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method-static",
+          "runner": 49746,
+          "runnerVersion": "v7",
+          "id": 0,
+          "kind": "syntax",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T09:48:52.827Z",
+          "completedAt": "2026-11-06T09:48:58.479Z"
+        }
+      ],
+      "counts": {
+        "execution": 12,
+        "syntax": 52
+      },
+      "protocol": "parallel-coverage-option1"
+    },
+    {
+      "lease": {
+        "pid": 80993,
+        "thread": "class-private-realm-baseline-validation",
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6",
+        "purpose": "language/expressions/class/elements/gen-private-method batch 1",
+        "acquiredAt": "2026-11-06T10:00:16.130Z"
+      },
+      "purpose": "language/expressions/class/elements/gen-private-method batch 1",
+      "cooperatingRunners": [
+        {
+          "pid": 6622,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 18574,
+          "ppid": 69783,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 34499,
+          "ppid": 2849,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 46832,
+          "ppid": 694,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 1,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+      },
+      "borrowedRunner": 21082,
+      "grantedAt": "2026-11-06T10:00:47.238Z",
+      "releasedAt": "2026-11-06T10:01:09.544Z",
+      "batches": [
+        {
+          "selection": "language/expressions/class/elements/gen-private-method",
+          "runner": 74944,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:47.239Z",
+          "completedAt": "2026-11-06T10:00:55.657Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method-static",
+          "runner": 75531,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 6,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:55.960Z",
+          "completedAt": "2026-11-06T10:00:59.088Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method",
+          "runner": 76447,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:00:59.392Z",
+          "completedAt": "2026-11-06T10:01:04.285Z"
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method-static",
+          "runner": 49746,
+          "runnerVersion": "v7",
+          "id": 1,
+          "kind": "execution",
+          "variants": 12,
+          "outcome": "compiled",
+          "releasedAt": "2026-11-06T10:01:04.592Z",
+          "completedAt": "2026-11-06T10:01:09.234Z"
+        }
+      ],
+      "counts": {
+        "execution": 36,
+        "syntax": 0
+      },
+      "protocol": "parallel-coverage-option1"
+    }
+  ],
+  "policy": "Unchanged Test262 sources and harnesses; all variants retained in denominators; no automatic retry; LLDB entry and final exit per variant via the frozen runner. Full class/elements directories are out of scope; private-element subfamilies selected."
+}
