@@ -1,0 +1,63 @@
+{
+  "kind": "linked-syntax-hash-selfhosting-acceptance",
+  "conformance": false,
+  "implementationCommit": "f5a8071",
+  "scope": "Fresh graph-local hashes for linked syntax copies; does not resolve eval/Function preparation timeouts.",
+  "selfbuild": {
+    "report": "docs/results/operator-hash-selfbuild-native-v1.json",
+    "sourceSnapshot": {
+      "sha256": "b2bc7bfe0b7f2f5e4e485c341c8ec965328bb806efa42edce9f6b8f8619f1114",
+      "files": 568
+    },
+    "nativeExitStatus": 0,
+    "initialStopConfirmed": true,
+    "byteIdentical": true,
+    "bytes": 71402018,
+    "sha256": "b346f166c4cd88c95770278e9b569fa2204b264f958bca44471e763d32e25398",
+    "signatureAuditExitStatus": 0,
+    "dwarfAuditExitStatus": 0
+  },
+  "smoke": {
+    "compileReport": "docs/results/operator-hash-smoke-stage2-compile-v1.json",
+    "executionReport": "docs/results/operator-hash-smoke-stage2-execute-v1.json",
+    "sourceSnapshot": {
+      "sha256": "997fc16b1147e23985377e0e45c9fcb1170f31a8376ff1b5dff57f78014499f9",
+      "files": 568
+    },
+    "byteIdenticalToNode": true,
+    "bytes": 17381890,
+    "sha256": "5f8fbc8c606354912504b5a7b9689bf5e9287b9ce282ae99183c8ec2b0d6ce64",
+    "nativeCompilerExitStatus": 0,
+    "expectedExitStatus": 42,
+    "outcome": {
+      "kind": "completed"
+    },
+    "signatureAuditExitStatus": 0,
+    "dwarfAuditExitStatus": 0
+  },
+  "workspaceGate": {
+    "report": "docs/results/operator-hash-rebased-workspace-gate-v4.json",
+    "baseMain": "b7aa59a",
+    "exitStatus": 0,
+    "tests": 4505
+  },
+  "focusedRegression": {
+    "redReport": "docs/results/operator-timeout-diagnosis-link-hashes-red-v1.log",
+    "redExitStatus": 1,
+    "greenReport": "docs/results/operator-timeout-diagnosis-link-hashes-green-v1.log",
+    "greenExitStatus": 0,
+    "tests": 28
+  },
+  "provenance": "Native self-build and smoke use the frozen b2bc7bfe compiler source graph captured before main b7aa59a. The later rebase integrates cluster D changes; the rebased workspace gate uses source graph 5b246857. No later workspace state is attributed to the earlier native images.",
+  "artifacts": [
+    "docs/results/operator-hash-smoke-stage2-compile-v1.json",
+    "docs/results/operator-hash-smoke-stage2-compile-v1.stdout.log",
+    "docs/results/operator-hash-smoke-stage2-compile-v1.stderr.log",
+    "docs/results/operator-hash-smoke-stage2-execute-v1.json",
+    "docs/results/operator-hash-smoke-stage2-execute-v1.stdout.log",
+    "docs/results/operator-hash-smoke-stage2-execute-v1.stderr.log",
+    "docs/results/operator-hash-smoke-stage2-compile-v1.lldb.log",
+    "docs/results/operator-hash-smoke-stage2-signature-v1.log",
+    "docs/results/operator-hash-smoke-stage2-dwarf-v1.log"
+  ]
+}
