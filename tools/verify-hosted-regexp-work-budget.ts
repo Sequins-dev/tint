@@ -7,6 +7,7 @@ export function run():number {
  const input="b".repeat(1000001);
  if(executeRegExp(compiled.value,input).kind!=="no-match")return 2;
  if(executeRegExp(compiled.value,input,0,false,1000000).kind!=="limit")return 3;
+ if(executeRegExp(compiled.value,input,0,false,undefined).kind!=="no-match")return 4;
  return 42;
 }`,
   "regexp-work-budget",

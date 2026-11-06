@@ -1,0 +1,42 @@
+{
+  "kind": "hosted-native-regexp-explicit-undefined-budget",
+  "conformance": false,
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "8942ad387811c9b6d29f99e6925e39116b9cae15d20e3427b52b6abc74a640de",
+      "files": 569
+    },
+    "imageSha256": "5759ecf9291a0c873536c93d2ea65429d1b40059954b5afdd62826cfde155ad1",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-work-budget-pzpiXf/regexp-work-budget.source.ts",
+    "fixtureSha256": "66cc8c6224814c4261d6e9883e62fad650847dd655405ce98088ba38089202e4",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/tools/verify-hosted-regexp-work-budget.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 268435456,
+      "allocationCapacity": 8388608
+    },
+    "debugSymbols": false
+  },
+  "fixture": "\nimport {compileRegExp,executeRegExp} from \"engine\";\nexport function run():number {\n const compiled=compileRegExp(\"a\",\"\");if(!compiled.ok)return 1;\n const input=\"b\".repeat(1000001);\n if(executeRegExp(compiled.value,input).kind!==\"no-match\")return 2;\n if(executeRegExp(compiled.value,input,0,false,1000000).kind!==\"limit\")return 3;\n if(executeRegExp(compiled.value,input,0,false,undefined).kind!==\"no-match\")return 4;\n return 42;\n}",
+  "observations": [
+    {
+      "phase": "initial-launch",
+      "nativeEntryConfirmed": false,
+      "result": "pre-entry debugger attach failure",
+      "lldbLog": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-work-budget-pzpiXf/regexp-work-budget\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-work-budget-pzpiXf/regexp-work-budget' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nerror: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n"
+    },
+    {
+      "phase": "separate-diagnostic-recheck",
+      "debuggerLaunch": "debugserver-direct",
+      "timeoutMs": 300000,
+      "result": {
+        "kind": "completed"
+      },
+      "entryAndExpectedExitValidation": "executeNativeFile accepts completed only after its independent initial-stopped record and native exit-42 protocol validation."
+    }
+  ]
+}
