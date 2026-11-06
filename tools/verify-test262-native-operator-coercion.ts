@@ -85,6 +85,17 @@ const sources = [
       "if(''+1e21!=='1e+21'||''+1e-7!=='1e-7'||''+(-0)!=='0'||''+123e-20!=='1.23e-18'||''+5e-324!=='5e-324'||''+0.1+0.2!=='0.10.2')throw 103;" +
       "if((2**32+1|0)!==1||(-1>>>0)!==4294967295||(1e21|0)!==-559939584||(NaN|0)!==0||(1<<33)!==2||(-5.5%2)!==-1.5||!Object.is(-0%1,-0))throw 104;",
   },
+  {
+    // Case 1 semantics without runtime Function compilation, whose native
+    // dynamic-compilation cost exceeded the containment budget.
+    name: "non-additive operators finish ToNumeric(lhs) first (static operator functions)",
+    source:
+      "var fs=[function(a,b){return a-b},function(a,b){return a*b},function(a,b){return a/b},function(a,b){return a%b}," +
+      "function(a,b){return a**b},function(a,b){return a&b},function(a,b){return a|b},function(a,b){return a^b}," +
+      "function(a,b){return a<<b},function(a,b){return a>>b},function(a,b){return a>>>b}];for(var i=0;i<fs.length;i++){var f=fs[i];" +
+      "t='';if(!threw(function(){f(o('l',Symbol()),o('r',E))},TypeError)||t!=='l')throw 110+i;" +
+      "t='';if(!threw(function(){f(o('l',1n),o('r',1))},TypeError)||t!=='lr')throw 130+i;}",
+  },
 ];
 const cases = sources.map(({ name, source: body }) => {
   const source = prelude + body;

@@ -1,0 +1,68 @@
+{
+  "kind": "native-selection-controller",
+  "selection": "language/expressions/addition",
+  "result": {
+    "exitStatus": "unobservable (adopted runner; original parent pid 83221 stopped while holding nothing)",
+    "journalComplete": true
+  },
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1",
+    "entry": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1/source-snapshot.json",
+    "sha256": "4075f7d1fd45b9bbe45c5544fd2978f5840f6b8f0588ee4aff70bcd1fc2b71eb"
+  },
+  "serialization": {
+    "centralPause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+    "grants": [
+      {
+        "batch": {
+          "id": 0,
+          "variants": 64
+        },
+        "grantedBy": "run-operator-families-conformance-v1.mjs (pid 83221)",
+        "acknowledgedAt": "2026-11-06T00:57:39.683Z"
+      },
+      {
+        "lease": {
+          "pid": 69783,
+          "owner": "operator",
+          "thread": "delegated-task operator-coercion (worktree t3-f3c644cf)",
+          "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf",
+          "purpose": "Test262 language/expressions/addition batch 1 (adopted runner 83276)",
+          "acquiredAt": "2026-11-06T03:33:16.594Z",
+          "turn": {
+            "owner": "operator",
+            "pids": [
+              69783,
+              83276
+            ],
+            "remaining": 1,
+            "setBy": "reference-keys release",
+            "at": "2026-11-06T03:33:15.113Z"
+          }
+        },
+        "paused": true,
+        "ack": {
+          "pid": 21082,
+          "state": "between-variants"
+        },
+        "acknowledgedAt": "2026-11-06T03:33:49.697Z",
+        "batch": {
+          "id": 1,
+          "variants": 31,
+          "kind": "execution",
+          "outcome": "compiled"
+        },
+        "releasedAt": "2026-11-06T03:34:01.744Z"
+      }
+    ]
+  },
+  "report": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/test262-operator-addition-current-v1.json",
+  "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/test262-operator-addition-current-v1.jsonl",
+  "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/test262-operator-addition-current-v1.json.log"
+}

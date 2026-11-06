@@ -1,0 +1,457 @@
+{
+  "kind": "operator-family-variant-census-node",
+  "conformance": false,
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "variantPolicy": "syntaxVariants from tools/test262.ts (frozen host source snapshot identical)",
+  "rows": [
+    {
+      "selection": "language/expressions/addition",
+      "files": 48,
+      "variants": 95,
+      "variantKinds": {
+        "sloppy": 48,
+        "strict": 47
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 3,
+        "Symbol.toPrimitive": 8,
+        "computed-property-names": 3
+      },
+      "filesSha256": "e92b3f1a505569c5d320f640eb56d377bfb2129aa4d93018a0280694bd2472d9"
+    },
+    {
+      "selection": "language/expressions/equals",
+      "files": 47,
+      "variants": 93,
+      "variantKinds": {
+        "sloppy": 47,
+        "strict": 46
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 3,
+        "Symbol.toPrimitive": 6
+      },
+      "filesSha256": "e885e3feaa53cfa57e25d9c14f8d3a4e9650344bcd935e8bc96f061d091e8a3c"
+    },
+    {
+      "selection": "language/expressions/less-than",
+      "files": 45,
+      "variants": 89,
+      "variantKinds": {
+        "sloppy": 45,
+        "strict": 44
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 1
+      },
+      "filesSha256": "7008d0f4bbd47302cfd60713568fab4d086a09cd5f0a7059359e2d3bc46157a5"
+    },
+    {
+      "selection": "language/expressions/exponentiation",
+      "files": 44,
+      "variants": 88,
+      "variantKinds": {
+        "sloppy": 44,
+        "strict": 44
+      },
+      "features": {
+        "exponentiation": 43,
+        "BigInt": 7,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "d8b53a90a9b0275442d6f210abb4095a11440c8e158ed590a01ebd838f5143fb"
+    },
+    {
+      "selection": "language/expressions/subtraction",
+      "files": 38,
+      "variants": 75,
+      "variantKinds": {
+        "sloppy": 38,
+        "strict": 37
+      },
+      "features": {
+        "BigInt": 5,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "d2543e4d40309c9f8a26c81e15614335dfd0a5f39099225f84919b68ea7c4193"
+    },
+    {
+      "selection": "language/expressions/multiplication",
+      "files": 40,
+      "variants": 79,
+      "variantKinds": {
+        "sloppy": 40,
+        "strict": 39
+      },
+      "features": {
+        "BigInt": 5,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "a0a67e8a21d0472af81bd8ae1e92ae51e86825f9aaacbed2e32d3393b18d2d3b"
+    },
+    {
+      "selection": "language/expressions/division",
+      "files": 45,
+      "variants": 89,
+      "variantKinds": {
+        "sloppy": 45,
+        "strict": 44
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "e695c3985b7863cb63f056d565fd4182c530b3f27b5acf069bf30715fc46e158"
+    },
+    {
+      "selection": "language/expressions/modulus",
+      "files": 40,
+      "variants": 79,
+      "variantKinds": {
+        "sloppy": 40,
+        "strict": 39
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "57b9c114bb39c97f7cb567081c370890d18b05451ea6eef677a4c6501904ce21"
+    },
+    {
+      "selection": "language/expressions/left-shift",
+      "files": 45,
+      "variants": 89,
+      "variantKinds": {
+        "sloppy": 45,
+        "strict": 44
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 4,
+        "computed-property-names": 3
+      },
+      "filesSha256": "c3492a97ca79b18d2a702af3c5af04b505f3ff7f61880db1cea186a12f02a243"
+    },
+    {
+      "selection": "language/expressions/right-shift",
+      "files": 37,
+      "variants": 73,
+      "variantKinds": {
+        "sloppy": 37,
+        "strict": 36
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 4,
+        "computed-property-names": 3
+      },
+      "filesSha256": "92d9002041e9cef5dc4c6fe92e2278964cc7f0c56f80c091a17d0cffafcdf1c8"
+    },
+    {
+      "selection": "language/expressions/unsigned-right-shift",
+      "files": 45,
+      "variants": 89,
+      "variantKinds": {
+        "sloppy": 45,
+        "strict": 44
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 4,
+        "computed-property-names": 3
+      },
+      "filesSha256": "0365ba56a5c35a9993731baee516048a8d3934ae134a04ae385f61d1d5344588"
+    },
+    {
+      "selection": "language/expressions/bitwise-and",
+      "files": 30,
+      "variants": 59,
+      "variantKinds": {
+        "sloppy": 30,
+        "strict": 29
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "f740042161cfff63c5f5d40154dd3ea117c935698cef1af3eec0e1e017efea2a"
+    },
+    {
+      "selection": "language/expressions/bitwise-or",
+      "files": 30,
+      "variants": 59,
+      "variantKinds": {
+        "sloppy": 30,
+        "strict": 29
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "a59df100bf39c0d285b34cf62627821c04abb98bcb2da3cbd2a376c1eeac6c91"
+    },
+    {
+      "selection": "language/expressions/bitwise-xor",
+      "files": 30,
+      "variants": 59,
+      "variantKinds": {
+        "sloppy": 30,
+        "strict": 29
+      },
+      "features": {
+        "BigInt": 6,
+        "Symbol": 2,
+        "Symbol.toPrimitive": 3,
+        "computed-property-names": 3
+      },
+      "filesSha256": "a4ed26eb8c6a08ae37731866cf46ecccf754a2cfd5afbe3b633004c1c4b6a52f"
+    },
+    {
+      "selection": "language/expressions/bitwise-not",
+      "files": 16,
+      "variants": 32,
+      "variantKinds": {
+        "sloppy": 16,
+        "strict": 16
+      },
+      "features": {
+        "BigInt": 2,
+        "Symbol.toPrimitive": 1
+      },
+      "filesSha256": "a82509e24745cbe433866b3e3657f42fa3029eb47ec08808dbbd89389eab73d1"
+    },
+    {
+      "selection": "language/expressions/less-than-or-equal",
+      "files": 47,
+      "variants": 93,
+      "variantKinds": {
+        "sloppy": 47,
+        "strict": 46
+      },
+      "features": {
+        "BigInt": 6
+      },
+      "filesSha256": "c705ef018bb866fa3a2b57092ee6910df8f752cfded43dc21880bdd6fdabd350"
+    },
+    {
+      "selection": "language/expressions/greater-than",
+      "files": 49,
+      "variants": 97,
+      "variantKinds": {
+        "sloppy": 49,
+        "strict": 48
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 1
+      },
+      "filesSha256": "8a11a207d35c6bf8e61133690cfce9d05b5ceb43d999e1986482291f34f6670f"
+    },
+    {
+      "selection": "language/expressions/greater-than-or-equal",
+      "files": 43,
+      "variants": 85,
+      "variantKinds": {
+        "sloppy": 43,
+        "strict": 42
+      },
+      "features": {
+        "BigInt": 6
+      },
+      "filesSha256": "69d3b0b457d158b67bb6c57bbb82ac7a7bd1984e74929c0e123f122cdb33566b"
+    },
+    {
+      "selection": "language/expressions/does-not-equals",
+      "files": 38,
+      "variants": 75,
+      "variantKinds": {
+        "sloppy": 38,
+        "strict": 37
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 1
+      },
+      "filesSha256": "fe579312090614f667d40f5004db279104c6f34cd841f0f0063d6f57abeb2ddf"
+    },
+    {
+      "selection": "language/expressions/strict-equals",
+      "files": 30,
+      "variants": 59,
+      "variantKinds": {
+        "sloppy": 30,
+        "strict": 29
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 1
+      },
+      "filesSha256": "01870ed2010d2f876a1ef6ec0b81bf14b8addf7b8c43244c0e3cb7e00e3565b1"
+    },
+    {
+      "selection": "language/expressions/strict-does-not-equals",
+      "files": 30,
+      "variants": 59,
+      "variantKinds": {
+        "sloppy": 30,
+        "strict": 29
+      },
+      "features": {
+        "BigInt": 8,
+        "Symbol": 1
+      },
+      "filesSha256": "7e142e03867a8ae03860f2a7f1a1639e7e8fb032f4dfe9c592fbe4d6ad7707a4"
+    },
+    {
+      "selection": "language/expressions/unary-plus",
+      "files": 17,
+      "variants": 34,
+      "variantKinds": {
+        "sloppy": 17,
+        "strict": 17
+      },
+      "features": {
+        "BigInt": 1
+      },
+      "filesSha256": "703cd313555e8f55354906b6a17501c04c7f1189219efed68e22597813daba76"
+    },
+    {
+      "selection": "language/expressions/unary-minus",
+      "files": 14,
+      "variants": 28,
+      "variantKinds": {
+        "sloppy": 14,
+        "strict": 14
+      },
+      "features": {
+        "BigInt": 2,
+        "Symbol.toPrimitive": 1
+      },
+      "filesSha256": "538d9e196787b9ae5e1a60760d11f33ce5ec6cfbce9fd2275639521b77722004"
+    },
+    {
+      "selection": "language/expressions/logical-not",
+      "files": 19,
+      "variants": 38,
+      "variantKinds": {
+        "sloppy": 19,
+        "strict": 19
+      },
+      "features": {
+        "BigInt": 1,
+        "Symbol": 1
+      },
+      "filesSha256": "afcb42815487097ad7cdddfab34e550c972f4c62d277b5d45c7aef71da39688c"
+    },
+    {
+      "selection": "language/expressions/typeof",
+      "files": 16,
+      "variants": 32,
+      "variantKinds": {
+        "sloppy": 16,
+        "strict": 16
+      },
+      "features": {
+        "BigInt": 1,
+        "Proxy": 1,
+        "Symbol": 1
+      },
+      "filesSha256": "ba5294b797a677e617a443d7d6275e3259845c83f82b64afd4776b74de740321"
+    },
+    {
+      "selection": "language/expressions/void",
+      "files": 9,
+      "variants": 18,
+      "variantKinds": {
+        "sloppy": 9,
+        "strict": 9
+      },
+      "features": {},
+      "filesSha256": "b6cf6a38587f742cd108d8de2f597aa85b8443b0a4752fe31954530563723c34"
+    },
+    {
+      "selection": "language/expressions/postfix-increment",
+      "files": 38,
+      "variants": 66,
+      "variantKinds": {
+        "strict": 31,
+        "sloppy": 35
+      },
+      "features": {
+        "BigInt": 1,
+        "new.target": 2,
+        "generators": 1
+      },
+      "filesSha256": "b0340b5b43105b6eeaa64ddf06808332acc22d65d95c0bb79e7da57dd0981bf6"
+    },
+    {
+      "selection": "language/expressions/postfix-decrement",
+      "files": 37,
+      "variants": 65,
+      "variantKinds": {
+        "sloppy": 35,
+        "strict": 30
+      },
+      "features": {
+        "BigInt": 1,
+        "new.target": 2,
+        "generators": 1
+      },
+      "filesSha256": "4dae04aa131df09b282187bebe431f3fbdc1a4fabde6d63f77211225cd9547aa"
+    },
+    {
+      "selection": "language/expressions/prefix-increment",
+      "files": 33,
+      "variants": 57,
+      "variantKinds": {
+        "sloppy": 31,
+        "strict": 26
+      },
+      "features": {
+        "BigInt": 1,
+        "new.target": 2,
+        "generators": 1
+      },
+      "filesSha256": "16e0c0f3aea8c78e2c9ec61ef2b86676af526a3a39e2b06366b870d8508bdf63"
+    },
+    {
+      "selection": "language/expressions/prefix-decrement",
+      "files": 34,
+      "variants": 58,
+      "variantKinds": {
+        "strict": 27,
+        "sloppy": 31
+      },
+      "features": {
+        "BigInt": 1,
+        "new.target": 2,
+        "generators": 1
+      },
+      "filesSha256": "0b8cc7e8a8921d7befcac0c041c08169621bd82aa7714e6ebb26689d12d45842"
+    }
+  ],
+  "totals": {
+    "files": 1034,
+    "variants": 2011
+  }
+}
