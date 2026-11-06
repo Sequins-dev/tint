@@ -1,0 +1,36 @@
+✔ module identities, aliases, local shadowing and source origins survive composition (8.4295ms)
+✔ type imports and generic parameter shadowing retain separate namespaces (1.035458ms)
+✔ unresolved, missing, namespace and mutable import misuse fail explicitly (1.009708ms)
+✔ cyclic declaration modules resolve exports before rewriting bodies (0.665959ms)
+✔ constructor type arguments and argument references are rewritten independently (0.480959ms)
+✔ for-of binding identities and origins survive module composition (0.406459ms)
+✔ parameter default expressions retain imported binding identity and source origins (0.3565ms)
+✔ linked numeric array constants retain one identity across imported aliases (1.037667ms)
+✔ composition preserves optional properties in imported type contracts (0.445625ms)
+✔ linked generic functions preserve type parameter scopes and imported type arguments (27.999834ms)
+✔ indexed access keeps imported type identities through linking and specialization (2.104ms)
+✔ named and star re-exports resolve aliases, shared diamonds and cycles (1.911459ms)
+✔ local exports preserve imported identities and type-only star boundaries (0.406375ms)
+✔ conflicting stars are omitted, explicit exports win, and missing exports fail (1.596917ms)
+✔ stars exclude default exports and missing dependency or unproductive cycles fail (0.811167ms)
+✔ instance linking orders runtime dependencies and excludes declaration-only type imports (0.784959ms)
+✔ instance evaluation visits diamond dependencies once and retains inline-type side effects (0.513125ms)
+✔ instance evaluation handles cyclic back-edges in source dependency order (0.383166ms)
+✔ source lookup uses logarithmic reads over ordered disjoint linked ranges (0.99625ms)
+✔ satisfies constraints retain imported aliases and specialize type parameters (2.69475ms)
+✔ linked signature types retain imported names and generic parameters (0.935791ms)
+✔ unrelated module exports do not multiply resolution work (87.261125ms)
+✔ a string-named star export links as a named binding rather than a namespace (0.691334ms)
+✔ namespace exports retain an explicit linker capability boundary (0.263ms)
+✔ semantic export adapters retain exact native names and export ordering (0.295834ms)
+✔ native policy and metadata retain competing-error order (0.870042ms)
+✔ linking rebases retained export source starts without changing declaration spans (0.28075ms)
+✔ linked copies receive fresh graph hashes when generated source hashes collide (0.744875ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 333.458625

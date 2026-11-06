@@ -1,0 +1,200 @@
+{
+  "kind": "cluster-b-original-timeout-diagnosis",
+  "conformance": false,
+  "recordedAt": "2026-11-06T16:36:25.055061+00:00",
+  "originalNativeSources": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "cases": [
+    {
+      "name": "bespoke coercion case 1",
+      "selectedCase": 1,
+      "originalBinary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-AiSbYw/operator-coercion",
+      "imageSha256": "c750f1baafecc31919cc2113ce63ad6d64b4177c57df80986d2ad959909b83bc",
+      "initialStopConfirmed": true,
+      "finalExpectedExit": 42,
+      "diagnosticExitStatus": 0,
+      "verdict": "Completes outside the original containment window; no retroactive change to retained timeout. Interactive debugger pauses and saturation preclude a timing benchmark."
+    },
+    {
+      "name": "addition/S11.6.1_A1.js",
+      "variant": "sloppy",
+      "symbolizedDiagnosticCase": 0,
+      "initialStopConfirmed": true,
+      "finalExpectedExit": 42,
+      "diagnosticExitStatus": 0,
+      "verdict": "Completes outside the original containment window; original timeout retained. Stage breakpoints and manual pauses make this a diagnostic, not a timing benchmark."
+    },
+    {
+      "name": "division/S11.5.2_A1.js",
+      "variant": "sloppy",
+      "symbolizedDiagnosticCase": 1,
+      "elapsedMs": 300078.085541,
+      "containmentMs": 300000,
+      "outcome": "timeout",
+      "phase": "after confirmed initial stop",
+      "sample": "operator-timeout-diagnosis-division-sloppy-original-sample-v1.txt"
+    },
+    {
+      "name": "division/S11.5.2_A1.js",
+      "variant": "strict",
+      "symbolizedDiagnosticCase": 2,
+      "elapsedMs": 300077.306541,
+      "containmentMs": 300000,
+      "outcome": "timeout",
+      "phase": "after confirmed initial stop",
+      "heartbeat": {
+        "intervalMs": 30000,
+        "stallMs": 150000
+      },
+      "sample": "operator-timeout-diagnosis-division-strict-original-sample-v1.txt"
+    }
+  ],
+  "findings": [
+    "Native work is in eval/Function JIT preparation, collection-runtime specialization/checking, allocation and copying collection; not a debugger attach wait in these observations.",
+    "Repeated source samples advance through compiler phases. The two extended diagnostics complete correctly, ruling out an infinite coercion loop for those exact cases.",
+    "Observed load average exceeded 57 on an 18-core host, and CPU time advanced substantially more slowly than wall time. Saturated-host timeouts remain suspect and require separate controlled rechecks.",
+    "Symbolized stacks also show syntax identity-index probing during linker/checker work. Source-local or missing nodeHash values are retained by linked copies; generated same-span nodes can form collision clusters. Fresh output-graph hashes are being tested as a narrow compiler-cost improvement, not yet proven to resolve every timeout."
+  ],
+  "diagnosticInfrastructureFailure": {
+    "attempt": "coercion-case1-lldb.log",
+    "debuggerExitStatus": 11,
+    "failure": "LLDB crashed formatting extended thread information through SystemRuntimeMacOSX::ReadLibdispatchTSDIndexes / TypeSystemClang::AddFieldToRecordType.",
+    "disposition": "Retained separately. A new explicitly labeled diagnostic uses a minimal thread/frame formatter and SBFrame APIs; it completes normally. No conformance retry erased this failure."
+  },
+  "sourceControl": {
+    "symbolizedOriginal": "Frozen host copied locally with only debugSymbols/debugDirectory enabled. Native source bytes remain c1102df6; exact host hashes and builder are retained.",
+    "preRebaseCandidateBuild": {
+      "manifest": {
+        "kind": "native-timeout-diagnostic-build",
+        "sourceSnapshot": {
+          "sha256": "17052a905b945d5600f1dc7bc25561cf41d838b8f973336dace400b70a8c753f",
+          "files": 568
+        },
+        "inputs": [
+          {
+            "path": "addition/S11.6.1_A1.js",
+            "variant": "sloppy",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92"
+          },
+          {
+            "path": "division/S11.5.2_A1.js",
+            "variant": "sloppy",
+            "sha256": "609f9978297934e0973361203ade223e851dda163dbdf52ee8ee800007561ac4"
+          },
+          {
+            "path": "division/S11.5.2_A1.js",
+            "variant": "strict",
+            "sha256": "609f9978297934e0973361203ade223e851dda163dbdf52ee8ee800007561ac4"
+          },
+          {
+            "name": "non-additive operators finish ToNumeric(lhs) first",
+            "variant": "raw",
+            "source": "var t='';function E(){}function o(n,v){return{valueOf:function(){t+=n;if(v===E)throw new E();return v;}};}function threw(f,C){try{f();}catch(e){return e instanceof C;}return false;}var ops=['-','*','/','%','**','&','|','^','<<','>>','>>>'];for(var i=0;i<ops.length;i++){var f=Function('a','b','return a '+ops[i]+' b');t='';if(!threw(function(){f(o('l',Symbol()),o('r',E))},TypeError)||t!=='l')throw 10+i;t='';if(!threw(function(){f(o('l',1n),o('r',1))},TypeError)||t!=='lr')throw 30+i;}",
+            "sha256": "071495eb2ff5723f1ec791b4ff637b5b1e18d6fee060ade709572c7a1143210c"
+          }
+        ],
+        "imageSha256": "87da0f7182874236c4178eef2cff0fcc1fbf31ed8e2bd32bc4d4e11e0a1b0595"
+      },
+      "executed": false,
+      "note": "Build only. Besides the hash candidate, this graph includes four already-integrated main changes relative to c1102df6; it is not a matched single-change A/B."
+    },
+    "currentCandidateSources": {
+      "sha256": "b2bc7bfe0b7f2f5e4e485c341c8ec965328bb806efa42edce9f6b8f8619f1114",
+      "files": 568
+    },
+    "candidateBuildVsCurrent": "Current main additionally changes iterator-constructor.ts. Current-tree validation uses a newly built and frozen toolchain; old image evidence is not attributed to the later graph."
+  },
+  "regression": {
+    "redExitStatus": 1,
+    "redReason": "Linked copies did not receive distinct graph-local hashes.",
+    "greenExitStatus": 0,
+    "focusedTests": 28,
+    "implementation": "packages/ts-native/src/modules/index.ts: assign a fresh hash to each linked syntax copy without changing source locations, source identities or binding equality."
+  },
+  "validation": [
+    {
+      "command": "Node 24.12.0 ~/.t3/tint-slots/tint-check",
+      "attempt": 1,
+      "exitStatus": 0,
+      "tests": 4457,
+      "report": "docs/results/operator-timeout-diagnosis-link-hashes-tint-check-v1.log"
+    },
+    {
+      "command": "Node 24.12.0 ~/.t3/tint-slots/tint-check",
+      "attempt": 2,
+      "exitStatus": 0,
+      "tests": 4483,
+      "report": "docs/results/operator-timeout-diagnosis-link-hashes-tint-check-v2.log"
+    }
+  ],
+  "processDisposition": "All original baseline diagnostic jobs have exited. New focused validation and stage-1 build remain active and will receive separate immutable reports.",
+  "artifacts": [
+    {
+      "path": "docs/results/operator-timeout-diagnosis-coercion-case1-lldb.log",
+      "sha256": "937dad45d538ca223b7605a0d30b20553706244fd0f616340d25865ceec8cb84"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-coercion-case1-lldb-v2.log",
+      "sha256": "240044357f1184196935b101499fe60e1b18025cc8cbdc77e6bdab0070c54a8f"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-addition-sloppy-lldb-v1.log",
+      "sha256": "e87645bd5025175d3101b4e060929ec2dc97d207e4572035d7d5de5a75d252df"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-sloppy-original-v1.json",
+      "sha256": "db1519017cd5bc14d45280b47b8c62f76326c295f2fb70645abfe067d379300d"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-sloppy-original-v1.log",
+      "sha256": "64f102ebb5055de0482a224980d806645855c4398f87238327750e95227bc3b6"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-strict-original-v1.json",
+      "sha256": "34200887144af8eafe73ff20e548ede4bb3c69eadc484b94c5ffabe7d281f967"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-strict-original-v1.stdout.log",
+      "sha256": "7da2ba7eb305254071490afc1f3a5a558497f23841fcb2174540254df8ccd593"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-strict-original-v1.stderr.log",
+      "sha256": "dd6dcc41d4af1397ab7b8b43b59c80e1f777c0c184a59eca75adcd09bb60e3ed"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-sloppy-original-sample-v1.txt",
+      "sha256": "d07cb448e8ffa60d43260919c48c5d681f6c90d84264917211f2e46c7694f72a"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-strict-original-sample-v1.txt",
+      "sha256": "91c696fbf660e5f9dea7aea4d33a3111325d1092a5bb11d561fcbd856bdef0b5"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-division-strict-original-sample-v2.txt",
+      "sha256": "3cb0fbf86f24c5de0a31656c004c2da8727fd73310cf85811825384eec0ed8c8"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-link-hashes-red-v1.log",
+      "sha256": "100eadd917860c35d78a004c67fbaf65ea72d69821fbb4207ad787109ef11f43"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-link-hashes-green-v1.log",
+      "sha256": "11ed48f4ff00360d041cda59a419e5f67c63f9e8c0322608f0e4cd6cec039db7"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-link-hashes-tint-check-v1.log",
+      "sha256": "47ed3cb75823a53cda5805352f3de6621f248f65b60675106ba1d2622e157462"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-link-hashes-tint-check-v2.log",
+      "sha256": "2ed013d0cc8aa80e512b6825f39d1a3545849deba13a9343cb943c766007188d"
+    },
+    {
+      "path": "docs/results/operator-timeout-diagnosis-diagnostic-inputs.json",
+      "sha256": "052e1acc159739024dfcd8af9ae0c8b689359d9565c19ddf891017a327ccd232"
+    }
+  ],
+  "symbolizedBuilderSource": "import {cpSync,mkdirSync,symlinkSync,readFileSync,writeFileSync} from 'node:fs';\nimport {resolve,join} from 'node:path';import {createHash} from 'node:crypto';\nconst frozen='/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1';\nconst root=resolve('.tint-bootstrap/b-phase2/symbolized-frozen-host');mkdirSync(root);\ncpSync(frozen+'/tools',root+'/tools',{recursive:true});cpSync(frozen+'/package.json',root+'/package.json');symlinkSync(frozen+'/node_modules',root+'/node_modules');\nconst tool=root+'/tools/test262-native.ts', original=readFileSync(tool,'utf8');\nconst patched=original.replace('const built = buildMacOSProgram({','const built = buildMacOSProgram({\\n      debugSymbols: true,\\n      debugDirectory: '+JSON.stringify(process.cwd())+',');\nif(original===patched)throw Error('instrumentation target missing');writeFileSync(tool,patched);\nconst {prepareNativeScriptProgram,createNativeBatchBuilder}=await import(tool);\nconst {executionPlan}=await import(root+'/tools/test262-execution.ts');\nconst {testMetadata}=await import(root+'/tools/test262.ts');\nconst {readWorkspaceSourceSnapshot,workspaceSourceIdentity}=await import(root+'/tools/workspace-sources.ts');\nconst snapshot=readWorkspaceSourceSnapshot(frozen+'/source-snapshot.json'),checkout=frozen+'/../test262';\nconst selected=[['addition/S11.6.1_A1.js','sloppy'],['division/S11.5.2_A1.js','sloppy'],['division/S11.5.2_A1.js','strict']];\nconst cases=selected.map(([path,variant])=>{const filename=resolve(checkout,'test/language/expressions',path),source=readFileSync(filename,'utf8'),metadata=testMetadata(source),plan=executionPlan(source,variant,metadata);const harness=plan.harness.map(name=>({filename:resolve(checkout,'harness',name),source:readFileSync(resolve(checkout,'harness',name),'utf8')}));const p=prepareNativeScriptProgram(plan,variant,harness,filename,undefined,true,true);if(!p.ok)throw Error(JSON.stringify(p));return{scripts:p.scripts,asynchronous:plan.asynchronous,canSuspend:plan.canSuspend,...(p.root?{modules:p.root.entries,scriptRoot:{absent:p.root.absent}}:{})};});\nwriteFileSync(resolve('.tint-bootstrap/b-phase2/diagnostic-inputs.json'),JSON.stringify({selected,sourceSnapshot:workspaceSourceIdentity(snapshot),instrumentation:'Frozen host copied locally; debugSymbols and debugDirectory enabled only. Native source bytes unchanged.',originalHostSha256:createHash('sha256').update(original).digest('hex'),symbolizedHostSha256:createHash('sha256').update(patched).digest('hex')},null,2));\nconst built=createNativeBatchBuilder(snapshot,true)(cases);if(!built.ok)throw Error(JSON.stringify(built));writeFileSync(resolve('.tint-bootstrap/b-phase2/operator-timeouts-debug'),built.bytes,{mode:0o755,flag:'wx'});console.log('built',built.bytes.length);\n"
+}

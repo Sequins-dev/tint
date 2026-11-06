@@ -1,0 +1,186 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-AiSbYw/operator-coercion"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-AiSbYw/operator-coercion' (arm64).
+(lldb) command source -s 0 '.tint-bootstrap/b-phase2/coercion-case1-lldb-v2.txt'
+Executing commands in '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/coercion-case1-lldb-v2.txt'.
+(lldb) settings set target.disable-aslr false
+(lldb) settings set thread-format "thread ${thread.index} tid=${thread.id}\n"
+(lldb) settings set frame-format "frame ${frame.index} pc=${frame.pc} ${module.file.basename}\n"
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-f5rVWe/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-f5rVWe/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-f5rVWe/port\",\"--\",\"127.0.0.1:0\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-AiSbYw/operator-coercion\",\"1\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-f5rVWe/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-f5rVWe/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); assert p.GetState()==lldb.eStateStopped; print("INITIAL",p.GetState(),p.GetProcessID())
+INITIAL 5 85490
+(lldb) script lldb.debugger.SetAsync(True); p.Continue()
+success
+(lldb) process interrupt
+(lldb) script t=p.GetSelectedThread(); print('STATE',p.GetState()); print([(f.GetFrameID(),hex(f.GetPC()),f.GetFunctionName()) for f in list(t.frames)[:20]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104b32fd0 operator-coercion
+->  0x104b32fd0: str    xzr, [sp, #0x18]
+    0x104b32fd4: ldr    x0, [sp, #0x20]
+    0x104b32fd8: mov    x1, #0x0                  ; =0 
+    0x104b32fdc: mov    x2, #0x0                  ; =0 
+Target 0: (operator-coercion) stopped.
+STATE 5
+[(0, '0x104b32fd0', None), (1, '0x104a88810', None), (2, '0x104a8a1bc', None), (3, '0x104a8ead8', None), (4, '0x104a90350', None), (5, '0x104b43c74', None), (6, '0x104b5f728', None), (7, '0x104ba1940', None), (8, '0x10849dd64', None), (9, '0x1093de574', None), (10, '0x1093f8a48', None), (11, '0x10d05bb04', None), (12, '0x10d09cb74', None), (13, '0x10c1e7160', None), (14, '0x10c1e4574', None), (15, '0x10d78f378', None), (16, '0x10d794070', None), (17, '0x10d79aad4', None), (18, '0x10d79b710', None), (19, '0x1099f7cb4', None)]
+(lldb) register read pc lr fp sp
+      pc = 0x0000000104b32fd0  
+      lr = 0x0000000104b32348  
+      fp = 0x00000001346a7310
+      sp = 0x00000001346a7150
+(lldb) image list -o -f
+[  0] 0x0000000004a60000 /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-AiSbYw/operator-coercion
+[  1] 0x00000000076c8000 /usr/lib/dyld
+[  2] 0x00000000076c8000 /usr/lib/libSystem.B.dylib
+[  3] 0x00000000076c8000 /usr/lib/system/libkeymgr.dylib
+[  4] 0x00000000076c8000 /usr/lib/system/libmacho.dylib
+[  5] 0x00000000076c8000 /usr/lib/system/libquarantine.dylib
+[  6] 0x00000000076c8000 /usr/lib/system/libremovefile.dylib
+[  7] 0x00000000076c8000 /usr/lib/system/libsystem_asl.dylib
+[  8] 0x00000000076c8000 /usr/lib/system/libsystem_blocks.dylib
+[  9] 0x00000000076c8000 /usr/lib/system/libsystem_c.dylib
+[ 10] 0x00000000076c8000 /usr/lib/system/libsystem_collections.dylib
+[ 11] 0x00000000076c8000 /usr/lib/system/libsystem_configuration.dylib
+[ 12] 0x00000000076c8000 /usr/lib/system/libsystem_containermanager.dylib
+[ 13] 0x00000000076c8000 /usr/lib/system/libsystem_coreservices.dylib
+[ 14] 0x00000000076c8000 /usr/lib/system/libsystem_darwin.dylib
+[ 15] 0x00000000076c8000 /usr/lib/system/libsystem_dnssd.dylib
+[ 16] 0x00000000076c8000 /usr/lib/system/libsystem_featureflags.dylib
+[ 17] 0x00000000076c8000 /usr/lib/system/libsystem_info.dylib
+[ 18] 0x00000000076c8000 /usr/lib/system/libsystem_malloc.dylib
+[ 19] 0x00000000076c8000 /usr/lib/system/libsystem_networkextension.dylib
+[ 20] 0x00000000076c8000 /usr/lib/system/libsystem_notify.dylib
+[ 21] 0x00000000076c8000 /usr/lib/system/libsystem_sandbox.dylib
+[ 22] 0x00000000076c8000 /usr/lib/system/libsystem_sanitizers.dylib
+[ 23] 0x00000000076c8000 /usr/lib/system/libsystem_secinit.dylib
+[ 24] 0x00000000076c8000 /usr/lib/system/libsystem_kernel.dylib
+[ 25] 0x00000000076c8000 /usr/lib/system/libsystem_platform.dylib
+[ 26] 0x00000000076c8000 /usr/lib/system/libsystem_pthread.dylib
+[ 27] 0x00000000076c8000 /usr/lib/system/libsystem_symptoms.dylib
+[ 28] 0x00000000076c8000 /usr/lib/system/libsystem_trace.dylib
+[ 29] 0x00000000076c8000 /usr/lib/system/libunwind.dylib
+[ 30] 0x00000000076c8000 /usr/lib/system/libcommonCrypto.dylib
+[ 31] 0x00000000076c8000 /usr/lib/system/libcompiler_rt.dylib
+[ 32] 0x00000000076c8000 /usr/lib/system/libcopyfile.dylib
+[ 33] 0x00000000076c8000 /usr/lib/system/libcorecrypto.dylib
+[ 34] 0x00000000076c8000 /usr/lib/system/libdispatch.dylib
+[ 35] 0x00000000076c8000 /usr/lib/system/libdyld.dylib
+[ 36] 0x00000000076c8000 /usr/lib/system/libsystem_darwindirectory.dylib
+[ 37] 0x00000000076c8000 /usr/lib/system/libsystem_eligibility.dylib
+[ 38] 0x00000000076c8000 /usr/lib/system/libsystem_m.dylib
+[ 39] 0x00000000076c8000 /usr/lib/system/libxpc.dylib
+[ 40] 0x00000000076c8000 /usr/lib/system/libsystem_trial.dylib
+[ 41] 0x00000000076c8000 /usr/lib/libc++.1.dylib
+[ 42] 0x00000000076c8000 /usr/lib/libc++abi.dylib
+[ 43] 0x00000000076c8000 /usr/lib/libRosetta.dylib
+[ 44] 0x00000000076c8000 /usr/lib/system/libcache.dylib
+[ 45] 0x00000000076c8000 /usr/lib/libobjc.A.dylib
+(lldb) disassemble --pc --count 12
+->  0x104b32fd0: str    xzr, [sp, #0x18]
+    0x104b32fd4: ldr    x0, [sp, #0x20]
+    0x104b32fd8: mov    x1, #0x0                  ; =0 
+    0x104b32fdc: mov    x2, #0x0                  ; =0 
+    0x104b32fe0: mov    x3, sp
+    0x104b32fe4: ldr    x12, [sp, #0x148]
+    0x104b32fe8: cbnz   x12, 0x104b32ff0
+    0x104b32fec: brk    #0x3
+    0x104b32ff0: ldr    x10, [x12]
+    0x104b32ff4: adr    x11, 0x104b32ff4
+    0x104b32ff8: mov    x17, #0x5144              ; =20804 
+    0x104b32ffc: movk   x17, #0x8, lsl #16
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script t=p.GetSelectedThread(); print('SAMPLE2',[(hex(f.GetPC()),f.GetFunctionName()) for f in list(t.frames)[:14]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x000000010551b7e4 operator-coercion
+->  0x10551b7e4: ldr    x9, [sp, #0x1c0]
+    0x10551b7e8: ldr    x10, [sp, #0x1c8]
+    0x10551b7ec: cmp    x9, x10
+    0x10551b7f0: cset   w9, eq
+Target 0: (operator-coercion) stopped.
+SAMPLE2 [('0x10551b7e4', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x10551c090', None), ('0x104cd55e0', None), ('0x104cd5a1c', None), ('0x106c98050', None), ('0x106c9b184', None)]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('SAMPLE3',[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:18]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104a893e0 operator-coercion
+->  0x104a893e0: ldr    x9, [sp, #0x48]
+    0x104a893e4: str    x9, [sp, #0x170]
+    0x104a893e8: ldr    x9, [sp, #0x50]
+    0x104a893ec: str    x9, [sp, #0x190]
+Target 0: (operator-coercion) stopped.
+SAMPLE3 [('0x104a893e0', None), ('0x104a8ead8', None), ('0x104a90350', None), ('0x104b43c74', None), ('0x104b5f728', None), ('0x104ba1940', None), ('0x10c39f758', None), ('0x10c3c61e8', None), ('0x10c3c3860', None), ('0x10c55ddf4', None), ('0x10c53e988', None), ('0x10c54f11c', None), ('0x10c3e4778', None), ('0x10c55725c', None), ('0x108541448', None), ('0x108fa5ca4', None), ('0x108f8ee88', None), ('0x10938c114', None)]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('COERCION_PROGRESS',p.GetState(),[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:8]])
+COERCION_PROGRESS 5 [('0x10559e9e8', None), ('0x104dbfec4', None), ('0x1071614d0', None), ('0x10c2801b4', None), ('0x10c288650', None), ('0x10c2c7f0c', None), ('0x10c2a17a4', None), ('0x10c2c7838', None)]
+(lldb) script p.Continue()
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x000000010559e9e8 operator-coercion
+->  0x10559e9e8: b      0x10559ea28
+    0x10559e9ec: brk    #0
+    0x10559e9f0: fmov   x9, d20
+    0x10559e9f4: fmov   d16, x9
+Target 0: (operator-coercion) stopped.
+success
+(lldb) process interrupt
+(lldb) script print('BESPOKE_PROGRESS',[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:6]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104b40264 operator-coercion
+->  0x104b40264: ldr    x9, [sp, #0x5b8]
+    0x104b40268: str    x9, [sp, #0x11d0]
+    0x104b4026c: fmov   d0, d16
+    0x104b40270: fcvtzs x9, d0
+Target 0: (operator-coercion) stopped.
+BESPOKE_PROGRESS [('0x104b40264', None), ('0x104b5f728', None), ('0x104ba1940', None), ('0x10551ba18', None), ('0x10551c090', None), ('0x10551c090', None)]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('BESPOKE_PROGRESS',p.GetState(),[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:6]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104aa4938 operator-coercion
+->  0x104aa4938: fmov   x9, d16
+    0x104aa493c: str    x9, [sp, #0x1e8]
+    0x104aa4940: fmov   x9, d18
+    0x104aa4944: cbz    x9, 0x104aa494c
+Target 0: (operator-coercion) stopped.
+BESPOKE_PROGRESS 5 [('0x104aa4938', None), ('0x104b2f104', None), ('0x104b32348', None), ('0x104a88810', None), ('0x104a8a1bc', None), ('0x104a8ead8', None)]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('BESPOKE_PROGRESS',[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:6]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104b2de84 operator-coercion
+->  0x104b2de84: fmov   d19, x9
+    0x104b2de88: fmov   d0, d19
+    0x104b2de8c: fmov   d1, d18
+    0x104b2de90: fcmp   d0, d1
+Target 0: (operator-coercion) stopped.
+BESPOKE_PROGRESS [('0x104b2de84', None), ('0x104b32348', None), ('0x104a88810', None), ('0x104a8a1bc', None), ('0x104a8ead8', None), ('0x104a90350', None)]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('BESPOKE_PROGRESS',[(hex(f.GetPC()),f.GetFunctionName()) for f in list(p.GetSelectedThread().frames)[:6]])
+Process 85490 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000104b9d2a4 operator-coercion
+->  0x104b9d2a4: str    x9, [sp, #0x30]
+    0x104b9d2a8: adr    x9, 0x104b9d2a8
+    0x104b9d2ac: mov    x17, #0xfb70              ; =64368 
+    0x104b9d2b0: movk   x17, #0x1, lsl #16
+Target 0: (operator-coercion) stopped.
+BESPOKE_PROGRESS [('0x104b9d2a4', None), ('0x104a8e530', None), ('0x104a90350', None), ('0x104b43c74', None), ('0x104b5f728', None), ('0x104ba1940', None)]
+(lldb) script p.Continue()
+success
+(lldb) [1G[JProcess 85490 exited with status = 42 (0x0000002a) 
+[1G[J(lldb)  [8Gscript print('FINAL',p.GetState(),p.GetExitStatus()); assert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42
+FINAL 10 42
+(lldb) quit

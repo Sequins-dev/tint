@@ -1,0 +1,129 @@
+(lldb) target create ".tint-bootstrap/b-phase2/operator-timeouts-debug"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/operator-timeouts-debug' (arm64).
+(lldb) command source -s 0 '.tint-bootstrap/b-phase2/addition-sloppy-lldb-v1.txt'
+Executing commands in '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/addition-sloppy-lldb-v1.txt'.
+(lldb) settings set target.disable-aslr false
+(lldb) settings set thread-format "thread ${thread.index} tid=${thread.id}\n"
+(lldb) settings set frame-format "frame ${frame.index} pc=${frame.pc} ${module.file.basename}\n"
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-Ch3215/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-Ch3215/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-Ch3215/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/operator-timeouts-debug\",\"0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-Ch3215/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-bdiag-Ch3215/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); assert p.GetState()==lldb.eStateStopped; print("INITIAL",p.GetState(),p.GetProcessID())
+INITIAL 5 99417
+(lldb) script lldb.debugger.SetAsync(True); p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('ADDITION_SAMPLE1',[(hex(f.GetPC()),f.GetFunctionName(),str(f.GetLineEntry())) for f in list(p.GetSelectedThread().frames)[:20]])
+Process 99417 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x00000001023e9b70 operator-timeouts-debug
+   65  	  if (count > maxReferences) return "limit";
+   66  	  for (let index = 0; index < count; index++) {
+   67  	    const offset = read(descriptor + 8 + index * 8);
+-> 68  	    if (offset === undefined) return "read";
+    	    ^
+   69  	    if (
+   70  	      !verifiedDescriptor &&
+   71  	      (!bounded(offset) ||
+Target 0: (operator-timeouts-debug) stopped.
+ADDITION_SAMPLE1 [('0x1023e9b70', 'runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:68:5'), ('0x1023eec28', 'runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:196:10'), ('0x1023f04a0', 'runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:250:10'), ('0x1024a3dc4', 'runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:305:13'), ('0x1024bf878', 'runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:450:14'), ('0x102501a90', 'runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/copying.ts:155:12'), ('0x104619d8c', 'program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7757]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/foundation/src/collections/key-index.ts:77:19'), ('0x10461d608', 'program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7760]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/foundation/src/collections/key-index.ts:115:9'), ('0x109f616b0', 'program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4657:7'), ('0x109f59dc4', 'program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4607:24'), ('0x109e3b008', 'program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:2434:20'), ('0x109f497ec', 'program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4499:24'), ('0x109f8a58c', 'program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4854:17'), ('0x109f6df5c', 'program:packages/typescript/src/checker/closures.ts:sequence [@350:value:133$19583]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4701:16'), ('0x109f7e6f0', 'program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4743:18'), ('0x109e13d4c', 'program:packages/typescript/src/checker/closures.ts:checkFunction [@350:value:122$19546]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:2142:27'), ('0x109f86830', 'program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:4805:11'), ('0x105f27fbc', 'program:packages/typescript/src/checker/closures.ts:checkClosureModule [@350:value:16$19458]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/checker/closures.ts:5130:7'), ('0x10698c818', 'program:packages/ts-native/src/runtime/index.ts:prepareCollectionPass [@166:value:10$20463]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/runtime/index.ts:301:20'), ('0x1069759fc', 'program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/runtime/index.ts:77:20')]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script fs=list(p.GetSelectedThread().frames); print('ADDITION_SAMPLE2',len(fs),[(f.GetFrameID(),f.GetFunctionName(),str(f.GetLineEntry())) for f in fs[:40]])
+Process 99417 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x00000001024fe3bc operator-timeouts-debug
+Target 0: (operator-timeouts-debug) stopped.
+ADDITION_SAMPLE2 28 [(0, 'runtime:packages/native-runtime/src/copying.ts:closure@3358 [closure_126]', ':4294967295'), (1, 'runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:198:8'), (2, 'runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:222:12'), (3, 'runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:35:20'), (4, 'runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:77:20'), (5, 'runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:196:10'), (6, 'runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/scan.ts:250:10'), (7, 'runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:305:13'), (8, 'runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/tracing/nursery.ts:450:14'), (9, 'runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/native-runtime/src/copying.ts:155:12'), (10, 'program:packages/typescript/src/syntax/rewrite.ts:statement [@309:value:15$19135]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/syntax/rewrite.ts:435:20'), (11, 'program:packages/typescript/src/syntax/rewrite.ts:rewriteModule [@309:value:1$19121]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/typescript/src/syntax/rewrite.ts:568:22'), (12, 'program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/compiler/src/native/managed-closure-uses.ts:26:3'), (13, 'program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/compiler/src/native/managed-jit-entry.ts:120:18'), (14, 'program:packages/js-engine/src/native/script-compile.ts:closure@8585 [closure_20860]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-engine/src/native/script-compile.ts:260:22'), (15, 'program:test262-runtime:closure@11701 [closure_21009]', ':4294967295'), (16, 'program:packages/js-engine/src/script-evaluation.ts:run [@294:value:59$19347]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-engine/src/script-evaluation.ts:194:18'), (17, 'program:packages/js-engine/src/script-evaluation.ts:closure@3845 [closure_19341]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-engine/src/script-evaluation.ts:128:41'), (18, 'program:packages/js-runtime/src/objects/global-properties.ts:evalCandidate [@72:value:11$18014]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-runtime/src/objects/global-properties.ts:144:34'), (19, 'program:packages/js-runtime/src/objects/global-properties.ts:callEvalCandidate [@72:value:9$18012]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-runtime/src/objects/global-properties.ts:89:10'), (20, 'program:test262-shared-script-2:execute [closure_18914]', ':4294967295'), (21, 'program:packages/js-runtime/src/objects/jobs.ts:runScriptContext [__tint_specialized_7116$21237]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-runtime/src/objects/jobs.ts:84:12'), (22, 'program:test262-shared-script-2:execute [@146:value:108$18913]', ':4294967295'), (23, 'program:test262-runtime:runNativeScripts [@147:value:114$21029]', ':4294967295'), (24, 'program:test262-case-0-host:run [@25:value:4$21044]', ':4294967295'), (25, 'program:test262-host:run [@1:value:6$21051]', ':4294967295'), (26, 'program:__tint_invoke$21316', ':4294967295'), (27, 'tint:process-entry', ':4294967295')]
+(lldb) script p.Continue()
+success
+(lldb) process interrupt
+(lldb) script print('CURRENT_STACK',[(f.GetFunctionName(),str(f.GetLineEntry())) for f in list(p.GetSelectedThread().frames)[:12]])
+Process 99417 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x000000010469bd98 operator-timeouts-debug
+   52  	    let at = hashValue & mask,
+   53  	      deleted = -1;
+   54  	    let state = table[at];
+-> 55  	    while (state !== 0) {
+    	           ^
+   56  	      if (state === 0xffffffff) {
+   57  	        if (deleted < 0) deleted = at;
+   58  	      } else {
+Target 0: (operator-timeouts-debug) stopped.
+CURRENT_STACK [('program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/foundation/src/collections/key-index.ts:55:12'), ('program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/foundation/src/collections/key-index.ts:104:16'), ('program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7153$19731]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/modules/index.ts:475:9'), ('program:packages/ts-native/src/modules/index.ts:property [@164:value:96$19701]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/modules/index.ts:503:16'), ('program:packages/ts-native/src/modules/index.ts:closure@40053 [closure_19725]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/modules/index.ts:1131:17'), ('program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/modules/index.ts:1130:34'), ('program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/ts-native/src/modules/index.ts:1378:27'), ('program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/compiler/src/native/managed-jit-program.ts:143:18'), ('program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/compiler/src/native/managed-jit-entry.ts:98:20'), ('program:packages/js-engine/src/native/script-compile.ts:closure@8585 [closure_20860]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-engine/src/native/script-compile.ts:260:22'), ('program:test262-runtime:closure@11701 [closure_21009]', ':4294967295'), ('program:packages/js-engine/src/script-evaluation.ts:run [@294:value:59$19347]', '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/packages/js-engine/src/script-evaluation.ts:194:18')]
+(lldb) breakpoint set --func-regex 'prepareManagedSurfaceEntry|prepareManagedJitProgram|prepareCollectionRuntimes|managedDirectCallDeclarations|lowerManagedJitProgram|bindManagedJitSignatures'
+Breakpoint 1: 6 locations.
+(lldb) breakpoint command add 1 -o 'script import time; print("JIT_PHASE",time.time(),p.GetSelectedThread().GetFrameAtIndex(0).GetFunctionName())' -o 'continue'
+(lldb) script p.Continue()
+success
+(lldb) [1G[J(lldb)  continue
+Process 99417 resuming
+[1G[J(lldb)  [8G[1G[JCommand #1 'continue' continued the target.
+[1G[J(lldb)  [8Gprocess interrupt
+(lldb) script bp=lldb.debugger.GetSelectedTarget().FindBreakpointByID(1); bp.SetScriptCallbackBody('import time\nprint("JIT_PHASE",time.time(),frame.GetFunctionName(),flush=True)\nreturn False')
+Process 99417 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x0000000102e8ad78 operator-timeouts-debug
+   62  	): ListEntry<T> | undefined {
+   63  	  while (node !== undefined) {
+   64  	    if (node.index === index) return node;
+-> 65  	    node = index < node.index ? node.left : node.right;
+    	           ^
+   66  	  }
+   67  	  return undefined;
+   68  	}
+Target 0: (operator-timeouts-debug) stopped.
+success
+(lldb) script print('HASH_SAMPLE',[(f.GetFunctionName(),f.FindVariable('hashValue').GetValue(),f.FindVariable('nextHash').GetValue()) for f in list(p.GetSelectedThread().frames)[:12]])
+HASH_SAMPLE [('program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7404$8161]', None, None), ('program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_425$925]', None, None), ('program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7756]', None, None), ('program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7760]', None, None), ('program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', None, None), ('program:packages/typescript/src/checker/closures.ts:expression [@350:value:128$19550]', None, None), ('program:packages/typescript/src/checker/closures.ts:condition [@350:value:123$19547]', None, None), ('program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', None, None), ('program:packages/typescript/src/checker/closures.ts:sequence [@350:value:133$19583]', None, None), ('program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', None, None), ('program:packages/typescript/src/checker/closures.ts:checkFunction [@350:value:122$19546]', None, None), ('program:packages/typescript/src/checker/closures.ts:statement [@350:value:135$19585]', None, None)]
+(lldb) script p.Continue()
+success
+(lldb) JIT_PHASE 1793981141.6251059 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981142.403989 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981163.3402581 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981174.6490428 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981174.7122838 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981187.576261 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981272.491585 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981273.820986 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981302.422842 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981316.918387 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981317.0112698 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981331.525183 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981393.864224 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981395.015698 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981432.8996701 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981454.3196921 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981454.419231 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981476.544951 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981537.664928 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981538.24048 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981551.395138 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981559.708458 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981559.7856672 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981570.6929102 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981612.174916 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981612.659511 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981623.386036 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981629.8952441 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981629.9366531 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981650.249714 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981723.11104 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981723.9933069 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981742.84172 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981754.909251 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981754.985787 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981770.542084 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981835.092011 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981835.764792 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981852.071994 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+JIT_PHASE 1793981861.1540082 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]
+JIT_PHASE 1793981861.204894 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]
+JIT_PHASE 1793981872.858409 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@166:value:9$20462]
+JIT_PHASE 1793981917.700403 program:packages/compiler/src/native/managed-closure-uses.ts:managedDirectCallDeclarations [@150:value:1$19353]
+JIT_PHASE 1793981918.228936 program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram [@393:value:15$20795]
+JIT_PHASE 1793981929.128274 program:packages/compiler/src/native/managed-jit-signatures.ts:bindManagedJitSignatures [@395:value:7$20809]
+[1G[JProcess 99417 exited with status = 42 (0x0000002a) 
+[1G[J(lldb)  [8Gscript print('FINAL',p.GetState(),p.GetExitStatus()); assert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42
+FINAL 10 42
+(lldb) quit

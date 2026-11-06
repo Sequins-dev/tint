@@ -1,0 +1,40 @@
+{
+  "kind": "single-native-timeout-diagnostic",
+  "conformance": false,
+  "label": "division-strict-original",
+  "index": 2,
+  "startedAt": "2026-11-06T16:22:24.834Z",
+  "elapsedMs": 300077.306541,
+  "frozenHost": ".tint-bootstrap/b-phase2/frozen-native-v1",
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/operator-timeouts-debug",
+  "imageSha256": "be640f906fdf768219196f6bb64e817106a0cf8e92362307275c10356292c3fc",
+  "inputManifest": {
+    "selected": [
+      [
+        "addition/S11.6.1_A1.js",
+        "sloppy"
+      ],
+      [
+        "division/S11.5.2_A1.js",
+        "sloppy"
+      ],
+      [
+        "division/S11.5.2_A1.js",
+        "strict"
+      ]
+    ],
+    "sourceSnapshot": {
+      "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+      "files": 568
+    },
+    "instrumentation": "Frozen host copied locally; debugSymbols and debugDirectory enabled only. Native source bytes unchanged.",
+    "originalHostSha256": "94226f243fa22422c1c6e637dc59e0303fb33608ba184a3ff3528fbc1f220114",
+    "symbolizedHostSha256": "1c7fab31edf3e4149f902e4f81763ec5224964e636a9c547aaebadea1d08f975"
+  },
+  "containmentMs": 300000,
+  "debuggerLaunch": "debugserver-direct",
+  "outcome": {
+    "kind": "timeout",
+    "detail": "native timeout after the initial stop\n\nLLDB stdout: ')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Bh81OE/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-REU8UO/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 53792 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010ef689c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10ef689c0 <+0>:  mov    x0, sp\n    0x10ef689c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10ef689c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10ef689cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=53792)>         Process::ShouldBroadcastEvent (0x7754a5b80) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=53792)>         Process::HandlePrivateEvent (pid = 53792) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=53792)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=53792)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=53792)>         Process::ShouldBroadcastEvent (0x7754a5b80) Restarting process from state: stopped\n<lldb.process.internal-state(pid=53792)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=53792)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=53792)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=53792)>         Process::ShouldBroadcastEvent (0x7754a5b80) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=53792)>         Process::HandlePrivateEvent (pid = 53792) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=53792)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=53792)>         Process::ShouldBroadcastEvent (0x7754a5ea0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=53792)>         Process::HandlePrivateEvent (pid = 53792) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=53792)>         timeout = <infinite>, event_sp)...\n\nRemote packets: itForResponse () got packet: T05thread:f58a88;threads:f58a88;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:b007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:20a555adf4050000;17:480435f401000000;18:0000000000000000;19:a06c956d01000000;1a:0075956d01000000;1b:1800000000000000;1c:98e4dce302000000;1d:506c956d01000000;1e:ac74818701000000;1f:106b956d01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16d956c50=206d956d01000000807c818701000000;memory:0x16d956d20=2077956d010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53792) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=53792)>         <  22> send packet: $pd6;thread:f58a88;#d6\n<lldb.process.internal-state(pid=53792)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=53792)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=53792)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=53792)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=53792)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53792) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53792) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+  }
+}
