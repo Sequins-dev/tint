@@ -1,0 +1,153 @@
+node:internal/modules/esm/resolve:274
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/ordinary-object-host-record-views.ts' imported from /Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-class-context.test.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
+    at moduleResolve (node:internal/modules/esm/resolve:864:10)
+    at defaultResolve (node:internal/modules/esm/resolve:990:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:718:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:735:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:764:52)
+    at #resolve (node:internal/modules/esm/loader:700:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:620:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:143:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:228:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/ordinary-object-host-record-views.ts'
+}
+
+Node.js v24.12.0
+✖ .tint-bootstrap/c1-baseline-class-context.test.ts (610.581542ms)
+✔ base classes have construct-only behavior and standard constructor/prototype attributes (171.911ms)
+✔ class methods are non-enumerable, replaceable and non-constructible (47.190208ms)
+✔ computed class methods cannot redefine a non-configurable constructor prototype (0.427542ms)
+✔ class accessor definitions merge halves and preserve callable metadata (0.428125ms)
+✔ source functions expose standard name and length descriptors (0.540459ms)
+✔ source execution receives its own identity independently of receiver and binding (56.182042ms)
+✔ source methods capture their home object before their first call (0.435917ms)
+✔ prepared class prototypes are published unchanged and become the constructor home (0.26675ms)
+✔ derived class identities retain separate constructor and instance prototype chains (0.47725ms)
+✔ private class methods install before fields and remain separate from properties (39.512208ms)
+✖ InitializeInstanceElements checks extensibility once before any private method (0.617666ms)
+✖ private field definition evaluates its initializer before rejecting a non-extensible receiver (0.264333ms)
+✖ super() binds a non-extensible return-override object before private elements reject it (0.358208ms)
+✔ public accessor metadata uses the source parameter length (0.100916ms)
+✔ private fields use definition identities, ignore prototypes and survive non-extensibility (1.278125ms)
+✔ private methods are read-only and accessors call with the original receiver (0.21025ms)
+✔ private access rejects non-objects and absent accessor halves without calling hooks (0.10375ms)
+✔ undefined private field values remain present and accessor exceptions propagate unchanged (0.287ms)
+✖ PrivateFieldAdd rejects non-extensible objects before the duplicate check (0.620459ms)
+✖ PrivateFieldAdd observes [[IsExtensible]] once, even for duplicates, and propagates abrupt checks (0.419542ms)
+✔ PrivateMethodOrAccessorAdd itself checks only duplicates (0.108834ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 16
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3201.395834
+
+✖ failing tests:
+
+test at .tint-bootstrap/c1-baseline-class-context.test.ts:1:1
+✖ .tint-bootstrap/c1-baseline-class-context.test.ts (610.581542ms)
+  'test failed'
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:358:1
+✖ InitializeInstanceElements checks extensibility once before any private method (0.617666ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (isTypeError).
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:387:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:407:1
+✖ private field definition evaluates its initializer before rejecting a non-extensible receiver (0.264333ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:418:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:445:1
+✖ super() binds a non-extensible return-override object before private elements reject it (0.358208ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (isTypeError).
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:504:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-private-elements.test.ts:151:1
+✖ PrivateFieldAdd rejects non-extensible objects before the duplicate check (0.620459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'none' !== 'type'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-private-elements.test.ts:157:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'none',
+    expected: 'type',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-private-elements.test.ts:171:1
+✖ PrivateFieldAdd observes [[IsExtensible]] once, even for duplicates, and propagates abrupt checks (0.419542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'isExtensible'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-private-elements.test.ts:183:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'isExtensible' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

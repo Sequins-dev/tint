@@ -1,0 +1,128 @@
+✔ base classes have construct-only behavior and standard constructor/prototype attributes (3.315583ms)
+✔ class methods are non-enumerable, replaceable and non-constructible (0.3985ms)
+✔ computed class methods cannot redefine a non-configurable constructor prototype (0.274125ms)
+✔ class accessor definitions merge halves and preserve callable metadata (0.339ms)
+✔ source functions expose standard name and length descriptors (0.452709ms)
+✔ source execution receives its own identity independently of receiver and binding (0.721375ms)
+✔ source methods capture their home object before their first call (40.351291ms)
+✔ prepared class prototypes are published unchanged and become the constructor home (0.307708ms)
+✔ derived class identities retain separate constructor and instance prototype chains (0.399375ms)
+✔ private class methods install before fields and remain separate from properties (0.4965ms)
+✖ InitializeInstanceElements checks extensibility once before any private method (0.645083ms)
+✖ private field definition evaluates its initializer before rejecting a non-extensible receiver (0.285ms)
+✖ super() binds a non-extensible return-override object before private elements reject it (20.1155ms)
+✔ public accessor metadata uses the source parameter length (0.146167ms)
+✔ private fields use definition identities, ignore prototypes and survive non-extensibility (1.529625ms)
+✔ private methods are read-only and accessors call with the original receiver (0.247084ms)
+✔ private access rejects non-objects and absent accessor halves without calling hooks (0.124334ms)
+✔ undefined private field values remain present and accessor exceptions propagate unchanged (0.337708ms)
+✖ PrivateFieldAdd rejects non-extensible objects before the duplicate check (0.701875ms)
+✖ PrivateFieldAdd observes [[IsExtensible]] once, even for duplicates, and propagates abrupt checks (0.441ms)
+✔ PrivateMethodOrAccessorAdd itself checks only duplicates (0.12125ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 16
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3333.073292
+
+✖ failing tests:
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:358:1
+✖ InitializeInstanceElements checks extensibility once before any private method (0.645083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (isTypeError).
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:387:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:407:1
+✖ private field definition evaluates its initializer before rejecting a non-extensible receiver (0.285ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:418:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-classes.test.ts:445:1
+✖ super() binds a non-extensible return-override object before private elements reject it (20.1155ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (isTypeError).
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-classes.test.ts:504:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-private-elements.test.ts:151:1
+✖ PrivateFieldAdd rejects non-extensible objects before the duplicate check (0.701875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'none' !== 'type'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-private-elements.test.ts:157:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'none',
+    expected: 'type',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/c1-baseline-private-elements.test.ts:171:1
+✖ PrivateFieldAdd observes [[IsExtensible]] once, even for duplicates, and propagates abrupt checks (0.441ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'isExtensible'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-baseline-private-elements.test.ts:183:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'isExtensible' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

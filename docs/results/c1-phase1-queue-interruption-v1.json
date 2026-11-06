@@ -1,0 +1,27 @@
+{
+  "kind": "interrupted-native-selection-prefixes",
+  "conformance": false,
+  "reason": "Two selections started before coordinator Phase 1 override arrived; stopped before native execution. Empty stdout placeholders removed; journals preserved unchanged. No results counted as native passes.",
+  "runs": [
+    {
+      "selection": "language/statements/class/syntax",
+      "journal": "docs/results/test262-c1-statements-syntax-v1.jsonl",
+      "journalSha256": "c9af20f9d40107469abbd0cdb11b46c73e109c2a8230fb63cf5bbe501e13c352",
+      "events": 1,
+      "observedVariants": 0,
+      "runnerPid": 87865,
+      "termination": "SIGTERM during synchronous compilation; ps confirmed no child/inferior immediately before termination",
+      "complete": false
+    },
+    {
+      "selection": "language/statements/class/definition",
+      "journal": "docs/results/test262-c1-statements-definition-v1.jsonl",
+      "journalSha256": "cc539d2fd46943649968c9cca7d3a879eca7951e2b0d0b649a34845c7389fb4f",
+      "events": 1,
+      "observedVariants": 0,
+      "runnerPid": 90599,
+      "termination": "SIGTERM during synchronous compilation; ps confirmed no child/inferior immediately before termination",
+      "complete": false
+    }
+  ]
+}

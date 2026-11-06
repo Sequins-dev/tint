@@ -1,0 +1,32 @@
+(lldb) target create ".tint-bootstrap/c1-stage1-v1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1' (arm64).
+(lldb) command source -s 0 '.tint-bootstrap/c1-selfbuild-v1.lldb'
+Executing commands in '/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-selfbuild-v1.lldb'.
+(lldb) settings set target.disable-aslr false
+(lldb) process launch --stop-at-entry -- /Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-source-v1 /Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v1 --debug-symbols
+Process 19147 launched: '/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1' (arm64)
+(lldb) script assert lldb.debugger.GetSelectedTarget().GetProcess().GetState() == lldb.eStateStopped; print('C1_INITIAL_STOP_OK')
+C1_INITIAL_STOP_OK
+(lldb) continue
+sources
+parse
+allocator
+runtime
+program
+Process 19147 resuming
+Process 19147 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame #0: 0x00000001046090ec c1-stage1-v1`runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61] at nursery.ts:151:7
+   148 	    const unit = offset / 16,
+   149 	      word = o.starts[(plan.startUnit + unit) >>> 5];
+   150 	    if (
+-> 151 	      word === undefined ||
+    	      ^
+   152 	      (word & (1 << ((plan.startUnit + unit) & 31))) === 0
+   153 	    )
+   154 	      return undefined;
+Target 0: (c1-stage1-v1) stopped.
+(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); assert p.GetState() == lldb.eStateExited and p.GetExitStatus() == 0; print('C1_EXIT_ZERO_OK')
+Traceback (most recent call last):
+  File "<input>", line 1, in <module>
+AssertionError

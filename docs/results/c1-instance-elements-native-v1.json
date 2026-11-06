@@ -1,0 +1,177 @@
+{
+  "kind": "c1-inherited-instance-elements-validation",
+  "conformance": false,
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "1fa7635cb1c3c952927f04208395fb37bf9860d72bba217a8b98f6df5f6928f1",
+      "files": 568
+    },
+    "imageSha256": "b5d2299f745f004553bf77de7e42afa0fac7e4e05ddaf623c3a673d0a158be61",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-instance-elements-PvOuOo/cases.json"
+  },
+  "fixture": {
+    "kind": "native-class-instance-elements-fixture",
+    "conformance": false,
+    "cases": [
+      {
+        "name": "return-override private field rejects non-extensible object",
+        "source": "class B{constructor(o){return o;}}class A extends B{#v;constructor(o){super(o);this.#v=42;}static v(o){return o.#v;}}const t=new A({});if(A.v(t)!==42)throw 70;let ok=false;const s=Object.preventExtensions({});try{new A(s);}catch(e){ok=e instanceof TypeError;}if(!ok)throw 71;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "return-override private method and accessor reject non-extensible object",
+        "source": "class B{constructor(o){return o;}}class M extends B{#m(){return 1;}static has(o){return #m in o;}}class G extends B{get #g(){return 2;}static has(o){return #g in o;}}for(const C of [M,G]){if(!C.has(new C({})))throw 72;const s=Object.preventExtensions({});let ok=false;try{new C(s);}catch(e){ok=e instanceof TypeError;}if(!ok||C.has(s))throw 73;}",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "base preventExtensions(this) blocks derived private elements",
+        "source": "class N{constructor(seal){if(seal)Object.preventExtensions(this);}}class F extends N{#v=1;}class M extends N{#m(){}}class P extends N{x=1;}for(const C of [F,M,P]){new C(false);let ok=false;try{new C(true);}catch(e){ok=e instanceof TypeError;}if(!ok)throw 74;}",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "existing private fields stay writable after seal and freeze",
+        "source": "class B{constructor(o){return o;}}class A extends B{#a=1;static get(o){return o.#a;}static inc(o){o.#a++;}}const o={};new A(o);Object.seal(o);A.inc(o);if(A.get(o)!==2)throw 75;Object.freeze(o);A.inc(o);if(A.get(o)!==3||!Object.isFrozen(o))throw 76;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "proxy isExtensible is observed per field and once per method batch",
+        "source": "class B{constructor(o){return o;}}let n=0;const p=()=>new Proxy({},{isExtensible(t){n++;return Reflect.isExtensible(t);}});class F extends B{#a;#b;x=1;}class M extends B{#m(){}#n(){}get #g(){return 0;}}class E extends B{x=1;}new F(p());if(n!==2)throw 77;n=0;new M(p());if(n!==1)throw 78;n=0;new E(p());if(n!==0)throw 79;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "throwing isExtensible trap aborts private element addition",
+        "source": "class B{constructor(o){return o;}}const err={};const p=new Proxy({},{isExtensible(){throw err;}});class F extends B{#a;static has(o){return #a in o;}}class M extends B{#m(){}static has(o){return #m in o;}}for(const C of [F,M]){let ok=false;try{new C(p);}catch(e){ok=e===err;}if(!ok||C.has(p))throw 80;}",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "private field initializer runs before the extensibility rejection",
+        "source": "class B{constructor(o){return o;}}const log=[];class A extends B{#x=(log.push('x'),1);y=log.push('y');}let ok=false;try{new A(Object.preventExtensions({}));}catch(e){ok=e instanceof TypeError;}if(!ok||log.join()!=='x')throw 81;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "this stays bound when instance element initialization rejects",
+        "source": "class B{constructor(o){return o;}}class A extends B{#x;constructor(o){try{super(o);}catch(e){if(!(e instanceof TypeError))throw 82;}}static has(o){return #x in o;}}const s=Object.preventExtensions({});const r=new A(s);if(r!==s||A.has(s))throw 83;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "static private field rejects a non-extensible class constructor",
+        "source": "const log=[];let ok=false;try{class C{static{Object.preventExtensions(this);}static #x=(log.push('x'),1);}}catch(e){ok=e instanceof TypeError;}if(!ok||log.join()!=='x')throw 84;class D{static #m(){return 5;}static m(){return D.#m();}}if(D.m()!==5)throw 85;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "foreign class rejects in its defining realm",
+        "source": "const h=$262.createRealm(),o=h.global,C=h.evalScript('class B{constructor(o){return o;}} (class extends B{#x;})');let ok=false;try{new C(Object.preventExtensions({}));}catch(e){ok=e instanceof o.TypeError&&!(e instanceof TypeError);}if(!ok)throw 86;",
+        "expected": {
+          "kind": "completed"
+        }
+      },
+      {
+        "name": "foreign base class creates its instance in the caller realm",
+        "source": "const r=$262.createRealm(),o=r.global,C=r.evalScript('(class {})'),h=Proxy.revocable(function(){},{get(){h.revoke();}});let ok=false;try{Reflect.construct(C,[],h.proxy);}catch(e){ok=e instanceof TypeError&&!(e instanceof o.TypeError);}if(!ok)throw 87;",
+        "expected": {
+          "kind": "completed"
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "return-override private field rejects non-extensible object",
+      "report": "docs/results/c1-instance-elements-case-0-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "return-override private method and accessor reject non-extensible object",
+      "report": "docs/results/c1-instance-elements-case-1-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "base preventExtensions(this) blocks derived private elements",
+      "report": "docs/results/c1-instance-elements-case-2-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "existing private fields stay writable after seal and freeze",
+      "report": "docs/results/c1-instance-elements-case-3-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "proxy isExtensible is observed per field and once per method batch",
+      "report": "docs/results/c1-instance-elements-case-4-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "throwing isExtensible trap aborts private element addition",
+      "report": "docs/results/c1-instance-elements-case-5-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "private field initializer runs before the extensibility rejection",
+      "report": "docs/results/c1-instance-elements-case-6-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "this stays bound when instance element initialization rejects",
+      "report": "docs/results/c1-instance-elements-case-7-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "static private field rejects a non-extensible class constructor",
+      "report": "docs/results/c1-instance-elements-case-8-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign class rejects in its defining realm",
+      "report": "docs/results/c1-instance-elements-case-9-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign base class creates its instance in the caller realm",
+      "report": "docs/results/c1-instance-elements-case-10-v1.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "accepted": true
+}
