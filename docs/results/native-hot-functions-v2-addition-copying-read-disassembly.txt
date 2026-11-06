@@ -1,0 +1,1031 @@
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/operator-timeouts-debug"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/operator-timeouts-debug' (arm64).
+(lldb) disassemble -n "runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]"
+operator-timeouts-debug`runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]:
+operator-timeouts-debug[0x10013d388] <+0>:    stp    x29, x30, [sp, #-0x10]!
+operator-timeouts-debug[0x10013d38c] <+4>:    mov    x29, sp
+operator-timeouts-debug[0x10013d390] <+8>:    sub    sp, sp, #0x250
+operator-timeouts-debug[0x10013d394] <+12>:   str    x0, [sp, #0x20]
+operator-timeouts-debug[0x10013d398] <+16>:   str    x3, [sp, #0x28]
+operator-timeouts-debug[0x10013d39c] <+20>:   str    xzr, [sp, #0x40]
+operator-timeouts-debug[0x10013d3a0] <+24>:   str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d3a4] <+28>:   str    xzr, [sp, #0xa0]
+operator-timeouts-debug[0x10013d3a8] <+32>:   str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d3ac] <+36>:   str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d3b0] <+40>:   str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d3b4] <+44>:   str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d3b8] <+48>:   str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d3bc] <+52>:   str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013d3c0] <+56>:   str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013d3c4] <+60>:   str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013d3c8] <+64>:   str    xzr, [sp, #0xe8]
+operator-timeouts-debug[0x10013d3cc] <+68>:   str    xzr, [sp, #0x130]
+operator-timeouts-debug[0x10013d3d0] <+72>:   str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d3d4] <+76>:   str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d3d8] <+80>:   str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d3dc] <+84>:   str    xzr, [sp, #0x200]
+operator-timeouts-debug[0x10013d3e0] <+88>:   str    xzr, [sp, #0x208]
+operator-timeouts-debug[0x10013d3e4] <+92>:   str    x1, [sp, #0x40]
+operator-timeouts-debug[0x10013d3e8] <+96>:   str    d0, [sp, #0x48]
+operator-timeouts-debug[0x10013d3ec] <+100>:  ldr    x10, [sp, #0x20]
+operator-timeouts-debug[0x10013d3f0] <+104>:  ldr    x9, [x10]
+operator-timeouts-debug[0x10013d3f4] <+108>:  str    x9, [sp, #0x30]
+operator-timeouts-debug[0x10013d3f8] <+112>:  adr    x9, 0x10013d3f8           ; <+112>
+operator-timeouts-debug[0x10013d3fc] <+116>:  mov    x17, #0xfb70              ; =64368 
+operator-timeouts-debug[0x10013d400] <+120>:  movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d404] <+124>:  add    x9, x9, x17
+operator-timeouts-debug[0x10013d408] <+128>:  str    x9, [sp, #0x38]
+operator-timeouts-debug[0x10013d40c] <+132>:  add    x9, sp, #0x30
+operator-timeouts-debug[0x10013d410] <+136>:  str    x9, [x10]
+operator-timeouts-debug[0x10013d414] <+140>:  b      0x10013d418               ; <+144>
+operator-timeouts-debug[0x10013d418] <+144>:  ldr    x9, [sp, #0x40]
+operator-timeouts-debug[0x10013d41c] <+148>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d420] <+152>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d424] <+156>:  str    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d428] <+160>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d42c] <+164>:  cbnz   x9, 0x10013d434           ; <+172> at copying.ts:19:3
+operator-timeouts-debug[0x10013d430] <+168>:  b      0x10013d4a4               ; <+284>
+operator-timeouts-debug[0x10013d434] <+172>:  ldr    x10, [x9]
+operator-timeouts-debug[0x10013d438] <+176>:  adr    x11, 0x10013d438          ; <+176> at copying.ts:19:3
+operator-timeouts-debug[0x10013d43c] <+180>:  mov    x17, #0xa3b8              ; =41912 
+operator-timeouts-debug[0x10013d440] <+184>:  movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d444] <+188>:  add    x11, x11, x17
+operator-timeouts-debug[0x10013d448] <+192>:  cmp    x10, x11
+operator-timeouts-debug[0x10013d44c] <+196>:  b.eq   0x10013d454               ; <+204> at copying.ts:19:3
+operator-timeouts-debug[0x10013d450] <+200>:  b      0x10013d4a4               ; <+284>
+operator-timeouts-debug[0x10013d454] <+204>:  ldr    x10, [x9, #0x10]
+operator-timeouts-debug[0x10013d458] <+208>:  str    x10, [sp, #0xa0]
+operator-timeouts-debug[0x10013d45c] <+212>:  b      0x10013d460               ; <+216>
+operator-timeouts-debug[0x10013d460] <+216>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d464] <+220>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d468] <+224>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d46c] <+228>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d470] <+232>:  cbnz   x9, 0x10013d478           ; <+240> at copying.ts:20:3
+operator-timeouts-debug[0x10013d474] <+236>:  b      0x10013d4ec               ; <+356>
+operator-timeouts-debug[0x10013d478] <+240>:  ldr    x10, [x9]
+operator-timeouts-debug[0x10013d47c] <+244>:  adr    x11, 0x10013d47c          ; <+244> at copying.ts:20:3
+operator-timeouts-debug[0x10013d480] <+248>:  mov    x17, #0xa374              ; =41844 
+operator-timeouts-debug[0x10013d484] <+252>:  movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d488] <+256>:  add    x11, x11, x17
+operator-timeouts-debug[0x10013d48c] <+260>:  cmp    x10, x11
+operator-timeouts-debug[0x10013d490] <+264>:  b.eq   0x10013d498               ; <+272> at copying.ts:20:3
+operator-timeouts-debug[0x10013d494] <+268>:  b      0x10013d4ec               ; <+356>
+operator-timeouts-debug[0x10013d498] <+272>:  ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d49c] <+276>:  str    x10, [sp, #0xa8]
+operator-timeouts-debug[0x10013d4a0] <+280>:  b      0x10013d4c0               ; <+312>
+operator-timeouts-debug[0x10013d4a4] <+284>:  str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d4a8] <+288>:  str    xzr, [sp, #0xa0]
+operator-timeouts-debug[0x10013d4ac] <+292>:  str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d4b0] <+296>:  str    xzr, [sp, #0xe8]
+operator-timeouts-debug[0x10013d4b4] <+300>:  str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d4b8] <+304>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d4bc] <+308>:  brk    #0
+operator-timeouts-debug[0x10013d4c0] <+312>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d4c4] <+316>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d4c8] <+320>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d4cc] <+324>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d4d0] <+328>:  ldr    x10, [x9, #0x20]
+operator-timeouts-debug[0x10013d4d4] <+332>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d4d8] <+336>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d4dc] <+340>:  str    x9, [sp, #0xb0]
+operator-timeouts-debug[0x10013d4e0] <+344>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d4e4] <+348>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d4e8] <+352>:  b      0x10013d508               ; <+384>
+operator-timeouts-debug[0x10013d4ec] <+356>:  str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d4f0] <+360>:  str    xzr, [sp, #0xa0]
+operator-timeouts-debug[0x10013d4f4] <+364>:  str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d4f8] <+368>:  str    xzr, [sp, #0xe8]
+operator-timeouts-debug[0x10013d4fc] <+372>:  str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d500] <+376>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d504] <+380>:  brk    #0
+operator-timeouts-debug[0x10013d508] <+384>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d50c] <+388>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d510] <+392>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d514] <+396>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d518] <+400>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d51c] <+404>:  ldr    x10, [x9, #0x28]
+operator-timeouts-debug[0x10013d520] <+408>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d524] <+412>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d528] <+416>:  str    x9, [sp, #0xb8]
+operator-timeouts-debug[0x10013d52c] <+420>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d530] <+424>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d534] <+428>:  b      0x10013d538               ; <+432>
+operator-timeouts-debug[0x10013d538] <+432>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d53c] <+436>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d540] <+440>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d544] <+444>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d548] <+448>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d54c] <+452>:  ldr    x10, [x9, #0x30]
+operator-timeouts-debug[0x10013d550] <+456>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d554] <+460>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d558] <+464>:  str    x9, [sp, #0xc0]
+operator-timeouts-debug[0x10013d55c] <+468>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d560] <+472>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d564] <+476>:  b      0x10013d568               ; <+480>
+operator-timeouts-debug[0x10013d568] <+480>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d56c] <+484>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d570] <+488>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d574] <+492>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d578] <+496>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d57c] <+500>:  ldr    x10, [x9, #0x38]
+operator-timeouts-debug[0x10013d580] <+504>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d584] <+508>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d588] <+512>:  str    x9, [sp, #0xc8]
+operator-timeouts-debug[0x10013d58c] <+516>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d590] <+520>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d594] <+524>:  b      0x10013d598               ; <+528>
+operator-timeouts-debug[0x10013d598] <+528>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d59c] <+532>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5a0] <+536>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d5a4] <+540>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5a8] <+544>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5ac] <+548>:  ldr    x10, [x9, #0x40]
+operator-timeouts-debug[0x10013d5b0] <+552>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5b4] <+556>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5b8] <+560>:  str    x9, [sp, #0xd0]
+operator-timeouts-debug[0x10013d5bc] <+564>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d5c0] <+568>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d5c4] <+572>:  b      0x10013d5c8               ; <+576>
+operator-timeouts-debug[0x10013d5c8] <+576>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5cc] <+580>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5d0] <+584>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d5d4] <+588>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5d8] <+592>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5dc] <+596>:  ldr    x10, [x9, #0x48]
+operator-timeouts-debug[0x10013d5e0] <+600>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5e4] <+604>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d5e8] <+608>:  str    x9, [sp, #0xd8]
+operator-timeouts-debug[0x10013d5ec] <+612>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d5f0] <+616>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d5f4] <+620>:  b      0x10013d5f8               ; <+624>
+operator-timeouts-debug[0x10013d5f8] <+624>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d5fc] <+628>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d600] <+632>:  ldr    x9, [sp, #0xe8]
+operator-timeouts-debug[0x10013d604] <+636>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d608] <+640>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d60c] <+644>:  ldr    x10, [x9, #0x50]
+operator-timeouts-debug[0x10013d610] <+648>:  str    x10, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d614] <+652>:  ldr    x9, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d618] <+656>:  str    x9, [sp, #0xe0]
+operator-timeouts-debug[0x10013d61c] <+660>:  mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013d620] <+664>:  str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013d624] <+668>:  b      0x10013d628               ; <+672>
+operator-timeouts-debug[0x10013d628] <+672>:  str    xzr, [sp, #0xe8]
+operator-timeouts-debug[0x10013d62c] <+676>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d630] <+680>:  str    xzr, [sp, #0x1f8]
+operator-timeouts-debug[0x10013d634] <+684>:  ldr    x9, [sp, #0xa0]
+operator-timeouts-debug[0x10013d638] <+688>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d63c] <+692>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d640] <+696>:  cbnz   x9, 0x10013d648           ; <+704> at copying.ts:89:18
+operator-timeouts-debug[0x10013d644] <+700>:  b      0x10013d6f4               ; <+876>
+operator-timeouts-debug[0x10013d648] <+704>:  ldr    x10, [x9]
+operator-timeouts-debug[0x10013d64c] <+708>:  adr    x11, 0x10013d64c          ; <+708> at copying.ts:89:18
+operator-timeouts-debug[0x10013d650] <+712>:  mov    x17, #0x8a2c              ; =35372 
+operator-timeouts-debug[0x10013d654] <+716>:  movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d658] <+720>:  add    x11, x11, x17
+operator-timeouts-debug[0x10013d65c] <+724>:  cmp    x10, x11
+operator-timeouts-debug[0x10013d660] <+728>:  b.eq   0x10013d668               ; <+736> at copying.ts:89:18
+operator-timeouts-debug[0x10013d664] <+732>:  b      0x10013d6f4               ; <+876>
+operator-timeouts-debug[0x10013d668] <+736>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d66c] <+740>:  ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d670] <+744>:  cmp    w10, #0x1
+operator-timeouts-debug[0x10013d674] <+748>:  b.eq   0x10013d67c               ; <+756> at copying.ts:89:18
+operator-timeouts-debug[0x10013d678] <+752>:  b      0x10013d6f4               ; <+876>
+operator-timeouts-debug[0x10013d67c] <+756>:  ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d680] <+760>:  str    x10, [sp, #0x58]
+operator-timeouts-debug[0x10013d684] <+764>:  b      0x10013d688               ; <+768>
+operator-timeouts-debug[0x10013d688] <+768>:  str    xzr, [sp, #0xa0]
+operator-timeouts-debug[0x10013d68c] <+772>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d690] <+776>:  ldr    x9, [sp, #0x58]
+operator-timeouts-debug[0x10013d694] <+780>:  fmov   d16, x9
+operator-timeouts-debug[0x10013d698] <+784>:  fmov   x9, d16
+operator-timeouts-debug[0x10013d69c] <+788>:  str    x9, [sp, #0xf0]
+operator-timeouts-debug[0x10013d6a0] <+792>:  ldr    x9, [sp, #0xa8]
+operator-timeouts-debug[0x10013d6a4] <+796>:  str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d6a8] <+800>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d6ac] <+804>:  cbnz   x9, 0x10013d6b4           ; <+812> at copying.ts:89:31
+operator-timeouts-debug[0x10013d6b0] <+808>:  b      0x10013d764               ; <+988>
+operator-timeouts-debug[0x10013d6b4] <+812>:  ldr    x10, [x9]
+operator-timeouts-debug[0x10013d6b8] <+816>:  adr    x11, 0x10013d6b8          ; <+816> at copying.ts:89:31
+operator-timeouts-debug[0x10013d6bc] <+820>:  mov    x17, #0x89d8              ; =35288 
+operator-timeouts-debug[0x10013d6c0] <+824>:  movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d6c4] <+828>:  add    x11, x11, x17
+operator-timeouts-debug[0x10013d6c8] <+832>:  cmp    x10, x11
+operator-timeouts-debug[0x10013d6cc] <+836>:  b.eq   0x10013d6d4               ; <+844> at copying.ts:89:31
+operator-timeouts-debug[0x10013d6d0] <+840>:  b      0x10013d764               ; <+988>
+operator-timeouts-debug[0x10013d6d4] <+844>:  ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d6d8] <+848>:  ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d6dc] <+852>:  cmp    w10, #0x1
+operator-timeouts-debug[0x10013d6e0] <+856>:  b.eq   0x10013d6e8               ; <+864> at copying.ts:89:31
+operator-timeouts-debug[0x10013d6e4] <+860>:  b      0x10013d764               ; <+988>
+operator-timeouts-debug[0x10013d6e8] <+864>:  ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d6ec] <+868>:  str    x10, [sp, #0x60]
+operator-timeouts-debug[0x10013d6f0] <+872>:  b      0x10013d728               ; <+928>
+operator-timeouts-debug[0x10013d6f4] <+876>:  str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d6f8] <+880>:  str    xzr, [sp, #0xa0]
+operator-timeouts-debug[0x10013d6fc] <+884>:  str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d700] <+888>:  str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d704] <+892>:  str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d708] <+896>:  str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d70c] <+900>:  str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d710] <+904>:  str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013d714] <+908>:  str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013d718] <+912>:  str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013d71c] <+916>:  str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d720] <+920>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d724] <+924>:  brk    #0
+operator-timeouts-debug[0x10013d728] <+928>:  str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d72c] <+932>:  str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d730] <+936>:  ldr    x9, [sp, #0x60]
+operator-timeouts-debug[0x10013d734] <+940>:  fmov   d16, x9
+operator-timeouts-debug[0x10013d738] <+944>:  ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013d73c] <+948>:  fmov   d17, x9
+operator-timeouts-debug[0x10013d740] <+952>:  ldr    x9, [sp, #0xf0]
+operator-timeouts-debug[0x10013d744] <+956>:  fmov   d18, x9
+operator-timeouts-debug[0x10013d748] <+960>:  fmov   x9, d18
+operator-timeouts-debug[0x10013d74c] <+964>:  str    x9, [sp, #0x150]
+operator-timeouts-debug[0x10013d750] <+968>:  fmov   x9, d16
+operator-timeouts-debug[0x10013d754] <+972>:  str    x9, [sp, #0x158]
+operator-timeouts-debug[0x10013d758] <+976>:  fmov   x9, d17
+operator-timeouts-debug[0x10013d75c] <+980>:  str    x9, [sp, #0x160]
+operator-timeouts-debug[0x10013d760] <+984>:  b      0x10013dffc               ; <+3188> at copying.ts:89:9
+operator-timeouts-debug[0x10013d764] <+988>:  str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d768] <+992>:  str    xzr, [sp, #0xa8]
+operator-timeouts-debug[0x10013d76c] <+996>:  str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d770] <+1000>: str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d774] <+1004>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d778] <+1008>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d77c] <+1012>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013d780] <+1016>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013d784] <+1020>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013d788] <+1024>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d78c] <+1028>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d790] <+1032>: brk    #0
+operator-timeouts-debug[0x10013d794] <+1036>: ldr    x9, [sp, #0xb0]
+operator-timeouts-debug[0x10013d798] <+1040>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d79c] <+1044>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d7a0] <+1048>: cbnz   x9, 0x10013d7a8           ; <+1056> at copying.ts:90:18
+operator-timeouts-debug[0x10013d7a4] <+1052>: b      0x10013d88c               ; <+1284>
+operator-timeouts-debug[0x10013d7a8] <+1056>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013d7ac] <+1060>: adr    x11, 0x10013d7ac          ; <+1060> at copying.ts:90:18
+operator-timeouts-debug[0x10013d7b0] <+1064>: mov    x17, #0x88fc              ; =35068 
+operator-timeouts-debug[0x10013d7b4] <+1068>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d7b8] <+1072>: add    x11, x11, x17
+operator-timeouts-debug[0x10013d7bc] <+1076>: cmp    x10, x11
+operator-timeouts-debug[0x10013d7c0] <+1080>: b.eq   0x10013d7c8               ; <+1088> at copying.ts:90:18
+operator-timeouts-debug[0x10013d7c4] <+1084>: b      0x10013d88c               ; <+1284>
+operator-timeouts-debug[0x10013d7c8] <+1088>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d7cc] <+1092>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d7d0] <+1096>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013d7d4] <+1100>: b.eq   0x10013d7dc               ; <+1108> at copying.ts:90:18
+operator-timeouts-debug[0x10013d7d8] <+1104>: b      0x10013d88c               ; <+1284>
+operator-timeouts-debug[0x10013d7dc] <+1108>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d7e0] <+1112>: str    x10, [sp, #0x68]
+operator-timeouts-debug[0x10013d7e4] <+1116>: b      0x10013d820               ; <+1176>
+operator-timeouts-debug[0x10013d7e8] <+1120>: str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d7ec] <+1124>: str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d7f0] <+1128>: ldr    x9, [sp, #0xf8]
+operator-timeouts-debug[0x10013d7f4] <+1132>: fmov   d16, x9
+operator-timeouts-debug[0x10013d7f8] <+1136>: fmov   x9, d16
+operator-timeouts-debug[0x10013d7fc] <+1140>: str    x9, [sp, #0x108]
+operator-timeouts-debug[0x10013d800] <+1144>: fmov   x9, d16
+operator-timeouts-debug[0x10013d804] <+1148>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013d808] <+1152>: cset   w9, ne
+operator-timeouts-debug[0x10013d80c] <+1156>: fmov   d17, x9
+operator-timeouts-debug[0x10013d810] <+1160>: fmov   x9, d17
+operator-timeouts-debug[0x10013d814] <+1164>: cbz    x9, 0x10013d81c           ; <+1172> at copying.ts:89:9
+operator-timeouts-debug[0x10013d818] <+1168>: b      0x10013d970               ; <+1512>
+operator-timeouts-debug[0x10013d81c] <+1172>: b      0x10013d91c               ; <+1428> at copying.ts:91:18
+operator-timeouts-debug[0x10013d820] <+1176>: str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d824] <+1180>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d828] <+1184>: ldr    x9, [sp, #0x68]
+operator-timeouts-debug[0x10013d82c] <+1188>: fmov   d16, x9
+operator-timeouts-debug[0x10013d830] <+1192>: fmov   x9, d16
+operator-timeouts-debug[0x10013d834] <+1196>: str    x9, [sp, #0x100]
+operator-timeouts-debug[0x10013d838] <+1200>: ldr    x9, [sp, #0xb8]
+operator-timeouts-debug[0x10013d83c] <+1204>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d840] <+1208>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d844] <+1212>: cbnz   x9, 0x10013d84c           ; <+1220> at copying.ts:90:31
+operator-timeouts-debug[0x10013d848] <+1216>: b      0x10013d8f4               ; <+1388>
+operator-timeouts-debug[0x10013d84c] <+1220>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013d850] <+1224>: adr    x11, 0x10013d850          ; <+1224> at copying.ts:90:31
+operator-timeouts-debug[0x10013d854] <+1228>: mov    x17, #0x8870              ; =34928 
+operator-timeouts-debug[0x10013d858] <+1232>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d85c] <+1236>: add    x11, x11, x17
+operator-timeouts-debug[0x10013d860] <+1240>: cmp    x10, x11
+operator-timeouts-debug[0x10013d864] <+1244>: b.eq   0x10013d86c               ; <+1252> at copying.ts:90:31
+operator-timeouts-debug[0x10013d868] <+1248>: b      0x10013d8f4               ; <+1388>
+operator-timeouts-debug[0x10013d86c] <+1252>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d870] <+1256>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d874] <+1260>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013d878] <+1264>: b.eq   0x10013d880               ; <+1272> at copying.ts:90:31
+operator-timeouts-debug[0x10013d87c] <+1268>: b      0x10013d8f4               ; <+1388>
+operator-timeouts-debug[0x10013d880] <+1272>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d884] <+1276>: str    x10, [sp, #0x70]
+operator-timeouts-debug[0x10013d888] <+1280>: b      0x10013d8b8               ; <+1328>
+operator-timeouts-debug[0x10013d88c] <+1284>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d890] <+1288>: str    xzr, [sp, #0xb0]
+operator-timeouts-debug[0x10013d894] <+1292>: str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d898] <+1296>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d89c] <+1300>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d8a0] <+1304>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013d8a4] <+1308>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013d8a8] <+1312>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013d8ac] <+1316>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d8b0] <+1320>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d8b4] <+1324>: brk    #0
+operator-timeouts-debug[0x10013d8b8] <+1328>: str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d8bc] <+1332>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d8c0] <+1336>: ldr    x9, [sp, #0x70]
+operator-timeouts-debug[0x10013d8c4] <+1340>: fmov   d16, x9
+operator-timeouts-debug[0x10013d8c8] <+1344>: ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013d8cc] <+1348>: fmov   d17, x9
+operator-timeouts-debug[0x10013d8d0] <+1352>: ldr    x9, [sp, #0x100]
+operator-timeouts-debug[0x10013d8d4] <+1356>: fmov   d18, x9
+operator-timeouts-debug[0x10013d8d8] <+1360>: fmov   x9, d18
+operator-timeouts-debug[0x10013d8dc] <+1364>: str    x9, [sp, #0x178]
+operator-timeouts-debug[0x10013d8e0] <+1368>: fmov   x9, d16
+operator-timeouts-debug[0x10013d8e4] <+1372>: str    x9, [sp, #0x180]
+operator-timeouts-debug[0x10013d8e8] <+1376>: fmov   x9, d17
+operator-timeouts-debug[0x10013d8ec] <+1380>: str    x9, [sp, #0x188]
+operator-timeouts-debug[0x10013d8f0] <+1384>: b      0x10013e0d8               ; <+3408> at copying.ts:90:9
+operator-timeouts-debug[0x10013d8f4] <+1388>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013d8f8] <+1392>: str    xzr, [sp, #0xb8]
+operator-timeouts-debug[0x10013d8fc] <+1396>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d900] <+1400>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d904] <+1404>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013d908] <+1408>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013d90c] <+1412>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013d910] <+1416>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013d914] <+1420>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d918] <+1424>: brk    #0
+operator-timeouts-debug[0x10013d91c] <+1428>: ldr    x9, [sp, #0xc0]
+operator-timeouts-debug[0x10013d920] <+1432>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d924] <+1436>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d928] <+1440>: cbnz   x9, 0x10013d930           ; <+1448> at copying.ts:91:18
+operator-timeouts-debug[0x10013d92c] <+1444>: b      0x10013da14               ; <+1676>
+operator-timeouts-debug[0x10013d930] <+1448>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013d934] <+1452>: adr    x11, 0x10013d934          ; <+1452> at copying.ts:91:18
+operator-timeouts-debug[0x10013d938] <+1456>: mov    x17, #0x87a4              ; =34724 
+operator-timeouts-debug[0x10013d93c] <+1460>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d940] <+1464>: add    x11, x11, x17
+operator-timeouts-debug[0x10013d944] <+1468>: cmp    x10, x11
+operator-timeouts-debug[0x10013d948] <+1472>: b.eq   0x10013d950               ; <+1480> at copying.ts:91:18
+operator-timeouts-debug[0x10013d94c] <+1476>: b      0x10013da14               ; <+1676>
+operator-timeouts-debug[0x10013d950] <+1480>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d954] <+1484>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d958] <+1488>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013d95c] <+1492>: b.eq   0x10013d964               ; <+1500> at copying.ts:91:18
+operator-timeouts-debug[0x10013d960] <+1496>: b      0x10013da14               ; <+1676>
+operator-timeouts-debug[0x10013d964] <+1500>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013d968] <+1504>: str    x10, [sp, #0x78]
+operator-timeouts-debug[0x10013d96c] <+1508>: b      0x10013d9a8               ; <+1568>
+operator-timeouts-debug[0x10013d970] <+1512>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d974] <+1516>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013d978] <+1520>: ldr    x9, [sp, #0x108]
+operator-timeouts-debug[0x10013d97c] <+1524>: fmov   d16, x9
+operator-timeouts-debug[0x10013d980] <+1528>: fmov   x9, d16
+operator-timeouts-debug[0x10013d984] <+1532>: str    x9, [sp, #0x118]
+operator-timeouts-debug[0x10013d988] <+1536>: fmov   x9, d16
+operator-timeouts-debug[0x10013d98c] <+1540>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013d990] <+1544>: cset   w9, ne
+operator-timeouts-debug[0x10013d994] <+1548>: fmov   d17, x9
+operator-timeouts-debug[0x10013d998] <+1552>: fmov   x9, d17
+operator-timeouts-debug[0x10013d99c] <+1556>: cbz    x9, 0x10013d9a4           ; <+1564> at copying.ts:89:9
+operator-timeouts-debug[0x10013d9a0] <+1560>: b      0x10013dae8               ; <+1888>
+operator-timeouts-debug[0x10013d9a4] <+1564>: b      0x10013da94               ; <+1804> at copying.ts:92:18
+operator-timeouts-debug[0x10013d9a8] <+1568>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013d9ac] <+1572>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d9b0] <+1576>: ldr    x9, [sp, #0x78]
+operator-timeouts-debug[0x10013d9b4] <+1580>: fmov   d16, x9
+operator-timeouts-debug[0x10013d9b8] <+1584>: fmov   x9, d16
+operator-timeouts-debug[0x10013d9bc] <+1588>: str    x9, [sp, #0x110]
+operator-timeouts-debug[0x10013d9c0] <+1592>: ldr    x9, [sp, #0xc8]
+operator-timeouts-debug[0x10013d9c4] <+1596>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d9c8] <+1600>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d9cc] <+1604>: cbnz   x9, 0x10013d9d4           ; <+1612> at copying.ts:91:29
+operator-timeouts-debug[0x10013d9d0] <+1608>: b      0x10013da74               ; <+1772>
+operator-timeouts-debug[0x10013d9d4] <+1612>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013d9d8] <+1616>: adr    x11, 0x10013d9d8          ; <+1616> at copying.ts:91:29
+operator-timeouts-debug[0x10013d9dc] <+1620>: mov    x17, #0x8718              ; =34584 
+operator-timeouts-debug[0x10013d9e0] <+1624>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013d9e4] <+1628>: add    x11, x11, x17
+operator-timeouts-debug[0x10013d9e8] <+1632>: cmp    x10, x11
+operator-timeouts-debug[0x10013d9ec] <+1636>: b.eq   0x10013d9f4               ; <+1644> at copying.ts:91:29
+operator-timeouts-debug[0x10013d9f0] <+1640>: b      0x10013da74               ; <+1772>
+operator-timeouts-debug[0x10013d9f4] <+1644>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013d9f8] <+1648>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013d9fc] <+1652>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013da00] <+1656>: b.eq   0x10013da08               ; <+1664> at copying.ts:91:29
+operator-timeouts-debug[0x10013da04] <+1660>: b      0x10013da74               ; <+1772>
+operator-timeouts-debug[0x10013da08] <+1664>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013da0c] <+1668>: str    x10, [sp, #0x80]
+operator-timeouts-debug[0x10013da10] <+1672>: b      0x10013da38               ; <+1712>
+operator-timeouts-debug[0x10013da14] <+1676>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013da18] <+1680>: str    xzr, [sp, #0xc0]
+operator-timeouts-debug[0x10013da1c] <+1684>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013da20] <+1688>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013da24] <+1692>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013da28] <+1696>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013da2c] <+1700>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013da30] <+1704>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013da34] <+1708>: brk    #0
+operator-timeouts-debug[0x10013da38] <+1712>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013da3c] <+1716>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013da40] <+1720>: ldr    x9, [sp, #0x80]
+operator-timeouts-debug[0x10013da44] <+1724>: fmov   d16, x9
+operator-timeouts-debug[0x10013da48] <+1728>: ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013da4c] <+1732>: fmov   d17, x9
+operator-timeouts-debug[0x10013da50] <+1736>: ldr    x9, [sp, #0x110]
+operator-timeouts-debug[0x10013da54] <+1740>: fmov   d18, x9
+operator-timeouts-debug[0x10013da58] <+1744>: fmov   x9, d18
+operator-timeouts-debug[0x10013da5c] <+1748>: str    x9, [sp, #0x1a0]
+operator-timeouts-debug[0x10013da60] <+1752>: fmov   x9, d16
+operator-timeouts-debug[0x10013da64] <+1756>: str    x9, [sp, #0x1a8]
+operator-timeouts-debug[0x10013da68] <+1760>: fmov   x9, d17
+operator-timeouts-debug[0x10013da6c] <+1764>: str    x9, [sp, #0x1b0]
+operator-timeouts-debug[0x10013da70] <+1768>: b      0x10013e1b4               ; <+3628> at copying.ts:91:9
+operator-timeouts-debug[0x10013da74] <+1772>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013da78] <+1776>: str    xzr, [sp, #0xc8]
+operator-timeouts-debug[0x10013da7c] <+1780>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013da80] <+1784>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013da84] <+1788>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013da88] <+1792>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013da8c] <+1796>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013da90] <+1800>: brk    #0
+operator-timeouts-debug[0x10013da94] <+1804>: ldr    x9, [sp, #0xd0]
+operator-timeouts-debug[0x10013da98] <+1808>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013da9c] <+1812>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013daa0] <+1816>: cbnz   x9, 0x10013daa8           ; <+1824> at copying.ts:92:18
+operator-timeouts-debug[0x10013daa4] <+1820>: b      0x10013db8c               ; <+2052>
+operator-timeouts-debug[0x10013daa8] <+1824>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013daac] <+1828>: adr    x11, 0x10013daac          ; <+1828> at copying.ts:92:18
+operator-timeouts-debug[0x10013dab0] <+1832>: mov    x17, #0x865c              ; =34396 
+operator-timeouts-debug[0x10013dab4] <+1836>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013dab8] <+1840>: add    x11, x11, x17
+operator-timeouts-debug[0x10013dabc] <+1844>: cmp    x10, x11
+operator-timeouts-debug[0x10013dac0] <+1848>: b.eq   0x10013dac8               ; <+1856> at copying.ts:92:18
+operator-timeouts-debug[0x10013dac4] <+1852>: b      0x10013db8c               ; <+2052>
+operator-timeouts-debug[0x10013dac8] <+1856>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dacc] <+1860>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013dad0] <+1864>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013dad4] <+1868>: b.eq   0x10013dadc               ; <+1876> at copying.ts:92:18
+operator-timeouts-debug[0x10013dad8] <+1872>: b      0x10013db8c               ; <+2052>
+operator-timeouts-debug[0x10013dadc] <+1876>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013dae0] <+1880>: str    x10, [sp, #0x88]
+operator-timeouts-debug[0x10013dae4] <+1884>: b      0x10013db20               ; <+1944>
+operator-timeouts-debug[0x10013dae8] <+1888>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013daec] <+1892>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013daf0] <+1896>: ldr    x9, [sp, #0x118]
+operator-timeouts-debug[0x10013daf4] <+1900>: fmov   d16, x9
+operator-timeouts-debug[0x10013daf8] <+1904>: fmov   x9, d16
+operator-timeouts-debug[0x10013dafc] <+1908>: str    x9, [sp, #0x128]
+operator-timeouts-debug[0x10013db00] <+1912>: fmov   x9, d16
+operator-timeouts-debug[0x10013db04] <+1916>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013db08] <+1920>: cset   w9, ne
+operator-timeouts-debug[0x10013db0c] <+1924>: fmov   d17, x9
+operator-timeouts-debug[0x10013db10] <+1928>: fmov   x9, d17
+operator-timeouts-debug[0x10013db14] <+1932>: cbz    x9, 0x10013db1c           ; <+1940> at copying.ts:89:9
+operator-timeouts-debug[0x10013db18] <+1936>: b      0x10013dc50               ; <+2248>
+operator-timeouts-debug[0x10013db1c] <+1940>: b      0x10013dbfc               ; <+2164> at copying.ts:93:9
+operator-timeouts-debug[0x10013db20] <+1944>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013db24] <+1948>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013db28] <+1952>: ldr    x9, [sp, #0x88]
+operator-timeouts-debug[0x10013db2c] <+1956>: fmov   d16, x9
+operator-timeouts-debug[0x10013db30] <+1960>: fmov   x9, d16
+operator-timeouts-debug[0x10013db34] <+1964>: str    x9, [sp, #0x120]
+operator-timeouts-debug[0x10013db38] <+1968>: ldr    x9, [sp, #0xd8]
+operator-timeouts-debug[0x10013db3c] <+1972>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013db40] <+1976>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013db44] <+1980>: cbnz   x9, 0x10013db4c           ; <+1988> at copying.ts:92:29
+operator-timeouts-debug[0x10013db48] <+1984>: b      0x10013dbe4               ; <+2140>
+operator-timeouts-debug[0x10013db4c] <+1988>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013db50] <+1992>: adr    x11, 0x10013db50          ; <+1992> at copying.ts:92:29
+operator-timeouts-debug[0x10013db54] <+1996>: mov    x17, #0x85d0              ; =34256 
+operator-timeouts-debug[0x10013db58] <+2000>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013db5c] <+2004>: add    x11, x11, x17
+operator-timeouts-debug[0x10013db60] <+2008>: cmp    x10, x11
+operator-timeouts-debug[0x10013db64] <+2012>: b.eq   0x10013db6c               ; <+2020> at copying.ts:92:29
+operator-timeouts-debug[0x10013db68] <+2016>: b      0x10013dbe4               ; <+2140>
+operator-timeouts-debug[0x10013db6c] <+2020>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013db70] <+2024>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013db74] <+2028>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013db78] <+2032>: b.eq   0x10013db80               ; <+2040> at copying.ts:92:29
+operator-timeouts-debug[0x10013db7c] <+2036>: b      0x10013dbe4               ; <+2140>
+operator-timeouts-debug[0x10013db80] <+2040>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013db84] <+2044>: str    x10, [sp, #0x90]
+operator-timeouts-debug[0x10013db88] <+2048>: b      0x10013dba8               ; <+2080>
+operator-timeouts-debug[0x10013db8c] <+2052>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013db90] <+2056>: str    xzr, [sp, #0xd0]
+operator-timeouts-debug[0x10013db94] <+2060>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013db98] <+2064>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013db9c] <+2068>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013dba0] <+2072>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dba4] <+2076>: brk    #0
+operator-timeouts-debug[0x10013dba8] <+2080>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013dbac] <+2084>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dbb0] <+2088>: ldr    x9, [sp, #0x90]
+operator-timeouts-debug[0x10013dbb4] <+2092>: fmov   d16, x9
+operator-timeouts-debug[0x10013dbb8] <+2096>: ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013dbbc] <+2100>: fmov   d17, x9
+operator-timeouts-debug[0x10013dbc0] <+2104>: ldr    x9, [sp, #0x120]
+operator-timeouts-debug[0x10013dbc4] <+2108>: fmov   d18, x9
+operator-timeouts-debug[0x10013dbc8] <+2112>: fmov   x9, d18
+operator-timeouts-debug[0x10013dbcc] <+2116>: str    x9, [sp, #0x1c8]
+operator-timeouts-debug[0x10013dbd0] <+2120>: fmov   x9, d16
+operator-timeouts-debug[0x10013dbd4] <+2124>: str    x9, [sp, #0x1d0]
+operator-timeouts-debug[0x10013dbd8] <+2128>: fmov   x9, d17
+operator-timeouts-debug[0x10013dbdc] <+2132>: str    x9, [sp, #0x1d8]
+operator-timeouts-debug[0x10013dbe0] <+2136>: b      0x10013e290               ; <+3848> at copying.ts:92:9
+operator-timeouts-debug[0x10013dbe4] <+2140>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013dbe8] <+2144>: str    xzr, [sp, #0xd8]
+operator-timeouts-debug[0x10013dbec] <+2148>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013dbf0] <+2152>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013dbf4] <+2156>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dbf8] <+2160>: brk    #0
+operator-timeouts-debug[0x10013dbfc] <+2164>: ldr    x9, [sp, #0xe0]
+operator-timeouts-debug[0x10013dc00] <+2168>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dc04] <+2172>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dc08] <+2176>: cbnz   x9, 0x10013dc10           ; <+2184> at copying.ts:93:9
+operator-timeouts-debug[0x10013dc0c] <+2180>: b      0x10013dcf4               ; <+2412>
+operator-timeouts-debug[0x10013dc10] <+2184>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013dc14] <+2188>: adr    x11, 0x10013dc14          ; <+2188> at copying.ts:93:9
+operator-timeouts-debug[0x10013dc18] <+2192>: mov    x17, #0x8624              ; =34340 
+operator-timeouts-debug[0x10013dc1c] <+2196>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013dc20] <+2200>: add    x11, x11, x17
+operator-timeouts-debug[0x10013dc24] <+2204>: cmp    x10, x11
+operator-timeouts-debug[0x10013dc28] <+2208>: b.eq   0x10013dc30               ; <+2216> at copying.ts:93:9
+operator-timeouts-debug[0x10013dc2c] <+2212>: b      0x10013dcf4               ; <+2412>
+operator-timeouts-debug[0x10013dc30] <+2216>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dc34] <+2220>: ldrb   w10, [x9, #0x10]
+operator-timeouts-debug[0x10013dc38] <+2224>: cmp    w10, #0x1
+operator-timeouts-debug[0x10013dc3c] <+2228>: b.eq   0x10013dc44               ; <+2236> at copying.ts:93:9
+operator-timeouts-debug[0x10013dc40] <+2232>: b      0x10013dcf4               ; <+2412>
+operator-timeouts-debug[0x10013dc44] <+2236>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013dc48] <+2240>: str    x10, [sp, #0x98]
+operator-timeouts-debug[0x10013dc4c] <+2244>: b      0x10013dca4               ; <+2332>
+operator-timeouts-debug[0x10013dc50] <+2248>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013dc54] <+2252>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013dc58] <+2256>: str    xzr, [sp, #0x130]
+operator-timeouts-debug[0x10013dc5c] <+2260>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013dc60] <+2264>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dc64] <+2268>: str    xzr, [sp, #0x200]
+operator-timeouts-debug[0x10013dc68] <+2272>: str    xzr, [sp, #0x208]
+operator-timeouts-debug[0x10013dc6c] <+2276>: ldr    x9, [sp, #0x128]
+operator-timeouts-debug[0x10013dc70] <+2280>: fmov   d16, x9
+operator-timeouts-debug[0x10013dc74] <+2284>: fmov   x9, d16
+operator-timeouts-debug[0x10013dc78] <+2288>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013dc7c] <+2292>: cset   w9, eq
+operator-timeouts-debug[0x10013dc80] <+2296>: fmov   d17, x9
+operator-timeouts-debug[0x10013dc84] <+2300>: fmov   x9, d17
+operator-timeouts-debug[0x10013dc88] <+2304>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013dc8c] <+2308>: cset   w9, ne
+operator-timeouts-debug[0x10013dc90] <+2312>: fmov   d16, x9
+operator-timeouts-debug[0x10013dc94] <+2316>: fmov   x9, d16
+operator-timeouts-debug[0x10013dc98] <+2320>: cbz    x9, 0x10013dca0           ; <+2328> at copying.ts:88:7
+operator-timeouts-debug[0x10013dc9c] <+2324>: b      0x10013ddfc               ; <+2676> at copying.ts:95:16
+operator-timeouts-debug[0x10013dca0] <+2328>: b      0x10013de38               ; <+2736> at copying.ts:88:7
+operator-timeouts-debug[0x10013dca4] <+2332>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013dca8] <+2336>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dcac] <+2340>: ldr    x9, [sp, #0x98]
+operator-timeouts-debug[0x10013dcb0] <+2344>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dcb4] <+2348>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dcb8] <+2352>: str    x9, [sp, #0x130]
+operator-timeouts-debug[0x10013dcbc] <+2356>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dcc0] <+2360>: cbnz   x9, 0x10013dcc8           ; <+2368> at copying.ts:93:9
+operator-timeouts-debug[0x10013dcc4] <+2364>: b      0x10013dde8               ; <+2656>
+operator-timeouts-debug[0x10013dcc8] <+2368>: ldr    x10, [x9]
+operator-timeouts-debug[0x10013dccc] <+2372>: adr    x11, 0x10013dccc          ; <+2372> at copying.ts:93:9
+operator-timeouts-debug[0x10013dcd0] <+2376>: mov    x17, #0xa25c              ; =41564 
+operator-timeouts-debug[0x10013dcd4] <+2380>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013dcd8] <+2384>: add    x11, x11, x17
+operator-timeouts-debug[0x10013dcdc] <+2388>: cmp    x10, x11
+operator-timeouts-debug[0x10013dce0] <+2392>: b.eq   0x10013dce8               ; <+2400> at copying.ts:93:9
+operator-timeouts-debug[0x10013dce4] <+2396>: b      0x10013dde8               ; <+2656>
+operator-timeouts-debug[0x10013dce8] <+2400>: ldr    x10, [x9, #0x18]
+operator-timeouts-debug[0x10013dcec] <+2404>: str    x10, [sp, #0x138]
+operator-timeouts-debug[0x10013dcf0] <+2408>: b      0x10013dd08               ; <+2432>
+operator-timeouts-debug[0x10013dcf4] <+2412>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013dcf8] <+2416>: str    xzr, [sp, #0xe0]
+operator-timeouts-debug[0x10013dcfc] <+2420>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013dd00] <+2424>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd04] <+2428>: brk    #0
+operator-timeouts-debug[0x10013dd08] <+2432>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013dd0c] <+2436>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd10] <+2440>: ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013dd14] <+2444>: str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013dd18] <+2448>: ldr    x9, [sp, #0x130]
+operator-timeouts-debug[0x10013dd1c] <+2452>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd20] <+2456>: ldr    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd24] <+2460>: str    x9, [sp, #0x208]
+operator-timeouts-debug[0x10013dd28] <+2464>: mov    x9, #0x5                  ; =5 
+operator-timeouts-debug[0x10013dd2c] <+2468>: str    x9, [sp, #0x200]
+operator-timeouts-debug[0x10013dd30] <+2472>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013dd34] <+2476>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013dd38] <+2480>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013dd3c] <+2484>: str    x9, [sp, #0x218]
+operator-timeouts-debug[0x10013dd40] <+2488>: ldr    x9, [sp, #0x138]
+operator-timeouts-debug[0x10013dd44] <+2492>: str    x9, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd48] <+2496>: ldr    d0, [sp, #0x210]
+operator-timeouts-debug[0x10013dd4c] <+2500>: ldr    d1, [sp, #0x218]
+operator-timeouts-debug[0x10013dd50] <+2504>: str    xzr, [sp]
+operator-timeouts-debug[0x10013dd54] <+2508>: str    xzr, [sp, #0x8]
+operator-timeouts-debug[0x10013dd58] <+2512>: str    xzr, [sp, #0x10]
+operator-timeouts-debug[0x10013dd5c] <+2516>: str    xzr, [sp, #0x18]
+operator-timeouts-debug[0x10013dd60] <+2520>: ldr    x0, [sp, #0x20]
+operator-timeouts-debug[0x10013dd64] <+2524>: mov    x1, #0x0                  ; =0 
+operator-timeouts-debug[0x10013dd68] <+2528>: add    x2, sp, #0x200
+operator-timeouts-debug[0x10013dd6c] <+2532>: mov    x3, sp
+operator-timeouts-debug[0x10013dd70] <+2536>: ldr    x12, [sp, #0x1f0]
+operator-timeouts-debug[0x10013dd74] <+2540>: cbnz   x12, 0x10013dd7c          ; <+2548> at copying.ts:93:9
+operator-timeouts-debug[0x10013dd78] <+2544>: brk    #0x3
+operator-timeouts-debug[0x10013dd7c] <+2548>: ldr    x10, [x12]
+operator-timeouts-debug[0x10013dd80] <+2552>: adr    x11, 0x10013dd80          ; <+2552> at copying.ts:93:9
+operator-timeouts-debug[0x10013dd84] <+2556>: mov    x17, #0xa508              ; =42248 
+operator-timeouts-debug[0x10013dd88] <+2560>: movk   x17, #0x1, lsl #16
+operator-timeouts-debug[0x10013dd8c] <+2564>: add    x11, x11, x17
+operator-timeouts-debug[0x10013dd90] <+2568>: cmp    x10, x11
+operator-timeouts-debug[0x10013dd94] <+2572>: b.eq   0x10013dd9c               ; <+2580> at copying.ts:93:9
+operator-timeouts-debug[0x10013dd98] <+2576>: brk    #0x3
+operator-timeouts-debug[0x10013dd9c] <+2580>: ldr    x10, [x12, #0x20]
+operator-timeouts-debug[0x10013dda0] <+2584>: adr    x11, 0x10013dda0          ; <+2584> at copying.ts:93:9
+operator-timeouts-debug[0x10013dda4] <+2588>: mov    x17, #0x3c8               ; =968 
+operator-timeouts-debug[0x10013dda8] <+2592>: movk   x17, #0x2, lsl #16
+operator-timeouts-debug[0x10013ddac] <+2596>: add    x11, x11, x17
+operator-timeouts-debug[0x10013ddb0] <+2600>: cmp    x10, x11
+operator-timeouts-debug[0x10013ddb4] <+2604>: b.eq   0x10013ddbc               ; <+2612> at copying.ts:93:9
+operator-timeouts-debug[0x10013ddb8] <+2608>: brk    #0x3
+operator-timeouts-debug[0x10013ddbc] <+2612>: ldr    x1, [x12, #0x18]
+operator-timeouts-debug[0x10013ddc0] <+2616>: ldr    x16, [x12, #0x10]
+operator-timeouts-debug[0x10013ddc4] <+2620>: blr    x16
+operator-timeouts-debug[0x10013ddc8] <+2624>: cmp    w0, #0x1
+operator-timeouts-debug[0x10013ddcc] <+2628>: b.eq   0x10013ddd4               ; <+2636> at copying.ts:93:9
+operator-timeouts-debug[0x10013ddd0] <+2632>: b      0x10013e358               ; <+4048> at copying.ts:92:9
+operator-timeouts-debug[0x10013ddd4] <+2636>: ldr    x9, [sp, #0x10]
+operator-timeouts-debug[0x10013ddd8] <+2640>: str    x9, [sp, #0x220]
+operator-timeouts-debug[0x10013dddc] <+2644>: ldr    x9, [sp, #0x220]
+operator-timeouts-debug[0x10013dde0] <+2648>: str    x9, [sp, #0x128]
+operator-timeouts-debug[0x10013dde4] <+2652>: b      0x10013dc50               ; <+2248>
+operator-timeouts-debug[0x10013dde8] <+2656>: str    xzr, [sp, #0x98]
+operator-timeouts-debug[0x10013ddec] <+2660>: str    xzr, [sp, #0x130]
+operator-timeouts-debug[0x10013ddf0] <+2664>: str    xzr, [sp, #0x138]
+operator-timeouts-debug[0x10013ddf4] <+2668>: str    xzr, [sp, #0x1f0]
+operator-timeouts-debug[0x10013ddf8] <+2672>: brk    #0
+operator-timeouts-debug[0x10013ddfc] <+2676>: str    xzr, [sp, #0x210]
+operator-timeouts-debug[0x10013de00] <+2680>: str    xzr, [sp, #0x218]
+operator-timeouts-debug[0x10013de04] <+2684>: ldr    x10, [sp, #0x28]
+operator-timeouts-debug[0x10013de08] <+2688>: ldr    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013de0c] <+2692>: str    x9, [x10, #0x10]
+operator-timeouts-debug[0x10013de10] <+2696>: ldr    x11, [sp, #0x218]
+operator-timeouts-debug[0x10013de14] <+2700>: str    x11, [x10, #0x18]
+operator-timeouts-debug[0x10013de18] <+2704>: mov    x0, #0x1                  ; =1 
+operator-timeouts-debug[0x10013de1c] <+2708>: str    w0, [x10]
+operator-timeouts-debug[0x10013de20] <+2712>: ldr    x10, [sp, #0x20]
+operator-timeouts-debug[0x10013de24] <+2716>: ldr    x9, [sp, #0x30]
+operator-timeouts-debug[0x10013de28] <+2720>: str    x9, [x10]
+operator-timeouts-debug[0x10013de2c] <+2724>: add    sp, sp, #0x250
+operator-timeouts-debug[0x10013de30] <+2728>: ldp    x29, x30, [sp], #0x10
+operator-timeouts-debug[0x10013de34] <+2732>: ret    
+operator-timeouts-debug[0x10013de38] <+2736>: b      0x10013de3c               ; <+2740> at copying.ts:98:36
+operator-timeouts-debug[0x10013de3c] <+2740>: ldr    x9, [sp, #0x48]
+operator-timeouts-debug[0x10013de40] <+2744>: str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013de44] <+2748>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013de48] <+2752>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013de4c] <+2756>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013de50] <+2760>: str    x9, [sp, #0x218]
+operator-timeouts-debug[0x10013de54] <+2764>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013de58] <+2768>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013de5c] <+2772>: movk   x9, #0x0, lsl #48
+operator-timeouts-debug[0x10013de60] <+2776>: str    x9, [sp, #0x220]
+operator-timeouts-debug[0x10013de64] <+2780>: ldr    d0, [sp, #0x210]
+operator-timeouts-debug[0x10013de68] <+2784>: fcvtzs x0, d0
+operator-timeouts-debug[0x10013de6c] <+2788>: scvtf  d1, x0
+operator-timeouts-debug[0x10013de70] <+2792>: fcmp   d0, d1
+operator-timeouts-debug[0x10013de74] <+2796>: b.ne   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013de78] <+2800>: mvn    x9, xzr
+operator-timeouts-debug[0x10013de7c] <+2804>: ubfx   x9, x9, #0, #53
+operator-timeouts-debug[0x10013de80] <+2808>: cmp    x0, x9
+operator-timeouts-debug[0x10013de84] <+2812>: b.hi   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013de88] <+2816>: mov    x1, #0x8                  ; =8 
+operator-timeouts-debug[0x10013de8c] <+2820>: mov    x2, #0x0                  ; =0 
+operator-timeouts-debug[0x10013de90] <+2824>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013de94] <+2828>: cmp    x0, x9
+operator-timeouts-debug[0x10013de98] <+2832>: b.eq   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013de9c] <+2836>: add    x10, x0, x2
+operator-timeouts-debug[0x10013dea0] <+2840>: mvn    x9, xzr
+operator-timeouts-debug[0x10013dea4] <+2844>: ubfx   x9, x9, #0, #53
+operator-timeouts-debug[0x10013dea8] <+2848>: sub    x9, x9, #0x7
+operator-timeouts-debug[0x10013deac] <+2852>: cmp    x10, x9
+operator-timeouts-debug[0x10013deb0] <+2856>: b.hi   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013deb4] <+2860>: mov    x9, #0x7                  ; =7 
+operator-timeouts-debug[0x10013deb8] <+2864>: and    x11, x10, x9
+operator-timeouts-debug[0x10013debc] <+2868>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013dec0] <+2872>: cmp    x11, x9
+operator-timeouts-debug[0x10013dec4] <+2876>: b.ne   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013dec8] <+2880>: ldr    x0, [x10]
+operator-timeouts-debug[0x10013decc] <+2884>: mvn    x9, xzr
+operator-timeouts-debug[0x10013ded0] <+2888>: ubfx   x9, x9, #0, #53
+operator-timeouts-debug[0x10013ded4] <+2892>: cmp    x0, x9
+operator-timeouts-debug[0x10013ded8] <+2896>: b.hi   0x10013dee4               ; <+2908> at copying.ts:98:21
+operator-timeouts-debug[0x10013dedc] <+2900>: scvtf  d0, x0
+operator-timeouts-debug[0x10013dee0] <+2904>: b      0x10013def0               ; <+2920> at copying.ts:98:21
+operator-timeouts-debug[0x10013dee4] <+2908>: mov    x9, #0x1                  ; =1 
+operator-timeouts-debug[0x10013dee8] <+2912>: scvtf  d0, x9
+operator-timeouts-debug[0x10013deec] <+2916>: fneg   d0, d0
+operator-timeouts-debug[0x10013def0] <+2920>: str    d0, [sp, #0x228]
+operator-timeouts-debug[0x10013def4] <+2924>: ldr    x9, [sp, #0x228]
+operator-timeouts-debug[0x10013def8] <+2928>: str    x9, [sp, #0x50]
+operator-timeouts-debug[0x10013defc] <+2932>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013df00] <+2936>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013df04] <+2940>: movk   x9, #0x0, lsl #48
+operator-timeouts-debug[0x10013df08] <+2944>: fmov   d16, x9
+operator-timeouts-debug[0x10013df0c] <+2948>: ldr    d0, [sp, #0x228]
+operator-timeouts-debug[0x10013df10] <+2952>: fmov   d1, d16
+operator-timeouts-debug[0x10013df14] <+2956>: fcmp   d0, d1
+operator-timeouts-debug[0x10013df18] <+2960>: cset   w9, mi
+operator-timeouts-debug[0x10013df1c] <+2964>: fmov   d17, x9
+operator-timeouts-debug[0x10013df20] <+2968>: fmov   x9, d17
+operator-timeouts-debug[0x10013df24] <+2972>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013df28] <+2976>: cset   w9, ne
+operator-timeouts-debug[0x10013df2c] <+2980>: fmov   d16, x9
+operator-timeouts-debug[0x10013df30] <+2984>: fmov   x9, d16
+operator-timeouts-debug[0x10013df34] <+2988>: cbz    x9, 0x10013df3c           ; <+2996> at copying.ts:99:14
+operator-timeouts-debug[0x10013df38] <+2992>: b      0x10013df40               ; <+3000> at copying.ts:99:26
+operator-timeouts-debug[0x10013df3c] <+2996>: b      0x10013df5c               ; <+3028> at copying.ts:99:38
+operator-timeouts-debug[0x10013df40] <+3000>: str    xzr, [sp, #0x210]
+operator-timeouts-debug[0x10013df44] <+3004>: str    xzr, [sp, #0x218]
+operator-timeouts-debug[0x10013df48] <+3008>: ldr    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013df4c] <+3012>: str    x9, [sp, #0x140]
+operator-timeouts-debug[0x10013df50] <+3016>: ldr    x10, [sp, #0x218]
+operator-timeouts-debug[0x10013df54] <+3020>: str    x10, [sp, #0x148]
+operator-timeouts-debug[0x10013df58] <+3024>: b      0x10013df88               ; <+3072> at copying.ts:99:7
+operator-timeouts-debug[0x10013df5c] <+3028>: ldr    x9, [sp, #0x50]
+operator-timeouts-debug[0x10013df60] <+3032>: fmov   d16, x9
+operator-timeouts-debug[0x10013df64] <+3036>: fmov   x9, d16
+operator-timeouts-debug[0x10013df68] <+3040>: str    x9, [sp, #0x218]
+operator-timeouts-debug[0x10013df6c] <+3044>: mov    x10, #0x1                 ; =1 
+operator-timeouts-debug[0x10013df70] <+3048>: str    x10, [sp, #0x220]
+operator-timeouts-debug[0x10013df74] <+3052>: ldr    x9, [sp, #0x218]
+operator-timeouts-debug[0x10013df78] <+3056>: str    x9, [sp, #0x140]
+operator-timeouts-debug[0x10013df7c] <+3060>: ldr    x10, [sp, #0x220]
+operator-timeouts-debug[0x10013df80] <+3064>: str    x10, [sp, #0x148]
+operator-timeouts-debug[0x10013df84] <+3068>: b      0x10013df88               ; <+3072> at copying.ts:99:7
+operator-timeouts-debug[0x10013df88] <+3072>: ldr    x9, [sp, #0x140]
+operator-timeouts-debug[0x10013df8c] <+3076>: str    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013df90] <+3080>: ldr    x10, [sp, #0x148]
+operator-timeouts-debug[0x10013df94] <+3084>: str    x10, [sp, #0x218]
+operator-timeouts-debug[0x10013df98] <+3088>: ldr    x10, [sp, #0x28]
+operator-timeouts-debug[0x10013df9c] <+3092>: ldr    x9, [sp, #0x210]
+operator-timeouts-debug[0x10013dfa0] <+3096>: str    x9, [x10, #0x10]
+operator-timeouts-debug[0x10013dfa4] <+3100>: ldr    x11, [sp, #0x218]
+operator-timeouts-debug[0x10013dfa8] <+3104>: str    x11, [x10, #0x18]
+operator-timeouts-debug[0x10013dfac] <+3108>: mov    x0, #0x1                  ; =1 
+operator-timeouts-debug[0x10013dfb0] <+3112>: str    w0, [x10]
+operator-timeouts-debug[0x10013dfb4] <+3116>: ldr    x10, [sp, #0x20]
+operator-timeouts-debug[0x10013dfb8] <+3120>: ldr    x9, [sp, #0x30]
+operator-timeouts-debug[0x10013dfbc] <+3124>: str    x9, [x10]
+operator-timeouts-debug[0x10013dfc0] <+3128>: add    sp, sp, #0x250
+operator-timeouts-debug[0x10013dfc4] <+3132>: ldp    x29, x30, [sp], #0x10
+operator-timeouts-debug[0x10013dfc8] <+3136>: ret    
+operator-timeouts-debug[0x10013dfcc] <+3140>: ldr    x9, [sp, #0x170]
+operator-timeouts-debug[0x10013dfd0] <+3144>: fmov   d16, x9
+operator-timeouts-debug[0x10013dfd4] <+3148>: fmov   x9, d16
+operator-timeouts-debug[0x10013dfd8] <+3152>: str    x9, [sp, #0xf8]
+operator-timeouts-debug[0x10013dfdc] <+3156>: fmov   x9, d16
+operator-timeouts-debug[0x10013dfe0] <+3160>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013dfe4] <+3164>: cset   w9, ne
+operator-timeouts-debug[0x10013dfe8] <+3168>: fmov   d17, x9
+operator-timeouts-debug[0x10013dfec] <+3172>: fmov   x9, d17
+operator-timeouts-debug[0x10013dff0] <+3176>: cbz    x9, 0x10013dff8           ; <+3184> at copying.ts:89:9
+operator-timeouts-debug[0x10013dff4] <+3180>: b      0x10013d7e8               ; <+1120>
+operator-timeouts-debug[0x10013dff8] <+3184>: b      0x10013d794               ; <+1036> at copying.ts:90:18
+operator-timeouts-debug[0x10013dffc] <+3188>: ldr    x9, [sp, #0x160]
+operator-timeouts-debug[0x10013e000] <+3192>: fmov   d16, x9
+operator-timeouts-debug[0x10013e004] <+3196>: ldr    x9, [sp, #0x150]
+operator-timeouts-debug[0x10013e008] <+3200>: fmov   d17, x9
+operator-timeouts-debug[0x10013e00c] <+3204>: fmov   d0, d16
+operator-timeouts-debug[0x10013e010] <+3208>: fmov   d1, d17
+operator-timeouts-debug[0x10013e014] <+3212>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e018] <+3216>: cset   w9, ge
+operator-timeouts-debug[0x10013e01c] <+3220>: fmov   d18, x9
+operator-timeouts-debug[0x10013e020] <+3224>: fmov   x9, d18
+operator-timeouts-debug[0x10013e024] <+3228>: str    x9, [sp, #0x168]
+operator-timeouts-debug[0x10013e028] <+3232>: fmov   x9, d18
+operator-timeouts-debug[0x10013e02c] <+3236>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013e030] <+3240>: cset   w9, ne
+operator-timeouts-debug[0x10013e034] <+3244>: fmov   d16, x9
+operator-timeouts-debug[0x10013e038] <+3248>: fmov   x9, d16
+operator-timeouts-debug[0x10013e03c] <+3252>: cbz    x9, 0x10013e044           ; <+3260> at copying.ts:89:9
+operator-timeouts-debug[0x10013e040] <+3256>: b      0x10013e048               ; <+3264> at copying.ts:89:9
+operator-timeouts-debug[0x10013e044] <+3260>: b      0x10013e0b0               ; <+3368> at copying.ts:89:9
+operator-timeouts-debug[0x10013e048] <+3264>: ldr    x9, [sp, #0x160]
+operator-timeouts-debug[0x10013e04c] <+3268>: fmov   d16, x9
+operator-timeouts-debug[0x10013e050] <+3272>: ldr    x9, [sp, #0x150]
+operator-timeouts-debug[0x10013e054] <+3276>: fmov   d17, x9
+operator-timeouts-debug[0x10013e058] <+3280>: fmov   d0, d16
+operator-timeouts-debug[0x10013e05c] <+3284>: fmov   d1, d17
+operator-timeouts-debug[0x10013e060] <+3288>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e064] <+3292>: fmov   d18, d0
+operator-timeouts-debug[0x10013e068] <+3296>: ldr    x9, [sp, #0x158]
+operator-timeouts-debug[0x10013e06c] <+3300>: fmov   d16, x9
+operator-timeouts-debug[0x10013e070] <+3304>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013e074] <+3308>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013e078] <+3312>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013e07c] <+3316>: fmov   d17, x9
+operator-timeouts-debug[0x10013e080] <+3320>: fmov   d0, d16
+operator-timeouts-debug[0x10013e084] <+3324>: fmov   d1, d17
+operator-timeouts-debug[0x10013e088] <+3328>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e08c] <+3332>: fmov   d19, d0
+operator-timeouts-debug[0x10013e090] <+3336>: fmov   d0, d18
+operator-timeouts-debug[0x10013e094] <+3340>: fmov   d1, d19
+operator-timeouts-debug[0x10013e098] <+3344>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e09c] <+3348>: cset   w9, ls
+operator-timeouts-debug[0x10013e0a0] <+3352>: fmov   d16, x9
+operator-timeouts-debug[0x10013e0a4] <+3356>: fmov   x9, d16
+operator-timeouts-debug[0x10013e0a8] <+3360>: str    x9, [sp, #0x168]
+operator-timeouts-debug[0x10013e0ac] <+3364>: b      0x10013e0b0               ; <+3368> at copying.ts:89:9
+operator-timeouts-debug[0x10013e0b0] <+3368>: ldr    x9, [sp, #0x168]
+operator-timeouts-debug[0x10013e0b4] <+3372>: fmov   d16, x9
+operator-timeouts-debug[0x10013e0b8] <+3376>: fmov   x9, d16
+operator-timeouts-debug[0x10013e0bc] <+3380>: str    x9, [sp, #0x170]
+operator-timeouts-debug[0x10013e0c0] <+3384>: b      0x10013dfcc               ; <+3140> at copying.ts:89:9
+operator-timeouts-debug[0x10013e0c4] <+3388>: ldr    x9, [sp, #0x198]
+operator-timeouts-debug[0x10013e0c8] <+3392>: fmov   d16, x9
+operator-timeouts-debug[0x10013e0cc] <+3396>: fmov   x9, d16
+operator-timeouts-debug[0x10013e0d0] <+3400>: str    x9, [sp, #0xf8]
+operator-timeouts-debug[0x10013e0d4] <+3404>: b      0x10013d7e8               ; <+1120>
+operator-timeouts-debug[0x10013e0d8] <+3408>: ldr    x9, [sp, #0x188]
+operator-timeouts-debug[0x10013e0dc] <+3412>: fmov   d16, x9
+operator-timeouts-debug[0x10013e0e0] <+3416>: ldr    x9, [sp, #0x178]
+operator-timeouts-debug[0x10013e0e4] <+3420>: fmov   d17, x9
+operator-timeouts-debug[0x10013e0e8] <+3424>: fmov   d0, d16
+operator-timeouts-debug[0x10013e0ec] <+3428>: fmov   d1, d17
+operator-timeouts-debug[0x10013e0f0] <+3432>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e0f4] <+3436>: cset   w9, ge
+operator-timeouts-debug[0x10013e0f8] <+3440>: fmov   d18, x9
+operator-timeouts-debug[0x10013e0fc] <+3444>: fmov   x9, d18
+operator-timeouts-debug[0x10013e100] <+3448>: str    x9, [sp, #0x190]
+operator-timeouts-debug[0x10013e104] <+3452>: fmov   x9, d18
+operator-timeouts-debug[0x10013e108] <+3456>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013e10c] <+3460>: cset   w9, ne
+operator-timeouts-debug[0x10013e110] <+3464>: fmov   d16, x9
+operator-timeouts-debug[0x10013e114] <+3468>: fmov   x9, d16
+operator-timeouts-debug[0x10013e118] <+3472>: cbz    x9, 0x10013e120           ; <+3480> at copying.ts:90:9
+operator-timeouts-debug[0x10013e11c] <+3476>: b      0x10013e124               ; <+3484> at copying.ts:90:9
+operator-timeouts-debug[0x10013e120] <+3480>: b      0x10013e18c               ; <+3588> at copying.ts:90:9
+operator-timeouts-debug[0x10013e124] <+3484>: ldr    x9, [sp, #0x188]
+operator-timeouts-debug[0x10013e128] <+3488>: fmov   d16, x9
+operator-timeouts-debug[0x10013e12c] <+3492>: ldr    x9, [sp, #0x178]
+operator-timeouts-debug[0x10013e130] <+3496>: fmov   d17, x9
+operator-timeouts-debug[0x10013e134] <+3500>: fmov   d0, d16
+operator-timeouts-debug[0x10013e138] <+3504>: fmov   d1, d17
+operator-timeouts-debug[0x10013e13c] <+3508>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e140] <+3512>: fmov   d18, d0
+operator-timeouts-debug[0x10013e144] <+3516>: ldr    x9, [sp, #0x180]
+operator-timeouts-debug[0x10013e148] <+3520>: fmov   d16, x9
+operator-timeouts-debug[0x10013e14c] <+3524>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013e150] <+3528>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013e154] <+3532>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013e158] <+3536>: fmov   d17, x9
+operator-timeouts-debug[0x10013e15c] <+3540>: fmov   d0, d16
+operator-timeouts-debug[0x10013e160] <+3544>: fmov   d1, d17
+operator-timeouts-debug[0x10013e164] <+3548>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e168] <+3552>: fmov   d19, d0
+operator-timeouts-debug[0x10013e16c] <+3556>: fmov   d0, d18
+operator-timeouts-debug[0x10013e170] <+3560>: fmov   d1, d19
+operator-timeouts-debug[0x10013e174] <+3564>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e178] <+3568>: cset   w9, ls
+operator-timeouts-debug[0x10013e17c] <+3572>: fmov   d16, x9
+operator-timeouts-debug[0x10013e180] <+3576>: fmov   x9, d16
+operator-timeouts-debug[0x10013e184] <+3580>: str    x9, [sp, #0x190]
+operator-timeouts-debug[0x10013e188] <+3584>: b      0x10013e18c               ; <+3588> at copying.ts:90:9
+operator-timeouts-debug[0x10013e18c] <+3588>: ldr    x9, [sp, #0x190]
+operator-timeouts-debug[0x10013e190] <+3592>: fmov   d16, x9
+operator-timeouts-debug[0x10013e194] <+3596>: fmov   x9, d16
+operator-timeouts-debug[0x10013e198] <+3600>: str    x9, [sp, #0x198]
+operator-timeouts-debug[0x10013e19c] <+3604>: b      0x10013e0c4               ; <+3388> at copying.ts:90:9
+operator-timeouts-debug[0x10013e1a0] <+3608>: ldr    x9, [sp, #0x1c0]
+operator-timeouts-debug[0x10013e1a4] <+3612>: fmov   d16, x9
+operator-timeouts-debug[0x10013e1a8] <+3616>: fmov   x9, d16
+operator-timeouts-debug[0x10013e1ac] <+3620>: str    x9, [sp, #0x108]
+operator-timeouts-debug[0x10013e1b0] <+3624>: b      0x10013d970               ; <+1512>
+operator-timeouts-debug[0x10013e1b4] <+3628>: ldr    x9, [sp, #0x1b0]
+operator-timeouts-debug[0x10013e1b8] <+3632>: fmov   d16, x9
+operator-timeouts-debug[0x10013e1bc] <+3636>: ldr    x9, [sp, #0x1a0]
+operator-timeouts-debug[0x10013e1c0] <+3640>: fmov   d17, x9
+operator-timeouts-debug[0x10013e1c4] <+3644>: fmov   d0, d16
+operator-timeouts-debug[0x10013e1c8] <+3648>: fmov   d1, d17
+operator-timeouts-debug[0x10013e1cc] <+3652>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e1d0] <+3656>: cset   w9, ge
+operator-timeouts-debug[0x10013e1d4] <+3660>: fmov   d18, x9
+operator-timeouts-debug[0x10013e1d8] <+3664>: fmov   x9, d18
+operator-timeouts-debug[0x10013e1dc] <+3668>: str    x9, [sp, #0x1b8]
+operator-timeouts-debug[0x10013e1e0] <+3672>: fmov   x9, d18
+operator-timeouts-debug[0x10013e1e4] <+3676>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013e1e8] <+3680>: cset   w9, ne
+operator-timeouts-debug[0x10013e1ec] <+3684>: fmov   d16, x9
+operator-timeouts-debug[0x10013e1f0] <+3688>: fmov   x9, d16
+operator-timeouts-debug[0x10013e1f4] <+3692>: cbz    x9, 0x10013e1fc           ; <+3700> at copying.ts:91:9
+operator-timeouts-debug[0x10013e1f8] <+3696>: b      0x10013e200               ; <+3704> at copying.ts:91:9
+operator-timeouts-debug[0x10013e1fc] <+3700>: b      0x10013e268               ; <+3808> at copying.ts:91:9
+operator-timeouts-debug[0x10013e200] <+3704>: ldr    x9, [sp, #0x1b0]
+operator-timeouts-debug[0x10013e204] <+3708>: fmov   d16, x9
+operator-timeouts-debug[0x10013e208] <+3712>: ldr    x9, [sp, #0x1a0]
+operator-timeouts-debug[0x10013e20c] <+3716>: fmov   d17, x9
+operator-timeouts-debug[0x10013e210] <+3720>: fmov   d0, d16
+operator-timeouts-debug[0x10013e214] <+3724>: fmov   d1, d17
+operator-timeouts-debug[0x10013e218] <+3728>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e21c] <+3732>: fmov   d18, d0
+operator-timeouts-debug[0x10013e220] <+3736>: ldr    x9, [sp, #0x1a8]
+operator-timeouts-debug[0x10013e224] <+3740>: fmov   d16, x9
+operator-timeouts-debug[0x10013e228] <+3744>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013e22c] <+3748>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013e230] <+3752>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013e234] <+3756>: fmov   d17, x9
+operator-timeouts-debug[0x10013e238] <+3760>: fmov   d0, d16
+operator-timeouts-debug[0x10013e23c] <+3764>: fmov   d1, d17
+operator-timeouts-debug[0x10013e240] <+3768>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e244] <+3772>: fmov   d19, d0
+operator-timeouts-debug[0x10013e248] <+3776>: fmov   d0, d18
+operator-timeouts-debug[0x10013e24c] <+3780>: fmov   d1, d19
+operator-timeouts-debug[0x10013e250] <+3784>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e254] <+3788>: cset   w9, ls
+operator-timeouts-debug[0x10013e258] <+3792>: fmov   d16, x9
+operator-timeouts-debug[0x10013e25c] <+3796>: fmov   x9, d16
+operator-timeouts-debug[0x10013e260] <+3800>: str    x9, [sp, #0x1b8]
+operator-timeouts-debug[0x10013e264] <+3804>: b      0x10013e268               ; <+3808> at copying.ts:91:9
+operator-timeouts-debug[0x10013e268] <+3808>: ldr    x9, [sp, #0x1b8]
+operator-timeouts-debug[0x10013e26c] <+3812>: fmov   d16, x9
+operator-timeouts-debug[0x10013e270] <+3816>: fmov   x9, d16
+operator-timeouts-debug[0x10013e274] <+3820>: str    x9, [sp, #0x1c0]
+operator-timeouts-debug[0x10013e278] <+3824>: b      0x10013e1a0               ; <+3608> at copying.ts:91:9
+operator-timeouts-debug[0x10013e27c] <+3828>: ldr    x9, [sp, #0x1e8]
+operator-timeouts-debug[0x10013e280] <+3832>: fmov   d16, x9
+operator-timeouts-debug[0x10013e284] <+3836>: fmov   x9, d16
+operator-timeouts-debug[0x10013e288] <+3840>: str    x9, [sp, #0x118]
+operator-timeouts-debug[0x10013e28c] <+3844>: b      0x10013dae8               ; <+1888>
+operator-timeouts-debug[0x10013e290] <+3848>: ldr    x9, [sp, #0x1d8]
+operator-timeouts-debug[0x10013e294] <+3852>: fmov   d16, x9
+operator-timeouts-debug[0x10013e298] <+3856>: ldr    x9, [sp, #0x1c8]
+operator-timeouts-debug[0x10013e29c] <+3860>: fmov   d17, x9
+operator-timeouts-debug[0x10013e2a0] <+3864>: fmov   d0, d16
+operator-timeouts-debug[0x10013e2a4] <+3868>: fmov   d1, d17
+operator-timeouts-debug[0x10013e2a8] <+3872>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e2ac] <+3876>: cset   w9, ge
+operator-timeouts-debug[0x10013e2b0] <+3880>: fmov   d18, x9
+operator-timeouts-debug[0x10013e2b4] <+3884>: fmov   x9, d18
+operator-timeouts-debug[0x10013e2b8] <+3888>: str    x9, [sp, #0x1e0]
+operator-timeouts-debug[0x10013e2bc] <+3892>: fmov   x9, d18
+operator-timeouts-debug[0x10013e2c0] <+3896>: cmp    x9, #0x0
+operator-timeouts-debug[0x10013e2c4] <+3900>: cset   w9, ne
+operator-timeouts-debug[0x10013e2c8] <+3904>: fmov   d16, x9
+operator-timeouts-debug[0x10013e2cc] <+3908>: fmov   x9, d16
+operator-timeouts-debug[0x10013e2d0] <+3912>: cbz    x9, 0x10013e2d8           ; <+3920> at copying.ts:92:9
+operator-timeouts-debug[0x10013e2d4] <+3916>: b      0x10013e2dc               ; <+3924> at copying.ts:92:9
+operator-timeouts-debug[0x10013e2d8] <+3920>: b      0x10013e344               ; <+4028> at copying.ts:92:9
+operator-timeouts-debug[0x10013e2dc] <+3924>: ldr    x9, [sp, #0x1d8]
+operator-timeouts-debug[0x10013e2e0] <+3928>: fmov   d16, x9
+operator-timeouts-debug[0x10013e2e4] <+3932>: ldr    x9, [sp, #0x1c8]
+operator-timeouts-debug[0x10013e2e8] <+3936>: fmov   d17, x9
+operator-timeouts-debug[0x10013e2ec] <+3940>: fmov   d0, d16
+operator-timeouts-debug[0x10013e2f0] <+3944>: fmov   d1, d17
+operator-timeouts-debug[0x10013e2f4] <+3948>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e2f8] <+3952>: fmov   d18, d0
+operator-timeouts-debug[0x10013e2fc] <+3956>: ldr    x9, [sp, #0x1d0]
+operator-timeouts-debug[0x10013e300] <+3960>: fmov   d16, x9
+operator-timeouts-debug[0x10013e304] <+3964>: mov    x9, #0x0                  ; =0 
+operator-timeouts-debug[0x10013e308] <+3968>: movk   x9, #0x0, lsl #32
+operator-timeouts-debug[0x10013e30c] <+3972>: movk   x9, #0x4020, lsl #48
+operator-timeouts-debug[0x10013e310] <+3976>: fmov   d17, x9
+operator-timeouts-debug[0x10013e314] <+3980>: fmov   d0, d16
+operator-timeouts-debug[0x10013e318] <+3984>: fmov   d1, d17
+operator-timeouts-debug[0x10013e31c] <+3988>: fsub   d0, d0, d1
+operator-timeouts-debug[0x10013e320] <+3992>: fmov   d19, d0
+operator-timeouts-debug[0x10013e324] <+3996>: fmov   d0, d18
+operator-timeouts-debug[0x10013e328] <+4000>: fmov   d1, d19
+operator-timeouts-debug[0x10013e32c] <+4004>: fcmp   d0, d1
+operator-timeouts-debug[0x10013e330] <+4008>: cset   w9, ls
+operator-timeouts-debug[0x10013e334] <+4012>: fmov   d16, x9
+operator-timeouts-debug[0x10013e338] <+4016>: fmov   x9, d16
+operator-timeouts-debug[0x10013e33c] <+4020>: str    x9, [sp, #0x1e0]
+operator-timeouts-debug[0x10013e340] <+4024>: b      0x10013e344               ; <+4028> at copying.ts:92:9
+operator-timeouts-debug[0x10013e344] <+4028>: ldr    x9, [sp, #0x1e0]
+operator-timeouts-debug[0x10013e348] <+4032>: fmov   d16, x9
+operator-timeouts-debug[0x10013e34c] <+4036>: fmov   x9, d16
+operator-timeouts-debug[0x10013e350] <+4040>: str    x9, [sp, #0x1e8]
+operator-timeouts-debug[0x10013e354] <+4044>: b      0x10013e27c               ; <+3828> at copying.ts:92:9
+operator-timeouts-debug[0x10013e358] <+4048>: cmp    w0, #0x2
+operator-timeouts-debug[0x10013e35c] <+4052>: b.eq   0x10013e364               ; <+4060> at copying.ts:92:9
+operator-timeouts-debug[0x10013e360] <+4056>: brk    #0
+operator-timeouts-debug[0x10013e364] <+4060>: ldr    x10, [sp, #0x28]
+operator-timeouts-debug[0x10013e368] <+4064>: ldr    x9, [sp, #0x10]
+operator-timeouts-debug[0x10013e36c] <+4068>: ldr    x11, [sp, #0x18]
+operator-timeouts-debug[0x10013e370] <+4072>: str    x9, [x10, #0x10]
+operator-timeouts-debug[0x10013e374] <+4076>: str    x11, [x10, #0x18]
+operator-timeouts-debug[0x10013e378] <+4080>: str    w0, [x10]
+operator-timeouts-debug[0x10013e37c] <+4084>: ldr    x10, [sp, #0x20]
+operator-timeouts-debug[0x10013e380] <+4088>: ldr    x9, [sp, #0x30]
+operator-timeouts-debug[0x10013e384] <+4092>: str    x9, [x10]
+operator-timeouts-debug[0x10013e388] <+4096>: add    sp, sp, #0x250
+operator-timeouts-debug[0x10013e38c] <+4100>: ldp    x29, x30, [sp], #0x10
+operator-timeouts-debug[0x10013e390] <+4104>: ret    

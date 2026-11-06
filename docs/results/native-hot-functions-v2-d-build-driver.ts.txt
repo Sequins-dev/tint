@@ -1,0 +1,30 @@
+import {cpSync,mkdirSync,symlinkSync,readFileSync,writeFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {startNativeHeartbeat} from '../../tools/test262-native-heartbeat.ts';
+const original='/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/node-toolchain-d-catch-symbolized-v1';
+const directory=resolve('.tint-bootstrap/perf/d-symbolized-v2');mkdirSync(directory);
+cpSync(original+'/tools',directory+'/tools',{recursive:true});cpSync(original+'/package.json',directory+'/package.json');symlinkSync(original+'/node_modules',directory+'/node_modules');
+const tool=directory+'/tools/test262-native.ts',prior=readFileSync(tool,'utf8');
+const patched=prior.replace('debugSymbols: true,','debugSymbols: true,\n      debugDirectory: '+JSON.stringify(original)+',');if(prior===patched)throw Error('debug field missing');writeFileSync(tool,patched);
+const heartbeat=startNativeHeartbeat('D catch symbolized native profile image');
+try{
+ const {readWorkspaceSourceSnapshot,workspaceSourceIdentity}=await import(directory+'/tools/workspace-sources.ts');
+ const snapshot=readWorkspaceSourceSnapshot(original+'/source-snapshot.json');
+ const {prepareNativeScriptProgram,createNativeBatchBuilder}=await import(tool);
+ const {executionPlan}=await import(directory+'/tools/test262-execution.ts');const {testMetadata}=await import(directory+'/tools/test262.ts');
+ const report=JSON.parse(readFileSync('/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/docs/results/test262-d-catch-single-phase2-v1.json','utf8'));
+ const root='/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262';
+ const selected=report.observations.map(({path,variant})=>({path,variant}));const inputs=[];
+ const cases=selected.map(({path,variant})=>{
+ const filename=join(root,'test',path),bytes=readFileSync(filename),source=bytes.toString(),metadata=testMetadata(source),plan=executionPlan(source,variant,metadata);
+ const harness=plan.harness.map(name=>({filename:join(root,'harness',name),source:readFileSync(join(root,'harness',name),'utf8')}));
+ const prepared=prepareNativeScriptProgram(plan,variant,harness,filename,undefined,true,true);if(!prepared.ok)throw Error(JSON.stringify(prepared));
+ inputs.push({path,variant,sha256:createHash('sha256').update(bytes).digest('hex')});
+ return{scripts:prepared.scripts,asynchronous:plan.asynchronous,canSuspend:plan.canSuspend,...(prepared.root?{modules:prepared.root.entries,scriptRoot:{absent:prepared.root.absent}}:{})};});
+ heartbeat.phase('compiling exact unchanged D catch selection with debug directory');
+ const started=performance.now(),cpu=process.cpuUsage(),built=createNativeBatchBuilder(snapshot,true)(cases);
+ if(!built.ok)throw Error(JSON.stringify(built));const binary=directory+'/image';writeFileSync(binary,built.bytes,{mode:0o755,flag:'wx'});
+ writeFileSync(directory+'/manifest.json',JSON.stringify({kind:'symbolized-native-profile-build',sourceSnapshot:workspaceSourceIdentity(snapshot),originalToolchain:original,inputs,imageSha256:createHash('sha256').update(built.bytes).digest('hex'),bytes:built.bytes.length,wallMs:performance.now()-started,cpu:process.cpuUsage(cpu),instrumentation:'Add debugDirectory to the pre-existing debugSymbols option. Sources, harnesses, language goals and execution resource limits unchanged.',priorToolSha:createHash('sha256').update(prior).digest('hex'),instrumentedToolSha:createHash('sha256').update(patched).digest('hex')},null,2)+'\n');
+ console.error('built '+binary);
+}finally{heartbeat.close();}
