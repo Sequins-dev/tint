@@ -1,0 +1,45 @@
+{
+  "kind": "c2-native-compilation-cost-comparison",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "baseline": "docs/results/c2-batch-cost-baseline-v1.json",
+  "fixed": "docs/results/c2-batch-cost-fixed-v1.json",
+  "scope": "Identical unchanged sources and variants. Both toolchains use Node v24.12.0 and the same native budgets; fixed includes the flow-fact fix plus worker heartbeat tooling.",
+  "method": "One observation per configuration, in order 8 then 64 then largest alone. CPU time is process.cpuUsage across build(items), including V8 helper threads and, on the fixed runner, heartbeat worker CPU. Preparation is outside the interval. Host contention varied; these are matched observations, not a statistical performance benchmark.",
+  "instrumentation": "First fixed build includes a 1.5-second inspector CPU profile after STALL. Other fixed builds retain the same enabled inspector but have no attached inspector. Baseline builds had no inspector.",
+  "results": [
+    {
+      "name": "eight",
+      "variants": 8,
+      "sourceIdentitiesMatch": true,
+      "baselineWallMs": 380097.638958,
+      "fixedWallMs": 193771.811958,
+      "baselineCpuMs": 319154.317,
+      "fixedCpuMs": 232153.967,
+      "cpuReductionFraction": 0.2725965007078378,
+      "wallReductionFraction": 0.4902051681004749
+    },
+    {
+      "name": "sixty-four",
+      "variants": 64,
+      "sourceIdentitiesMatch": true,
+      "baselineWallMs": 378989.939084,
+      "fixedWallMs": 172309.65662500003,
+      "baselineCpuMs": 308760.148,
+      "fixedCpuMs": 196694.014,
+      "cpuReductionFraction": 0.3629553060066547,
+      "wallReductionFraction": 0.5453450372812958
+    },
+    {
+      "name": "largest-alone",
+      "variants": 1,
+      "sourceIdentitiesMatch": true,
+      "baselineWallMs": 318823.0163329999,
+      "fixedWallMs": 177305.45383300004,
+      "baselineCpuMs": 301319.286,
+      "fixedCpuMs": 201507.566,
+      "cpuReductionFraction": 0.33124902599165196,
+      "wallReductionFraction": 0.4438749878465159
+    }
+  ]
+}

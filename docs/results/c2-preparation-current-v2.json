@@ -1,0 +1,88 @@
+{
+  "kind": "c2-preparation-inventory",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "toolchain": "docs/results/c2-frozen-toolchain-v2.json",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "groups": [
+    {
+      "selection": "language/statements/class/elements",
+      "variants": 3156,
+      "prepared": 2432,
+      "syntaxOnly": 722,
+      "blockers": [
+        {
+          "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+          "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+          "variant": "sloppy",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "test: {\"start\":616,\"end\":742,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+          }
+        },
+        {
+          "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+          "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+          "variant": "strict",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "test: {\"start\":630,\"end\":756,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+          }
+        }
+      ],
+      "exceptions": []
+    },
+    {
+      "selection": "language/statements/class/dstr",
+      "variants": 3840,
+      "prepared": 3552,
+      "syntaxOnly": 288,
+      "blockers": [],
+      "exceptions": []
+    },
+    {
+      "selection": "language/expressions/class/elements",
+      "variants": 2943,
+      "prepared": 2234,
+      "syntaxOnly": 706,
+      "blockers": [
+        {
+          "path": "language/expressions/class/elements/class-name-static-initializer-default-export.js",
+          "sha256": "0d9afacaaa9ce2d1735527c944a1e02d15a3e70f754c2c928efc55e892502746",
+          "variant": "module",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        },
+        {
+          "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+          "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+          "variant": "sloppy",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "test: {\"start\":623,\"end\":747,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+          }
+        },
+        {
+          "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+          "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+          "variant": "strict",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "test: {\"start\":637,\"end\":761,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+          }
+        }
+      ],
+      "exceptions": []
+    },
+    {
+      "selection": "language/expressions/class/dstr",
+      "variants": 3840,
+      "prepared": 3552,
+      "syntaxOnly": 288,
+      "blockers": [],
+      "exceptions": []
+    }
+  ]
+}

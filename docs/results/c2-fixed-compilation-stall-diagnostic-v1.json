@@ -1,0 +1,166 @@
+{
+  "kind": "native-compilation-stall-diagnostic",
+  "conformance": false,
+  "toolchain": "docs/results/c2-frozen-toolchain-v6.json",
+  "phase": "compiling eight (8 variants)",
+  "stallElapsedMs": 164502,
+  "runnerPid": 85550,
+  "inferiors": [],
+  "osSample": ".tint-bootstrap/c2/fixed-batch-sample-v1.txt",
+  "profileSha256": "3764b2fa8367441f639de39a52a10ee7c1b030b3b0e8e6eedde9e4e6ed57f4d7",
+  "profileSamples": 931,
+  "topFrames": [
+    {
+      "function": "emitModule",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 72,
+      "samples": 202
+    },
+    {
+      "function": "compileArm64Program",
+      "file": "packages/compiler/dist/native/index.js",
+      "line": 21,
+      "samples": 176
+    },
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "line": 0,
+      "samples": 130
+    },
+    {
+      "function": "analyzeSlots",
+      "file": "packages/ir/dist/scalar/liveness.js",
+      "line": 2,
+      "samples": 78
+    },
+    {
+      "function": "encode",
+      "file": "packages/codegen/dist/aarch64/isa.js",
+      "line": 91,
+      "samples": 69
+    },
+    {
+      "function": "emit",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 109,
+      "samples": 63
+    },
+    {
+      "function": "value",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 775,
+      "samples": 23
+    },
+    {
+      "function": "temporaryRegisters",
+      "file": "packages/codegen/dist/aarch64/scalar/temporary-registers.js",
+      "line": 19,
+      "samples": 16
+    },
+    {
+      "function": "provenRecordGuards",
+      "file": "packages/ir/dist/scalar/record-facts.js",
+      "line": 240,
+      "samples": 16
+    },
+    {
+      "function": "instructionResult",
+      "file": "packages/ir/dist/scalar/operands.js",
+      "line": 207,
+      "samples": 15
+    },
+    {
+      "function": "analyzeRecordAccesses",
+      "file": "packages/ir/dist/scalar/record-facts.js",
+      "line": 55,
+      "samples": 15
+    },
+    {
+      "function": "calleeSavedSlots",
+      "file": "packages/codegen/dist/aarch64/scalar/callee-registers.js",
+      "line": 5,
+      "samples": 10
+    },
+    {
+      "function": "rawStore",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 279,
+      "samples": 9
+    },
+    {
+      "function": "planTemporarySlots",
+      "file": "packages/ir/dist/scalar/temporary-slots.js",
+      "line": 6,
+      "samples": 9
+    },
+    {
+      "function": "address",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 215,
+      "samples": 9
+    },
+    {
+      "function": "branch",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 302,
+      "samples": 8
+    },
+    {
+      "function": "intern",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 185,
+      "samples": 7
+    },
+    {
+      "function": "grow",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 164,
+      "samples": 6
+    },
+    {
+      "function": "valueLifetimes",
+      "file": "packages/ir/dist/scalar/value-lifetimes.js",
+      "line": 4,
+      "samples": 5
+    },
+    {
+      "function": "register",
+      "file": "packages/codegen/dist/aarch64/isa.js",
+      "line": 11,
+      "samples": 5
+    },
+    {
+      "function": "rawValue",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 1380,
+      "samples": 5
+    },
+    {
+      "function": "wordOnlyValues",
+      "file": "packages/ir/dist/scalar/word-uses.js",
+      "line": 16,
+      "samples": 5
+    },
+    {
+      "function": "",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 747,
+      "samples": 4
+    },
+    {
+      "function": "saveRaw",
+      "file": "packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 1383,
+      "samples": 4
+    },
+    {
+      "function": "proves",
+      "file": "packages/ir/dist/scalar/record-facts.js",
+      "line": 160,
+      "samples": 3
+    }
+  ],
+  "observation": "Compiler is actively emitting native code and computing liveness. This post-fix profile is past the checker. Keep running; do not broaden the fix to emission/GC.",
+  "timingInstrumentation": "The first fixed batch includes a short OS sample and a 1.5-second inspector CPU profile after its STALL notification; no native inferior existed."
+}

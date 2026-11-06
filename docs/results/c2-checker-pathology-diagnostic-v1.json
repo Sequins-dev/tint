@@ -1,0 +1,348 @@
+{
+  "kind": "checker-pathology-diagnostic",
+  "conformance": false,
+  "profileSamples": 537,
+  "profileSha256": "2390f97cb250d33c5413c1891eb3ebe67882b3c18b23f40fbc9ae501da93fc3d",
+  "topFrames": [
+    {
+      "function": "stableFacts",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 656,
+      "samples": 237
+    },
+    {
+      "function": "forgetNarrowed",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 484,
+      "samples": 233
+    },
+    {
+      "function": "position",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 16,
+      "samples": 20
+    },
+    {
+      "function": "get",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 61,
+      "samples": 7
+    },
+    {
+      "function": "statement",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 3616,
+      "samples": 6
+    },
+    {
+      "function": "cell",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 803,
+      "samples": 6
+    },
+    {
+      "function": "prepareCollectionPass",
+      "file": "packages/ts-native/dist/runtime/index.js",
+      "line": 37,
+      "samples": 5
+    },
+    {
+      "function": "set",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 69,
+      "samples": 4
+    },
+    {
+      "function": "expression",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 1811,
+      "samples": 3
+    },
+    {
+      "function": "chainReceiver",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 1823,
+      "samples": 2
+    },
+    {
+      "function": "typeOf",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 551,
+      "samples": 2
+    },
+    {
+      "function": "isUndefined",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 916,
+      "samples": 2
+    },
+    {
+      "function": "condition",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 1717,
+      "samples": 1
+    },
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "line": 0,
+      "samples": 1
+    },
+    {
+      "function": "pure",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 887,
+      "samples": 1
+    },
+    {
+      "function": "relates",
+      "file": "packages/typescript/dist/types/index.js",
+      "line": 156,
+      "samples": 1
+    },
+    {
+      "function": "recordTypeFlow",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 446,
+      "samples": 1
+    },
+    {
+      "function": "has",
+      "file": "packages/foundation/dist/collections/key-index.js",
+      "line": 65,
+      "samples": 1
+    },
+    {
+      "function": "(program)",
+      "file": "",
+      "line": 0,
+      "samples": 1
+    },
+    {
+      "function": "ungroup",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 882,
+      "samples": 1
+    },
+    {
+      "function": "sequence",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 3591,
+      "samples": 1
+    },
+    {
+      "function": "",
+      "file": "packages/typescript/dist/checker/closures.js",
+      "line": 2195,
+      "samples": 1
+    }
+  ],
+  "pausedCompilerFrames": [
+    {
+      "function": "forgetNarrowed",
+      "location": {
+        "scriptId": "277",
+        "lineNumber": 484,
+        "columnNumber": 8
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":14439,\"bindings\":87784,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "cell",
+      "location": {
+        "scriptId": "277",
+        "lineNumber": 830,
+        "columnNumber": 12
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":14439,\"bindings\":87784,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "statement",
+      "location": {
+        "scriptId": "277",
+        "lineNumber": 3670,
+        "columnNumber": 20
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":14439,\"bindings\":87784,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "checkClosureModule",
+      "location": {
+        "scriptId": "277",
+        "lineNumber": 3956,
+        "columnNumber": 12
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":14439,\"bindings\":87784}"
+        }
+      }
+    },
+    {
+      "function": "prepareCollectionPass",
+      "location": {
+        "scriptId": "313",
+        "lineNumber": 190,
+        "columnNumber": 23
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null}"
+        }
+      }
+    },
+    {
+      "function": "prepareCollectionRuntimes",
+      "location": {
+        "scriptId": "313",
+        "lineNumber": 14,
+        "columnNumber": 23
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null}"
+        }
+      }
+    },
+    {
+      "function": "compileArm64Program",
+      "location": {
+        "scriptId": "266",
+        "lineNumber": 300,
+        "columnNumber": 21
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "buildMacOSProgram",
+      "location": {
+        "scriptId": "219",
+        "lineNumber": 160,
+        "columnNumber": 20
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "",
+      "location": {
+        "scriptId": "204",
+        "lineNumber": 1988,
+        "columnNumber": 18
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "",
+      "location": {
+        "scriptId": "204",
+        "lineNumber": 1866,
+        "columnNumber": 4
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "flush",
+      "location": {
+        "scriptId": "86",
+        "lineNumber": 175,
+        "columnNumber": 10
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    },
+    {
+      "function": "",
+      "location": {
+        "scriptId": "86",
+        "lineNumber": 386,
+        "columnNumber": 0
+      },
+      "values": {
+        "result": {
+          "type": "string",
+          "value": "{\"present\":null,\"bindings\":null,\"module\":null}"
+        }
+      }
+    }
+  ],
+  "diagnosticInstrumentation": "OS sample at 60 seconds and 130 seconds; a 1.5-second Node inspector CPU profile; brief inspector pause to read flow-fact and binding counts. Native execution was not interrupted.",
+  "originalCanary": {
+    "report": "docs/results/test262-c2-dstr-canary-native-v2.json",
+    "compileWallMs": 779706.0824579999,
+    "approximateProcessCpuMs": 371240,
+    "cpuScope": "Node process CPU observed near compilation completion; includes preparation and inspector instrumentation, not an exact isolated compilation timer."
+  },
+  "rootCause": "Every statement eagerly filters all existing flow facts, and every initialized binding scans all existing facts to remove only its own narrowing tokens. Independent declarations therefore perform quadratic work. Index narrowing tokens by binding and snapshot only consuming control-flow cases.",
+  "scalingReport": "docs/results/c2-checker-flow-scaling-v1.json",
+  "validationFailuresPreserved": [
+    {
+      "phase": "initial workspace gate",
+      "exitStatus": 1,
+      "passed": 4477,
+      "failed": 1,
+      "reason": "Worktree lacked .tint-bootstrap/test262; repair is a symlink to the shared pinned checkout. Focused module graph recheck 10/10; later full gates pass.",
+      "log": ".tint-bootstrap/c2/check-v2.log"
+    },
+    {
+      "phase": "first native bootstrap build",
+      "exitStatus": 1,
+      "nativeExecutionStarted": false,
+      "log": "[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild/slot-1 after 0s\n[0.0s] sources\n[0.1s] parse\n[1.7s] allocator\n[2.0s] runtime\n[3.8s] program\nfile:///Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v3/tools/bootstrap-compiler.ts:89\nif (!built.ok) throw Error(JSON.stringify(built.error));\n                     ^\n\nError: {\"stage\":\"check\",\"message\":\"packages/typescript/src/checker/closures.ts:23239:23244: value does not match its declared type\"}\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v3/tools/bootstrap-compiler.ts:89:22\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.12.0\n",
+      "resolution": "Explicit undefined element guard for typed array iteration in narrowing token invalidation."
+    },
+    {
+      "phase": "first selfbuild harness startup",
+      "nativeExecutionStarted": false,
+      "log": "[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild/slot-1 after 0s\nnode:internal/modules/esm/resolve:274\n    throw new ERR_MODULE_NOT_FOUND(\n          ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/stephenbelanger/.t3/worktrees/tint//tools/native-debugger-session.ts' imported from /Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/selfbuild.mjs\n    at finalizeResolution (node:internal/modules/esm/resolve:274:11)\n    at moduleResolve (node:internal/modules/esm/resolve:864:10)\n    at defaultResolve (node:internal/modules/esm/resolve:990:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:718:20)\n    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:735:38)\n    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:764:52)\n    at #resolve (node:internal/modules/esm/loader:700:17)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:620:35)\n    at ModuleJob.syncLink (node:internal/modules/esm/module_job:143:33)\n    at ModuleJob.link (node:internal/modules/esm/module_job:228:17) {\n  code: 'ERR_MODULE_NOT_FOUND',\n  url: 'file:///Users/stephenbelanger/.t3/worktrees/tint//tools/native-debugger-session.ts'\n}\n\nNode.js v24.12.0\n",
+      "resolution": "Corrected the relative import in the local harness from three parent directories to two."
+    },
+    {
+      "phase": "cost test typecheck",
+      "exitStatus": 2,
+      "reason": "Generator instrumentation returned void instead of undefined; added explicit return undefined.",
+      "log": ".tint-bootstrap/c2/check-v4.log"
+    }
+  ]
+}

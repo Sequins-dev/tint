@@ -1,0 +1,71 @@
+{
+  "kind": "checker-flow-cost",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "results": [
+    {
+      "version": "baseline",
+      "declarations": 250,
+      "visits": 62258,
+      "elapsedMs": 26.080792000000002,
+      "cpuMs": 42.904,
+      "ok": true
+    },
+    {
+      "version": "baseline",
+      "declarations": 500,
+      "visits": 249508,
+      "elapsedMs": 62.351416999999984,
+      "cpuMs": 79.549,
+      "ok": true
+    },
+    {
+      "version": "baseline",
+      "declarations": 1000,
+      "visits": 999008,
+      "elapsedMs": 292.38924999999995,
+      "cpuMs": 236.912,
+      "ok": true
+    },
+    {
+      "version": "baseline",
+      "declarations": 2000,
+      "visits": 3998008,
+      "elapsedMs": 1134.7986250000001,
+      "cpuMs": 906.585,
+      "ok": true
+    },
+    {
+      "version": "fixed",
+      "declarations": 250,
+      "visits": 8,
+      "elapsedMs": 14.36458400000015,
+      "cpuMs": 23.685,
+      "ok": true
+    },
+    {
+      "version": "fixed",
+      "declarations": 500,
+      "visits": 8,
+      "elapsedMs": 11.453457999999955,
+      "cpuMs": 17.042,
+      "ok": true
+    },
+    {
+      "version": "fixed",
+      "declarations": 1000,
+      "visits": 8,
+      "elapsedMs": 9.05966699999999,
+      "cpuMs": 21.856,
+      "ok": true
+    },
+    {
+      "version": "fixed",
+      "declarations": 2000,
+      "visits": 8,
+      "elapsedMs": 9.648458000000119,
+      "cpuMs": 19.623,
+      "ok": true
+    }
+  ]
+}

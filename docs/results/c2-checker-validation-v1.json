@@ -1,0 +1,109 @@
+{
+  "kind": "c2-checker-validation",
+  "conformance": false,
+  "checkerCommit": "d0a480a5705699a67c4f8639144e332397f40b07",
+  "main": "ee8713721aa453a6b04e8d33343d8172a303e194",
+  "runs": [
+    {
+      "command": "pnpm install",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm build",
+      "exitStatus": 0
+    },
+    {
+      "command": "node --test packages/typescript/test/checker-flow-cost.test.ts (red, before implementation)",
+      "exitStatus": 1,
+      "tests": 3,
+      "passed": 2,
+      "failed": 1,
+      "failure": "249508 Set-entry visits for 500 independent declarations exceeded the linear bound."
+    },
+    {
+      "command": "initial focused checker tests after implementation",
+      "exitStatus": 1,
+      "failure": "An overly broad edit inserted stableFacts() in the collection prepass before present initialization. Removed that accidental insertion before continuing."
+    },
+    {
+      "command": "node --test --test-concurrency=2 packages/typescript/test/checker-flow-cost.test.ts packages/typescript/test/checker-closures.test.ts",
+      "exitStatus": 0,
+      "tests": 188,
+      "passed": 188,
+      "log": {
+        "path": ".tint-bootstrap/c2/checker-focused-v2.log",
+        "sha256": "800bb078643cac0038eb41be0dbad3c83be867ae2b85ebff6ebff0abb1c8b2d6"
+      }
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check (pre-heartbeat rebase)",
+      "exitStatus": 0,
+      "tests": 4481,
+      "passed": 4481,
+      "log": {
+        "path": ".tint-bootstrap/c2/check-v5.log",
+        "sha256": "09a8adabac1170148286483e9944fa02fabefe84fa1663cee45e097d412809ce"
+      }
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check (post-heartbeat rebase)",
+      "exitStatus": 0,
+      "tests": 4485,
+      "passed": 4485,
+      "log": {
+        "path": ".tint-bootstrap/c2/check-v6.log",
+        "sha256": "7a21460c049b44a57b7dcaef0b7c67a98d3900f37b839780562cbee65aadde0e"
+      }
+    },
+    {
+      "command": "TINT_BUILD_ONLY=1 hosted checker-flow fixture; executeNativeFile under LLDB",
+      "exitStatus": 0,
+      "cases": 9,
+      "report": "docs/results/c2-checker-flow-native-v1.json"
+    },
+    {
+      "command": "frozen Node bootstrap, debug stage 1",
+      "exitStatus": 0,
+      "buildToolchain": "docs/results/c2-frozen-toolchain-v4.json",
+      "log": {
+        "path": ".tint-bootstrap/c2/bootstrap-v2.log",
+        "sha256": "efb7e6e11868287327630d623a3979c2272942fc7de537774ac78442480455e4"
+      }
+    },
+    {
+      "command": "xcrun dwarfdump --verify .tint-bootstrap/c2/stage1-flow-v2",
+      "exitStatus": 0,
+      "log": {
+        "path": ".tint-bootstrap/c2/stage1-dwarf-v1.log",
+        "sha256": "19f28661ea2c71e146bf457a7d0d8347e481d606de7f46b719a769a4163850a5"
+      }
+    },
+    {
+      "command": "codesign --verify --strict .tint-bootstrap/c2/stage1-flow-v2",
+      "exitStatus": 0
+    },
+    {
+      "command": "matched baseline and fixed batch compilation measurements",
+      "exitStatus": 0,
+      "report": "docs/results/c2-batch-cost-comparison-v1.json"
+    },
+    {
+      "command": "native Test262 statement class/elements/private-methods, connected launch",
+      "exitStatus": 0,
+      "passed": 9,
+      "total": 10,
+      "crashes": 1,
+      "report": "docs/results/test262-c2-private-methods-native-v3.json"
+    },
+    {
+      "command": "native Test262 statement class/elements/private-methods, direct launch",
+      "exitStatus": 0,
+      "passed": 10,
+      "total": 10,
+      "crashes": 0,
+      "report": "docs/results/test262-c2-private-methods-direct-native-v4.json"
+    }
+  ],
+  "selfBuild": "Still in progress when this validation report was written. This report does not establish stage-image identity.",
+  "failedAttempts": "docs/results/c2-checker-pathology-diagnostic-v1.json"
+}
