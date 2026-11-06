@@ -1,0 +1,23 @@
+{
+  "kind": "c1-linked-hash-compiler-graph-comparison",
+  "conformance": false,
+  "compilerGraphEqual": false,
+  "beforeModules": 220,
+  "afterModules": 220,
+  "differingModules": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/codegen/src/aarch64/scalar/leaf-registers.ts"
+  ],
+  "baselineSelfBuild": "docs/results/operator-hash-selfbuild-native-v1.json",
+  "baselineAudit": "docs/results/operator-hash-native-validation-v1.json",
+  "frozenSource": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/hash-source-v1",
+  "stageImageBytes": 71402018,
+  "stageImageSha256": "b346f166c4cd88c95770278e9b569fa2204b264f958bca44471e763d32e25398",
+  "byteIdentical": true,
+  "initialStopped": true,
+  "exitStatus": 0,
+  "stage1SignatureExit": 0,
+  "stage1DwarfExit": 0,
+  "stage2AuditDerivedFromByteIdentity": true,
+  "scope": "Graph comparison against accepted merged linked-hash self-build. No new native run or performance investigation. Only exact graph agreement supports reusing compiler self-build identity."
+}

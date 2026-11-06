@@ -1,0 +1,19 @@
+{
+  "kind": "c1-shallow-selector-main-integration",
+  "conformance": false,
+  "base": "2c0e13c282daf530fa15fd7308c06839bc4b69c4",
+  "selectionImplementation": "Main selectedFiles implementation retained, including non-recursive standalone file selection, fixture exclusion and unsupported-pattern rejection.",
+  "c1Tests": "tools/test262-checkout-direct.test.ts",
+  "ledgerIntegration": "Shared test262SelectionIncludes export retained for ledger membership; filesystem selection is unchanged from main.",
+  "focused": {
+    "command": "node --test --test-concurrency=2 tools/test262-checkout.test.ts tools/test262-checkout-direct.test.ts tools/test262-coverage-ledger.test.ts tools/native-debugger-session.test.ts",
+    "exitStatus": 0,
+    "passed": 23,
+    "failed": 0,
+    "log": "docs/results/c1-main-shallow-integration-focused-v1.txt"
+  },
+  "priorWorkspaceGate": "docs/results/c1-ledger-direct-workspace-validation-v1.json",
+  "rebasedWorkspaceGate": "pending separate immutable report after capped check v10 completes",
+  "linkedHashCompilerComparison": "docs/results/c1-linked-hash-compiler-graph-v1.json",
+  "scope": "Main shallow-selection implementation supersedes C1 filesystem-selection implementation. Native reports retain original snapshots. Current main combines two independently self-built compiler changes; linked-hash baseline differs in the two register-copy modules, so exact combined stage-image identity is not claimed."
+}
