@@ -33,6 +33,33 @@ example `'intl402/*.js'`. This batches the namespace tests without selecting the
 Temporal child family. Complete per-file reports can be extracted from its journal
 with `test262-native-extract.ts`, retaining all source/harness hashes.
 
+For a focused recheck, set `TINT_TEST262_VARIANTS=/path/to/variants.json` to a
+nonempty JSON array. Paths remain relative to `test/` and must belong to the
+ordinary selection argument. For example:
+
+```json
+[
+  { "path": "language/statements/for-await-of/head-let-init.js", "variant": "strict" }
+]
+```
+
+Each entry requires `path` and `variant` (`sloppy`, `strict`, `raw` or `module`);
+an optional `sha256` must match the pinned source bytes. Missing or out-of-selection
+paths, fixture files, metadata-incompatible variants, duplicates, empty lists and
+hash mismatches fail before native preparation. Syntax-negative grouping and the
+selection's original within-lane order are preserved rather than manifest order.
+The existing batch size, isolated processes, heartbeat, negative-phase handling
+and resource limits apply to every requested variant, including non-passes.
+
+Use a fresh report and journal with the frozen toolchain as usual. The report's
+selection is labeled `[explicit variant subset]` and includes `rootSelection`,
+`requestedVariants` and `complete: true` only after every request is observed.
+The schema-2 journal retains the root selection and subset count; both artifacts
+record `variantSubsetSha256` over the normalized paths, variants and pinned source
+hashes. Resume requires the same subset identity. These are complete focused
+reports, not complete reports for the root family; original outcomes remain in
+their original reports.
+
 ```sh
 # Inventory only; no execution.
 node tools/test262-syntax.ts /path/to/test262 . > syntax.json

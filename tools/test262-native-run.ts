@@ -1,5 +1,6 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
-import { nativeSelectionOrder } from "./native-selection-order.ts";
+import { nativeVariantSelection } from "./native-variant-selection.ts";
+import { readFileSync } from "node:fs";
 import {
   frozenNativeRunIdentity,
   sameNativeObservationInput,
@@ -17,7 +18,6 @@ import { resolve } from "node:path";
 import { test262Checkout, test262Source, within } from "./test262-checkout.ts";
 import {
   testMetadata,
-  syntaxVariants,
   type TestMetadata,
   type SyntaxVariant,
 } from "./test262.ts";
@@ -72,17 +72,19 @@ if (process.platform !== "darwin" || process.arch !== "arm64")
 const heartbeat = startNativeHeartbeat(selection);
 try {
   const suite = test262Checkout(checkout, selection),
-    harnessRoot = resolve(suite.root, "harness");
-  const files = nativeSelectionOrder(
-    suite.files.map((file) => ({
-      ...file,
-      metadata: testMetadata(test262Source(file.filename).source),
-    })),
+    harnessRoot = resolve(suite.root, "harness"),
+    variantManifest = process.env.TINT_TEST262_VARIANTS;
+  const selected = nativeVariantSelection(
+    suite.files.map((file) => {
+      const { source, sha256 } = test262Source(file.filename);
+      return { ...file, sha256, metadata: testMetadata(source) };
+    }),
+    selection,
+    variantManifest === undefined
+      ? undefined
+      : JSON.parse(readFileSync(variantManifest, "utf8")),
   );
-  const totalVariants = files.reduce(
-    (total, file) => total + syntaxVariants(file.metadata).length,
-    0,
-  );
+  const { files, totalVariants, subset } = selected;
   const batchSize = Number(batchArgument);
   if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 64)
     throw new Error("batch size must be an integer between 1 and 64");
@@ -133,6 +135,7 @@ try {
       revision: suite.revision,
       dirty: suite.dirty,
       selection,
+      ...subset,
       batchSize,
       sourceSnapshot,
       sourceSnapshotFile,
@@ -268,10 +271,18 @@ try {
     }
     pending = [];
   }
-  for (const { filename, path, metadata } of files) {
+  for (const {
+    filename,
+    path,
+    metadata,
+    variants,
+    sha256: pinnedSha256,
+  } of files) {
     heartbeat.phase("preparing " + path);
     const { source, sha256 } = test262Source(filename);
-    for (const variant of syntaxVariants(metadata)) {
+    if (sha256 !== pinnedSha256)
+      throw Error("pinned native source changed during selection: " + path);
+    for (const variant of variants) {
       const started = performance.now(),
         plan = executionPlan(source, variant, metadata);
       const harness = plan.harness.map((name) => ({
@@ -435,6 +446,8 @@ try {
   if (priorIndex !== checkpoint.observations.length)
     throw Error("native resume prefix extends outside selection");
   flush();
+  if (observations.length !== totalVariants)
+    throw Error("native selection did not observe every requested variant");
   if (!checkpoint.complete)
     journal({
       kind: "complete",
@@ -460,7 +473,8 @@ try {
           debuggerEntitlement: nativeDebuggerEntitlement,
         },
         scope:
-          (selection === "."
+          (subset === undefined ? "" : "Explicit variant subset. ") +
+          (selection === "." && subset === undefined
             ? "Complete pinned suite. "
             : "Selected variants only; no whole-suite coverage claim. ") +
           "Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals." +
@@ -482,7 +496,10 @@ try {
                     ? " Module variants load sibling fixtures through a synchronous table loader; fixtures that bootstrap cannot parse are judged only by the native syntax verdict at load, and native acceptance stays unsupported; JSON, attributes, top-level await, import() and import.meta are unsupported."
                     : ""),
         variantPolicy:
-          "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+          (subset === undefined
+            ? "All syntaxVariants from tools/test262.ts; "
+            : "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; ") +
+          "raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
         sourceSnapshot,
         sourceSnapshotFile,
         frozenToolchainSha256,
@@ -500,7 +517,11 @@ try {
             "A failed batch compilation is retained for every affected variant; no automatic retry.",
         },
         dirty: suite.dirty,
-        selection,
+        selection:
+          subset === undefined
+            ? selection
+            : selection + " [explicit variant subset]",
+        ...(subset === undefined ? {} : { ...subset, complete: true }),
         totals: executionTotals(observations.map((item) => item.status)),
         observations,
       },
