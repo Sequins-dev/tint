@@ -321,6 +321,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Temporal.ZonedDateTime.from  | 176 / 182 (96.70%) | 6 pre-entry debugger failures        | [Report](results/test262-temporal-zoned-from-h-v1.json)                      |
 | Temporal.ZonedDateTime.compare | 100 / 100 (100.00%) | None                              | [Report](results/test262-temporal-zoned-compare-h-v1.json)                    |
 | Temporal.PlainTime.from | 85 / 102 (83.33%) | 17 initial-stop debugger failures; no semantic failures | [Report](results/test262-temporal-plain-time-from-h-v1.json) |
+| Temporal.PlainTime.add | 59 / 64 (92.19%) | 5 pre-entry debugger failures; no semantic failures | [Report](results/test262-temporal-plain-time-add-h-v1.json) |
 | Temporal.PlainTime.compare | 57 / 64 (89.06%) | 7 initial-stop debugger failures; no semantic failures | [Report](results/test262-temporal-plain-time-compare-h-v1.json) |
 | Temporal.ZonedDateTime.from  | 182 / 182 (100.00%) | None                                | [Report](results/test262-temporal-zoned-from-named-native-v1.json)           |
 | Temporal.ZonedDateTime.until |  194 / 198 (97.98%) | 4 pre-entry debugger failures       | [Report](results/test262-temporal-zoned-until-duration-native-v3.json)       |
