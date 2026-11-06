@@ -1,0 +1,20 @@
+{
+  "kind": "inherited-native-controller-retirement",
+  "at": "2026-11-06T15:12:32.659228+00:00",
+  "controllerPid": 13297,
+  "runnerPid": 73618,
+  "stateAtRetirement": "between-variants; ack pid verified; no runner children",
+  "action": "SIGTERM controller only; removed own private pause; runner finished normally without restarting or discarding its journal",
+  "completedJournal": ".tint-bootstrap/test262-reference-keys-assignment-target-member-computed-reference-undefined-v6.jsonl",
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "replacement": "Direct frozen runners, maximum two concurrent; no cross-cluster coordination machinery"
+}

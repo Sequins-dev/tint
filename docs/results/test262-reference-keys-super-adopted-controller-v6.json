@@ -1,0 +1,87 @@
+{
+  "kind": "native-selection-controller",
+  "selection": "language/expressions/super",
+  "adoptedRunner": 34499,
+  "result": {
+    "exitStatus": "unobservable (adopted runner; previous controller stopped while holding no lease, runner paused between batches)",
+    "journalComplete": true
+  },
+  "sourceSnapshot": {
+    "sha256": "0cdd910dd27c6efe0b43f01cd8c9989a297ecad24d2f541040fbaf89909aba2d",
+    "files": 568
+  },
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/node-toolchain-reference-keys-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/node-toolchain-reference-keys-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/node-toolchain-reference-keys-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/node-toolchain-reference-keys-v1/source-snapshot.json",
+    "sha256": "35a21e1c3c78daac03d6e2ca8feae08159ed0fb42fa2d1b2406744550b721a1b"
+  },
+  "runIdentity": "b465a65e2417121f441d8cb48ea006b3a28dfdad0b3e8e33504cd43cefbbdf6c",
+  "serialization": {
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "centralPause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause",
+    "grants": [
+      {
+        "label": "reference-keys-super",
+        "mode": "central-pause-ack",
+        "centralChild": 87092,
+        "paused": true,
+        "ack": {
+          "pid": 87092,
+          "state": "between-variants"
+        },
+        "acknowledgedAt": "2026-11-06T10:52:15.415Z",
+        "protocol": "v6-aggregate-cap-central-pause-ack",
+        "batches": [
+          {
+            "id": 1,
+            "variants": 64,
+            "kind": "execution",
+            "outcome": "compiled"
+          }
+        ],
+        "declinedNext": {
+          "id": 2,
+          "variants": 56,
+          "kind": "execution",
+          "outcome": "compiled",
+          "reason": "execution cap 64 would be exceeded (64+56)"
+        },
+        "used": {
+          "execution": 64,
+          "syntax": 0
+        },
+        "releasedAt": "2026-11-06T10:58:40.686Z"
+      },
+      {
+        "label": "reference-keys-super",
+        "mode": "central-pause-ack",
+        "centralChild": 87092,
+        "paused": true,
+        "ack": {
+          "pid": 87092,
+          "state": "between-variants"
+        },
+        "acknowledgedAt": "2026-11-06T12:18:49.587Z",
+        "protocol": "v6-aggregate-cap-central-pause-ack",
+        "batches": [
+          {
+            "id": 2,
+            "variants": 56,
+            "kind": "execution",
+            "outcome": "compiled"
+          }
+        ],
+        "used": {
+          "execution": 56,
+          "syntax": 0
+        },
+        "releasedAt": "2026-11-06T12:23:15.791Z"
+      }
+    ],
+    "grantRule": "Earlier grants are in the journal and earlier controller logs (v2 single batch, v3 syntax+next execution); these grants use v4 aggregate caps with the v5 language-core central owner"
+  },
+  "report": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/test262-reference-keys-super-v4.json",
+  "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/test262-reference-keys-super-v4.jsonl"
+}
