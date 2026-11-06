@@ -378,3 +378,47 @@ test("indexed string properties fold case and retain nonmember suffixes during l
   if (result.kind === "match")
     assert.deepEqual(result.match.captures[1], { start: 0, end: 5 });
 });
+
+test("greedy single-character repetitions preserve captures and Unicode backtracking", () => {
+  for (const [pattern, flags, input] of [
+    ["(a+)(a)", "", "aaaa"],
+    ["(a+(b)?)+c", "", "aaabaac"],
+    ["(?<=(a+)(a))b", "", "aaaab"],
+    ["a{0,0}b", "", "b"],
+    ["(?:a){2,4}a", "", "aaaaa"],
+    ["(?i:a)+Ab", "", "aAaAb"],
+    ["[😀-🙏]{1,4}😀", "u", "😀😀😀"],
+    ["(?<=(😀+)😀)x", "u", "😀😀😀x"],
+    [String.raw`[\p{Letter}--\p{ASCII}]+α`, "v", "ααα"],
+  ] as const) {
+    const compiled = compileRegExp(pattern, flags);
+    assert.ok(compiled.ok);
+    const actual = executeRegExp(compiled.value, input);
+    const expected = new RegExp(pattern, flags).exec(input);
+    assert.ok(expected);
+    assert.equal(actual.kind, "match", pattern);
+    if (actual.kind === "match") {
+      assert.equal(actual.match.start, expected.index, pattern);
+      assert.equal(
+        actual.match.end,
+        expected.index + expected[0].length,
+        pattern,
+      );
+      assert.deepEqual(
+        actual.match.captures.map((range) =>
+          range === undefined ? undefined : input.slice(range.start, range.end),
+        ),
+        [...expected],
+        pattern,
+      );
+    }
+  }
+});
+
+test("million-character linear repetitions complete with the default work allowance", () => {
+  const compiled = compileRegExp("^a+$", "");
+  assert.ok(compiled.ok);
+  const result = executeRegExp(compiled.value, "a".repeat(1100000));
+  assert.equal(result.kind, "match");
+  if (result.kind === "match") assert.equal(result.match.end, 1100000);
+});

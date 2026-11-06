@@ -1,5 +1,10 @@
 import { equalCharacter } from "./case-fold.ts";
-import type { RegExpProgram, MatchResult, CaptureRange } from "./model.ts";
+import type {
+  Instruction,
+  RegExpProgram,
+  MatchResult,
+  CaptureRange,
+} from "./model.ts";
 import {
   readCharacter,
   matchText,
@@ -16,6 +21,7 @@ interface Frame {
   readonly captures: number[];
   readonly counts: number[];
   readonly starts: number[];
+  readonly repeatMinimum: number | undefined;
 }
 interface RunResult {
   readonly kind: "match" | "no-match" | "limit";
@@ -26,6 +32,59 @@ function filled(length: number, value: number): number[] {
   const result: number[] = [];
   for (let i = 0; i < length; i++) result.push(value);
   return result;
+}
+function consumeUnit(
+  instruction: Instruction,
+  input: string,
+  position: number,
+  direction: number,
+  unicode: boolean,
+  unicodeSets: boolean,
+  budget: WorkBudget,
+): number {
+  if (instruction.kind === "set") {
+    const ends = setEnds(
+      instruction.body,
+      input,
+      position,
+      direction,
+      budget,
+      instruction.ignoreCase,
+    );
+    if (ends.length > 1) throw "REGEXP_SINGLE_CHARACTER_INVARIANT";
+    return ends[0] ?? -1;
+  }
+  const character = readCharacter(input, position, direction, unicode);
+  if (character === undefined) return -1;
+  let matches = false;
+  if (instruction.kind === "character")
+    matches = equalCharacter(
+      character.value,
+      instruction.value,
+      instruction.ignoreCase,
+      unicode,
+    );
+  else if (instruction.kind === "dot")
+    matches = instruction.dotAll || !lineTerminator(character.value);
+  else if (instruction.kind === "class") {
+    for (const item of instruction.entries) {
+      if (item === undefined) throw "REGEXP_CLASS_INVARIANT";
+      if (
+        entryMatches(
+          item,
+          character.value,
+          instruction.ignoreCase,
+          unicode,
+          unicodeSets,
+        )
+      ) {
+        matches = true;
+        break;
+      }
+    }
+    if (instruction.inverted) matches = !matches;
+  } else throw "REGEXP_SINGLE_CHARACTER_INVARIANT";
+  return matches ? character.end : -1;
 }
 function run(
   program: RegExpProgram,
@@ -43,13 +102,18 @@ function run(
     starts = filled(program.repeats, -1);
   const stack: Frame[] = [],
     unicode = program.flags.unicode || program.flags.unicodeSets;
-  function push(next: number, end: number): void {
+  function push(
+    next: number,
+    end: number,
+    repeatMinimum: number | undefined = undefined,
+  ): void {
     stack.push({
       pc: next,
       position: end,
       captures: captures.slice(),
       counts: counts.slice(),
       starts: starts.slice(),
+      repeatMinimum,
     });
   }
   while (true) {
@@ -71,43 +135,20 @@ function run(
       case "character":
       case "dot":
       case "class": {
-        const character = readCharacter(input, position, direction, unicode);
-        if (character === undefined) {
-          failed = true;
-          break;
-        }
-        let matches = false;
-        if (instruction.kind === "character")
-          matches = equalCharacter(
-            character.value,
-            instruction.value,
-            instruction.ignoreCase,
-            unicode,
-          );
-        else if (instruction.kind === "dot")
-          matches = instruction.dotAll || !lineTerminator(character.value);
+        const end = consumeUnit(
+          instruction,
+          input,
+          position,
+          direction,
+          unicode,
+          program.flags.unicodeSets,
+          budget,
+        );
+        if (end < 0) failed = true;
         else {
-          for (const item of instruction.entries) {
-            if (item === undefined) throw "REGEXP_CLASS_INVARIANT";
-            if (
-              entryMatches(
-                item,
-                character.value,
-                instruction.ignoreCase,
-                unicode,
-                program.flags.unicodeSets,
-              )
-            ) {
-              matches = true;
-              break;
-            }
-          }
-          if (instruction.inverted) matches = !matches;
-        }
-        if (matches) {
-          position = character.end;
+          position = end;
           pc = instruction.next;
-        } else failed = true;
+        }
         break;
       }
       case "set": {
@@ -199,6 +240,46 @@ function run(
         }
         break;
       }
+      case "repeat-unit": {
+        const body = program.instructions[instruction.body];
+        if (body === undefined) throw "REGEXP_SINGLE_CHARACTER_INVARIANT";
+        let count = 0,
+          minimum = position;
+        while (count < instruction.max) {
+          if (--budget.remaining < 0)
+            return { kind: "limit", position, captures };
+          const end = consumeUnit(
+            body,
+            input,
+            position,
+            direction,
+            unicode,
+            program.flags.unicodeSets,
+            budget,
+          );
+          if (budget.remaining < 0)
+            return { kind: "limit", position, captures };
+          if (end < 0) break;
+          position = end;
+          count++;
+          if (count === instruction.min) minimum = position;
+        }
+        if (count < instruction.min) failed = true;
+        else {
+          if (count > instruction.min) {
+            const previous = readCharacter(
+              input,
+              position,
+              -direction,
+              unicode,
+            );
+            if (previous === undefined) throw "REGEXP_REPEAT_INVARIANT";
+            push(instruction.next, previous.end, minimum);
+          }
+          pc = instruction.next;
+        }
+        break;
+      }
       case "repeat-enter":
         counts[instruction.slot] = 0;
         starts[instruction.slot] = -1;
@@ -263,9 +344,35 @@ function run(
       if (frame === undefined) return { kind: "no-match", position, captures };
       pc = frame.pc;
       position = frame.position;
-      captures = frame.captures;
-      counts = frame.counts;
-      starts = frame.starts;
+      if (
+        frame.repeatMinimum !== undefined &&
+        frame.position !== frame.repeatMinimum
+      ) {
+        const previous = readCharacter(
+          input,
+          frame.position,
+          -direction,
+          unicode,
+        );
+        if (previous === undefined) throw "REGEXP_REPEAT_INVARIANT";
+        // The checkpoint stays immutable while later instructions change captures
+        // and enclosing repetition counters on each alternative.
+        stack.push({
+          pc: frame.pc,
+          position: previous.end,
+          captures: frame.captures,
+          counts: frame.counts,
+          starts: frame.starts,
+          repeatMinimum: frame.repeatMinimum,
+        });
+        captures = frame.captures.slice();
+        counts = frame.counts.slice();
+        starts = frame.starts.slice();
+      } else {
+        captures = frame.captures;
+        counts = frame.counts;
+        starts = frame.starts;
+      }
     }
   }
 }

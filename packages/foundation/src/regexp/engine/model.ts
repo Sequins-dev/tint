@@ -47,6 +47,13 @@ export type Instruction =
     }
   | { readonly kind: "split"; readonly first: number; readonly second: number }
   | {
+      readonly kind: "repeat-unit";
+      readonly body: number;
+      readonly min: number;
+      readonly max: number;
+      readonly next: number;
+    }
+  | {
       readonly kind: "repeat-enter";
       readonly slot: number;
       readonly next: number;

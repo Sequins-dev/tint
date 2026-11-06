@@ -1,0 +1,564 @@
+{
+  "kind": "cluster-j-recheck-list",
+  "basis": "docs/results/test262-cluster-j-regexp-baseline-interruption-v1.json",
+  "completeSelection": false,
+  "resourceSamples": ".tint-bootstrap/j-resource-samples-v1.jsonl",
+  "policy": "Retain original outcomes. Recheck selected files with batch size 1 and frozen current source, separately at family boundaries or load average below about 25. Profile any timeout receiving over about 250 CPU-seconds.",
+  "variants": [
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"12\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 880420.7762910001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"13\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1180456.8586670002,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"18\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1495894.684792,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"19\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1795934.600666,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"22\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2109305.3310000002,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"23\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2409358.139458,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-positive-cases.js",
+      "sha256": "b1bd0e8027bbdc4e698af61f0b23054d2fcda58ad594faff9688abc3d999ab99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"26\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2722426.725709,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-positive-cases.js",
+      "sha256": "b1bd0e8027bbdc4e698af61f0b23054d2fcda58ad594faff9688abc3d999ab99",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"27\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3024327.259042,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-negative-cases.js",
+      "sha256": "7fd505960f3450b4e4e02a623822e70a24a19a833e9a93d6c9e8929abb1ba8b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"28\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3324403.801084,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-negative-cases.js",
+      "sha256": "7fd505960f3450b4e4e02a623822e70a24a19a833e9a93d6c9e8929abb1ba8b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"29\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3624471.630708,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-negative-cases.js",
+      "sha256": "a1638eb47d976537ce07075afbe594e9f899b98e0b5a68001cf26dfdec7f7dbe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"32\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3938177.3129579998,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-negative-cases.js",
+      "sha256": "a1638eb47d976537ce07075afbe594e9f899b98e0b5a68001cf26dfdec7f7dbe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"33\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 4238231.480083,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T16.js",
+      "sha256": "0f503d55b915750bb0ac262066f7719f8d9aabd7bad513461000e680d87622ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"51\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4257291.969375,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T4.js",
+      "sha256": "219aff338431d221cf9688bf32723823b8dd82f7769ac56fd47bdd476c7cf65b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"57\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4263592.537791001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T5.js",
+      "sha256": "504755eec4c17a4aeda750794045e5a97169956aa5486f988f98190ab128dd15",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"59\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4286597.026374999,
+      "batch": 0
+    }
+  ]
+}

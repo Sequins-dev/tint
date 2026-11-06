@@ -48,7 +48,12 @@ with a one-million-step floor; explicit embedding budgets remain absolute limits
 A [native red/green fixture](results/regexp-default-work-budget-native-red-green-v1.json)
 covers a 1,000,001-character linear search and an explicit budget override, retaining
 the initial small-fixture resource fault. Work-budget exhaustion reports unsupported
-execution, never a false no-match result.
+execution, never a false no-match result. Greedy single-character repetitions keep
+compact backtracking checkpoints instead of cloning repeat state for every
+character. A [native regression](results/regexp-compact-repetition-native-v1.json)
+retains the old allocation trap and verifies 1.1-million-character matching,
+zero-minimum fallback, captures, Unicode reverse matching, sets and modifiers at
+the standard 256 MiB resource limit.
 
 `Symbol.match` and `Symbol.search` now share RegExpExec, preserve overridden
 `exec` results, and cover Unicode empty-match advancement and observable

@@ -1,0 +1,2133 @@
+{
+  "kind": "native-selection-interruption",
+  "completeSelection": false,
+  "reason": "Retired obsolete frozen baseline after first complete 64-variant batch; current main includes register-copy work and candidate includes RegExp fixes. Runner stopped during batch-1 compilation after SIGSTOP and independent verification of zero child/native/debugger processes, then terminated with SIGTERM and resumed to deliver it.",
+  "selection": "built-ins/RegExp",
+  "expectedVariants": 3756,
+  "observedVariants": 64,
+  "counts": {
+    "pass": 49,
+    "timeout": 12,
+    "crash": 3
+  },
+  "start": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193",
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": false,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "built-ins/RegExp",
+    "batchSize": 64,
+    "sourceSnapshot": {
+      "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+      "files": 568
+    },
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-connected",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  },
+  "compilations": [
+    {
+      "kind": "compilation",
+      "compilation": {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 535261.4640830001,
+        "outcome": "compiled"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.2.15-6-1.js",
+      "sha256": "371a6b078435472f3d4f3b2ffaa5ed277a067ff9028916bb448d1a019267b346",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 544813.57825,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.2.15-6-1.js",
+      "sha256": "371a6b078435472f3d4f3b2ffaa5ed277a067ff9028916bb448d1a019267b346",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 548284.5907920001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.2.5-3-1.js",
+      "sha256": "30dc4a713761412451a00a090f47430c9c5cccde72514784bd4a8290e403e846",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 551575.889458,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.2.5-3-1.js",
+      "sha256": "30dc4a713761412451a00a090f47430c9c5cccde72514784bd4a8290e403e846",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 555888.074083,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-1.js",
+      "sha256": "d38ef39493ab50ef936dd66f801c6a4d6017f74458bb878bc25ae6a16874ef48",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 558217.192792,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-1.js",
+      "sha256": "d38ef39493ab50ef936dd66f801c6a4d6017f74458bb878bc25ae6a16874ef48",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 561488.6384170001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-2.js",
+      "sha256": "23117a16aeb6059a9c1efbbd58b9e85ab573d291b5c1f00193d160d512f40cce",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 564191.4714169999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-2.js",
+      "sha256": "23117a16aeb6059a9c1efbbd58b9e85ab573d291b5c1f00193d160d512f40cce",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 567096.6235,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-3.js",
+      "sha256": "1d48d0b7941510ed0da5df8cd48e4f099263a1d427f8a760c75c2d5e523cf1e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 569499.415667,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-3.js",
+      "sha256": "1d48d0b7941510ed0da5df8cd48e4f099263a1d427f8a760c75c2d5e523cf1e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 572157.29625,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-4.js",
+      "sha256": "27e47c38aaf5cc4154a7bccddf0cfdb37faa9057a6cb15bd10274d755516aa44",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 576672.456333,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/15.10.4.1-4.js",
+      "sha256": "27e47c38aaf5cc4154a7bccddf0cfdb37faa9057a6cb15bd10274d755516aa44",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 580402.5817089999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"12\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1Gl603/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 880420.7762910001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"13\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fgICqQ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1180456.8586670002,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-positive-cases.js",
+      "sha256": "0fbf00f17c78ce86747382125474667547048858764d8df1ac6274e3173458ee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1186385.28425,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-positive-cases.js",
+      "sha256": "0fbf00f17c78ce86747382125474667547048858764d8df1ac6274e3173458ee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1190437.6292080001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-negative-cases.js",
+      "sha256": "e096d0c2056a9c9ff4b9602681db41f14bccfe2bc777ad6304cd2c293a5d7ceb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1194350.963709,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-negative-cases.js",
+      "sha256": "e096d0c2056a9c9ff4b9602681db41f14bccfe2bc777ad6304cd2c293a5d7ceb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1195868.903959,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"18\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hnt1HA/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1495894.684792,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"19\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-irBF5L/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1795934.600666,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-negative-cases.js",
+      "sha256": "c99083f6609898ba97c9c2201a6bd909fd48ae643e02ffcfd418ac9afc73a5e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1804267.3032499999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-negative-cases.js",
+      "sha256": "c99083f6609898ba97c9c2201a6bd909fd48ae643e02ffcfd418ac9afc73a5e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1809246.735542,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"22\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yej3RN/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2109305.3310000002,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"23\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ET9if3/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2409358.139458,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-negative-cases.js",
+      "sha256": "e6d39accece59e3fa3e9e99e4993ec5405879c78ec8092ab39ee186cfdec34a8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2415256.621416,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-negative-cases.js",
+      "sha256": "e6d39accece59e3fa3e9e99e4993ec5405879c78ec8092ab39ee186cfdec34a8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2420325.5365830003,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-positive-cases.js",
+      "sha256": "b1bd0e8027bbdc4e698af61f0b23054d2fcda58ad594faff9688abc3d999ab99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"26\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XOvexO/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 2722426.725709,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-word-class-escape-positive-cases.js",
+      "sha256": "b1bd0e8027bbdc4e698af61f0b23054d2fcda58ad594faff9688abc3d999ab99",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"27\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-J8stt2/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3024327.259042,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-negative-cases.js",
+      "sha256": "7fd505960f3450b4e4e02a623822e70a24a19a833e9a93d6c9e8929abb1ba8b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"28\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AGuIcy/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3324403.801084,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-negative-cases.js",
+      "sha256": "7fd505960f3450b4e4e02a623822e70a24a19a833e9a93d6c9e8929abb1ba8b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"29\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2t952w/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3624471.630708,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-positive-cases.js",
+      "sha256": "4b23d2726a5ee440d5def027683c961ab8db4dc3607cf0071166a7448c6b287a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3632118.977292,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-whitespace-class-escape-positive-cases.js",
+      "sha256": "4b23d2726a5ee440d5def027683c961ab8db4dc3607cf0071166a7448c6b287a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3638121.663458,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-negative-cases.js",
+      "sha256": "a1638eb47d976537ce07075afbe594e9f899b98e0b5a68001cf26dfdec7f7dbe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"32\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sMIzkq/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 3938177.3129579998,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-negative-cases.js",
+      "sha256": "a1638eb47d976537ce07075afbe594e9f899b98e0b5a68001cf26dfdec7f7dbe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: pen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"33\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QbJ6qV/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 4238231.480083,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-positive-cases.js",
+      "sha256": "a0f34065f7f24cf10c5ad5c37863ccceee8a867b33e522f3be816e8cb96556c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4239757.49575,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-word-class-escape-positive-cases.js",
+      "sha256": "a0f34065f7f24cf10c5ad5c37863ccceee8a867b33e522f3be816e8cb96556c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "String.fromCodePoint"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4240588.165708,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T1.js",
+      "sha256": "df10ab4d3fbbbef2fc69c4c0427eda589d2c5d9ce0bab8c2580ce18fae8b51f5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4241325.631166,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T1.js",
+      "sha256": "df10ab4d3fbbbef2fc69c4c0427eda589d2c5d9ce0bab8c2580ce18fae8b51f5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4242404.631333,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T10.js",
+      "sha256": "98355aff872dc17304d06217eb2f26c98d684c363adb568b1b05ff4a8c37ea35",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4243158.3596250005,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T10.js",
+      "sha256": "98355aff872dc17304d06217eb2f26c98d684c363adb568b1b05ff4a8c37ea35",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4244417.868625,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T11.js",
+      "sha256": "fbbcffaa1240d732d7bb9c6069f189472f394097aa438d3ee95d0229538b3b45",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4245078.732042001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T11.js",
+      "sha256": "fbbcffaa1240d732d7bb9c6069f189472f394097aa438d3ee95d0229538b3b45",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4246151.651083,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T12.js",
+      "sha256": "59869f1e703526323f6a5c129a2e198b417eb4aa03d9efbd2bc2c71bf4c578cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4247381.961,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T12.js",
+      "sha256": "59869f1e703526323f6a5c129a2e198b417eb4aa03d9efbd2bc2c71bf4c578cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4249440.031292,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T13.js",
+      "sha256": "d48957680582bc4cb23a8251f930433ea9dd26f90b238fe82de5d09c6f660141",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4250175.727083,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T13.js",
+      "sha256": "d48957680582bc4cb23a8251f930433ea9dd26f90b238fe82de5d09c6f660141",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4250825.722333,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T14.js",
+      "sha256": "12c7aae0599e721b66cec2d32cd8e8c47a34fab1c6e5b9ee5090992fe7fe7c34",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4251483.784959,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T14.js",
+      "sha256": "12c7aae0599e721b66cec2d32cd8e8c47a34fab1c6e5b9ee5090992fe7fe7c34",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4252289.999792,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T15.js",
+      "sha256": "0ba2062ee8172df5235ffd3daafefa2699b317f271726368ae0475982c07a82f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4253606.700083001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T15.js",
+      "sha256": "0ba2062ee8172df5235ffd3daafefa2699b317f271726368ae0475982c07a82f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4254870.97425,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T16.js",
+      "sha256": "0f503d55b915750bb0ac262066f7719f8d9aabd7bad513461000e680d87622ed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4256787.899541999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T16.js",
+      "sha256": "0f503d55b915750bb0ac262066f7719f8d9aabd7bad513461000e680d87622ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"51\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7fFtDw/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4257291.969375,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T2.js",
+      "sha256": "07e64feb42cc43de84cb4a98ecdbfe10ebafdceceeee003e36a80068fc43c4e5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4258562.139834,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T2.js",
+      "sha256": "07e64feb42cc43de84cb4a98ecdbfe10ebafdceceeee003e36a80068fc43c4e5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4259282.0832090005,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T3.js",
+      "sha256": "e14223d417bdce78e335ac8bb05dd1af9e852acd3da338a528ff27b113678071",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4260034.834,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T3.js",
+      "sha256": "e14223d417bdce78e335ac8bb05dd1af9e852acd3da338a528ff27b113678071",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4261734.3040000005,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T4.js",
+      "sha256": "219aff338431d221cf9688bf32723823b8dd82f7769ac56fd47bdd476c7cf65b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4263047.421666999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T4.js",
+      "sha256": "219aff338431d221cf9688bf32723823b8dd82f7769ac56fd47bdd476c7cf65b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"57\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8Yqyv/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4263592.537791001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T5.js",
+      "sha256": "504755eec4c17a4aeda750794045e5a97169956aa5486f988f98190ab128dd15",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4270123.0309999995,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T5.js",
+      "sha256": "504755eec4c17a4aeda750794045e5a97169956aa5486f988f98190ab128dd15",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: id\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"59\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5WNEHf/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ZmxfYp/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 4286597.026374999,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T6.js",
+      "sha256": "8eaf62ac421458cafe40bef3d75ff4d75a9c8f1a85bfcf8445c410a490d467e6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4289966.716042001,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T6.js",
+      "sha256": "8eaf62ac421458cafe40bef3d75ff4d75a9c8f1a85bfcf8445c410a490d467e6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4291900.371084,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T7.js",
+      "sha256": "d9507e014b8b962c9d5c7f68de19c7e6cf96d42b80e51a3348a253bd6620f1ab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4292749.385833,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/RegExp/S15.10.1_A1_T7.js",
+      "sha256": "d9507e014b8b962c9d5c7f68de19c7e6cf96d42b80e51a3348a253bd6620f1ab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 4293882.63275,
+      "batch": 0
+    }
+  ],
+  "abandonedPhase": "compiling batch 1; no native inferior",
+  "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-regexp-v1.jsonl",
+  "journalBytes": 73897,
+  "journalSha256": "d96bc90daa92a87ad179aec5d1fbb8321f7a201cd6ce76ac33047705f03363f4",
+  "stderrTail": "398Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A3.1_T1.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.432Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A3.1_T2.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.438Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A4.1_T1.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.445Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A4.1_T2.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.450Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A4.1_T3.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.457Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.10_A5.1_T1.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.461Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T1.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.466Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T4.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.485Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T5.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.490Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T6.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.495Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T7.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.501Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T8.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.507Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.11_A1_T9.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.525Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.12_A3_T5.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.530Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.12_A4_T5.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.534Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T1.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.545Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T10.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.590Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T11.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.595Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T12.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.600Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T13.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.605Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T14.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.609Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T15.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.614Z [Test262] selection=\"built-ins/RegExp\" phase=\"preparing built-ins/RegExp/S15.10.2.13_A1_T17.js\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:16.618Z [Test262] selection=\"built-ins/RegExp\" phase=\"compiling batch 1 (64 variants)\" elapsed=0ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:26.962Z [Test262] selection=\"built-ins/RegExp\" phase=\"compiling batch 1 (64 variants)\" elapsed=10344ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:29:56.963Z [Test262] selection=\"built-ins/RegExp\" phase=\"compiling batch 1 (64 variants)\" elapsed=40345ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n2026-11-06T19:30:26.963Z [Test262] selection=\"built-ins/RegExp\" phase=\"compiling batch 1 (64 variants)\" elapsed=70345ms done=64/3756 pass=49 fail=0 unsupported=0 infra=15\n/Users/stephenbelanger/.t3/tint-slots/slot:27: command not found: ne\n[slot] acquired /Users/stephenbelanger/.t3/tint-slots/runner/slot-10 after 4399s\n2026-11-06T19:30:43.768Z [Test262] selection=\"built-ins/RegExp\" phase=\"initializing\" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0\nfile:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v1/tools/native-run-journal.ts:220\n    throw Error(\"frozen native toolchain identity differs\");\n          ^\n\nError: frozen native toolchain identity differs\n    at frozenNativeRunIdentity (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v1/tools/native-run-journal.ts:220:11)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v1/tools/test262-native-run.ts:116:33\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.12.0\n",
+  "wrapperObservation": "The earlier in-place slot-wrapper edit caused its tail to execute the command again after termination. Frozen-source identity validation rejected that second invocation before any native execution. Both owned runner and wrapper exited.",
+  "completedSubselection": "docs/results/test262-cluster-j-character-class-escapes-baseline-v1.json"
+}

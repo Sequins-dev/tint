@@ -34,6 +34,39 @@ function captureNumbers(node: PatternNode, result: number[]): void {
       captureNumbers(term, result);
     }
 }
+function singleCharacterSet(set: ClassSetExpression): boolean {
+  if (set.kind === "entry") {
+    const entry = set.entry;
+    if (entry.kind === "property") return !entry.strings;
+    return true;
+  }
+  if (set.kind === "strings") return false;
+  if (set.kind === "complement") return singleCharacterSet(set.body);
+  for (const operand of set.operands) {
+    if (operand === undefined) throw "REGEXP_SET_INVARIANT";
+    if (!singleCharacterSet(operand)) return false;
+  }
+  return true;
+}
+function singleCharacter(node: PatternNode): boolean {
+  if (node.kind === "character" || node.kind === "dot") return true;
+  if (node.kind === "class") {
+    for (const entry of node.entries) {
+      if (entry === undefined) throw "REGEXP_CLASS_INVARIANT";
+      if (entry.kind === "property" && entry.strings) return false;
+    }
+    return true;
+  }
+  if (node.kind === "unicode-set") return singleCharacterSet(node.body);
+  if (node.kind === "modifiers") return singleCharacter(node.body);
+  if (node.kind === "group")
+    return node.capture === 0 && singleCharacter(node.body);
+  if (node.kind === "sequence" && node.terms.length === 1) {
+    const term = node.terms[0];
+    return term !== undefined && singleCharacter(term);
+  }
+  return false;
+}
 export function compileRegExp(
   pattern: string,
   flags: string,
@@ -197,6 +230,14 @@ export function compileRegExp(
       });
     }
     if (node.kind === "repeat") {
+      if (node.greedy && singleCharacter(node.body))
+        return push({
+          kind: "repeat-unit",
+          body: emit(node.body, next, options, direction),
+          min: node.min,
+          max: node.max,
+          next,
+        });
       const slot = repeats++;
       const choice = push({ kind: "accept" });
       const end = push({ kind: "repeat-end", slot, min: node.min, choice });
