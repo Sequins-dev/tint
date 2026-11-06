@@ -223,7 +223,7 @@ export function executeNativeFile(
       return (
         result.stderr.slice(-4096) +
         "\nLLDB stdout: " +
-        result.stdout.slice(-2048) +
+        result.stdout.slice(-8192) +
         readDebuggerSessionLogs(directory)
       );
     };
