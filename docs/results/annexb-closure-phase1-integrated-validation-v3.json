@@ -1,0 +1,33 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "node": "v24.12.0",
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": {
+    "total": 4504,
+    "passed": 4504,
+    "failed": 0
+  },
+  "gates": [
+    "typecheck (including pnpm build)",
+    "tests (concurrency 4)",
+    "boundaries",
+    "format:check"
+  ],
+  "log": "docs/results/annexb-closure-phase1-slot-check-v3.log",
+  "logSha256": "c4d3645b9fc921cf0d899365cc899ab5c1e99ca835b6792ca9090f49637db00c",
+  "compilerGraphAgreement": "docs/results/annexb-closure-bootstrap-graph-integrated-node-v2.json",
+  "previousCompleteCheck": {
+    "command": "pnpm check",
+    "exitStatus": 0,
+    "tests": 4500,
+    "log": ".tint-bootstrap/phase1-integrated-node24-check-v2.log",
+    "note": "Launched before RESOURCE RULE; allowed to complete because it was progressing."
+  },
+  "nativeEvidencePolicy": "Inherited frozen selection and 53/53 native fixture observations retain their original source identities; integration does not relabel them. Bootstrap graph remains identical to accepted byte-identical self-build."
+}
