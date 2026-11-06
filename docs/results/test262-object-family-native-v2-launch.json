@@ -1,0 +1,45 @@
+{
+  "kind": "native-selection-launch",
+  "conformance": false,
+  "startedAt": "2026-11-06T22:49:20.796254+00:00",
+  "selection": "built-ins/Object",
+  "requestedVariants": 6802,
+  "batchSize": 64,
+  "mainAtFreeze": "d2be77ba4a18671b55432d5ba9958970fdea8ed0",
+  "mainAtLaunch": "97b7dc7e5cc6c4fcdb5f17212dff3f751ae47f2b",
+  "frozenToolchainMetadata": "docs/results/frozen-node-toolchain-builtins-object-v4.json",
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+  "toolchainManifestSha256": "23cad7d29f9594f37e7ab082b3873f450450a8f6eae46f41d80c20d84c1136b1",
+  "argv": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "6",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins/Object",
+    "64"
+  ],
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "stdoutStaging": ".tint-bootstrap/object-family-native-v2.stdout.json",
+  "stderr": ".tint-bootstrap/object-family-native-v2.stderr.log",
+  "exitStatusFile": ".tint-bootstrap/object-family-native-v2.exit",
+  "ownerPid": 44312,
+  "passiveDiagnosticObserverPid": 44314,
+  "debuggerLaunch": "debugserver-direct",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 6,
+    "clusterRunners": 1
+  },
+  "previousExperiment": "docs/results/test262-object-family-native-v1-interruption.json",
+  "protocolComparison": "docs/results/cluster-g-object-launch-protocol-comparison-v1.json",
+  "scope": "Fresh full selection on current rebuilt main including P compiler changes. Original 59 passes/5 pre-entry failures remain in their interrupted journal; no observations combined or replaced. Launch receipt only."
+}
