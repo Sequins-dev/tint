@@ -127,6 +127,12 @@ const programs: readonly {
     source:
       "let closed=0;function iter(){return{[Symbol.iterator](){return{next(){return{value:undefined,done:false};},return(){closed++;return{};}};}};}function f([a=(()=>{throw 7;})()]){}let caught;try{f(iter());}catch(e){caught=e;}if(caught!==7||closed!==1)throw 1;function g([a]){return a;}g(iter());if(closed!==2)throw 2;",
   },
+  {
+    // Pinned annexB block-decl-func-skip-arguments.js predates this rule.
+    name: "Annex B block functions named arguments replace the implicit arguments binding",
+    source:
+      'const r=[];(function(){r.push(String(arguments));{r.push(arguments());function arguments(){}r.push(arguments());}r.push(typeof arguments);})();(function(x){const f=()=>arguments;{function arguments(){}}r.push(typeof f());})(1);(function(..._){{function arguments(){}}r.push(typeof arguments);})();(function(a=0,f=()=>arguments){{function arguments(){}}r.push(typeof arguments,String(f()));})();if(r.join()!=="[object Arguments],,,function,function,function,function,[object Arguments]")throw r.join();',
+  },
 ];
 
 function referenceRealm() {
