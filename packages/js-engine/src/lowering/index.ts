@@ -102,6 +102,11 @@ interface AssignmentReference extends Span {
   readonly invalid?: boolean;
   readonly base: Expression;
   readonly property: Expression | undefined;
+  /** Read-modify-write references keep a computed key in a mutable temporary.
+   * Like ECMA-262 GetValue/PutValue, the first ToPropertyKey result replaces
+   * it, so the key is converted once; reconverting a property key is
+   * unobservable. */
+  readonly retainedKey?: boolean;
   readonly superReceiver?: Expression;
   readonly privateName?: Expression;
 }
@@ -581,7 +586,10 @@ function lowerScriptEntry(
     check(member(result, "error", span), span);
     return member(result, "value", span);
   }
-  function captureAssignment(target: Expression): AssignmentReference {
+  function captureAssignment(
+    target: Expression,
+    readModifyWrite: boolean = false,
+  ): AssignmentReference {
     while (target.kind === "group") target = target.expression;
     if (target.kind === "identifier")
       return {
@@ -600,11 +608,21 @@ function lowerScriptEntry(
         const key =
           target.kind === "member"
             ? text(target.property, target)
-            : temporary(value(target.index), true);
+            : temporary(value(target.index), true, readModifyWrite);
         const base = temporary(member(methodHome, "prototype", target), true);
-        return { ...at(target), base, property: key, superReceiver };
+        return {
+          ...at(target),
+          base,
+          property: key,
+          superReceiver,
+          retainedKey: readModifyWrite && target.kind === "index",
+        };
       }
-      return propertyReference(temporary(value(target.object), true), target);
+      return propertyReference(
+        temporary(value(target.object), true),
+        target,
+        readModifyWrite,
+      );
     }
     if (target.kind === "call") {
       // Annex B.3.9 evaluates the call, then throws before evaluating the RHS.
@@ -622,6 +640,7 @@ function lowerScriptEntry(
   function propertyReference(
     base: Expression,
     node: Expression,
+    readModifyWrite: boolean = false,
   ): AssignmentReference {
     if (node.kind === "member") {
       if (node.private)
@@ -637,7 +656,8 @@ function lowerScriptEntry(
       return {
         ...at(node),
         base,
-        property: temporary(value(node.index), true),
+        property: temporary(value(node.index), true, readModifyWrite),
+        retainedKey: readModifyWrite,
       };
     throw "PROPERTY_REFERENCE_INVARIANT";
   }
@@ -645,6 +665,29 @@ function lowerScriptEntry(
     // NamedEvaluation uses the original IsIdentifierRef syntax. Parentheses
     // preserve an assignment reference but do not qualify it for name inference.
     return target.kind === "identifier" ? text(target.name, target) : undefined;
+  }
+  /** Convert a property Reference key. GetValue stores the result back into
+   * a retained key temporary so the later PutValue reuses it unobservably. */
+  function referenceKey(
+    target: AssignmentReference,
+    property: Expression,
+    span: Span,
+    store: boolean,
+  ): Expression {
+    const key = checkedOperatorValue(
+      "objectPropertyKey",
+      [target.base, property],
+      span,
+    );
+    // Return the typed conversion; the stored copy serves the later write.
+    if (store && target.retainedKey === true)
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: property,
+        value: { ...key },
+      });
+    return key;
   }
   function readAssignment(target: AssignmentReference): Expression {
     if (target.invalid) return id("undefined");
@@ -658,13 +701,18 @@ function lowerScriptEntry(
         target,
       );
     if (property === undefined) return read(target.base, target);
+    const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
-      return propertyValue(target.base, property, target);
-    const key = checkedOperatorValue(
-      "objectPropertyKey",
-      [target.base, property],
-      target,
-    );
+      return checkedRuntimeValue(
+        "getObjectValueProperty",
+        [
+          target.base,
+          key,
+          member(id("$global"), "hooks", target),
+          id("$errors"),
+        ],
+        target,
+      );
     return checkedRuntimeValue(
       "getObjectValuePropertyWithReceiver",
       [
@@ -708,11 +756,7 @@ function lowerScriptEntry(
       write(target.base, assigned, target);
       return;
     }
-    const key = checkedOperatorValue(
-      "objectPropertyKey",
-      [target.base, property],
-      target,
-    );
+    const key = referenceKey(target, property, target, false);
     const args: Expression[] = [target.base, key, assigned];
     if (superReceiver !== undefined) args.push(superReceiver);
     args.push(
@@ -3007,7 +3051,7 @@ function lowerScriptEntry(
             node,
             "Script compound operator is not implemented: " + operator,
           );
-        const target = captureAssignment(node.target);
+        const target = captureAssignment(node.target, true);
         const previous = temporary(readAssignment(target), true);
         if (operator === "&&" || operator === "||" || operator === "??") {
           const result = temporary(previous, true, true);
@@ -3051,7 +3095,7 @@ function lowerScriptEntry(
         return assigned;
       }
       case "update": {
-        const target = captureAssignment(node.target);
+        const target = captureAssignment(node.target, true);
         const previous = temporary(readAssignment(target), true);
         const result = temporary(
           runtimeCall(
