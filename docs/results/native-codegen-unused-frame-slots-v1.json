@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-code-generation-static-overhead-diagnostic",
+  "mergeReady": false,
+  "sourceIR": {
+    "captureSha256": "b36459424efd940e6bb24048c21f3af34f0db483ec2cfa18c8de9a0671957257",
+    "optimizedSha256": "5011dbb7a7957cad844342be97039573d899aaf306b953983e6dbcf807ecec2b",
+    "frozenSourceSnapshot": "e4cf68d53f79d191dbf0b69962fd5865a1067bfe8f23f7c4e700b664301c1370",
+    "scope": "Pre-C2 frozen compiler program IR replayed through the unchanged post-C2 scalar optimizer and emitter. These static counts do not describe current-main native CPU."
+  },
+  "pattern": "Unused local slots survive the exhausted optional scalar optimizer. Native frame allocation and GC descriptors retain them; frame compaction removes neither live storage nor heap allocations.",
+  "baselineOptimizer": {
+    "unusedFrameSlots": {
+      "removed": 278818,
+      "managedRemoved": 111643,
+      "functions": 7773,
+      "skipped": 0
+    },
+    "existingCodegenGuards": {
+      "stableLayouts": true,
+      "checked": 195892,
+      "proven": 15479,
+      "skippedFunctions": 334
+    },
+    "kind": "immutable-native-compiler-optimization-attribution",
+    "captureSha256": "b36459424efd940e6bb24048c21f3af34f0db483ec2cfa18c8de9a0671957257",
+    "host": "Node replay of compiler analysis; not a native speed measurement",
+    "cpu": {
+      "user": 4497799,
+      "system": 297001
+    },
+    "wallMs": 7271.0652089999985,
+    "budgetExhausted": true,
+    "passes": [
+      {
+        "phase": "scalar",
+        "pass": "fold-constants",
+        "visited": 1465813,
+        "rewritten": 36704
+      },
+      {
+        "phase": "scalar",
+        "pass": "ssa-constants",
+        "visited": 1005968,
+        "rewritten": 1101,
+        "skipped": 5969
+      },
+      {
+        "phase": "scalar",
+        "pass": "forward-local-loads",
+        "visited": 6342144,
+        "rewritten": 294856
+      },
+      {
+        "phase": "scalar",
+        "pass": "remove-unread-stores",
+        "visited": 2351840,
+        "rewritten": 263621
+      },
+      {
+        "phase": "scalar",
+        "pass": "remove-dead-scalars",
+        "visited": 949749,
+        "rewritten": 37450
+      },
+      {
+        "phase": "scalar",
+        "pass": "scalar-replace-records",
+        "visited": 2175832,
+        "rewritten": 0
+      },
+      {
+        "phase": "scalar",
+        "pass": "inline-small-functions",
+        "visited": 1477569,
+        "rewritten": 4035
+      },
+      {
+        "phase": "scalar",
+        "pass": "fold-constants",
+        "visited": 533843,
+        "rewritten": 38
+      },
+      {
+        "phase": "scalar",
+        "pass": "forward-local-loads",
+        "visited": 2919978,
+        "rewritten": 39
+      },
+      {
+        "phase": "scalar",
+        "pass": "remove-unread-stores",
+        "visited": 777264,
+        "rewritten": 0
+      }
+    ],
+    "before": {
+      "functions": 7803,
+      "blocks": 445121,
+      "instructions": 1465813,
+      "fixedReads": 0,
+      "checkedAccesses": 192886,
+      "allocations": 11653
+    },
+    "after": {
+      "functions": 7803,
+      "blocks": 463372,
+      "instructions": 904050,
+      "fixedReads": 0,
+      "checkedAccesses": 195892,
+      "allocations": 11653
+    }
+  },
+  "emission": [
+    {
+      "label": "before",
+      "sourceIRsha256": "5011dbb7a7957cad844342be97039573d899aaf306b953983e6dbcf807ecec2b",
+      "scope": "Static output from identical compiler IR, with only unused local slots removed using the existing verified slot compactor; not a native execution speed measurement.",
+      "emitCPU": {
+        "user": 16512334,
+        "system": 576283
+      },
+      "emitWallMs": 19309.726041,
+      "codeBytes": 47056408,
+      "rootFrames": 3954,
+      "referenceRoots": 200302,
+      "generalRoots": 5187
+    },
+    {
+      "label": "after",
+      "sourceIRsha256": "5011dbb7a7957cad844342be97039573d899aaf306b953983e6dbcf807ecec2b",
+      "scope": "Static output from identical compiler IR, with only unused local slots removed using the existing verified slot compactor; not a native execution speed measurement.",
+      "emitCPU": {
+        "user": 13839835,
+        "system": 452800
+      },
+      "emitWallMs": 19925.443416000002,
+      "codeBytes": 45619224,
+      "rootFrames": 3954,
+      "referenceRoots": 117182,
+      "generalRoots": 2931
+    }
+  ],
+  "namedFunctions": [
+    {
+      "function": "isa.fail",
+      "before": {
+        "id": 5908,
+        "name": "@48:value:1$12553",
+        "frameBytes": 144,
+        "codeBytes": 592,
+        "referenceRoots": 6,
+        "generalRoots": 0
+      },
+      "after": {
+        "id": 5908,
+        "name": "@48:value:1$12553",
+        "frameBytes": 128,
+        "codeBytes": 588,
+        "referenceRoots": 5,
+        "generalRoots": 0
+      }
+    },
+    {
+      "function": "isa.word",
+      "before": {
+        "id": 5909,
+        "name": "@48:value:2$12554",
+        "frameBytes": 160,
+        "codeBytes": 564,
+        "referenceRoots": 2,
+        "generalRoots": 0
+      },
+      "after": {
+        "id": 5909,
+        "name": "@48:value:2$12554",
+        "frameBytes": 144,
+        "codeBytes": 560,
+        "referenceRoots": 1,
+        "generalRoots": 0
+      }
+    },
+    {
+      "function": "isa.encode",
+      "before": {
+        "id": 5914,
+        "name": "@48:value:7$12559",
+        "frameBytes": 16848,
+        "codeBytes": 91636,
+        "referenceRoots": 567,
+        "generalRoots": 31
+      },
+      "after": {
+        "id": 5914,
+        "name": "@48:value:7$12559",
+        "frameBytes": 5216,
+        "codeBytes": 89768,
+        "referenceRoots": 102,
+        "generalRoots": 30
+      }
+    },
+    {
+      "function": "closure.lowerEntries",
+      "before": {
+        "id": 6207,
+        "name": "@35:value:23$13882",
+        "frameBytes": 56400,
+        "codeBytes": 908288,
+        "referenceRoots": 2765,
+        "generalRoots": 55
+      },
+      "after": {
+        "id": 6207,
+        "name": "@35:value:23$13882",
+        "frameBytes": 22992,
+        "codeBytes": 607204,
+        "referenceRoots": 1423,
+        "generalRoots": 27
+      }
+    }
+  ],
+  "semanticBoundary": "Existing slot compaction keeps ABI parameters, receiver slots, exception destinations, guarded-transfer destinations and every explicit load/store. Instruction values and environment cells are separate namespaces. Normalize before codegen analyses so slot-indexed word facts see the same numbering. Input verification must precede normalization.",
+  "measurementScope": "Counts of emitted instructions, frames and root locations establish overhead. No native CPU improvement or Test262 outcome equivalence is claimed yet. Matched symbolized A1 before/after images are being built from one source snapshot for execution measurements.",
+  "nextImplementation": "Reuse the existing verified slot compactor at native frame-planning entry, bounded independently per function with fallback to original frames; do not raise the global scalar-optimization budget or remove safety checks.",
+  "artifacts": {
+    "before-functions.json": {
+      "sha256": "046bd36c9e670474c3d85f7fb6866a2129419c8766dfd1f5a8fd64705ed382ce",
+      "uncompressedBytes": 1353503
+    },
+    "after-functions.json": {
+      "sha256": "5a67b3c61b4974d39bc3e5d3a0a7a6e0990fbddcc9d16706323876f8b87dcd42",
+      "uncompressedBytes": 1352175
+    },
+    "emission.log": {
+      "sha256": "f25b0f366f07e3a568fea125b1d2685ace0f93c56d2e6fe97b856330e7003133",
+      "uncompressedBytes": 1636
+    },
+    "optimizer-replay.json": {
+      "sha256": "954a7f17fd26e12980259a3523608e4c09a2ab4f2248e52c1e333c44d1d8c5b6",
+      "uncompressedBytes": 2218
+    }
+  }
+}
