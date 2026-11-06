@@ -1,0 +1,37 @@
+{
+  "kind": "native-run-progress-investigation",
+  "trigger": "Coordinator mandatory progress rule: inspect every silent owned process immediately",
+  "at": "2026-11-06T16:05:11.746Z",
+  "findings": [
+    {
+      "pid": 37225,
+      "selection": "language/future-reserved-words",
+      "observed": 61,
+      "diagnosis": "CPU-active compilation alternating with synchronous LLDB calls. Journal advanced from 58 to 61 during investigation.",
+      "sample": "docs/results/a1-sample-future-words-20261107.txt"
+    },
+    {
+      "pid": 32204,
+      "selection": "language/global-code",
+      "observed": 48,
+      "diagnosis": "Wrapper waiting synchronously for LLDB; native inferior had confirmed initial stopped state and increasing CPU time. Sampled inferior completed and next variant started; journal advanced from 46 to 48.",
+      "sample": "docs/results/a1-sample-global-20261107.txt",
+      "inferiorSample": "docs/results/a1-sample-global-inferior-20261107.txt"
+    }
+  ],
+  "monitor": {
+    "log": ".tint-bootstrap/a1-progress-monitor.log",
+    "intervalMs": 30000,
+    "fields": [
+      "selection",
+      "phase",
+      "observed",
+      "lastObserved",
+      "journalQuietSeconds",
+      "process tree elapsed/CPU/state"
+    ],
+    "investigation": "sample wrapper and native child once per journal-silence episode after 120s"
+  },
+  "heartbeat": "Not yet present on local main at 5c21ca4. Existing frozen toolchain is unchanged; external progress monitor supplies visibility.",
+  "retiredHolds": "docs/results/a1-retired-holds-v1.json"
+}
