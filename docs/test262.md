@@ -159,6 +159,8 @@ with LLDB entry/exit containment and unchanged harnesses:
 | `language/directive-prologue` | 62/62 | [Report](results/test262-language-core-directive-prologue-v2.json) |
 | `language/comments` | 81/81 | [Report](results/test262-language-core-comments-v2.json) |
 
+The inherited [integrated-main controls](results/language-main-controls-interruption-v3.json) stopped at the coordinator-directed case boundary after four passing class-realm cases; 81 controls remain unexecuted. These bespoke cases are separate from native conformance and do not gate the already-validated frozen host used for the queued language selections.
+
 The current direct-eval rerun passes [**336/336**](results/test262-language-direct-eval-current-v1.json).
 Proper tail calls remain a standard gap: the six `tail-call-optimization`
 variants in the complete [call report](results/test262-language-call-reference-core-v1.json)
