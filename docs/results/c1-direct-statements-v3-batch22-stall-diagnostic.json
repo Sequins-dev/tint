@@ -1,0 +1,18 @@
+{
+  "kind": "c1-native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/*.js",
+  "phase": "compiling batch 22 (26 variants)",
+  "runnerPid": 81217,
+  "completedVariants": 476,
+  "passed": 476,
+  "firstObservedStallElapsedMs": 165858,
+  "cpuObservations": [
+    "92:27.06",
+    "93:01.74",
+    "93:28.01"
+  ],
+  "inferiorLaunched": false,
+  "sample": "docs/results/c1-direct-statements-v3-batch22-stall-sample.txt",
+  "interpretation": "CPU-active compile, with a live 30-second heartbeat and no native inferior. Preserved diagnostic only; no interruption, retry or compiler-performance investigation."
+}
