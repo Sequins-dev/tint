@@ -1,0 +1,118 @@
+{
+  "kind": "native-language-arguments-environment-checkpoint",
+  "conformance": true,
+  "wholeSuite": false,
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "frozenToolchain": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-managed-templates-v1",
+  "runIdentity": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+  "variantPolicy": "Runner default: strict and sloppy variants per test flags; failures, unsupported and infrastructure outcomes retained in the denominator.",
+  "needsTriage": false,
+  "results": [
+    {
+      "selection": "language/arguments-object",
+      "report": "docs/results/test262-language-arguments-object-current-v1.json",
+      "controllerReport": "docs/results/test262-language-arguments-object-current-controller-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "totals": {
+        "total": 460,
+        "passed": 458,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9956521739130435
+      },
+      "nonPasses": [
+        {
+          "path": "language/arguments-object/10.6-13-a-2.js",
+          "variant": "sloppy",
+          "status": "fail",
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "TypeError",
+            "message": "native Script threw"
+          },
+          "known": "optional legacy arguments.caller access (sloppy)"
+        },
+        {
+          "path": "language/arguments-object/10.6-13-a-3.js",
+          "variant": "sloppy",
+          "status": "fail",
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "TypeError",
+            "message": "native Script threw"
+          },
+          "known": "optional legacy arguments.caller access (sloppy)"
+        }
+      ],
+      "unexpected": [],
+      "complete": true
+    },
+    {
+      "selection": "annexB/language/function-code",
+      "report": "docs/results/test262-annexb-function-code-current-v3.json",
+      "controllerReport": "docs/results/test262-annexb-function-code-current-controller-v3.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "totals": {
+        "total": 159,
+        "passed": 158,
+        "failed": 1,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9937106918238994
+      },
+      "nonPasses": [
+        {
+          "path": "annexB/language/function-code/block-decl-func-skip-arguments.js",
+          "variant": "sloppy",
+          "status": "fail",
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "Test262Error",
+            "message": "native Script threw"
+          },
+          "known": "pinned expectation predates current B.3.2.1 (paramNames excludes implicit arguments); native-arguments-scope case 19 proves current semantics"
+        }
+      ],
+      "unexpected": [],
+      "complete": true
+    }
+  ],
+  "scope": "Complete unchanged selections; not merged into earlier reports. arguments-object ran under controller v1 (single hold); annexB/language/function-code under v3 (parent round-robin, one batch per grant). Overlaps the queued parent function-control v5 arguments-object group (same frozen host)."
+}

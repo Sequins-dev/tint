@@ -1,0 +1,96 @@
+{
+  "kind": "native-lane-grant-accounting",
+  "selection": "annexB/language/function-code",
+  "report": "test262-annexb-function-code-current-v3.json",
+  "journal": "test262-annexb-function-code-current-v3.jsonl",
+  "controllerReport": "test262-annexb-function-code-current-controller-v3.json",
+  "policy": "Parent round-robin: at most one execution batch (<=64 execution variants) per lease grant.",
+  "derivation": "Grant membership is the runner journal order between diagnostic-pause records (each marks the runner resuming after a grant was acquired). Controller grant labels count compilations from 1; runner batch ids count from 0.",
+  "compilations": [
+    {
+      "id": 0,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 128427.38725000001,
+      "outcome": "compiled"
+    },
+    {
+      "id": 1,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 112730.81158400048,
+      "outcome": "compiled"
+    },
+    {
+      "id": 2,
+      "variants": 31,
+      "kind": "execution",
+      "compileMs": 121060.1005420005,
+      "outcome": "compiled"
+    }
+  ],
+  "grants": [
+    {
+      "purpose": "Test262 annexB/language/function-code batch 1 (159 variants total)",
+      "acquiredAt": "2026-11-06T03:53:38.022Z",
+      "central": {
+        "ackPid": 21082,
+        "ackState": "between-variants"
+      },
+      "releasedAt": "2026-11-06T03:55:49.868Z",
+      "observations": 64,
+      "runnerBatches": {
+        "0": 64
+      },
+      "statuses": {
+        "pass": 63,
+        "fail": 1
+      }
+    },
+    {
+      "purpose": "Test262 annexB/language/function-code batch 2 (159 variants total)",
+      "acquiredAt": "2026-11-06T04:20:49.469Z",
+      "central": {
+        "ackPid": 21082,
+        "ackState": "between-variants"
+      },
+      "releasedAt": "2026-11-06T04:23:12.242Z",
+      "observations": 65,
+      "runnerBatches": {
+        "1": 64,
+        "2": 1
+      },
+      "statuses": {
+        "pass": 65
+      }
+    },
+    {
+      "purpose": "Test262 annexB/language/function-code batch 3 (159 variants total)",
+      "acquiredAt": "2026-11-06T05:25:03.685Z",
+      "central": {
+        "ackPid": 21082,
+        "ackState": "between-variants"
+      },
+      "releasedAt": "2026-11-06T05:25:15.525Z",
+      "observations": 30,
+      "runnerBatches": {
+        "2": 30
+      },
+      "statuses": {
+        "pass": 30
+      }
+    }
+  ],
+  "deviation": {
+    "grant": 2,
+    "observations": 65,
+    "runnerBatches": {
+      "1": 64,
+      "2": 1
+    },
+    "cause": "The controller re-paused the runner on seeing the next batch compilation record (100 ms poll); the runner passed its between-variants check for the first batch-2 variant before the pause file was written, then acknowledged before the second.",
+    "scheduling": "Breach of the <=64-variant/one-batch grant rule, retained as observed; not replayed or retried.",
+    "validity": "Every variant, including the 65th, executed while this controller held the exclusive lease and the verified central pause, under LLDB entry/final-exit containment. Conformance observations are unaffected."
+  },
+  "remediation": "Do not reuse this controller pattern until the boundary race is resolved: pause on the observation count reaching the batch variants count (runner acknowledged boundary), and detect/record any overrun. A strict guarantee needs a runner-side pause-after-batch option; none was built."
+}
