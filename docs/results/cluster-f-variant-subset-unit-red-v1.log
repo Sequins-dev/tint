@@ -1,0 +1,203 @@
+✖ default native selection keeps all strictness variants and groups syntax negatives (2.227791ms)
+✖ explicit variants retain native ordering and carry a stable complete-subset identity (0.34525ms)
+✖ raw and module requests must match the pinned metadata policy (0.223292ms)
+✖ variant manifests reject missing, fixture and out-of-root paths (3.965959ms)
+✖ variant manifests reject duplicate requests instead of reducing the denominator (0.443291ms)
+✖ optional hashes must match the pinned source (0.376167ms)
+✔ invalid or empty manifests fail before any native preparation (0.710375ms)
+✖ resume rejects a changed subset before appending any records (2.177167ms)
+✖ subset metadata is ledger accepted while retaining a non-pass (1.081667ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 1
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 449.232208
+
+✖ failing tests:
+
+test at tools/native-variant-selection.test.ts:27:1
+✖ default native selection keeps all strictness variants and groups syntax negatives (2.227791ms)
+  AssertionError [ERR_ASSERTION]: native variant-list selection is available
+      at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:28:19)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:33:1
+✖ explicit variants retain native ordering and carry a stable complete-subset identity (0.34525ms)
+  AssertionError [ERR_ASSERTION]: native variant-list selection is available
+      at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:35:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:42:1
+✖ raw and module requests must match the pinned metadata policy (0.223292ms)
+  AssertionError [ERR_ASSERTION]: native variant-list selection is available
+      at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:43:24)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:46:1
+✖ variant manifests reject missing, fixture and out-of-root paths (3.965959ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /path/. Input:
+  
+  'AssertionError [ERR_ASSERTION]: native variant-list selection is available'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:48:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: AssertionError [ERR_ASSERTION]: native variant-list selection is available
+        at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+        at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:48:20
+        at getActual (node:assert:580:5)
+        at strict.throws (node:assert:728:24)
+        at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:48:9)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12),
+    expected: /path/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:50:1
+✖ variant manifests reject duplicate requests instead of reducing the denominator (0.443291ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /duplicate/. Input:
+  
+  'AssertionError [ERR_ASSERTION]: native variant-list selection is available'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:51:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: AssertionError [ERR_ASSERTION]: native variant-list selection is available
+        at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+        at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:51:20
+        at getActual (node:assert:580:5)
+        at strict.throws (node:assert:728:24)
+        at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:51:9)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12),
+    expected: /duplicate/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:53:1
+✖ optional hashes must match the pinned source (0.376167ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "native variant-list selection is available"
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:54:9)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: AssertionError [ERR_ASSERTION]: native variant-list selection is available
+        at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+        at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:54:26
+        at getActual (node:assert:580:5)
+        at strict.doesNotThrow (node:assert:748:32)
+        at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:54:9)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1201:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+        at Test.postRun (node:internal/test_runner/test:1330:19)
+        at Test.run (node:internal/test_runner/test:1258:12),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:60:1
+✖ resume rejects a changed subset before appending any records (2.177167ms)
+  AssertionError [ERR_ASSERTION]: native variant-list selection is available
+      at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:63:43)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tools/native-variant-selection.test.ts:72:1
+✖ subset metadata is ledger accepted while retaining a non-pass (1.081667ms)
+  AssertionError [ERR_ASSERTION]: native variant-list selection is available
+      at select (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:21:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:73:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

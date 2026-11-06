@@ -1,0 +1,24 @@
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/test262.ts:31
+  if (!object(data)) throw new Error("invalid Test262 metadata");
+                           ^
+
+Error: invalid Test262 metadata
+    at testMetadata (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/test262.ts:31:28)
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/tools/native-variant-selection.test.ts:11:77
+
+Node.js v26.0.0
+✖ tools/native-variant-selection.test.ts (320.736167ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 335.920834
+
+✖ failing tests:
+
+test at tools/native-variant-selection.test.ts:1:1
+✖ tools/native-variant-selection.test.ts (320.736167ms)
+  'test failed'

@@ -1,0 +1,110 @@
+{
+  "kind": "test262-native-variant-subset-feature-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-06T23:56:08.450915+00:00",
+  "base": "4e763648d83214efa4c8ac44555145f981b44bd9",
+  "validatedCodeHead": "1c74ba8760d8898a8751fcaa88bfaa6989f9842d",
+  "codeDiffAfterRebaseExitStatus": 0,
+  "feature": "TINT_TEST262_VARIANTS=<JSON array of path,variant,optional sha256>",
+  "sourceChanges": [
+    "tools/native-variant-selection.ts",
+    "tools/test262-native-run.ts"
+  ],
+  "tests": "tools/native-variant-selection.test.ts",
+  "documentation": "docs/test262-runner.md",
+  "contracts": [
+    "Every entry belongs to pinned root selection and syntaxVariants; optional source sha256 must match.",
+    "Reject duplicates, empty lists, malformed entries, fixture and out-of-root paths.",
+    "Preserve syntax grouping, within-lane order, existing batching, negative-phase routing and fresh-process isolation.",
+    "Seal normalized requested path/variant/source identities in schema-2 journal; reject changed subsets on resume.",
+    "Complete focused reports carry explicit subset selection, rootSelection,requestedVariants,complete=true; all non-passes retained."
+  ],
+  "references": [
+    "docs/results/temporal-preentry-direct-recheck-driver-h-v1.mjs",
+    "docs/results/test262-temporal-preentry-recheck-direct-h-v1.json",
+    "docs/results/test262-c2-syntax-negative-direct-recheck-v1.json"
+  ],
+  "tdd": {
+    "redLog": "docs/results/cluster-f-variant-subset-unit-red-v1.log",
+    "redExitStatus": 1,
+    "redNodeVersion": "v26.0.0",
+    "reason": "Eight assertion failures for unavailable subset API before implementation. Preliminary empty-YAML fixture error retained separately, not counted as feature evidence.",
+    "greenLog": "docs/results/cluster-f-variant-subset-unit-green-v1.log",
+    "greenExitStatus": 0,
+    "greenNodeVersion": "v24.12.0",
+    "focusedTests": 28,
+    "featureTests": 10
+  },
+  "buildExitStatus": 0,
+  "typecheckExitStatus": 0,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "input": {
+      "kind": "workspace-gate-inputs",
+      "queuedAt": "2026-11-06T23:44:43Z",
+      "codeHead": "1c74ba8760d8898a8751fcaa88bfaa6989f9842d",
+      "baseMain": "140c727a19f383d0f1560469c7a2bcf0a0d8d13f",
+      "nodeVersion": "v24.12.0",
+      "nodePath": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "command": "~/.t3/tint-slots/tint-check",
+      "sourceChange": "Host-only native variant manifest support. No portable compiler/runtime changes."
+    },
+    "exit": {
+      "exitStatus": 0,
+      "finishedAt": "2026-11-06T23:55:07.494255+00:00"
+    },
+    "node": {
+      "pid": "7714",
+      "nodeExecutable": [
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+      ]
+    },
+    "counts": {
+      "tests": 4589,
+      "pass": 4589,
+      "fail": 0
+    },
+    "typecheckExitStatus": 0,
+    "testsExitStatus": 0,
+    "boundariesExitStatus": 0,
+    "formatExitStatus": 0,
+    "log": "docs/results/cluster-f-variant-subset-check-v1.log.gz"
+  },
+  "progressDiagnosis": "Quiet gate intervals were investigated immediately. Script-service worker CPU advanced from20.04s to91.18s; conformance worker also CPU-active. Both samples succeeded. Gate subsequently passed; no progressing work killed.",
+  "nativeExecution": "No new native subset execution claimed. Existing syntax/execution builders and NativeImageRunner are reused unchanged. Connected parent14181 remains active; after it finishes, use a freshly frozen current-main direct toolchain and a new journal to recheck all retained pre-entry errors.",
+  "selfBuild": "Host-only tooling change; no portable compiler/runtime source changes. Existing F iterator cleanup self-build evidence is merged in cluster-f-phase2-ready-v3.json.",
+  "artifacts": {
+    "cluster-f-variant-subset-preliminary-fixture-error-v1.log": {
+      "sha256": "c5326d96cde9f075949d93151338202298e5ca0394a187c86d5d80e9ec900fa7",
+      "bytes": 764
+    },
+    "cluster-f-variant-subset-unit-red-v1.log": {
+      "sha256": "56ee4cbe4714f150c9324133d56ad9213ae2d9aaefa0887144ed22b9fb8eee0e",
+      "bytes": 11410
+    },
+    "cluster-f-variant-subset-unit-green-v1.log": {
+      "sha256": "666d3440bbcfb040fb19c18e8c9636a4435ebff60587b6d66b28752c335206ee",
+      "bytes": 2826
+    },
+    "cluster-f-variant-subset-build-v1.log": {
+      "sha256": "b52102a551af183e46c3253ba918c3d3976dbb80f2aea0b409d0d94e15479d04",
+      "bytes": 89
+    },
+    "cluster-f-variant-subset-check-v1.log.gz": {
+      "uncompressedSha256": "ffc029b6dd223bc3841153a0a8b6a2661713c86ebc2804fb5b26578390470d3e",
+      "uncompressedBytes": 386112
+    },
+    "cluster-f-variant-subset-check-cpu-v1.jsonl.gz": {
+      "uncompressedSha256": "ca87c87a432b13fea01ce7c1568c9378c3f98da1dce014379bf60040440b2db6",
+      "uncompressedBytes": 68807
+    },
+    "cluster-f-variant-subset-check-17815-sample-v1.txt.gz": {
+      "uncompressedSha256": "9af83c1f29d6218bfffb40a66a025328388250034933dac716b22d87ecaa15a7",
+      "uncompressedBytes": 547808
+    },
+    "cluster-f-variant-subset-check-18248-sample-v1.txt.gz": {
+      "uncompressedSha256": "a7e36f71aa5cc056a718020562898a4126a272529b316539c32b7433352fd3ef",
+      "uncompressedBytes": 781515
+    }
+  }
+}
