@@ -451,10 +451,10 @@ export function installPrimitiveIntrinsics(
       "fromCharCode",
       1,
       (receiver, args): unknown => {
-        let text = "";
+        const output = createStringBuilder();
         for (const argument of args)
-          text += String.fromCharCode(number(argument));
-        return text;
+          appendString(output, String.fromCharCode(number(argument)));
+        return finishString(output);
       },
       hooks,
     ),
