@@ -1,0 +1,16 @@
+{
+  "kind": "c1-direct-file-extraction-audit",
+  "conformance": false,
+  "checkpoint": "docs/results/c1-direct-statements-completed-files-v4.json",
+  "prefixObservedVariants": 218,
+  "completeFileVariants": 217,
+  "completeFiles": 111,
+  "notYetCompleteFiles": [
+    {
+      "path": "language/statements/class/cpn-class-decl-fields-methods-computed-property-name-from-assignment-expression-assignment.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "reason": "A batch boundary split one two-variant file. Its single observed pass remains in the immutable prefix; publication waits for its second variant. No non-pass filtered."
+}
