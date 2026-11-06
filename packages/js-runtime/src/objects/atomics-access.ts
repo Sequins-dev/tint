@@ -4,6 +4,7 @@ import {
   readWord64,
   writeWord64,
 } from "@tint/foundation/binary/bytes";
+import { blockingAtomicWait } from "./atomics-wait.ts";
 import type { StorageAccess } from "../bytes/index.ts";
 import { bufferIndex } from "./array-buffer.ts";
 import type { BufferStorageWindow } from "./buffer-storage.ts";
@@ -394,7 +395,31 @@ export function prepareAtomicWait(
   let result: string;
   if (!equalBytes(observed, expectedBytes)) result = "not-equal";
   else if (converted.value <= 0) result = "timed-out";
-  else return rejectUnsupportedExecution(realm);
+  else {
+    if (asynchronous) return rejectUnsupportedExecution(realm);
+    const storage = data.storage;
+    if (storage.kind !== "shared") throw "ATOMIC_WAIT_STORAGE_INVARIANT";
+    const waiting = storage.service.waiting;
+    if (waiting === undefined) return rejectUnsupportedExecution(realm);
+    const width = data.kind === "Int32" ? 4 : 8;
+    const narrow = readUnsigned(expectedBytes, 0, 4, data.endian);
+    const wide =
+      width === 8 ? readWord64(expectedBytes, 0, data.endian) : undefined;
+    if (!narrow.ok || (wide !== undefined && !wide.ok))
+      throw "ATOMIC_WAIT_EXPECTED_INVARIANT";
+    const lo = wide !== undefined && wide.ok ? wide.value.lo : narrow.value;
+    const hi = wide !== undefined && wide.ok ? wide.value.hi : 0;
+    result = blockingAtomicWait(
+      waiting,
+      storage.handle,
+      data.byteOffset + access.index * width,
+      width,
+      lo,
+      hi,
+      converted.value,
+      realm,
+    );
+  }
   if (!asynchronous) return result;
   const object = createObject<ScriptPropertyKey, unknown>(
     realm.objectPrototype,

@@ -33,7 +33,7 @@ export interface NativeWaitLocation {
 }
 export type NativeWaitState = "waiting" | "notified" | "timed-out";
 export interface NativeWaitRegistration {
-  readonly state: NativeWaitState | "not-equal";
+  readonly state: "waiting" | "not-equal" | "timed-out";
   /** Zero for immediate results; otherwise a never-reissued registration token. */
   readonly ticket: number;
 }
@@ -211,7 +211,7 @@ function facade(
         ) !== 0;
       matches = scratch[0] === lo && scratch[1] === hi;
     }
-    let result: NativeWaitState | "not-equal" = "not-equal",
+    let result: "waiting" | "not-equal" | "timed-out" = "not-equal",
       ticket = 0,
       full = false;
     if (!fault && matches) {

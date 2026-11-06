@@ -2,6 +2,8 @@ import type {
   SharedBlockDescriptor,
   SharedBlockAtomics,
   SharedBlockService,
+  SharedBlockWaiting,
+  SharedBlockNotifications,
   SharedOrder,
   SharedResult,
   SharedStatus,
@@ -43,6 +45,23 @@ export {
   type NativeSharedAtomicMemoryHost,
   type NativeSharedBlockRegistry,
 } from "./shared-memory-host.ts";
+import {
+  createNativeWaitRegistry,
+  attachNativeWaitRegistry,
+  type NativeWaitRegistry,
+  type NativeWaitLocation,
+  type NativeWaiterParkingHost,
+} from "./shared-waiters.ts";
+export interface NativeSharedWaitHost {
+  readonly parking: NativeWaiterParkingHost;
+  readonly now: () => number;
+  readonly maxWaiters: number;
+}
+export interface NativeSharedWaitAttachment {
+  readonly parking: NativeWaiterParkingHost;
+  readonly now: () => number;
+  readonly registry: NativeSharedBlockRegistry;
+}
 export interface NativeSharedBlockPolicy {
   readonly pageSize: number;
   readonly maxBlocks: number;
@@ -81,6 +100,7 @@ export function createNativeSharedBlockService(
   host: NativeSharedMemoryHost,
   policy: NativeSharedBlockPolicy,
   atomicHost?: NativeSharedAtomicMemoryHost,
+  waitHost?: NativeSharedWaitHost,
 ): SharedResult<NativeSharedBlockService> {
   const page = policy.pageSize,
     count = policy.maxBlocks,
@@ -113,12 +133,30 @@ export function createNativeSharedBlockService(
   writeNumber(host, registry, sharedRegistryPageSizeOffset, page);
   // Zeroed mapping already holds count/quota/lock = 0. Publish the header last.
   writeNumber(host, registry, sharedRegistryMagicOffset, sharedRegistryMagic);
-  return { ok: true, value: sharedFacade(host, registry, atomicHost) };
+  let waiters: NativeWaitRegistry | undefined;
+  if (waitHost !== undefined) {
+    const created = createNativeWaitRegistry(
+      host,
+      waitHost.parking,
+      registry.engineId,
+      waitHost.maxWaiters,
+    );
+    if (!created.ok) {
+      rollback(host, base, extent);
+      return created;
+    }
+    waiters = created.value;
+  }
+  return {
+    ok: true,
+    value: sharedFacade(host, registry, atomicHost, waiters, waitHost?.now),
+  };
 }
 export function attachNativeSharedBlockService(
   host: NativeSharedMemoryHost,
   registry: NativeSharedBlockRegistry,
   atomicHost?: NativeSharedAtomicMemoryHost,
+  waitHost?: NativeSharedWaitAttachment,
 ): SharedResult<NativeSharedBlockService> {
   // The caller proves this capability came from an owned live registry mapping.
   if (
@@ -138,18 +176,36 @@ export function attachNativeSharedBlockService(
     registry.engineId !== registry.base
   )
     return { ok: false, error: "invalid-handle" };
-  return { ok: true, value: sharedFacade(host, registry, atomicHost) };
+  let waiters: NativeWaitRegistry | undefined;
+  if (waitHost !== undefined) {
+    if (waitHost.registry.engineId !== registry.engineId)
+      return { ok: false, error: "invalid-handle" };
+    const attached = attachNativeWaitRegistry(
+      host,
+      waitHost.parking,
+      waitHost.registry,
+    );
+    if (!attached.ok) return attached;
+    waiters = attached.value;
+  }
+  return {
+    ok: true,
+    value: sharedFacade(host, registry, atomicHost, waiters, waitHost?.now),
+  };
 }
 /** Moving managed facade; all mutable authority is scalar native registry data.
  * Successful mappings are retained through engine lifetime. There is deliberately
  * no finalizer/destroy API: shutdown must first exclude every agent/operation. */
 export interface NativeSharedBlockService extends SharedBlockService {
   readonly registry: NativeSharedBlockRegistry;
+  readonly waitRegistry: NativeSharedBlockRegistry | undefined;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
   registry: NativeSharedBlockRegistry,
   atomicHost: NativeSharedAtomicMemoryHost | undefined,
+  waiters: NativeWaitRegistry | undefined,
+  clock: (() => number) | undefined,
 ): NativeSharedBlockService {
   function location(
     handle: number,
@@ -601,9 +657,80 @@ function sharedFacade(
               output,
             ),
         };
+  function waiterLocation(
+    handle: number,
+    offset: number,
+    width: 4 | 8,
+  ): SharedResult<NativeWaitLocation> {
+    if (width !== 4 && width !== 8)
+      return { ok: false, error: "invalid-width" };
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const status = access(offset, width, "seq-cst", width === 8);
+    if (status !== "none") return { ok: false, error: status };
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+    );
+    if (offset > length || width > length - offset)
+      return { ok: false, error: "invalid-range" };
+    return {
+      ok: true,
+      value: {
+        engineId: registry.engineId,
+        blockId: handle,
+        address: block.base,
+        byteLength: length,
+        byteOffset: offset,
+        width,
+      },
+    };
+  }
+  function configureWaiting(
+    active: NativeWaitRegistry,
+    now: () => number,
+  ): SharedBlockWaiting {
+    return {
+      register: (handle, offset, width, lo, hi, zeroTimeout) => {
+        const grant = waiterLocation(handle, offset, width);
+        return grant.ok
+          ? active.register(grant.value, lo, hi, zeroTimeout)
+          : grant;
+      },
+      poll: (ticket) => active.poll(ticket),
+      expire: (ticket) => active.expire(ticket),
+      take: (ticket) => active.take(ticket),
+      park: (ticket, timeout) => active.park(ticket, timeout),
+      now,
+    };
+  }
+  function configureNotifications(
+    active: NativeWaitRegistry,
+  ): SharedBlockNotifications {
+    return {
+      notify: (handle, offset, width, count) => {
+        const grant = waiterLocation(handle, offset, width);
+        return grant.ok
+          ? active.notify(grant.value.blockId, offset, width, count)
+          : grant;
+      },
+    };
+  }
+  const waiting =
+    waiters === undefined || clock === undefined
+      ? undefined
+      : configureWaiting(waiters, clock);
+  const notifications =
+    waiters === undefined ? undefined : configureNotifications(waiters);
   return {
     engineId: registry.engineId,
     registry,
+    waitRegistry: waiters?.registry,
+    waiting,
+    notifications,
     atomics,
     create: (initial, maximum, growable): SharedResult<SharedBlockDescriptor> =>
       create(initial, maximum, growable),

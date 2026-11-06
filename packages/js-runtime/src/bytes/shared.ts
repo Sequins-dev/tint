@@ -61,6 +61,30 @@ export interface SharedBlockNotifications {
   ): SharedResult<number>;
 }
 
+/** Owner-agent waiter protocol. Tickets are opaque scalar capabilities. Kernel
+ * wakes are advisory; only a terminal state can complete a language wait. */
+export type SharedWaitState = "waiting" | "notified" | "timed-out";
+export interface SharedWaitRegistration {
+  readonly state: "waiting" | "not-equal" | "timed-out";
+  readonly ticket: number;
+}
+export interface SharedBlockWaiting {
+  register(
+    handle: number,
+    offset: number,
+    width: 4 | 8,
+    lo: number,
+    hi: number,
+    zeroTimeout: boolean,
+  ): SharedResult<SharedWaitRegistration>;
+  poll(ticket: number): SharedResult<SharedWaitState>;
+  expire(ticket: number): SharedResult<boolean>;
+  take(ticket: number): SharedResult<SharedWaitState>;
+  park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;
+  /** Monotonic milliseconds, with one process-wide origin shared by its agents. */
+  now(): number;
+}
+
 /** Explicit trusted embedding capability. No global or ordinary-storage fallback.
  * Engine/block identities are stable safe integers, unique within their scope.
  * Creation reserves a stable, zeroed, nonmoving payload up to maximum once.
@@ -73,6 +97,7 @@ export interface SharedBlockService {
   readonly engineId: number;
   readonly atomics?: SharedBlockAtomics | undefined;
   readonly notifications?: SharedBlockNotifications | undefined;
+  readonly waiting?: SharedBlockWaiting | undefined;
   create(
     initial: number,
     maximum: number,

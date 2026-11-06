@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { after, test } from "node:test";
+import type { SharedBlockService } from "@tint/js-runtime/bytes/shared";
 import type * as objects from "../packages/js-runtime/src/objects/index.ts";
 import { bindHostRecordViews } from "../packages/js-runtime/test/ordinary-object-host-record-views.ts";
 const host = bindHostRecordViews();
@@ -211,13 +212,14 @@ async function memoryFixture(
   maximum = initial,
   endian: "little" | "big" = "little",
   canSuspend = false,
+  serviceOverride?: SharedBlockService,
 ) {
   const f = await fixture(undefined, canSuspend);
   o.installArrayBufferIntrinsics(f.root, f.realm, f.hooks);
   o.installTypedArrayIntrinsics(f.root, f.realm, f.hooks, endian);
   const { NodeSharedBlockService } =
     await import("./node-shared-block-service.ts");
-  const service = new NodeSharedBlockService();
+  const service = serviceOverride ?? new NodeSharedBlockService();
   if (shared)
     o.installSharedArrayBufferIntrinsics(f.root, f.realm, f.hooks, service);
   const constructor = f.get(
@@ -999,4 +1001,112 @@ test("wait observes the shared word after index, expected and timeout coercions 
   });
   assert.equal(f.invoke("wait", [view, index, expected, timeout]), "timed-out");
   assert.deepEqual(events, ["index", "expected", "timeout", "read:seq-cst"]);
+});
+
+test("synchronous native waiting rechecks spurious wakes and returns only a notified terminal result", async () => {
+  const { NodeSharedMemoryHost } = await import("./node-shared-memory-host.ts");
+  const { createNativeSharedBlockService } =
+    await import("@tint/native-runtime/shared-blocks");
+  const host = new NodeSharedMemoryHost();
+  let now = 0,
+    parks = 0;
+  let service: SharedBlockService | undefined;
+  const created = createNativeSharedBlockService(
+    host,
+    { pageSize: 16384, maxBlocks: 8, maxReservedBytes: 262144 },
+    host,
+    {
+      parking: {
+        park: () => {
+          parks++;
+          now++;
+          if (parks === 2) {
+            const notified = service?.notifications?.notify(1, 0, 4, 1);
+            assert.deepEqual(notified, { ok: true, value: 1 });
+          }
+          return 0;
+        },
+        wake: () => 0,
+      },
+      now: () => now,
+      maxWaiters: 4,
+    },
+  );
+  assert.ok(created.ok);
+  service = created.value;
+  const f = await memoryFixture(true, 16, 16, "little", true, service);
+  assert.equal(f.invoke("wait", [f.view("Int32Array"), 0, 0, 100]), "ok");
+  assert.equal(parks, 2);
+  assert.equal(f.realm.unsupported, false);
+});
+test("synchronous waiting uses a monotonic deadline and exact wrapped BigInt expected words", async () => {
+  const { NodeSharedMemoryHost } = await import("./node-shared-memory-host.ts");
+  const { createNativeSharedBlockService } =
+    await import("@tint/native-runtime/shared-blocks");
+  const host = new NodeSharedMemoryHost();
+  let now = 10;
+  const durations: number[] = [];
+  const created = createNativeSharedBlockService(
+    host,
+    { pageSize: 16384, maxBlocks: 8, maxReservedBytes: 262144 },
+    host,
+    {
+      parking: {
+        park: (_address, _expected, duration) => {
+          durations.push(duration);
+          now = 11;
+          return 0;
+        },
+        wake: () => 0,
+      },
+      now: () => now,
+      maxWaiters: 4,
+    },
+  );
+  assert.ok(created.ok);
+  const f = await memoryFixture(true, 16, 16, "little", true, created.value);
+  assert.equal(
+    f.invoke("wait", [f.view("BigInt64Array"), 0, "18446744073709551616", 0.5]),
+    "timed-out",
+  );
+  assert.deepEqual(durations, [500000]);
+  assert.equal(f.realm.unsupported, false);
+});
+
+test("a rejected host clock releases its registration before another wait", async () => {
+  const { NodeSharedMemoryHost } = await import("./node-shared-memory-host.ts");
+  const { createNativeSharedBlockService } =
+    await import("@tint/native-runtime/shared-blocks");
+  const host = new NodeSharedMemoryHost();
+  let bad = true;
+  let service: SharedBlockService | undefined;
+  const made = createNativeSharedBlockService(
+    host,
+    { pageSize: 16384, maxBlocks: 8, maxReservedBytes: 262144 },
+    host,
+    {
+      parking: {
+        park: () => {
+          assert.deepEqual(service?.notifications?.notify(1, 0, 4, 1), {
+            ok: true,
+            value: 1,
+          });
+          return 0;
+        },
+        wake: () => 0,
+      },
+      now: () => (bad ? NaN : 0),
+      maxWaiters: 1,
+    },
+  );
+  assert.ok(made.ok);
+  service = made.value;
+  const f = await memoryFixture(true, 16, 16, "little", true, service),
+    view = f.view("Int32Array");
+  assert.throws(
+    () => f.invoke("wait", [view, 0, 0, 1]),
+    (error) => error === "ATOMIC_WAIT_CLOCK_INVARIANT",
+  );
+  bad = false;
+  assert.equal(f.invoke("wait", [view, 0, 0, 1]), "ok");
 });
