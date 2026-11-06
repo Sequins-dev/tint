@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method.js",
+  "sourceSnapshot": {
+    "sha256": "123935ef906ff413ccbc14759243a25d66e8ad9cf4a26ce1dfdea9504cc9378c",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v11/source-snapshot.json",
+  "frozenToolchainSha256": "1c53b5eca597c20fc79f86f0ec9b371e00964a76e70ff324be0c72198eedc407",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/elements-file-harvest-prefix-v2.jsonl",
+    "journalSha256": "8ebdfa9b92a8dcc59c9e2f3cdf27beb1a413d0ddfbaf48c88b6b202f3b1bdfc7",
+    "journalBytes": 507595,
+    "observedVariants": 722
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 6,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 12746.293291999958,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "f53173a5ad59029290385f6f1e806e7648a31c0221cc74dcc3a9201e45b9cc3c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 38610.721249999944,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "f53173a5ad59029290385f6f1e806e7648a31c0221cc74dcc3a9201e45b9cc3c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 40572.25766699994,
+      "batch": 6
+    }
+  ]
+}
