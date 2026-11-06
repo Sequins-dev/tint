@@ -1,0 +1,72 @@
+{
+  "kind": "complete-historical-native-family-extraction-audit",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "selection": "built-ins/Array",
+  "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "438d7748be1da9064d98fbb2f8d8640c1fa73bd9adf4ac43c73469d06d12e0f4",
+    "files": 506
+  },
+  "recordedSnapshotPath": ".tint-bootstrap/node-toolchain-native-behavior-v9-collations-v1/source-snapshot.json",
+  "resolvedFrozenSnapshot": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/node-toolchain-native-behavior-v9-collations-v1/source-snapshot.json",
+  "frozenSnapshotFileSha256": "50285538fb9604c3a8bb035d34d23e46a7737cefddb0e9f6ace35ea4d13cd5e3",
+  "frozenToolchainSha256Recorded": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005",
+  "sourceSnapshotIdentityMatches": true,
+  "selectedSourceAndHarnessIdentitiesVerified": 6119,
+  "observationJudgmentsRevalidated": true,
+  "distinctSelectedVariants": 6119,
+  "allExpectedVariantsPresent": true,
+  "noRetriesCombined": true,
+  "sourceJournalUnchanged": true,
+  "totals": {
+    "total": 6119,
+    "passed": 5972,
+    "failed": 0,
+    "unsupported": 142,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 5,
+    "passFraction": 0.9759764667429318
+  },
+  "unsupportedByHarnessIncludes": {
+    "resizableArrayBufferUtils.js": 48,
+    "compareArray.js,resizableArrayBufferUtils.js": 94
+  },
+  "crashes": [
+    {
+      "path": "built-ins/Array/prototype/reduceRight/15.4.4.22-9-b-7.js",
+      "variant": "strict",
+      "preEntryAttachFailure": true,
+      "retainedStatus": "crash"
+    },
+    {
+      "path": "built-ins/Array/prototype/reduceRight/15.4.4.22-9-c-i-7.js",
+      "variant": "strict",
+      "preEntryAttachFailure": true,
+      "retainedStatus": "crash"
+    },
+    {
+      "path": "built-ins/Array/prototype/some/15.4.4.17-7-6.js",
+      "variant": "strict",
+      "preEntryAttachFailure": true,
+      "retainedStatus": "crash"
+    },
+    {
+      "path": "built-ins/Array/prototype/some/15.4.4.17-7-8.js",
+      "variant": "sloppy",
+      "preEntryAttachFailure": true,
+      "retainedStatus": "crash"
+    },
+    {
+      "path": "built-ins/Array/prototype/splice/create-non-array-invalid-len.js",
+      "variant": "strict",
+      "preEntryAttachFailure": true,
+      "retainedStatus": "crash"
+    }
+  ],
+  "interpretation": "Historical complete Array selection recovered from one interrupted broader journal. All 6119 variants and their source/harness hashes verified against the pinned checkout; original non-passes retained. This is not a current-main rerun. Fresh Array measurement remains in the G breadth queue after Object.",
+  "priorFootprint": "docs/results/test262-native-journal-footprint-audit-v1.json",
+  "priorJournalOnlyArrayVariants": 4896
+}
