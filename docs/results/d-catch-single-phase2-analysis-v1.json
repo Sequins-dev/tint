@@ -1,0 +1,81 @@
+{
+  "kind": "focused-native-timeout-recheck",
+  "selection": "annexB/language/eval-code/direct/var-env-lower-lex-catch-non-strict.js",
+  "conformance": true,
+  "report": "docs/results/test262-d-catch-single-phase2-v1.json",
+  "journal": "docs/results/test262-d-catch-single-phase2-v1.jsonl",
+  "stderr": "docs/results/test262-d-catch-single-phase2-v1.log",
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193",
+  "totals": {
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "processExitStatus": 0,
+  "containmentMs": 300000,
+  "loads": {
+    "start": {
+      "loadAverage": "45.62, 43.24, 34.34 ",
+      "idlePercent": 0
+    },
+    "end": {
+      "loadAverage": "42.43, 55.46, 52.14 ",
+      "idlePercent": 0.28
+    }
+  },
+  "cpuAudit": {
+    "path": "docs/results/d-catch-single-phase2-process-v1.jsonl",
+    "intervalSeconds": 30,
+    "pid": 25090,
+    "lastObserved": {
+      "pid": 25090,
+      "parent": 25089,
+      "elapsed": "04:56",
+      "cpuTime": "3:23.91",
+      "cpuPercent": "64.5",
+      "state": "RX",
+      "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-zOJceR/test 0",
+      "at": "2026-11-07T01:42:19+0800",
+      "cpuSeconds": 203.91,
+      "elapsedSeconds": 296
+    },
+    "observedCpuSeconds": 203.91,
+    "conservativeSingleThreadCpuUpperBound": 207.91
+  },
+  "classification": "load-induced/inconclusive",
+  "interpretation": "Far below the requested 250 CPU-second criterion. No semantic or intrinsic compiler/runtime hang is established by this focused recheck. Original timeout remains unchanged.",
+  "profiling": {
+    "samples": [
+      "docs/results/d-catch-recheck-compile-stall-90891.txt",
+      "docs/results/d-catch-recheck-compile-stall-late-90891.txt",
+      "docs/results/d-catch-single-sample-25090-150.txt",
+      "docs/results/d-catch-single-sample-25090-60.txt",
+      "docs/results/d-catch-single-stall-25090.txt"
+    ],
+    "result": "Native samples contain raw address stacks without function symbols; exact shared JIT-preparation cost is not confirmed. Symbolized diagnostic toolchain prepared separately but not executed."
+  },
+  "nextStep": "Recheck singly later when CPU share is adequate; do not block broader Phase 2 measurements on this low-share observation.",
+  "original": "docs/results/test262-annexb-closure-annexB-language-eval-code-direct-v3.json",
+  "verification": {
+    "complete": true,
+    "sourceMatchesPassing4504TestGate": true,
+    "reportSha256": "5f68cb4e7e47f21bfc92a4300ab22e1b9999415083bb9263380cc7f7f81639aa"
+  },
+  "artifactNormalization": "Committed top captures remove only trailing spaces and excess blank EOF lines; original stdout remains in .tint-bootstrap.",
+  "validation": {
+    "passingWorkspaceGate": "docs/results/annexb-closure-phase1-integrated-validation-v3.json",
+    "tests": 4504,
+    "exitStatus": 0,
+    "reuseReason": "No compiler/runtime/tool source edits; current source snapshot equals that passing gate.",
+    "initialWhitespaceCheck": "Detected top-output trailing spaces; normalized captures before committing."
+  }
+}
