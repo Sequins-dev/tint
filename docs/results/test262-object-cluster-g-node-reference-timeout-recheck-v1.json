@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "conformance": false,
+  "complete": true,
+  "engine": {
+    "name": "Node.js",
+    "version": "v24.12.0",
+    "v8": "13.6.233.17-node.37",
+    "adapter": "script-async-v2"
+  },
+  "scope": "Single-variant Node reference recheck after external Metal CPU saturation eased; original full reference and timeout preserved. Not Tint native conformance.",
+  "startedAt": "2026-11-06T22:43:30.193Z",
+  "completedAt": "2026-11-06T22:43:30.412Z",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "rootSelection": "built-ins/Object",
+  "requestedVariants": 1,
+  "selection": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-25.js",
+  "variantPolicy": "Only the explicitly retained strict timeout variant, in one isolated Node process; not a complete two-variant file report.",
+  "originalReport": "docs/results/test262-object-cluster-g-node-reference-v1.json",
+  "originalReportSha256": "139d5968c388b883c2cca416d97923aa07fd5e4920e6e117cca2d9160dc8db92",
+  "originalTimeouts": [
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-25.js",
+      "variant": "strict",
+      "status": "timeout"
+    }
+  ],
+  "timeoutMs": 5000,
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-25.js",
+      "sha256": "9a01a009500a62e2462265c3e88902d15546da2e7c3f1c8a320df828429e66a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass"
+    }
+  ]
+}

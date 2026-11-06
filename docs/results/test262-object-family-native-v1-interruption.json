@@ -1,0 +1,33 @@
+{
+  "kind": "native-selection-interruption",
+  "conformance": false,
+  "interruptedAt": "2026-11-06T22:43:10.323153+00:00",
+  "selection": "built-ins/Object",
+  "totalVariants": 6802,
+  "observedVariants": 64,
+  "passed": 59,
+  "crashes": 5,
+  "failures": 0,
+  "unsupported": 0,
+  "unobservedVariants": 6738,
+  "reason": "Adopt main 51ff615 LLDB connection-readiness correction before measuring the rest of the family. The five original crashes are pre-entry state=2/pid=0 failures; no native semantic failures observed.",
+  "phaseAtStop": "compiling batch 1 (64 variants), between native variants",
+  "ownedProcessesAtStop": [
+    "35338 38974 R 6:07.23"
+  ],
+  "nativeInferiorAtStop": false,
+  "runnerPid": 35338,
+  "ownerPid": 38972,
+  "journal": "docs/results/test262-object-family-native-v1.jsonl",
+  "journalSha256": "b2bf51c87e4ae0e63e5accaeafa83bb71dbfff54ae9b64ab887b0a8ffb97aa8c",
+  "journalBytes": 66861,
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "frozenToolchainSha256": "a3042355f8bb862dfad08a42c1c97a04dc2613369297eb0da5afd686123f085f",
+  "replacementPolicy": "Fresh full Object experiment on rebased/re-frozen main. Keep this original prefix unchanged; no prior observation is replaced or resumed with changed inputs.",
+  "preservedImage": ".tint-bootstrap/object-batch0-launch-diagnostic-v1/image.json",
+  "relatedFix": "51ff615",
+  "fixGate": "0e9efbe"
+}

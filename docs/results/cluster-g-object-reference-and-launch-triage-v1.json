@@ -1,0 +1,80 @@
+{
+  "kind": "cluster-g-object-reference-and-launch-triage",
+  "conformance": false,
+  "createdAt": "2026-11-06T22:43:57.451141+00:00",
+  "nativeInterruption": "docs/results/test262-object-family-native-v1-interruption.json",
+  "nativeJournalUnchangedAfterStop": true,
+  "nativeRunnerExitStatus": 143,
+  "allOldOwnedProcessesExited": true,
+  "nativeRootCause": "Pre-entry LLDB connected-state readiness failures; main 51ff615 consumes process state events before RemoteLaunch, with full gate in 0e9efbe. Fresh full measurement will use a new frozen adapter.",
+  "originalNativeObservations": {
+    "total": 64,
+    "passed": 59,
+    "crashes": 5,
+    "failed": 0,
+    "unsupported": 0
+  },
+  "preservedBatchImage": {
+    "capturedAt": "2026-11-06T22:41:22.631782+00:00",
+    "sourceImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-OlmMoc/test",
+    "sha256": "41d182e4edbb9774a84d85afca559b4b07ddab600c4bffb7aa5dca0cee4397c8",
+    "bytes": 179040767,
+    "sourceSnapshot": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "journal": "docs/results/test262-object-family-native-v1.jsonl",
+    "batch": 0
+  },
+  "nodeReference": {
+    "report": "docs/results/test262-object-cluster-g-node-reference-v1.json",
+    "totals": {
+      "total": 6802,
+      "passed": 6799,
+      "failed": 2,
+      "unsupported": 0,
+      "timeouts": 1,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 0.9995589532490444
+    },
+    "runnerExitStatus": 0,
+    "scope": "Node only, not Tint native evidence"
+  },
+  "nodeReferenceNonpasses": [
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-25.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    },
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-arguments.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "Test262Error: Expected SameValue(\u00abnull\u00bb, \u00ab[object Arguments]\u00bb) to be true"
+      }
+    },
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-caller.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "Test262Error: Expected SameValue(\u00abnull\u00bb, \u00abfunction g() {\n  return f();\n}\u00bb) to be true"
+      }
+    }
+  ],
+  "interpretation": {
+    "timeout": "Occurred during documented external Metal saturation, approximately 22:29\u201322:37Z. Original timeout retained.",
+    "timeoutRecheck": "docs/results/test262-object-cluster-g-node-reference-timeout-recheck-v1.json",
+    "timeoutRecheckPassed": true,
+    "descriptorFailures": "Both pinned tests require SameValue for the value of a non-writable, non-configurable function property across calls. Node v24.12.0 reports null outside invocation but an Arguments object or caller function inside invocation. Do not change Tint to match these Node discrepancies."
+  },
+  "next": "Rebase, build and freeze main with the connection-readiness fix, verify the preserved image under that host, and launch a fresh complete Object selection; then Array."
+}
