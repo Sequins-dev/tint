@@ -1,0 +1,39 @@
+{
+  "kind": "c1-queued-launch-cancellations-memory-emergency",
+  "conformance": false,
+  "completeNativeSelection": false,
+  "nativeExecutions": 0,
+  "reason": "Coordinator revoked the second-runner allowance and lowered the global cap to 6. Both launchers were still queued. Their immutable captured helper reads the cap once at startup, so both queued launchers were stopped before native execution. Replace with one fresh cap-6 launch for the largest unmeasured C1 population.",
+  "launchers": [
+    14111,
+    76782
+  ],
+  "frozenToolchains": [
+    "docs/results/c1-phase2-frozen-toolchain-v7.json",
+    "docs/results/c1-phase2-frozen-toolchain-v8.json"
+  ],
+  "observations": [
+    {
+      "selection": "language/statements/class/method",
+      "nativeExecutions": 0,
+      "journalCreated": false,
+      "stdout": "docs/results/test262-c1-foundation-language-statements-class-method-v2.unstarted-stdout.txt",
+      "stderr": "docs/results/test262-c1-foundation-language-statements-class-method-v2.json.stderr.txt",
+      "slotSource": "docs/results/test262-c1-foundation-language-statements-class-method-v2.json.slot-source.txt",
+      "launcherSignal": "SIGTERM after SIGSTOP boundary check; no native children; launcher resumed to deliver termination"
+    },
+    {
+      "selection": "language/statements/class/*.js",
+      "nativeExecutions": 0,
+      "journalCreated": false,
+      "stdout": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v1.unstarted-stdout.txt",
+      "stderr": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v1.json.stderr.txt",
+      "slotSource": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v1.json.slot-source.txt",
+      "launcherSignal": "SIGTERM after SIGSTOP boundary check; no native children; launcher resumed to deliver termination"
+    }
+  ],
+  "newClusterRunnerLimit": 1,
+  "newGlobalRunnerCap": 6,
+  "newGlobalSelfBuildCap": 1,
+  "scope": "No variants failed, passed, or were interrupted. Empty stdout files are retained as unstarted artifacts, not canonical native reports. No journal existed to resume."
+}
