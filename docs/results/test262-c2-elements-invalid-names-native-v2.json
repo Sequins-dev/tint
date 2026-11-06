@@ -1,0 +1,1474 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/elements/syntax/early-errors/invalid-names",
+  "sourceSnapshot": {
+    "sha256": "123935ef906ff413ccbc14759243a25d66e8ad9cf4a26ce1dfdea9504cc9378c",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v11/source-snapshot.json",
+  "frozenToolchainSha256": "1c53b5eca597c20fc79f86f0ec9b371e00964a76e70ff324be0c72198eedc407",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/elements-invalid-names-prefix-v2.jsonl",
+    "journalSha256": "b83823c4b0b2896bfb6d3d869190ebf9df20edc355ab8d60225b7e8803906fc4",
+    "journalBytes": 499399,
+    "observedVariants": 707
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 10,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 11367.679625000339,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 56,
+    "passed": 50,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 6,
+    "passFraction": 0.8928571428571429
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-call-expression-bad-reference.js",
+      "sha256": "950a5f4848fde39bbaba2fea2120a4dfe0bbfb3e3479a434955322606a537b71",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13359.34837500006,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-call-expression-bad-reference.js",
+      "sha256": "950a5f4848fde39bbaba2fea2120a4dfe0bbfb3e3479a434955322606a537b71",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13791.962832999881,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-call-expression-this.js",
+      "sha256": "40b4742187009b8c1caf2bfbf310bb052e620df0a0facbcc627d45c6d79f7c26",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14233.550375000108,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-call-expression-this.js",
+      "sha256": "40b4742187009b8c1caf2bfbf310bb052e620df0a0facbcc627d45c6d79f7c26",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14651.960500000045,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-call-expression-bad-reference.js",
+      "sha256": "9641ce94e26bf3397a249f0858c876f89023dc1c89218bdf924c12aadc222508",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15114.861375000328,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-call-expression-bad-reference.js",
+      "sha256": "9641ce94e26bf3397a249f0858c876f89023dc1c89218bdf924c12aadc222508",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15761.830874999985,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-call-expression-this.js",
+      "sha256": "b3e547b69fcfeb004b9822685375d5f79418e87c8d866b150ab56bd5c47e1d39",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16376.951249999925,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-call-expression-this.js",
+      "sha256": "b3e547b69fcfeb004b9822685375d5f79418e87c8d866b150ab56bd5c47e1d39",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17242.787291999906,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-member-expression-bad-reference.js",
+      "sha256": "907c0c124890ca47664cdcd76b6e0ae074de968e2fb06afa8aa5784f0742c1de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4DYLjx/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"10\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4DYLjx/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4DYLjx/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4DYLjx/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 18206.92849999992,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-member-expression-bad-reference.js",
+      "sha256": "907c0c124890ca47664cdcd76b6e0ae074de968e2fb06afa8aa5784f0742c1de",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19262.967124999966,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-member-expression-this.js",
+      "sha256": "d263b72245de37ac4c468bc7e8d626e69c21088175578d81b7f84c8f46bd4cc9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20137.72541700024,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-fn-member-expression-this.js",
+      "sha256": "d263b72245de37ac4c468bc7e8d626e69c21088175578d81b7f84c8f46bd4cc9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21335.053582999855,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-member-expression-bad-reference.js",
+      "sha256": "f2486441b258d2ece4f71ed963442b65df97ff0e06d043fafb46e0d1cbe384ce",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23090.813207999803,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-member-expression-bad-reference.js",
+      "sha256": "f2486441b258d2ece4f71ed963442b65df97ff0e06d043fafb46e0d1cbe384ce",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23848.001999999862,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-member-expression-this.js",
+      "sha256": "91c3aa77336f18612b16c41679d277c716304dd73b45f3a25b4432d34884e6f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24657.161458000075,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/field-init-member-expression-this.js",
+      "sha256": "91c3aa77336f18612b16c41679d277c716304dd73b45f3a25b4432d34884e6f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25551.949792,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-call-expression-bad-reference.js",
+      "sha256": "d58ff777589f98ae0a5bf802df8858d8aab81340fedfb92b496fcb905d6bd3fb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26463.020916999783,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-call-expression-bad-reference.js",
+      "sha256": "d58ff777589f98ae0a5bf802df8858d8aab81340fedfb92b496fcb905d6bd3fb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27533.833749999758,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-call-expression-this.js",
+      "sha256": "ff59b6ce7b59fe4c68dc68de918a2fc7b0e3ac7919c498ad48cd375762037f39",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29017.02237499971,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-call-expression-this.js",
+      "sha256": "ff59b6ce7b59fe4c68dc68de918a2fc7b0e3ac7919c498ad48cd375762037f39",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30111.017625000328,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-member-expression-bad-reference.js",
+      "sha256": "23f9fa3a68dc314522eb7428f4367b4fdd3c0bcb5826a499b892e37144af2b87",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 31158.79408300016,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-member-expression-bad-reference.js",
+      "sha256": "23f9fa3a68dc314522eb7428f4367b4fdd3c0bcb5826a499b892e37144af2b87",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32307.12037499994,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-member-expression-this.js",
+      "sha256": "76a45a96891fedbcb17126424631927b946b73a82802916057c3f025e15f7969",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 33746.2236250001,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/fields-init-heritage-member-expression-this.js",
+      "sha256": "76a45a96891fedbcb17126424631927b946b73a82802916057c3f025e15f7969",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 34822.674999999814,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-call-expression-bad-reference.js",
+      "sha256": "8c9309571740a447305003b0e23167fbec8737d38e7ec604d0566cbf71629cd7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 36055.191208000295,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-call-expression-bad-reference.js",
+      "sha256": "8c9309571740a447305003b0e23167fbec8737d38e7ec604d0566cbf71629cd7",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 37199.52324999962,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-call-expression-this.js",
+      "sha256": "15cd525bbf50b3a5a6a2f6b0a0300b326ef3bb8873d8e0aab46e005a11204f47",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 38227.23245800007,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-call-expression-this.js",
+      "sha256": "15cd525bbf50b3a5a6a2f6b0a0300b326ef3bb8873d8e0aab46e005a11204f47",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 39823.418874999974,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-call-expression-bad-reference.js",
+      "sha256": "354d5a44af229abd733925eed09838ca1dec6d148c061ad44a036f7e959e7ce2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iEzPaH/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"30\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iEzPaH/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iEzPaH/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iEzPaH/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 41849.724208000116,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-call-expression-bad-reference.js",
+      "sha256": "354d5a44af229abd733925eed09838ca1dec6d148c061ad44a036f7e959e7ce2",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 43830.18770799972,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-call-expression-this.js",
+      "sha256": "386fa22336ca203b5a739fb24acbcbf27047022a693dc2181dc222572feaad43",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 45729.25783299981,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-call-expression-this.js",
+      "sha256": "386fa22336ca203b5a739fb24acbcbf27047022a693dc2181dc222572feaad43",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 48663.482542000245,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-member-expression-bad-reference.js",
+      "sha256": "3a590aedddb33fa5ffd30c5aa59b44f569cf0d4f9b932b0c818277438db3356c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 50880.263542000204,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-member-expression-bad-reference.js",
+      "sha256": "3a590aedddb33fa5ffd30c5aa59b44f569cf0d4f9b932b0c818277438db3356c",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-t6Kegb/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"35\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-t6Kegb/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-t6Kegb/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-t6Kegb/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 53841.88620800013,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-member-expression-this.js",
+      "sha256": "b0e901c89625f38caf3be300a03ccc7029b158ee650a0eb57980d9321705b360",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 57024.8920839997,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-fn-member-expression-this.js",
+      "sha256": "b0e901c89625f38caf3be300a03ccc7029b158ee650a0eb57980d9321705b360",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fSGxW3/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"37\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fSGxW3/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fSGxW3/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fSGxW3/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 61944.29408300016,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-call-expression-bad-reference.js",
+      "sha256": "9a4f2c7d177b5c9b6dbe03c4d414dd509eab15f88191b1babe8dbf51b1601710",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 69007.29066700023,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-call-expression-bad-reference.js",
+      "sha256": "9a4f2c7d177b5c9b6dbe03c4d414dd509eab15f88191b1babe8dbf51b1601710",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 73750.635458,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-call-expression-this.js",
+      "sha256": "bf9980f9837b6b354825fb5fe9719f7a2935adbfc32071a87d2f652bbef51c83",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 76393.24170800019,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-call-expression-this.js",
+      "sha256": "bf9980f9837b6b354825fb5fe9719f7a2935adbfc32071a87d2f652bbef51c83",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 79743.84504200006,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-member-expression-bad-reference.js",
+      "sha256": "29c6393cff7dac9f66849ffe87b19ca46ae23069eaa92bdb8b9bb01ac3095905",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 83054.44158300012,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-member-expression-bad-reference.js",
+      "sha256": "29c6393cff7dac9f66849ffe87b19ca46ae23069eaa92bdb8b9bb01ac3095905",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 86186.70662499964,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-member-expression-this.js",
+      "sha256": "0cbf02844a13c2a17878e11ca3e28e56713bd3bf4a9cbb31f2809e1c13214b3e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JnwMye/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"44\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JnwMye/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JnwMye/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JnwMye/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 89349.97795800027,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-heritage-member-expression-this.js",
+      "sha256": "0cbf02844a13c2a17878e11ca3e28e56713bd3bf4a9cbb31f2809e1c13214b3e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 93322.20541599998,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-member-expression-bad-reference.js",
+      "sha256": "0811e3e7e52509b1f644585f76ef5a74ff45418fe746dd8d3ae79c3ebcb36ee6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 96587.60904100025,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-member-expression-bad-reference.js",
+      "sha256": "0811e3e7e52509b1f644585f76ef5a74ff45418fe746dd8d3ae79c3ebcb36ee6",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 99323.26041699992,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-member-expression-this.js",
+      "sha256": "f2d252ff01937a93b28feead21f40167e7571730f227d2a13bde2cba19ca8caf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 102562.9196250001,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-member-expression-this.js",
+      "sha256": "f2d252ff01937a93b28feead21f40167e7571730f227d2a13bde2cba19ca8caf",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 106151.50999999978,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-call-expression-bad-reference.js",
+      "sha256": "c54c46db723ab789b452ab8db23ab5356677d5e12328cdbad28b103848462ffc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 109535.12287500035,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-call-expression-bad-reference.js",
+      "sha256": "c54c46db723ab789b452ab8db23ab5356677d5e12328cdbad28b103848462ffc",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 113881.86849999987,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-call-expression-this.js",
+      "sha256": "045e0823b454a4a63134749f4b5a97d129c9a961200973c22f1afa5252d1f4c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 116084.18329200009,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-call-expression-this.js",
+      "sha256": "045e0823b454a4a63134749f4b5a97d129c9a961200973c22f1afa5252d1f4c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 119434.49674999993,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-member-expression-bad-reference.js",
+      "sha256": "b4c03d1872ac355519e6c2a7274ca153003bf956d247117e285dfca9f3c30fd9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 121743.20733299991,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-member-expression-bad-reference.js",
+      "sha256": "b4c03d1872ac355519e6c2a7274ca153003bf956d247117e285dfca9f3c30fd9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yLzYtd/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"55\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yLzYtd/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yLzYtd/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yLzYtd/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 123857.18562500039,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-member-expression-this.js",
+      "sha256": "a5ae63ab6629db949705c0115bdb522cf8e18354288422faf3c8cfefc174e37b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 126405.54495899985,
+      "batch": 10
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/invalid-names/method-outter-member-expression-this.js",
+      "sha256": "a5ae63ab6629db949705c0115bdb522cf8e18354288422faf3c8cfefc174e37b",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-fields-private", "class"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 128212.28725000005,
+      "batch": 10
+    }
+  ]
+}
