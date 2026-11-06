@@ -1,0 +1,51 @@
+{
+  "kind": "c1-merge-ready-slice-validation",
+  "conformance": false,
+  "mergeReadyCommittedSlice": true,
+  "base": "3ed10e35883dc7c9cc74fa1caf0e41ecb546f7ba",
+  "validatedHead": "0e84522ebe6497b829162e022188fb82e4f5b648",
+  "workspace": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "node": "24.12.0",
+    "testConcurrency": 4,
+    "tests": 4555,
+    "passed": 4555,
+    "failed": 0,
+    "exitStatus": 0,
+    "signal": null,
+    "elapsedMs": 4269631,
+    "queuedSeconds": 3877,
+    "log": "docs/results/c1-check-v10.txt",
+    "logSha256": "b15ac2f22dc2666f3b13b5d59a13426ffad0da50480cbdb159f6b839fa9c7a49",
+    "progress": "docs/results/c1-check-v10-progress.txt"
+  },
+  "nativeEvidence": {
+    "uniqueCompletedVariants": 409,
+    "passed": 409,
+    "completeFoundationSelections": 6,
+    "foundationVariants": 192,
+    "completeDirectFiles": 111,
+    "directVariants": 217,
+    "foundation": "docs/results/c1-foundation-checkpoint-v5.json",
+    "directFiles": "docs/results/c1-direct-statements-completed-files-v4.json",
+    "wholeClass": false,
+    "wholeSuite": false
+  },
+  "classPatchSelfBuild": "docs/results/c1-frozen-selfbuild-v2.json",
+  "classPatchNativeFixture": "docs/results/c1-instance-elements-native-v1.json",
+  "currentCombinedCompilerStageIdentityVerified": false,
+  "compilerIntegrationScope": "The original C1 private-element patch has its accepted frozen self-build and 11 native cases. Later upstream compiler changes carry separate evidence; exact current combined stage identity is not claimed.",
+  "inProgressNotInSlice": {
+    "selection": "language/statements/class/*.js",
+    "parentVariants": 504,
+    "runnerPid": 81217,
+    "controllerPid": 81194,
+    "journal": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.jsonl",
+    "trackedSourceClean": true,
+    "untrackedActiveArtifacts": [
+      "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.json",
+      "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.jsonl",
+      "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.json.stderr.txt"
+    ]
+  }
+}
