@@ -1,0 +1,62 @@
+{
+  "kind": "native-focused-recheck-validation",
+  "generatedAt": "2026-11-06T23:34:52.994909+00:00",
+  "conformance": false,
+  "selection": "language/expressions/object/11.1.5_6-3-1.js",
+  "nativeReport": "docs/results/test262-object-load-timeout-recheck-a2-native-v1.json",
+  "nativeTotals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "originalInterruption": "docs/results/cluster-a2-object-connected-supersession-interruption-v1.json",
+  "originalObservations": [
+    {
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": "timeout"
+    },
+    {
+      "variant": "strict",
+      "status": "crash",
+      "outcome": "crash"
+    }
+  ],
+  "externalSaturation": {
+    "window": "2026-11-06T22:29\u201322:37Z",
+    "classificationAuthority": "/Users/stephenbelanger/.t3/tint-briefs/load-events.md",
+    "classification": "Original sloppy timeout is load-induced and inconclusive by the coordinator-recorded saturation window. A neighbouring inferior was sampled at nine CPU seconds in 150 wall seconds; no direct CPU sample of the timed-out inferior was obtained."
+  },
+  "recheckPolicy": "Complete file extracted from the fresh full-object run, with each variant executed in its own LLDB-contained process. New frozen v4 and direct launch are recorded separately from the original v3 connected measurement. No observations or snapshots combined; original interruption evidence is unchanged.",
+  "nativeExecutionsAddedByExtraction": 0,
+  "ledgerValidation": {
+    "kind": "native-selection-ledger-validation",
+    "generatedAt": "2026-11-06T23:34:52.894Z",
+    "nativeExecutions": 0,
+    "report": "docs/results/test262-object-load-timeout-recheck-a2-native-v1.json",
+    "reportSha256": "31e127157273e35d787e05f09f39b6a2844e3991a09486704fc4857ef7a544ce",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "expectedVariants": 2,
+    "acceptedArtifacts": 1,
+    "rejected": [],
+    "counts": {
+      "pass": 2
+    }
+  },
+  "workspaceGate": {
+    "policy": "Docs-only slice reuses current main gate per shared READY FILE rule",
+    "main": "7f29edb9bdf457ced2ae78298648b7c7a3923484"
+  },
+  "portableSourceChanged": false,
+  "selfBuildRequired": false
+}
