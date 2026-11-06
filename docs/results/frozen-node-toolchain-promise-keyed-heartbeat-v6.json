@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "head": "1b875fe141c1215dc2eb040fd9f018edf2ffabd3",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "29b180787c20683eea66571cc11a371f504b829e7232b0650f05d1790509ad15",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v6",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v6/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v6/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v6/source-snapshot.json",
+    "sha256": "b25b186e241e38c0109cc5cc8af1d8c6384791929fde7e071d9ce23c74be8ada"
+  },
+  "runIdentity": "049c1d6815335c6610e58896d0418cf23159073f4aa7c6a367b7b269ea528f34",
+  "main": "20810b1d3734d762727fd4069a9df6977d85c3a8",
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "short-native-fixture",
+    "slot": "not required by updated RESOURCE RULE",
+    "concurrentTest262Runners": 1
+  },
+  "priorNativeFixture": "docs/results/native-promise-keyed-validation-v3.json",
+  "scope": "Rebased graph includes current main; the two keyed Promise implementation files match the native-validated bytes. Other upstream source differences retain their own provenance.",
+  "purpose": "Current rebased host tooling for short LLDB smoke continuation; original stage2 image source provenance remains unchanged."
+}

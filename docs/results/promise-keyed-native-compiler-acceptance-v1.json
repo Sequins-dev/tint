@@ -1,0 +1,29 @@
+{
+  "kind": "native-promise-keyed-compiler-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "imageSourceSnapshot": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+  "sourceAudit": "docs/results/promise-keyed-selfbuild-source-audit-v3.json",
+  "nativeSelfBuild": "docs/results/bootstrap-promise-keyed-v3.json",
+  "smokeContinuation": "docs/results/bootstrap-promise-keyed-smoke-v5.json",
+  "retainedStartupFailure": "docs/results/promise-keyed-selfbuild-smoke-startup-interruption-v1.json",
+  "stageImages": {
+    "bytes": 71847842,
+    "sha256": "742548cd1b9ddebfc1c0ae74ea8a88889afe2a3934e03b602b177db175048f1c",
+    "byteIdentical": true
+  },
+  "strictSignatures": "both verified, exit 0",
+  "dwarf": "both verified, exit 0",
+  "nativeStage2BuildExit": 0,
+  "nativeStage2SmokeBuildExit": 0,
+  "smokeExpectedExit": 42,
+  "smokeActualExit": 42,
+  "smokeByteIdentical": true,
+  "nativeEntryAndFinalStatesVerified": true,
+  "bespokeKeyedRegressions": "docs/results/native-promise-keyed-validation-v3.json",
+  "test262KeyedSelections": [
+    "docs/results/test262-promise-allkeyed-native-v1.json",
+    "docs/results/test262-promise-allsettledkeyed-native-v1.json"
+  ],
+  "nativeFixtureNotTest262Coverage": true
+}

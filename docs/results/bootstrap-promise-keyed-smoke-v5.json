@@ -1,0 +1,67 @@
+{
+  "kind": "native-self-build-smoke-continuation",
+  "conformance": false,
+  "accepted": true,
+  "prior": "docs/results/bootstrap-promise-keyed-v3.json",
+  "retainedStartupFailure": "docs/results/promise-keyed-selfbuild-smoke-startup-interruption-v1.json",
+  "sourceAudit": "docs/results/promise-keyed-selfbuild-source-audit-v3.json",
+  "hostToolchain": "docs/results/frozen-node-toolchain-promise-keyed-heartbeat-v6.json",
+  "launchMode": "connected",
+  "imageSourceSnapshot": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+  "native": [
+    {
+      "label": "stage2-smoke-build",
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke",
+        "--debug-symbols"
+      ],
+      "expected": 0,
+      "debuggerExitStatus": 0,
+      "signal": null,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-BaeQrT",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/stage2-smoke-build.log",
+      "initial": {
+        "stopped": true,
+        "state": 5,
+        "pid": 63743
+      },
+      "final": {
+        "exited": true,
+        "state": 10,
+        "exitStatus": 0
+      }
+    },
+    {
+      "label": "smoke-execution",
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke",
+      "args": [],
+      "expected": 42,
+      "debuggerExitStatus": 0,
+      "signal": null,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke-execution.log",
+      "initial": {
+        "stopped": true,
+        "state": 5,
+        "pid": 65088
+      },
+      "final": {
+        "exited": true,
+        "state": 10,
+        "exitStatus": 42
+      }
+    }
+  ],
+  "stageImages": {
+    "bytes": 71847842,
+    "sha256": "742548cd1b9ddebfc1c0ae74ea8a88889afe2a3934e03b602b177db175048f1c",
+    "byteIdentical": true
+  },
+  "smoke": {
+    "byteIdentical": true,
+    "sha256": "27b93ca550a4c8dc544e3bbcffc285b155cceb7dcac7a65388636a73da3399ce",
+    "bytes": 2132578
+  }
+}

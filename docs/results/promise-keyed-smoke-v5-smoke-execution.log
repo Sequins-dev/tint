@@ -1,0 +1,19 @@
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(120)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/port\",\"--\",\"127.0.0.1:0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(120)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.SetAsync(True)\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()\nlldb.debugger.SetAsync(False)\nlaunch_info = lldb.SBLaunchInfo([])\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-smoke-v5/smoke\"), True)\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\nlaunch_error = lldb.SBError()\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/launch.log\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\nassert launch_error.Success(), launch_error.GetCString()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/pid",'w').write(str(p.GetProcessID())); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/initial.json",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+5
+43
+(lldb) continue
+Process 65088 resuming
+Process 65088 exited with status = 42 (0x0000002a)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-smoke-jTP18U/final.json",'w').write(json.dumps({'exited':p.GetState()==lldb.eStateExited,'state':p.GetState(),'exitStatus':p.GetExitStatus()})); assert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42
+47
+
+Debugserver: 
+Connection: 
+Launch: 
+state=5
+Process state: 
+Remote packets: 
