@@ -1,4 +1,3 @@
-import { createScriptIteratorHooks } from "./iteration.ts";
 import { installIteratorSearch } from "./iterator-search.ts";
 import { installIteratorFrom } from "./iterator-from.ts";
 import { installIteratorConsumers } from "./iterator-consumers.ts";
@@ -23,7 +22,9 @@ import {
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 
-/** Abstract Iterator base; concrete iterators and subclasses share its prototype. */
+/** Abstract Iterator base; concrete iterators and subclasses share its prototype.
+ * Prototype intrinsics such as [Symbol.iterator] and [Symbol.dispose] are
+ * installed with the realm by installIteratorIntrinsics. */
 export function installIteratorConstructor(
   global: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
@@ -50,31 +51,6 @@ export function installIteratorConstructor(
   installIteratorConsumers(realm, hooks);
   installIteratorSearch(realm, hooks);
   installIteratorHelpers(realm, hooks, constructor);
-
-  builtinProperty(
-    prototype,
-    wellKnownSymbol(realm.symbolRegistry, "dispose"),
-    builtinFunction(
-      realm.functionPrototype,
-      "[Symbol.dispose]",
-      0,
-      (receiver, args): unknown => {
-        const protocol = createScriptIteratorHooks(realm, hooks);
-        const method = protocol.get(receiver, "return");
-        if (!protocol.isNullish(method)) {
-          if (!protocol.isCallable(method))
-            throw createRuntimeError(realm, "type");
-          // Disposal ignores the return value, unlike IteratorClose.
-          protocol.call(method, receiver, []);
-        }
-        return undefined;
-      },
-      hooks,
-    ),
-    true,
-    true,
-    hooks,
-  );
 
   function inherited(
     key: ScriptPropertyKey,
