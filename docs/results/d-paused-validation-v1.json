@@ -1,0 +1,62 @@
+{
+  "kind": "cluster-paused-validation",
+  "conformance": false,
+  "cluster": "D",
+  "branch": "fix/direct-eval-closure-resolution",
+  "mainAtFinalRebase": "2c0e13c282daf530fa15fd7308c06839bc4b69c4",
+  "ownChanges": "Reports and documentation only; no compiler, runtime, tooling or test source edits.",
+  "fullWorkspaceGate": {
+    "command": "PATH=<Node24>/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "typecheck": 0,
+    "tests": {
+      "passed": 4524,
+      "failed": 0,
+      "exitStatus": 0
+    },
+    "boundaries": 0,
+    "formatCheck": 0,
+    "mainAtGate": "614e676c584793b03ae80e5771f3002667851e63",
+    "headAtGate": "e81e9d109b3a35fc0bc914fa2169ecae5ec74a08",
+    "log": "docs/results/d-paused-final-check-v1.log"
+  },
+  "finalRebase": {
+    "exitStatus": 0,
+    "changedProductionSourcesSinceFullGate": [
+      "packages/ts-native/src/modules/index.ts"
+    ],
+    "changedTestSinceFullGate": "packages/ts-native/test/modules-link.test.ts",
+    "addedToolSinceFullGate": "tools/verify-linked-syntax-hashes.ts",
+    "postRebaseBuild": 0,
+    "focusedTests": {
+      "command": "node --test --test-concurrency=2 packages/ts-native/test/modules-link.test.ts",
+      "passed": 28,
+      "failed": 0,
+      "exitStatus": 0
+    },
+    "changedSourceFormatting": 0,
+    "log": "docs/results/d-paused-post-rebase-focused-v1.log",
+    "inheritedMainValidation": "docs/results/operator-hash-rebased-workspace-gate-v5.json",
+    "inheritedMainNativeEvidence": [
+      "docs/results/operator-hash-native-validation-v1.json",
+      "docs/results/operator-hash-selfbuild-native-v1.json"
+    ],
+    "reuseReason": "All D changes are reports/documentation. Main added the independently gated linked-syntax graph-hash fix; a fresh local build and all 28 linker tests, including its new regression, pass after rebasing. The 4524-test full gate was before this final rebase, not represented as a full rerun of the final tree."
+  },
+  "nativeSelfBuild": "No new D portable code changes; no new self-build launched during the pause. Existing reviewed Phase 1 and main-owned compiler evidence remains separately identified.",
+  "journalVerification": {
+    "observed": 84,
+    "passed": 76,
+    "timeouts": 8,
+    "unobserved": 34,
+    "complete": false,
+    "sha256": "477b544e4a3c4bcc9e780839f50317adf772ce2fc51e2a8f568412e2ef5b328c",
+    "resumable": true
+  },
+  "handoff": "/Users/stephenbelanger/.t3/tint-briefs/handoff-D.md",
+  "processes": "No D runner, inferior, observer or queued native wrapper remains.",
+  "logHashes": {
+    "d-paused-final-check-v1.log": "e048d1710fcd26d62404c25088c696bea13186a78445739c109617387aaa90d8",
+    "d-paused-post-rebase-focused-v1.log": "f93b1beaff5516cb281bd06fa06da044fc761f770031f123db713e55e9887198"
+  }
+}

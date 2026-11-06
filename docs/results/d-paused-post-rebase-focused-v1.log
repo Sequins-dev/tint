@@ -1,0 +1,42 @@
+
+> tint-workspace@ build /Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366
+> tsc -b
+
+✔ module identities, aliases, local shadowing and source origins survive composition (10.099209ms)
+✔ type imports and generic parameter shadowing retain separate namespaces (1.298875ms)
+✔ unresolved, missing, namespace and mutable import misuse fail explicitly (26.242125ms)
+✔ cyclic declaration modules resolve exports before rewriting bodies (1.925084ms)
+✔ constructor type arguments and argument references are rewritten independently (0.672167ms)
+✔ for-of binding identities and origins survive module composition (0.501708ms)
+✔ parameter default expressions retain imported binding identity and source origins (0.427916ms)
+✔ linked numeric array constants retain one identity across imported aliases (1.332625ms)
+✔ composition preserves optional properties in imported type contracts (0.570125ms)
+✔ linked generic functions preserve type parameter scopes and imported type arguments (7.784834ms)
+✔ indexed access keeps imported type identities through linking and specialization (1.896958ms)
+✔ named and star re-exports resolve aliases, shared diamonds and cycles (1.756625ms)
+✔ local exports preserve imported identities and type-only star boundaries (0.477667ms)
+✔ conflicting stars are omitted, explicit exports win, and missing exports fail (1.839416ms)
+✔ stars exclude default exports and missing dependency or unproductive cycles fail (0.931625ms)
+✔ instance linking orders runtime dependencies and excludes declaration-only type imports (0.8095ms)
+✔ instance evaluation visits diamond dependencies once and retains inline-type side effects (0.46225ms)
+✔ instance evaluation handles cyclic back-edges in source dependency order (0.348625ms)
+✔ source lookup uses logarithmic reads over ordered disjoint linked ranges (0.953625ms)
+✔ satisfies constraints retain imported aliases and specialize type parameters (1.846666ms)
+✔ linked signature types retain imported names and generic parameters (0.831666ms)
+✔ unrelated module exports do not multiply resolution work (121.623791ms)
+✔ a string-named star export links as a named binding rather than a namespace (0.782166ms)
+✔ namespace exports retain an explicit linker capability boundary (0.29375ms)
+✔ semantic export adapters retain exact native names and export ordering (0.344875ms)
+✔ native policy and metadata retain competing-error order (0.924959ms)
+✔ linking rebases retained export source starts without changing declaration spans (2.456208ms)
+✔ linked copies receive fresh graph hashes when generated source hashes collide (14.710542ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 371.817458
+Checking formatting...
+All matched files use Prettier code style!
