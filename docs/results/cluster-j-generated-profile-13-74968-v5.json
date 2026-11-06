@@ -1,0 +1,67 @@
+{
+  "at": "2026-11-06T20:02:07.332Z",
+  "runner": "2026-11-06T20:01:44.780Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=276212ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+  "process": {
+    "pid": 74968,
+    "ppid": 74967,
+    "elapsed": "04:53",
+    "cpuTime": "4:18.20",
+    "cpu": "84.9",
+    "state": "RX",
+    "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+  },
+  "journal": ".tint-bootstrap/cluster-j-regexp-v5.jsonl",
+  "header": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "84aa3dddcbaad83c617fed5c78bf330be30b726ad90ddd07a1d89afbd01f97a4",
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": false,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "built-ins/RegExp",
+    "batchSize": 64,
+    "sourceSnapshot": {
+      "sha256": "eb810121f9ab6bf004b75f1f6903afa64e7c6c96bcd751f5d94a361acf737990",
+      "files": 569
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v5/source-snapshot.json",
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  }
+}

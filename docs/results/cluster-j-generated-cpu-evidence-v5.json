@@ -1,0 +1,351 @@
+{
+  "kind": "cluster-j-generated-regexp-cpu-evidence",
+  "timestamp": "2026-11-06T20:46:38.929640+00:00",
+  "conformance": false,
+  "journal": ".tint-bootstrap/cluster-j-regexp-v5.jsonl",
+  "classification": {
+    "digitNegativeStrict": {
+      "outcome": "timeout",
+      "lastCpuSeconds": 258.2,
+      "wallLimitSeconds": 300,
+      "interpretation": "Real slowness, >250 CPU seconds; sampled; handoff to P."
+    },
+    "nonDigitPositiveSloppy": {
+      "outcome": "timeout",
+      "lastCpuSeconds": 226.28,
+      "lastInferiorWallSeconds": 290,
+      "interpretation": "Inconclusive CPU share; remains on recheck list. Manual late sample arrived after process termination (exit 255)."
+    },
+    "nonDigitPositiveStrict": {
+      "outcome": "timeout",
+      "lastCpuSeconds": 253.59,
+      "lastInferiorWallSeconds": 268,
+      "wallLimitSeconds": 300,
+      "interpretation": "Real slowness under ~20 load; sampled; handoff to P."
+    }
+  },
+  "profiles": [
+    {
+      "observationOrdinal": 13,
+      "pid": 74968,
+      "evidence": {
+        "sample.txt": {
+          "path": "docs/results/cluster-j-generated-profile-13-74968-v5.sample.txt",
+          "sha256": "136aab2c92dd06778472bd52ea58675c5645b42409fdb32c397c1402e069050b"
+        },
+        "sample-status.json": {
+          "path": "docs/results/cluster-j-generated-profile-13-74968-v5.sample-status.json",
+          "sha256": "2d919e0a99c7315086fa2d44d2dbddcb5a4e916ca233e747113583d40a1a84fb"
+        },
+        "json": {
+          "path": "docs/results/cluster-j-generated-profile-13-74968-v5.json",
+          "sha256": "f25b698a1e1f6f9fec4b9b6e95955729a043c9f286057a5960efaedebcac5aee"
+        }
+      },
+      "copiedNativeImage": ".tint-bootstrap/j-profiles-v5/13-74968.image"
+    },
+    {
+      "observationOrdinal": 19,
+      "pid": 45502,
+      "evidence": {
+        "sample.txt": {
+          "path": "docs/results/cluster-j-generated-profile-19-45502-v5.sample.txt",
+          "sha256": "ab01cb8f55c96991d621f638dfee8ccb6ba6aceb9d5dd42ad8d7e5d37a898200"
+        },
+        "sample-status.json": {
+          "path": "docs/results/cluster-j-generated-profile-19-45502-v5.sample-status.json",
+          "sha256": "70edfd9b69ada20b84224564c293b7af4a267f0567cee40cbe111d8d437f4d52"
+        },
+        "json": {
+          "path": "docs/results/cluster-j-generated-profile-19-45502-v5.json",
+          "sha256": "40ddd615439b0da8de8f0e87c6ab0f08ed8b1a31b482d4886ca912e5d45b2797"
+        }
+      },
+      "copiedNativeImage": ".tint-bootstrap/j-profiles-v5/19-45502.image"
+    }
+  ],
+  "cpuSamples": [
+    {
+      "at": "2026-11-06T19:57:33.729Z",
+      "uptime": "3:57  up 3 days,  7:22, 1 user, load averages: 23.60 42.32 84.25",
+      "runner": "2026-11-06T19:57:14.761Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=6193ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "00:19",
+        "cpuTime": "0:16.80",
+        "cpu": "95.3",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T19:58:04.182Z",
+      "uptime": "3:58  up 3 days,  7:23, 1 user, load averages: 22.52 40.28 82.06",
+      "runner": "2026-11-06T19:57:44.764Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=36196ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "00:50",
+        "cpuTime": "0:43.73",
+        "cpu": "78.2",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T19:58:34.133Z",
+      "uptime": "3:58  up 3 days,  7:24, 1 user, load averages: 22.97 38.73 80.05",
+      "runner": "2026-11-06T19:58:14.765Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=66197ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "01:20",
+        "cpuTime": "1:08.83",
+        "cpu": "88.3",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T19:59:04.172Z",
+      "uptime": "3:59  up 3 days,  7:24, 1 user, load averages: 21.83 36.95 77.97",
+      "runner": "2026-11-06T19:58:44.767Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=96199ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "01:50",
+        "cpuTime": "1:37.37",
+        "cpu": "96.7",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T19:59:34.202Z",
+      "uptime": "3:59  up 3 days,  7:25, 1 user, load averages: 21.92 35.51 76.03",
+      "runner": "2026-11-06T19:59:14.771Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=126203ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "02:20",
+        "cpuTime": "2:05.04",
+        "cpu": "91.4",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:00:04.320Z",
+      "uptime": "4:00  up 3 days,  7:25, 1 user, load averages: 23.78 34.69 74.33",
+      "runner": "2026-11-06T19:59:44.772Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=156204ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "02:50",
+        "cpuTime": "2:32.96",
+        "cpu": "90.2",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:00:34.153Z",
+      "uptime": "4:00  up 3 days,  7:26, 1 user, load averages: 23.91 33.60 72.56",
+      "runner": "2026-11-06T20:00:14.773Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=186205ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "03:20",
+        "cpuTime": "2:58.95",
+        "cpu": "77.8",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:01:04.153Z",
+      "uptime": "4:01  up 3 days,  7:26, 2 users, load averages: 25.79 33.16 71.04",
+      "runner": "2026-11-06T20:00:44.778Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=216210ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "03:50",
+        "cpuTime": "3:23.18",
+        "cpu": "72.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:01:34.175Z",
+      "uptime": "4:01  up 3 days,  7:27, 2 users, load averages: 29.07 33.25 69.77",
+      "runner": "2026-11-06T20:01:14.779Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=246211ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "04:20",
+        "cpuTime": "3:48.38",
+        "cpu": "90.6",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:02:04.135Z",
+      "uptime": "4:02  up 3 days,  7:27, 1 user, load averages: 31.60 33.54 68.61",
+      "runner": "2026-11-06T20:01:44.780Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=276212ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "04:50",
+        "cpuTime": "4:15.34",
+        "cpu": "85.7",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:02:07.332Z",
+      "uptime": "4:02  up 3 days,  7:27, 1 user, load averages: 31.60 33.54 68.61",
+      "runner": "2026-11-06T20:01:44.780Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=276212ms done=13/3756 pass=12 fail=0 unsupported=0 infra=1 waiting runner=13682 child/inferior=74319,74967,74968",
+      "process": {
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "04:53",
+        "cpuTime": "4:18.20",
+        "cpu": "84.9",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:41:27.583Z",
+      "uptime": "4:41  up 3 days,  8:06, 1 user, load averages: 20.79 33.56 36.16",
+      "runner": "2026-11-06T20:41:17.469Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=16816ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "00:27",
+        "cpuTime": "0:24.34",
+        "cpu": "86.6",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:41:57.911Z",
+      "uptime": "4:41  up 3 days,  8:07, 1 user, load averages: 20.57 32.27 35.60",
+      "runner": "2026-11-06T20:41:47.471Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=46818ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "00:57",
+        "cpuTime": "0:53.37",
+        "cpu": "98.5",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:42:28.060Z",
+      "uptime": "4:42  up 3 days,  8:07, 1 user, load averages: 20.26 31.12 35.07",
+      "runner": "2026-11-06T20:42:17.473Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=76820ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "01:28",
+        "cpuTime": "1:22.53",
+        "cpu": "96.9",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:42:58.067Z",
+      "uptime": "4:42  up 3 days,  8:08, 1 user, load averages: 18.91 29.74 34.43",
+      "runner": "2026-11-06T20:42:47.474Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=106821ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "01:58",
+        "cpuTime": "1:51.78",
+        "cpu": "96.6",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:43:28.102Z",
+      "uptime": "4:43  up 3 days,  8:08, 1 user, load averages: 19.83 28.92 33.97",
+      "runner": "2026-11-06T20:43:17.477Z [Test262] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=136824ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "02:28",
+        "cpuTime": "2:19.69",
+        "cpu": "96.4",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:43:58.087Z",
+      "uptime": "4:43  up 3 days,  8:09, 1 user, load averages: 19.51 27.92 33.43",
+      "runner": "2026-11-06T20:43:47.479Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=166826ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3 waiting runner=88428 child/inferior=45500,45501,45502",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "02:58",
+        "cpuTime": "2:48.32",
+        "cpu": "93.6",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:44:28.026Z",
+      "uptime": "4:44  up 3 days,  8:09, 1 user, load averages: 18.31 26.85 32.85",
+      "runner": "2026-11-06T20:44:17.482Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=196829ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3 waiting runner=88428 child/inferior=45500,45501,45502",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "03:28",
+        "cpuTime": "3:17.38",
+        "cpu": "97.6",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:44:58.108Z",
+      "uptime": "4:44  up 3 days,  8:10, 1 user, load averages: 18.12 25.99 32.33",
+      "runner": "2026-11-06T20:44:47.485Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=226832ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3 waiting runner=88428 child/inferior=45500,45501,45502",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "03:58",
+        "cpuTime": "3:45.46",
+        "cpu": "98.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    },
+    {
+      "at": "2026-11-06T20:45:28.072Z",
+      "uptime": "4:45  up 3 days,  8:10, 1 user, load averages: 19.63 25.59 31.97",
+      "runner": "2026-11-06T20:45:17.485Z [Test262 STALL] selection=\"built-ins/RegExp\" phase=\"executing built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js [strict; flags=generated] (launching debugger / awaiting LLDB)\" elapsed=256832ms done=19/3756 pass=16 fail=0 unsupported=0 infra=3 waiting runner=88428 child/inferior=45500,45501,45502",
+      "process": {
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "04:28",
+        "cpuTime": "4:13.59",
+        "cpu": "86.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      }
+    }
+  ],
+  "handoff": "~/.t3/tint-briefs/handoff-J-to-P.md",
+  "attribution": "Shared hot runtime offsets recur in both unsymbolized profiles. Exact caller attribution remains unresolved; no claim of eval/Function JIT cost."
+}
