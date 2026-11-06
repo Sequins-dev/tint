@@ -15,7 +15,9 @@ Combinators share iterator acquisition/closing and generic constructor capabilit
 Native errors and result arrays use intrinsic identities rather than mutable globals.
 
 Shared agents retain callback realms and enqueue-time Script/module identities.
-Source functions and generators capture definition contexts; top-level Script
+Promise reaction and thenable jobs enter `GetFunctionRealm(handler)`, following
+bound and callable Proxy targets; a revoked Proxy falls back to the realm current
+at enqueue. Resolving functions and errors created by the job use that realm. Source functions and generators capture definition contexts; top-level Script
 entries restore their caller context. Checkpoints drain only after Script execution
 exits. Rejection notifications remain distinct from thrown jobs and `$DONE` failures.
 The Test262 host preserves the original harness and detects repeated completion.
