@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-f-phase1-final-validation",
+  "baseMain": "3017779f912db87f43ba0c46d0bb55dde30c6fa4",
+  "priorValidation": "docs/results/cluster-f-phase1-handoff-v1.json",
+  "clarification": "Final rebase also integrated cluster B test/fixture additions, rather than only documentation. No compiler/runtime implementation changed. Retained full pnpm check (4468 tests) is supplemented by all 10 newly integrated tests and repeated type, boundary and formatting gates.",
+  "changedFiles": [
+    "packages/js-runtime/test/ordinary-object-operator-coercion.test.ts",
+    "tools/verify-test262-native-operator-coercion.ts"
+  ],
+  "commands": [
+    {
+      "command": "Node 24.12.0 pnpm typecheck",
+      "exitStatus": 0,
+      "log": "docs/results/cluster-f-phase1-final-typecheck-v1.log"
+    },
+    {
+      "command": "Node 24.12.0 --test packages/js-runtime/test/ordinary-object-operator-coercion.test.ts (10/10)",
+      "exitStatus": 0,
+      "log": "docs/results/cluster-f-phase1-integrated-operator-tests-v1.log"
+    },
+    {
+      "command": "Node 24.12.0 pnpm boundaries",
+      "exitStatus": 0,
+      "log": "docs/results/cluster-f-phase1-final-boundaries-v1.log"
+    },
+    {
+      "command": "Node 24.12.0 pnpm format:check",
+      "exitStatus": 0,
+      "log": "docs/results/cluster-f-phase1-final-format-v1.log"
+    }
+  ],
+  "inheritedPids": [
+    6622,
+    48103,
+    92205
+  ],
+  "inheritedProcessesStillRunning": [],
+  "nativeRunExitStatus": "Original process was orphaned under launchd, so shell exit status unavailable; completion verified through canonical 590-variant report, journal complete record, and process exit."
+}

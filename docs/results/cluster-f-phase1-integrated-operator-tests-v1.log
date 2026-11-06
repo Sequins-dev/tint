@@ -1,0 +1,18 @@
+✔ ToPrimitive passes the hint and receiver to @@toPrimitive exactly once (1.139708ms)
+✔ ToPrimitive validates @@toPrimitive before OrdinaryToPrimitive (0.453959ms)
+✔ OrdinaryToPrimitive orders methods by hint and skips non-callables (0.180625ms)
+✔ addition converts both operands to primitives before ToString or ToNumeric (0.254166ms)
+✔ other binary operators finish ToNumeric(lhs) before converting rhs (0.23075ms)
+✔ relational operators convert left then right with the number hint (0.115167ms)
+✔ relational BigInt comparisons are exact and treat invalid strings as unordered (0.365167ms)
+✔ unary and update operators preserve ToNumber and ToNumeric distinctions (0.281542ms)
+✔ ToString, ToNumber and ToPropertyKey reject symbols only after ToPrimitive (0.16825ms)
+✔ loose equality converts objects with the default hint across Symbol and BigInt (0.258792ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 302.944209
