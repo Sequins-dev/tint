@@ -128,6 +128,10 @@ internal slots; calendar conversion reads those slots rather than public getters
   YearMonth addition/subtraction accepts only years and months, derives the first
   day before shared date arithmetic and canonicalizes the result reference day.
   Its derived PlainDate and resulting date must satisfy day-level bounds.
+  Partial replacement shares ISO field merging and canonicalizes reference
+  components. YearMonth differences validate year/month units after ordered
+  option reads, compare complete reference dates before the zero shortcut, and
+  share exact date-difference and calendar-rounding primitives.
 - **PlainTime:** constructor, clock fields, ISO time strings with ambiguity checks,
   property-bag/Temporal conversion, overflow options and comparison. Shared clock
   records contain no artificial calendar date. Time-only arithmetic, equality,
@@ -179,6 +183,9 @@ reference-day normalization, intrinsic allocation and derived-date boundaries.
 Its [validation checkpoint](results/temporal-year-month-arithmetic-checkpoint-h-v1.json)
 tracks the pending cumulative self-build, workspace gates and complete selection
 measurement; the fixture contributes no Test262 passes.
+The [partial-update and difference fixture](results/native-temporal-partial-updates-green-h-v1.json)
+passes eight native cases, including field order, brands, canonical references,
+calendar-unit rounding, boundary dates and the existing PlainDate difference path.
 
 The [zoned conversion native regression](results/native-temporal-zoned-bags-green-v1.json)
 passes nine focused cases, including getter order, early offset-syntax errors,

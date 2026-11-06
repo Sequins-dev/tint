@@ -1,0 +1,139 @@
+✔ calendar identifier validation is separate from algorithm availability (2.32275ms)
+✔ date since retains the receiver's month-end anchor (4.046083ms)
+✔ date rounding applies signed direction and checks candidate bounds (1.021291ms)
+✔ day increments retain calendar prefixes near the date limit (0.37725ms)
+✔ calendar rounding compares receiver-relative month and year boundaries (3.368583ms)
+✔ zero rounded weeks preserve a nonzero calendar prefix (0.201292ms)
+✔ calendar half ties preserve parity and signed rounding directions (0.783958ms)
+✔ uniform day rounding can produce a duration beyond date endpoints (0.2505ms)
+✔ partial ISO field merging retains omitted fields and replaces the month pair together (1.088417ms)
+✔ merged month pairs still require agreement and reject overflow when requested (0.234625ms)
+✔ date-time differences borrow a calendar day before balancing the clock (2.783625ms)
+✔ date-time clock differences preserve subnanosecond boundaries beyond Instant limits (0.383959ms)
+✔ civil day rounding returns durations without constructing out-of-range dates (0.287875ms)
+✔ calendar rounding includes the fractional clock at the boundary (0.496292ms)
+✔ rounded clock carries bubble into calendar boundaries (0.329208ms)
+✔ calendar prefixes retain fractional-day rounding and carry across a month boundary (0.683417ms)
+✔ Temporal.PlainDateTime exposes constructor and clock accessors (6.754834ms)
+✔ Temporal.PlainDateTime supplies intrinsic copy and clock/date conversion methods (2.156333ms)
+✔ duration sums balance from the largest input unit and preserve exact carries (2.419125ms)
+✔ duration comparisons preserve differences below binary64 precision (0.676042ms)
+✔ duration formatting rounds exact clocks, balances up to the original largest unit, and keeps calendar prefixes (2.259625ms)
+✔ duration rounding balances exact signed clock totals and fixed-length days (2.64175ms)
+✔ plain-relative duration rounding uses calendar endpoints and fractional days (1.432125ms)
+✔ zoned clock ties exclude retained calendar days from half-even parity (1.054208ms)
+✔ blank plain dates retain their wider bounds and zoned clock rounding validates the next day (0.346375ms)
+✔ duration totals use exact uniform ratios and require calendar context (1.925875ms)
+✔ calendar totals use the actual relative year and month lengths (1.580292ms)
+✔ calendar totals reject a time component that moves beyond supported dates (0.427375ms)
+✔ month-end totals shift to the interval containing the destination (0.392167ms)
+✔ zoned day totals validate the next boundary even for blank durations (0.59625ms)
+✔ named-zone clock totals measure elapsed time across both offset changes (5.936917ms)
+✔ named calendar totals divide by actual adjacent calendar endpoints (2.562375ms)
+✔ Temporal.Duration exposes constructor and branded field getters (9.583875ms)
+✔ Temporal epoch conversion floors negative nanoseconds and keeps exact subsecond precision (1.697541ms)
+✔ Temporal epoch conversion checks inclusive instant limits before offset conversion (0.31975ms)
+✔ Temporal epoch splitting matches independent BigInt division and Gregorian UTC fields (25.553459ms)
+✔ Temporal date-time conversion preserves exact instants across positive and negative offsets (1.03125ms)
+✔ integral millisecond epochs convert exactly and reject out-of-range or fractional inputs (0.210791ms)
+✔ local coordinates can cross Instant bounds before applying the zone offset (0.165417ms)
+✔ Temporal.Instant exposes its epoch constructor, conversion factories and branded accessors (4.677583ms)
+✔ month code syntax is independent of calendar-specific month availability (1.00775ms)
+✔ Temporal.Now owns its tagged namespace and non-constructor instant method (4.782042ms)
+✔ Temporal.Now.instant floors the supplied clock before exact nanosecond conversion (1.407ms)
+✔ Temporal.Now provides every ISO clock view using intrinsic prototypes and one clock read (1.905541ms)
+✔ Temporal partial dates expose only their calendar fields (6.307083ms)
+✖ partial-date regulation canonicalizes references after overflow in the supplied year (1.449875ms)
+✖ partial-date merging replaces the month pair before consistency checks (0.224125ms)
+✔ Temporal.PlainDate exposes constructor and branded calendar accessors (10.985541ms)
+✔ Temporal.PlainDate supplies slot-based equality, calendar copy and partial-date conversions (2.180291ms)
+✔ Temporal.PlainTime exposes constructor and clock accessors (4.534ms)
+✔ clock splitting floors arbitrary signed totals and retains an exact bounded clock (2.949042ms)
+✔ difference settings distinguish clock-only and calendar-capable consumers (1.970958ms)
+✔ validated clock settings balance exact fields and signed rounding independently (1.301375ms)
+✔ pure difference normalization shares unit and increment rules with option readers (0.313625ms)
+✔ YearMonth arithmetic balances calendar units and canonicalizes the reference day (1.714834ms)
+✔ YearMonth arithmetic rejects every lower duration unit (0.501542ms)
+✔ YearMonth arithmetic validates its derived first day and its result (0.288042ms)
+✔ YearMonth differences ignore reference days after full-date equality (1.690583ms)
+✔ YearMonth rounding uses exact day distances and signed rounding directions (0.834708ms)
+✔ YearMonth difference options admit only years and months (0.223083ms)
+✔ named local interpretation preserves fractions, modes and supplied-offset policies (5.798625ms)
+✔ start of day chooses the transition when a gap straddles midnight (0.382708ms)
+✔ shared zoned interpretation supports named models and exact versus minute matching (0.909834ms)
+✔ zoned calendar arithmetic and day rounding follow variable day lengths (3.704083ms)
+✔ named-zone hours in a day reflect spring and autumn transitions (0.556458ms)
+✔ day rounding selects the two calendar boundaries when a date starts twice (3.125875ms)
+✔ zone offset formatting preserves seconds and fractional nanoseconds (0.681625ms)
+✔ named offsets use the queried instant and floor subsecond negative epochs (2.268875ms)
+✔ displayed instant offsets round to minutes with half-expand ties (0.17875ms)
+✔ time-zone equality compares primary identity while keeping UTC distinct from offsets (2.559625ms)
+✔ clock-only zoned arithmetic preserves nanosecond precision across offsets and epoch bounds (8.679916ms)
+✔ calendar arithmetic precedes the exact time portion with independent overflow rejection (0.454708ms)
+✔ day rounding validates both bounds and uses the local day's tie origin (0.590542ms)
+✔ named calendar differences separate local dates from exact offset-changing clock remainders (7.227625ms)
+✔ calendar differences reconstruct endpoints across month ends and non-hour transitions (30.318375ms)
+✔ single-unit calendar rounding compares exact variable-day endpoints and tie parity (1.135333ms)
+✔ equal named instants return zero without probing an out-of-range calendar neighbor (0.323834ms)
+✔ calendar rounding retains larger prefixes and bubbles a rounded year boundary (0.419333ms)
+✔ clock rounding carries a variable-length day and rerounds the remaining clock (4.945375ms)
+✔ Temporal.ZonedDateTime exposes constructor and clock accessors (6.409125ms)
+✔ fixed zones reuse civil calendar differences with exact clock remainders (3.72825ms)
+✔ calendar differences require equal zone identities while clock differences do not (0.485291ms)
+✔ zoned day rounding validates both nudge endpoints against Instant bounds (1.058125ms)
+✔ zoned formatting rounds the exact epoch and independently controls zone and calendar annotations (1.802208ms)
+✔ negative epoch formatting uses the positive-coordinate tie convention (0.4535ms)
+ℹ tests 85
+ℹ suites 0
+ℹ pass 83
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4075.269209
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-temporal-partial-fields.test.ts:33:1
+✖ partial-date regulation canonicalizes references after overflow in the supplied year (1.449875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-partial-fields.test.ts:34:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-temporal-partial-fields.test.ts:79:1
+✖ partial-date merging replaces the month pair before consistency checks (0.224125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-partial-fields.test.ts:80:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

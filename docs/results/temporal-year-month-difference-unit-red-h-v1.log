@@ -1,0 +1,95 @@
+✔ Temporal partial dates expose only their calendar fields (9.768917ms)
+✖ partial-date equality and year-month comparison have intrinsic method contracts (2.057625ms)
+✖ YearMonth differences ignore reference days after full-date equality (4.532334ms)
+✖ YearMonth rounding uses exact day distances and signed rounding directions (2.590708ms)
+✖ YearMonth difference options admit only years and months (1.465875ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 716.455916
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-temporal-partial-date.test.ts:41:1
+✖ partial-date equality and year-month comparison have intrinsic method contracts (2.057625ms)
+  AssertionError [ERR_ASSERTION]: PlainYearMonth.until
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-partial-date.test.ts:76:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:11:1
+✖ YearMonth differences ignore reference days after full-date equality (4.532334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:12:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:24:1
+✖ YearMonth rounding uses exact day distances and signed rounding directions (2.590708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:25:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:33:1
+✖ YearMonth difference options admit only years and months (1.465875ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/packages/js-runtime/test/ordinary-object-temporal-year-month-difference.test.ts:36:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
