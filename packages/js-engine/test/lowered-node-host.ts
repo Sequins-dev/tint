@@ -328,6 +328,7 @@ import { bindHostRecordViews } from "../../js-runtime/test/ordinary-object-host-
 bindHostRecordViews();
 const runtime = await import("@tint/js-runtime/objects");
 const globals = await import("@tint/js-runtime/environments/global");
+const evaluation = await import("../src/script-evaluation.ts");
 const specifierModules = new Map<string, Record<string, unknown>>([
   ["@tint/js-runtime/objects", runtime],
   ["@tint/js-runtime/environments/global", globals],
@@ -347,6 +348,40 @@ type Entry = (
   readonly value: unknown;
 };
 
+// Node stands in for the compiler-bound direct-eval site record check.
+function viewDirectEvalSite(value: unknown): unknown {
+  return typeof value === "object" &&
+    value !== null &&
+    "variables" in value &&
+    "catches" in value
+    ? value
+    : undefined;
+}
+
+/** Instantiate a lowered module's printed entry over this checkout's runtime. */
+export function instantiateLoweredModule(module: Module): Entry {
+  const printed = printLoweredModule(module);
+  const names: string[] = [],
+    values: unknown[] = [];
+  for (const [specifier, imported] of printed.specifiers) {
+    const source = specifierModules.get(specifier);
+    if (source === undefined) throw new Error("unknown import " + specifier);
+    for (const name of imported) {
+      // Type-only vocabulary (records, keys) has no runtime value.
+      if (!(name in source)) continue;
+      names.push(name);
+      values.push(
+        name === "viewDirectEvalSite" ? viewDirectEvalSite : source[name],
+      );
+    }
+  }
+  const factory = new Function(
+    ...names,
+    printed.body + "\nreturn execute;",
+  ) as (...values: unknown[]) => Entry;
+  return factory(...values);
+}
+
 type ScriptLowering = typeof lowerScript;
 
 /** Lower Script source and return its executable entry. Callers may pass
@@ -362,24 +397,7 @@ export function compileLoweredScript(
   if (!parsed.ok) throw new Error("parse: " + JSON.stringify(parsed.error));
   const lowered = lower(parsed.value);
   if (!lowered.ok) throw new Error("lower: " + JSON.stringify(lowered.error));
-  const printed = printLoweredModule(lowered.value);
-  const names: string[] = [],
-    values: unknown[] = [];
-  for (const [specifier, imported] of printed.specifiers) {
-    const module = specifierModules.get(specifier);
-    if (module === undefined) throw new Error("unknown import " + specifier);
-    for (const name of imported) {
-      // Type-only vocabulary (records, keys) has no runtime value.
-      if (!(name in module)) continue;
-      names.push(name);
-      values.push(module[name]);
-    }
-  }
-  const factory = new Function(
-    ...names,
-    printed.body + "\nreturn execute;",
-  ) as (...values: unknown[]) => Entry;
-  return factory(...values);
+  return instantiateLoweredModule(lowered.value);
 }
 
 export interface LoweredRealm {
@@ -391,8 +409,9 @@ export interface LoweredRealm {
 }
 
 /** A realm resembling the native Test262 host's intrinsic installation.
- * Eval, Function constructors, Date, Intl, Temporal and weak collections are
- * not installed; tests relying on them are not meaningful here. */
+ * Indirect and direct eval compile through the evaluator host contract with
+ * this checkout's lowering. Function constructors, Date, Intl, Temporal and
+ * weak collections are not installed; tests needing them are not meaningful. */
 export function createLoweredRealm(
   lower: ScriptLowering = lowerScript,
 ): LoweredRealm {
@@ -442,6 +461,39 @@ export function createLoweredRealm(
   r.installRegExpIntrinsics!(object, realm, hooks);
   r.installMathIntrinsics!(object, realm, hooks, () => 0.5);
   r.installPromiseIntrinsics!(object, realm, hooks, () => {});
+  const entries: Entry[] = [];
+  const host = {
+    domain: () => 1,
+    storage: {
+      domain: 1,
+      publish: () => {
+        throw new Error("lowered-node-host does not publish native code");
+      },
+    },
+    table: () => undefined,
+    compile: (module: Module) => {
+      entries.push(instantiateLoweredModule(module));
+      return { ok: true as const, address: entries.length };
+    },
+    invoke: (
+      address: number,
+      frame: { $argument0: unknown; $argument1: unknown },
+    ) => entries[address - 1]!(frame.$argument0, frame.$argument1),
+    completion: (value: unknown) => value as never,
+    fault: (reason: string) => {
+      throw new Error("lowered-node-host evaluator fault: " + reason);
+    },
+  };
+  const context = { realm, global };
+  r.installEvalIntrinsic!(object, realm, hooks);
+  r.installEvalCompiler!(
+    realm,
+    evaluation.createIndirectEvaluator(context, host as never),
+  );
+  r.installDirectEvalCompiler!(
+    realm,
+    evaluation.createDirectEvaluator(context, host as never),
+  );
   const printed: string[] = [];
   const print = r.createCallableObject!(
     realm.functionPrototype,

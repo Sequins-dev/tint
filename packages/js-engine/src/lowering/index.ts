@@ -4621,32 +4621,61 @@ function lowerScriptEntry(
         );
         check(member(result, "error", node), node);
         const record = annexVariableRecord;
-        check(
-          temporary(
-            record === undefined
-              ? call(
-                  "setGlobalBinding",
-                  [
-                    id("$global"),
-                    text(node.name, node),
-                    member(result, "value", node),
-                    { ...at(node), kind: "boolean", value: false },
-                  ],
-                  node,
-                )
-              : call(
-                  "setMutableBinding",
-                  [
-                    record,
-                    text(node.name, node),
-                    member(result, "value", node),
-                    { ...at(node), kind: "boolean", value: false },
-                  ],
-                  node,
-                ),
-          ),
-          node,
-        );
+        const copy = (target: Expression | undefined): Expression =>
+          target === undefined
+            ? call(
+                "setGlobalBinding",
+                [
+                  id("$global"),
+                  text(node.name, node),
+                  member(result, "value", node),
+                  { ...at(node), kind: "boolean", value: false },
+                ],
+                node,
+              )
+            : call(
+                "setMutableBinding",
+                [
+                  target,
+                  text(node.name, node),
+                  member(result, "value", node),
+                  { ...at(node), kind: "boolean", value: false },
+                ],
+                node,
+              );
+        if (record === undefined && entryKind === "direct-eval") {
+          // B.3.2.3 copies into the eval caller's VariableEnvironment: the
+          // enclosing function's record, or the global object at top level.
+          const variables = temporary(
+            member(member(id("$site"), "variables", node), "declarative", node),
+          );
+          const local = statements.length;
+          check(temporary(copy(variables)), node);
+          const declarative: BlockStatement = {
+            ...at(node),
+            kind: "block",
+            statements: statements.splice(local),
+          };
+          check(temporary(copy(undefined)), node);
+          const global: BlockStatement = {
+            ...at(node),
+            kind: "block",
+            statements: statements.splice(local),
+          };
+          statements.push({
+            ...at(node),
+            kind: "if",
+            test: {
+              ...at(node),
+              kind: "binary",
+              operator: "!==",
+              left: variables,
+              right: id("undefined", node),
+            },
+            consequent: declarative,
+            alternate: global,
+          });
+        } else check(temporary(copy(record)), node);
         if (record === undefined) {
           const admission = annexAdmissions.get(node.name);
           if (admission === undefined) throw "SCRIPT_ANNEX_ADMISSION_INVARIANT";
