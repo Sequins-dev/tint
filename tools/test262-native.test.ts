@@ -172,7 +172,7 @@ test("debugger launch experiments are explicit and reject invalid platform modes
     await import("./test262-native-process.ts");
   assert.equal(
     selectNativeDebuggerLaunch("darwin", undefined),
-    "debugserver-connected",
+    "debugserver-direct",
   );
   assert.equal(selectNativeDebuggerLaunch("linux", undefined), "lldb-local");
   assert.equal(

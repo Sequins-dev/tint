@@ -346,8 +346,15 @@ Complete unchanged Annex B selections are queued.
 
 ### Debugger transport
 
-Darwin runs use `/usr/bin/lldb` and its bundled debugserver. By default the private
-stub accepts a connection before LLDB launches the inferior.
+Darwin runs use `/usr/bin/lldb` and its bundled debugserver. By default
+(`debugserver-direct`) the private stub launches the inferior and establishes its
+initial stop before LLDB connects. The [direct-protocol probe](results/object-lldb-direct-protocol-probe-v1.json)
+completed all five previously crashed Object cases, while connected launch still
+intermittently reports `failed to catch stop after launch` with PID 0 even after the
+connection-readiness fix.
+
+With `TINT_TEST262_DEBUGGER_LAUNCH=debugserver-connected`, the private stub accepts a
+connection before LLDB launches the inferior.
 The debugger connects asynchronously, then launches synchronously through the
 connected process's `SBProcess.RemoteLaunch` API, with an initial stop and explicit
 argument vector. This avoids target-level launch rejecting the existing connection
@@ -424,8 +431,8 @@ observations.
 ### Debugger launch experiments
 
 `TINT_TEST262_DEBUGGER_LAUNCH=lldb-local` selects LLDB-managed launch on macOS;
-`debugserver-connected` is the Darwin default. `debugserver-direct` retains the
-earlier launch-before-connect protocol for controlled comparisons. Reports record
+`debugserver-direct` (launch before connect) is the Darwin default.
+`debugserver-connected` remains available for controlled comparisons. Reports record
 the selected protocol. Both require a recorded initial stopped state and the
 inferior's final outcome. Local launches use a private process group so failed
 pre-handoff launches can be cleaned up without affecting another session. A

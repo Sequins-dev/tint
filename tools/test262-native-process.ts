@@ -36,7 +36,9 @@ export function selectNativeDebuggerLaunch(
   | "lldb-local"
   | "lldb-local-stdio" {
   if (requested === undefined)
-    return platform === "darwin" ? "debugserver-connected" : "lldb-local";
+    // Direct launch establishes the initial stop before LLDB connects; the
+    // connected protocol still misses initial-stop events intermittently.
+    return platform === "darwin" ? "debugserver-direct" : "lldb-local";
   if (
     requested !== "lldb-local" &&
     requested !== "lldb-local-stdio" &&
