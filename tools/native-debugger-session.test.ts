@@ -82,6 +82,11 @@ test("connected launch publishes the stub before requesting the inferior", () =>
   const args = JSON.parse(match[1]);
   assert.deepEqual(args.slice(args.indexOf("--") + 1), ["127.0.0.1:0"]);
   assert.ok(script.indexOf("gdb-remote") < script.indexOf(".RemoteLaunch("));
+  assert.ok(script.includes("lldb.debugger.SetAsync(True)"));
+  assert.ok(
+    script.indexOf("lldb.debugger.SetAsync(True)") <
+      script.indexOf("HandleCommand('gdb-remote"),
+  );
   assert.ok(
     script.indexOf("StopListeningForEvents") < script.indexOf(".RemoteLaunch("),
   );
