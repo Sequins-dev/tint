@@ -300,6 +300,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Const destructuring          |    186 / 186 (100%) | None                                | [Report](results/test262-language-const-destructuring-core-v1.json)          |
 | Catch destructuring          |    186 / 186 (100%) | None                                | [Report](results/test262-language-catch-destructuring-core-v1.json)          |
 | Parameter destructuring      |    372 / 372 (100%) | None                                | [Report](results/test262-language-parameter-destructuring-core-v1.json)      |
+| Object method destructuring  | 1,122 / 1,122 (100%) | None                                | [Report](results/test262-language-object-destructuring-a2-native-v1.json)     |
 | Synchronous `using`          |  146 / 154 (94.81%) | 8 module/eval variants              | [Report](results/test262-using-annex-native-v3.json)                         |
 | Async `using`                |  180 / 188 (95.74%) | 8 module/eval variants              | [Report](results/test262-await-using-handoff-native-v4.json)                 |
 | `await` expressions          |   44 / 44 (100.00%) | None                                | [Report](results/test262-await-handoff-native-v6.json)                       |
