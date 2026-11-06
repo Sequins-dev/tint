@@ -1,0 +1,37 @@
+{
+  "kind": "promise-keyed-native-followup-start",
+  "complete": false,
+  "conformance": false,
+  "recordedAt": "2026-11-06T17:26:33.455183+00:00",
+  "branch": "test/builtins-native-coverage",
+  "head": "edf3c7800ccbb9e7f5a76185ea7116f7e60ea810",
+  "promise": {
+    "runnerPid": 73521,
+    "selection": "built-ins/Promise",
+    "expectedVariants": 1458,
+    "batchSize": 64,
+    "toolchain": "docs/results/frozen-node-toolchain-promise-keyed-heartbeat-v4.json",
+    "sourceSnapshot": {
+      "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+      "files": 568
+    },
+    "report": "docs/results/test262-promise-keyed-native-v3.json",
+    "journal": "docs/results/test262-promise-keyed-native-v3.jsonl",
+    "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/test262-promise-keyed-native-v3.stderr.log",
+    "diagnostics": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-run-progress-audit-v3.jsonl",
+    "heartbeatMs": 30000,
+    "stallMs": 150000,
+    "resourcePolicy": "slot runner 10; one cluster-G runner; no pause/controller/keeper",
+    "observedAtStartRecord": 64
+  },
+  "selfBuild": {
+    "status": "queued for global selfbuild slot",
+    "toolchain": "docs/results/frozen-node-toolchain-promise-keyed-heartbeat-v3.json",
+    "command": "slot selfbuild 2 -- node .tint-bootstrap/validate-promise-keyed-selfbuild-v3.mjs",
+    "containmentMs": 7200000,
+    "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3.log",
+    "progress": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-progress-v3.jsonl",
+    "expectedReport": "docs/results/bootstrap-promise-keyed-v3.json"
+  },
+  "acceptance": "Self-build remains required before merge-ready status. Promise measurement overlaps the global self-build-slot wait; no acceptance or full-family result claimed."
+}
