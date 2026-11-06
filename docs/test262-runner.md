@@ -378,3 +378,21 @@ The [immutable-view native fixture](results/native-immutable-views-direct-patien
 passed under this protocol after the retained connected/local launch failures.
 This does not convert earlier failed observations into passes or change the
 protocol/budget of an active frozen survey.
+
+## Throughput analysis
+
+`node tools/test262-throughput.ts [journal-directory]` aggregates JSONL journals
+(default: `docs/results`) by engine, selection directory and compilation kind.
+It retains interrupted batches and reports truncated tails. Batch time is counted
+once, independently of the number of recorded observations. Overlapping reruns
+remain workload measurements and must not be added into suite coverage.
+
+Historical `elapsedMs` includes compilation, preparation and earlier launches.
+The analysis therefore reports execution wall time as unavailable, alongside the
+raw latency sum and approximate within-batch observation deltas. Compilation-only
+whole-suite extrapolations use the observed batch occupancy and 103,264 variants;
+they exclude debugger launch, native execution and preparation. Use matched CPU
+and wall measurements for optimization claims. The exported `analyzeCPUProfile`
+helper attributes V8 sampling intervals to the innermost compiler stage and keeps
+GC and synchronous child-process waits separate. Sampled intervals are elapsed
+time, not process CPU accounting.
