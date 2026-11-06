@@ -1,0 +1,80 @@
+{
+  "kind": "native-launch-readiness-diagnostic",
+  "conformance": false,
+  "startedAt": "2026-11-06T22:46:52.865Z",
+  "completedAt": "2026-11-06T22:47:14.089Z",
+  "scope": "Five preserved cases from the original Object image under the new connection-readiness adapter. Original failures remain unchanged; this is not a new complete Test262 selection.",
+  "image": {
+    "capturedAt": "2026-11-06T22:41:22.631782+00:00",
+    "sourceImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-OlmMoc/test",
+    "sha256": "41d182e4edbb9774a84d85afca559b4b07ddab600c4bffb7aa5dca0cee4397c8",
+    "bytes": 179040767,
+    "sourceSnapshot": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "journal": "docs/results/test262-object-family-native-v1.jsonl",
+    "batch": 0
+  },
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "frozenMetadata": "docs/results/frozen-node-toolchain-builtins-object-v3.json",
+  "frozenToolchainSha256": "9cadd25621435ced6d92c78fe69a216dea726339fb133887edacd0bdc9492da5",
+  "toolchainManifestSha256": "a9c236a8e9d74f7a9dcf52f05f5855f37ce4be06e85436105d642a00c599d7fa",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "completionContract": "executeNativeFile accepts completion only after an independently recorded initial stopped state and native exit 42.",
+  "total": 5,
+  "completed": 5,
+  "results": [
+    {
+      "path": "built-ins/Object/S15.2.1.1_A1_T3.js",
+      "variant": "sloppy",
+      "sha256": "d19f5afac52078b2cd8d6efad3db990588fbb77d35e999916e8f15289bfc6618",
+      "batchIndex": 4,
+      "originalStatus": "crash",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Object/S15.2.1.1_A1_T5.js",
+      "variant": "strict",
+      "sha256": "8ac71854b97140417f14c3916b373567571a1427c95e1315ba1af2b58b9c1432",
+      "batchIndex": 9,
+      "originalStatus": "crash",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Object/S15.2.1.1_A2_T11.js",
+      "variant": "sloppy",
+      "sha256": "3405b90f5b693631effff8dd815b147aa629999340be1076d99715a00fe554aa",
+      "batchIndex": 14,
+      "originalStatus": "crash",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Object/S15.2.1.1_A2_T14.js",
+      "variant": "sloppy",
+      "sha256": "44638e73dd04073db50fb98c77e18f086ddb1ecd48d13d754f5f7941aaaa5c98",
+      "batchIndex": 20,
+      "originalStatus": "crash",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Object/S15.2.2.1_A1_T2.js",
+      "variant": "strict",
+      "sha256": "15595593db0f78eefb41612eb5f94b16708ba86448708901cf1a621eb0056b56",
+      "batchIndex": 47,
+      "originalStatus": "crash",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

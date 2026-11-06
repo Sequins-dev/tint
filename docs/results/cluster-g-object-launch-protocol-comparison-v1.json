@@ -1,0 +1,30 @@
+{
+  "kind": "native-launch-protocol-comparison",
+  "conformance": false,
+  "createdAt": "2026-11-06T22:48:15.309403+00:00",
+  "scope": "Controlled diagnostic on the same preserved Object batch image and same five original pre-entry failure cases. No Test262 family percentage or replacement of original observations.",
+  "imageSha256": "41d182e4edbb9774a84d85afca559b4b07ddab600c4bffb7aa5dca0cee4397c8",
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "frozenMetadata": "docs/results/frozen-node-toolchain-builtins-object-v3.json",
+  "connected": {
+    "report": "docs/results/object-lldb-connection-readiness-probe-v1.json",
+    "sha256": "536c86b35eef59f01bbe7f2cee687efacbfd2eeab5493db3fdde1b796b9a9751",
+    "completed": 4,
+    "total": 5,
+    "driverExitStatus": 1,
+    "failure": "One initial state=2/pid=0 launch failure remains after main 51ff615; original observation retained."
+  },
+  "direct": {
+    "report": "docs/results/object-lldb-direct-protocol-probe-v1.json",
+    "sha256": "894c5b39335d7274d256371ec2ef0a4679317561cd33e4023aa43d366d0640b0",
+    "completed": 5,
+    "total": 5,
+    "driverExitStatus": 0,
+    "completionContract": "executeNativeFile accepts completion only after an independently recorded initial stopped state and native exit 42."
+  },
+  "decision": "Use debugserver-direct for the fresh full Object selection. It also completed the independent Promise 1458/1458 experiment with zero infrastructure errors. Retain the connected-launch failure for shared debugger follow-up; do not block breadth on it.",
+  "nextMeasurement": "Rebase, rebuild and re-freeze latest main including P compiler changes, then start a separate complete Object journal."
+}
