@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "kind": "frozen-native-selfbuild-validation",
+  "scope": "P inline primitive-union storage, general numeric equality leaf storage, boolean carriers and adjacent block fallthrough; post-C2 integration proof.",
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/source-snapshot.json",
+    "sha256": "de3a79af18c67a2095ab1cac8c4044fb6bfe11c7f4e09b61536a37ba10b8e9cf"
+  },
+  "sourceSnapshot": {
+    "sha256": "57d40829b280e7432424eb41fe40ecd4646e74898f7d6997c5f4a048eaab0625",
+    "files": 568
+  },
+  "sourceProvenance": "Frozen from main 3ed10e3 plus P changes; includes linked-syntax hash and C2 checker fix 63e5264. Later C1 private-element and runner-only main changes are separately integrated by the current workspace gate, not retroactively attributed to these images.",
+  "stageImageComparison": {
+    "snapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1/source",
+    "stage1": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1/stage1",
+    "stage2": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1/stage2",
+    "bytes": 69486994,
+    "sha256": "2e79b837c6ab82b1d20afef3425e576edc7ae40cc48c7698944157bdae3bb478",
+    "initial": {
+      "state": "stopped",
+      "pid": 34402,
+      "monotonicNs": 3544323833
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 3375979071250
+    },
+    "identical": true,
+    "inferiorWallMs": 3372434.747417,
+    "dwarfExit": 0,
+    "cpu": {
+      "pid": 34402,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 44012081535,
+        "systemTicks": 1213409257
+      },
+      "cpuMsLowerBound": 1884395.4496666668,
+      "finalUnobservedWallBoundMs": 103.965917,
+      "probes": 32327,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    }
+  },
+  "selfbuildExit": {
+    "startedUTC": "2026-11-06T21:17:54.171Z",
+    "endedUTC": "2026-11-06T22:17:06.201Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "args": [
+      "selfbuild-perf",
+      "1",
+      "--",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      ".tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1.ts"
+    ],
+    "status": 0,
+    "signal": null
+  },
+  "artifactChecks": {
+    "signature": {
+      "exitStatus": 0,
+      "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1/stage2: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-post-C2-v1/stage2: satisfies its Designated Requirement\n"
+    },
+    "sections": {
+      "exitStatus": 0,
+      "sizes": {
+        "__debug_abbrev": 69,
+        "__debug_info": 2186912,
+        "__debug_line": 17995197
+      }
+    }
+  },
+  "nodeStage1TimeSeconds": {
+    "wall": 175.14,
+    "user": 110.34,
+    "sys": 4.45
+  },
+  "workspaceGateV4": {
+    "startedUTC": "2026-11-06T21:15:59.632Z",
+    "endedUTC": "2026-11-06T22:01:27.093Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 0,
+    "signal": null
+  },
+  "workspaceGateV4Tests": {
+    "pass": 4577,
+    "fail": 0
+  },
+  "currentMainGate": "v5 queued after rebase onto f74cb1e, including the LLDB async connection readiness fix; no merge-ready claim until it passes.",
+  "performanceEvidence": "native-codegen-inline-primitive-unions-v2.json",
+  "nativeBenchmarkSummary": {
+    "beforeMedianCPUms": 130.598,
+    "afterMedianCPUms": 44.463229,
+    "speedup": 2.9372136,
+    "pairs": 4,
+    "expectedNativeExits": 8
+  },
+  "suiteProjection": "No whole-suite execution speedup can be projected from the isolated store benchmark. Existing journal compilation scenarios are reported separately in native-journal-throughput-v3.",
+  "retainedRejectedRun": {
+    "exit": {
+      "startedUTC": "2026-11-06T21:26:27.503Z",
+      "endedUTC": "2026-11-06T22:07:44.436Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/slot",
+      "args": [
+        "runner",
+        "8",
+        "--",
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/tools/test262-native-run.ts",
+        "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+        "language/expressions/addition/S11.6.1_A1.js",
+        "64"
+      ],
+      "status": 1,
+      "signal": null
+    },
+    "cause": "P launcher set TINT_TEST262_MODULES=0; the runner accepts only unset or explicit 1. It rejected configuration before compilation or native execution.",
+    "variantObservations": 0,
+    "classification": "configuration rejection, not conformance or debugger failure",
+    "nextRun": "Corrected v2 queued with TINT_TEST262_MODULES deleted from the child environment. Original rejection retained; corrected run is a distinct report."
+  },
+  "artifacts": {
+    "native-codegen-inline-post-C2-v1-selfbuild.log.gz": {
+      "sha256": "412496a6019d364dc8acf3fa11f2d907914765748b7bc57cd6171c665cb87a2d",
+      "uncompressedBytes": 44159
+    },
+    "native-codegen-inline-post-C2-v1-gate-v4.log.gz": {
+      "sha256": "9511684e7e3b477f0c7e31d6f9468e16cfb74730ec800a1badc0caec227cf54e",
+      "uncompressedBytes": 413792
+    },
+    "native-codegen-inline-post-C2-v1-sample.txt.gz": {
+      "sha256": "28b08e7fead6107b8613ee8c640079c2880206e7ec273f6086599747e86a02e3",
+      "uncompressedBytes": 50953
+    },
+    "native-codegen-inline-post-C2-v1-rejected-run.log.gz": {
+      "sha256": "2812415fbcc1f2bff6e32d51a599e5850e2ee72f76d34c5c6680232c88cb9c7e",
+      "uncompressedBytes": 58937
+    },
+    "native-codegen-inline-post-C2-v1-rejected-run-cpu.jsonl.gz": {
+      "sha256": "d14489d31d70aed8779e645554b56cd569d49917d1af7af3c2389351fd1ce125",
+      "uncompressedBytes": 79083
+    }
+  }
+}
