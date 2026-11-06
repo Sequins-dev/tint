@@ -1,0 +1,247 @@
+{
+  "kind": "cluster-paused-native-run",
+  "conformance": false,
+  "cluster": "D",
+  "reason": "Explicit user ACTIVE CLUSTER LIMIT pause",
+  "selection": "language/eval-code/indirect",
+  "expected": 118,
+  "observed": 84,
+  "passed": 76,
+  "timeouts": 8,
+  "unknown": 34,
+  "complete": false,
+  "journal": "docs/results/test262-d-language-indirect-phase2-v1.jsonl",
+  "sha256": "477b544e4a3c4bcc9e780839f50317adf772ce2fc51e2a8f568412e2ef5b328c",
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/node-toolchain-d-indirect-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/node-toolchain-d-indirect-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/node-toolchain-d-indirect-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/node-toolchain-d-indirect-v1/source-snapshot.json",
+    "sha256": "27aaa601aafb1efb22e383cfcc6c91594515ffbdb8365478e87054685725c541"
+  },
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193",
+  "resumeAttempt": {
+    "wrapperPid": 89507,
+    "exitStatus": 143,
+    "observerExitStatus": 130,
+    "state": "Cancelled while queued; no new Node runner or inferior started; journal unchanged."
+  },
+  "heldMarker": ".tint-bootstrap/d-indirect-phase2-v1.pause",
+  "interruption": "docs/results/d-language-indirect-interruption-v1.json",
+  "cpuAudits": [
+    "docs/results/d-language-indirect-phase2-v1-process.jsonl",
+    "docs/results/d-language-indirect-phase2-v2-process.jsonl"
+  ],
+  "nonPasses": [
+    {
+      "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 21,
+      "sourceSha256": "39a15c0d4663f1a803116de4b6c15502a6b62bd2c9afda7fe2aebd096db79c0d",
+      "cpu": {
+        "pid": 3539,
+        "cpuTime": "1:51.68",
+        "elapsed": "04:27",
+        "cpuSeconds": 111.68,
+        "elapsedSeconds": 267,
+        "singleThreadCpuUpperBound": 144.68,
+        "at": "2026-11-07T02:32:33+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+      "variant": "strict",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 22,
+      "sourceSha256": "39a15c0d4663f1a803116de4b6c15502a6b62bd2c9afda7fe2aebd096db79c0d",
+      "cpu": {
+        "pid": 25744,
+        "cpuTime": "2:15.04",
+        "elapsed": "04:30",
+        "cpuSeconds": 135.04,
+        "elapsedSeconds": 270,
+        "singleThreadCpuUpperBound": 165.04,
+        "at": "2026-11-07T02:37:36+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 34,
+      "sourceSha256": "2a04dc1d21ee7c0bcd7797cab22917551d9781bc39b1b105705a53399a7ec55d",
+      "cpu": {
+        "pid": 40299,
+        "cpuTime": "3:04.15",
+        "elapsed": "04:31",
+        "cpuSeconds": 184.15,
+        "elapsedSeconds": 271,
+        "singleThreadCpuUpperBound": 213.15,
+        "at": "2026-11-07T02:58:46+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+      "variant": "strict",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 35,
+      "sourceSha256": "2a04dc1d21ee7c0bcd7797cab22917551d9781bc39b1b105705a53399a7ec55d",
+      "cpu": {
+        "pid": 62456,
+        "cpuTime": "1:46.76",
+        "elapsed": "04:27",
+        "cpuSeconds": 106.75999999999999,
+        "elapsedSeconds": 267,
+        "singleThreadCpuUpperBound": 139.76,
+        "at": "2026-11-07T03:03:42+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 36,
+      "sourceSha256": "fcde6ae4f756c301436b8f6ef186dc0c2845b38b53f58f61dd4a04c7880659e4",
+      "cpu": {
+        "pid": 82951,
+        "cpuTime": "0:06.75",
+        "elapsed": "04:33",
+        "cpuSeconds": 6.75,
+        "elapsedSeconds": 273,
+        "singleThreadCpuUpperBound": 33.75,
+        "at": "2026-11-07T03:09:02+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+      "variant": "strict",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 37,
+      "sourceSha256": "fcde6ae4f756c301436b8f6ef186dc0c2845b38b53f58f61dd4a04c7880659e4",
+      "cpu": {
+        "pid": 90630,
+        "cpuTime": "1:27.44",
+        "elapsed": "04:18",
+        "cpuSeconds": 87.44,
+        "elapsedSeconds": 258,
+        "singleThreadCpuUpperBound": 129.44,
+        "at": "2026-11-07T03:13:44+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 38,
+      "sourceSha256": "be3e210ca302b4cd58ad5b4cb10a73e37b6eed89e03e803c72b7c54c5dd85a1a",
+      "cpu": {
+        "pid": 11644,
+        "cpuTime": "2:47.72",
+        "elapsed": "04:38",
+        "cpuSeconds": 167.72,
+        "elapsedSeconds": 278,
+        "singleThreadCpuUpperBound": 189.72,
+        "at": "2026-11-07T03:18:52+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    },
+    {
+      "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+      "variant": "strict",
+      "status": "timeout",
+      "batch": 0,
+      "selectedCase": 39,
+      "sourceSha256": "be3e210ca302b4cd58ad5b4cb10a73e37b6eed89e03e803c72b7c54c5dd85a1a",
+      "cpu": {
+        "pid": 38104,
+        "cpuTime": "2:56.43",
+        "elapsed": "04:40",
+        "cpuSeconds": 176.43,
+        "elapsedSeconds": 280,
+        "singleThreadCpuUpperBound": 196.43,
+        "at": "2026-11-07T03:23:56+0800"
+      },
+      "classification": "load-sensitive/inconclusive; retain timeout and recheck separately",
+      "detail": "Timeout after confirmed initial stop; sampled CPU below full-core criterion. External saturation windows additionally apply."
+    }
+  ],
+  "diagnostics": [
+    "docs/results/d-language-indirect-phase2-v1-stall-11644-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-25744-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-3539-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-38104-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-40299-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-51215-phase-0.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-51215-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-62456-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-65875-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-71135-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-82951-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-87505-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-90630-phase-1.txt",
+    "docs/results/d-language-indirect-phase2-v1-stall-93719-phase-1.txt"
+  ],
+  "pressure": "docs/results/d-indirect-pressure-spike-v1.json",
+  "stagedImages": [
+    {
+      "binary": ".tint-bootstrap/d-indirect-batch0-preserved-test",
+      "originalPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6r1FDY/test",
+      "pid": 71135,
+      "sourceSnapshot": {
+        "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+        "files": 568
+      },
+      "imageSha256": "8b4d324f39745f00babcdac4365a7a2769480214b2fce7c6dc092016c8f24a7c",
+      "bytes": 166524671,
+      "capturedAt": "2026-11-07T01:54:21+0800",
+      "purpose": "Preserved staged image for symbolication of samples; never executed directly."
+    },
+    {
+      "binary": ".tint-bootstrap/d-indirect-batch1-preserved-test",
+      "originalPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-D1Z5Cp/test",
+      "pid": 21123,
+      "sourceSnapshot": {
+        "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+        "files": 568
+      },
+      "imageSha256": "166fe82b6d9814498cb66d9c2157ef6cda20287119ecfacad55acf71eb23452f",
+      "bytes": 173096447,
+      "capturedAt": "2026-11-07T04:03:51+0800",
+      "purpose": "Preserved staged batch-1 image for symbolication; never executed directly."
+    }
+  ],
+  "scope": "This is an incomplete prefix, not a ledger-countable family report. All observed outcomes and unobserved variants remain in the eventual selection denominator.",
+  "validation": {
+    "completedBuild": {
+      "command": "PATH=<Node24>/bin:$PATH pnpm build",
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/d-rebased-build-v1.log"
+    },
+    "noProductionSourceChanges": true
+  }
+}

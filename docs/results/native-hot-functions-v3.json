@@ -1,0 +1,419 @@
+{
+  "kind": "host-separated-throughput-attribution",
+  "schemaVersion": 3,
+  "baseNativeAttribution": "native-hot-functions-v2.json",
+  "NodeTiny": {
+    "before": {
+      "kind": "compile-only-toolchain-comparison",
+      "conformance": false,
+      "label": "main-v1",
+      "startedAt": "2026-11-06T19:51:45.590Z",
+      "selection": "language/expressions/left-shift/S11.7.1_A1.js",
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "dirty": false,
+      "inputs": [
+        {
+          "path": "language/expressions/left-shift/S11.7.1_A1.js",
+          "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/left-shift/S11.7.1_A1.js",
+          "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        }
+      ],
+      "moduleExecution": true,
+      "dynamicImport": true,
+      "jsonModules": true,
+      "frozenToolchain": "ad322e5415d91d75b6ab128442d58353f47bd8b8b0a91e4e75dd7239334dcf47",
+      "sourceSnapshot": {
+        "sha256": "449314e5e5fa186f989c4f0da8e41587594a222de7113b0d7b8b1db9b77e62ab",
+        "files": 568
+      },
+      "nodeVersion": "v24.12.0",
+      "execArgv": [
+        "--inspect=127.0.0.1:0",
+        "--cpu-prof",
+        "--cpu-prof-interval=10000",
+        "--cpu-prof-dir=/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2",
+        "--cpu-prof-name=main-tiny-compile-v1.cpuprofile"
+      ],
+      "compileWallMs": 341556.693416,
+      "loadStart": [
+        24.103515625,
+        79.87255859375,
+        113.95703125
+      ],
+      "loadEnd": [
+        24.708984375,
+        43.1669921875,
+        85.04248046875
+      ],
+      "compileProcessCPUms": 327529.639,
+      "compileCpuUsage": {
+        "user": 323658687,
+        "system": 3870952
+      },
+      "compiled": true,
+      "bytes": 154371839,
+      "imageSha256": "0b2dce364cb7b8adcfe531bd997fd616e89337c9ea7f53ab5f038aaae5b0682b"
+    },
+    "after": {
+      "kind": "compile-only-toolchain-comparison",
+      "conformance": false,
+      "label": "current-B-v1",
+      "startedAt": "2026-11-06T19:59:19.317Z",
+      "selection": "language/expressions/left-shift/S11.7.1_A1.js",
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "dirty": false,
+      "inputs": [
+        {
+          "path": "language/expressions/left-shift/S11.7.1_A1.js",
+          "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+          "variant": "sloppy",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        },
+        {
+          "path": "language/expressions/left-shift/S11.7.1_A1.js",
+          "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+          "variant": "strict",
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ]
+        }
+      ],
+      "moduleExecution": true,
+      "dynamicImport": true,
+      "jsonModules": true,
+      "frozenToolchain": "12843f1956e6c8db6d8b3946fc5f1f95072ba3c76fdaeec03f2daf7e3e87a468",
+      "sourceSnapshot": {
+        "sha256": "bb9bce32cacb56e9e4b9635e01240ea48a534c5978948d9a329d7daab30a60c8",
+        "files": 568
+      },
+      "nodeVersion": "v24.12.0",
+      "execArgv": [
+        "--inspect=127.0.0.1:0",
+        "--cpu-prof",
+        "--cpu-prof-interval=10000",
+        "--cpu-prof-dir=/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2",
+        "--cpu-prof-name=current-B-tiny-compile-v1.cpuprofile"
+      ],
+      "compileWallMs": 376629.738625,
+      "loadStart": [
+        20.59130859375,
+        35.9404296875,
+        76.896484375
+      ],
+      "loadEnd": [
+        27.78125,
+        30.0146484375,
+        59.3896484375
+      ],
+      "compileProcessCPUms": 365817.888,
+      "compileCpuUsage": {
+        "user": 358924156,
+        "system": 6893732
+      },
+      "compiled": true,
+      "bytes": 158070527,
+      "imageSha256": "78fb1e18aadb32d49ef38127be0c67ab48b4cf0d51fae906a3548a3851f1ff74"
+    },
+    "sampledFunctions": [
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "stableFacts @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/typescript/dist/checker/closures.js",
+        "sampledElapsedMs": 52753.3619999999,
+        "percent": 14.926313838641335,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "forgetNarrowed @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/typescript/dist/checker/closures.js",
+        "sampledElapsedMs": 47789.524000000056,
+        "percent": 13.521819394625208,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "set @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/foundation/dist/collections/key-index.js",
+        "sampledElapsedMs": 34198.81800000011,
+        "percent": 9.676393523100556,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "get @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/foundation/dist/collections/key-index.js",
+        "sampledElapsedMs": 26306.027000000046,
+        "percent": 7.443165704771081,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "relates @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/typescript/dist/types/index.js",
+        "sampledElapsedMs": 14576.417999999998,
+        "percent": 4.124328411736507,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / main",
+        "function": "position @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-main-comparison-v1/packages/foundation/dist/collections/key-index.js",
+        "sampledElapsedMs": 13581.982000000007,
+        "percent": 3.842957457057959,
+        "denominatorSampledElapsedMs": 353425.249999981
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "stableFacts @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+        "sampledElapsedMs": 53273.61200000021,
+        "percent": 13.643605465052183,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "forgetNarrowed @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+        "sampledElapsedMs": 47793.98400000003,
+        "percent": 12.240248723871293,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "set @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/collections/key-index.js",
+        "sampledElapsedMs": 33199.22400000015,
+        "percent": 8.502466737226149,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "get @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/collections/key-index.js",
+        "sampledElapsedMs": 21419.17200000004,
+        "percent": 5.485543802738437,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "relates @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/types/index.js",
+        "sampledElapsedMs": 15791.528999999973,
+        "percent": 4.044279771492287,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      },
+      {
+        "host": "Node/V8",
+        "workload": "two-variant left-shift compile / hash",
+        "function": "(garbage collector) @ ",
+        "sampledElapsedMs": 14066.287000000004,
+        "percent": 3.602437735706596,
+        "denominatorSampledElapsedMs": 390465.79099974333
+      }
+    ],
+    "cpuRatio": 1.1169001044207787,
+    "imageBytesRatio": 1.0239596031501574,
+    "sourceConfound": "The production source differs only in linkModules, but this source is also compiled into the shared native host. Original pair varies both Node build-host implementation and embedded compiler input, not just the host indexing algorithm. A cross pair with identical native source snapshot is in progress.",
+    "repeatStatus": "No causal 11.7% regression conclusion from one cold pair."
+  },
+  "NodeLarge": {
+    "samples": 3699,
+    "DescriptorArrayBinarySearch": {
+      "samples": 1399,
+      "percent": 37.82103271154366
+    },
+    "LookupIterator": {
+      "samples": 757,
+      "percent": 20.464990537983237
+    },
+    "jsStack": "operator-left-shift-node-checker-stack-v1.txt",
+    "cpuAtInterruptionSeconds": 2741.6,
+    "wallAtInterruptionSeconds": 4653,
+    "observedVariants": 0,
+    "source": "operator-left-shift-interruption-v1.json",
+    "limitation": "Changing source size and shared fixed work prevent fitting a scaling exponent from a two-variant completion and an interrupted 64-variant run. The stableFacts full-set scan is a plausible superlinear mechanism; C2 owns the fix.",
+    "hypothesis": "For non-narrowed tokens, narrowed[token - graph.bindings.length] probes a negative array property. V8 named-property lookup and Smi-to-string frames are consistent with this hypothesis, not a direct captured property-name trace."
+  },
+  "D": {
+    "sourceSnapshot": {
+      "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+      "files": 568
+    },
+    "pausedPrefix": {
+      "expected": 118,
+      "observed": 84,
+      "passed": 76,
+      "timeouts": 8,
+      "unknown": 34
+    },
+    "cpuClassifications": [
+      {
+        "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 3539,
+          "cpuTime": "1:51.68",
+          "elapsed": "04:27",
+          "cpuSeconds": 111.68,
+          "elapsedSeconds": 267,
+          "singleThreadCpuUpperBound": 144.68,
+          "at": "2026-11-07T02:32:33+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+        "variant": "strict",
+        "cpu": {
+          "pid": 25744,
+          "cpuTime": "2:15.04",
+          "elapsed": "04:30",
+          "cpuSeconds": 135.04,
+          "elapsedSeconds": 270,
+          "singleThreadCpuUpperBound": 165.04,
+          "at": "2026-11-07T02:37:36+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 40299,
+          "cpuTime": "3:04.15",
+          "elapsed": "04:31",
+          "cpuSeconds": 184.15,
+          "elapsedSeconds": 271,
+          "singleThreadCpuUpperBound": 213.15,
+          "at": "2026-11-07T02:58:46+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+        "variant": "strict",
+        "cpu": {
+          "pid": 62456,
+          "cpuTime": "1:46.76",
+          "elapsed": "04:27",
+          "cpuSeconds": 106.75999999999999,
+          "elapsedSeconds": 267,
+          "singleThreadCpuUpperBound": 139.76,
+          "at": "2026-11-07T03:03:42+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 82951,
+          "cpuTime": "0:06.75",
+          "elapsed": "04:33",
+          "cpuSeconds": 6.75,
+          "elapsedSeconds": 273,
+          "singleThreadCpuUpperBound": 33.75,
+          "at": "2026-11-07T03:09:02+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+        "variant": "strict",
+        "cpu": {
+          "pid": 90630,
+          "cpuTime": "1:27.44",
+          "elapsed": "04:18",
+          "cpuSeconds": 87.44,
+          "elapsedSeconds": 258,
+          "singleThreadCpuUpperBound": 129.44,
+          "at": "2026-11-07T03:13:44+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 11644,
+          "cpuTime": "2:47.72",
+          "elapsed": "04:38",
+          "cpuSeconds": 167.72,
+          "elapsedSeconds": 278,
+          "singleThreadCpuUpperBound": 189.72,
+          "at": "2026-11-07T03:18:52+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      },
+      {
+        "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+        "variant": "strict",
+        "cpu": {
+          "pid": 38104,
+          "cpuTime": "2:56.43",
+          "elapsed": "04:40",
+          "cpuSeconds": 176.43,
+          "elapsedSeconds": 280,
+          "singleThreadCpuUpperBound": 196.43,
+          "at": "2026-11-07T03:23:56+0800"
+        },
+        "classification": "load-sensitive/inconclusive; retain timeout and recheck separately"
+      }
+    ],
+    "classification": "All eight indirect timeouts are load-sensitive/inconclusive. Existing symbolized catch sample provides named attribution only for that distinct workload. D has not been resumed."
+  },
+  "nativeBatchCompiler": {
+    "portableCore": "buildMacOSProgram and compileArm64Program are shared by Node and native self-builds.",
+    "currentCLI": "Reads fixed projectFiles/projectRoots and projectBuildRequest with compiler CLI as entry. Not a drop-in Test262 batch compiler.",
+    "requiredBridge": "Preserve Node preparation contracts, generated host modules, managed surfaces, resource settings and host/runtime bindings in a reusable native build-request transport; compare emitted images and outcomes before selecting it.",
+    "decision": "First measure generated array/capture improvements; do not assume native compilation beats Node from self-hosting alone."
+  },
+  "projection": {
+    "variants": 103264,
+    "hypotheticalCPUHoursAt64PerBatch": 146.84245481833335,
+    "CPUHoursAtObserved2PerBatch": 4697.502866902222,
+    "scope": "Conditional compilation-only scenarios, not a full-suite prediction. The 64-variant case already shows the constant-cost assumption is optimistic. Inferior execution and contention excluded."
+  }
+}
