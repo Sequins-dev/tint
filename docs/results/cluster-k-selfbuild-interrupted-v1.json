@@ -1,0 +1,48 @@
+{
+  "kind": "native-selfbuild-interruption",
+  "conformance": false,
+  "reason": "stopped during host memory emergency; superseded by rebase",
+  "requestedBy": "coordinator",
+  "toolExitStatus": 1,
+  "toolExitExplanation": "The existing harness rejected the deliberate stopped state after LLDB killed the interrupted inferior. This is an interruption, not a successful self-build or an observed native compiler fault.",
+  "sourceToolchain": "docs/results/frozen-node-toolchain-thread-host-v2.json",
+  "sourceSnapshot": {
+    "sha256": "823c1adee187bdad0b26bdb2b9ea28f533ca10a66e83c8158f9e629fa37122a3",
+    "files": 568
+  },
+  "stage1": {
+    "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/stage1",
+    "bytes": 71914226,
+    "sha256": "f1bb3567a57505bf854d343ad49a595b81b660b56b04b1c74a01f14b232d68c4",
+    "preserved": true
+  },
+  "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/sources",
+  "stage2Produced": false,
+  "stageImageComparisonPerformed": false,
+  "initial": {
+    "state": 5,
+    "pid": 25066
+  },
+  "stopped": {
+    "state": 5,
+    "exit": -1
+  },
+  "debuggerTermination": "SIGSTOP observed by the owning LLDB, followed by SBProcess.Kill; LLDB recorded native exit status 9 (killed).",
+  "beforeStop": {
+    "pid": 25066,
+    "wall": "54:55",
+    "cpu": "27:05.19",
+    "rssKiB": 5103584
+  },
+  "cleanup": {
+    "pids": [
+      25066,
+      25069,
+      24484,
+      8833
+    ],
+    "verifiedExited": true
+  },
+  "evidenceDirectory": "docs/results/cluster-k-selfbuild-interrupted-v1",
+  "next": "Validate the completed rebased slice, then run a new frozen comparison through slot selfbuild 1. Keep the independent coverage runner active."
+}

@@ -1,0 +1,29 @@
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) process launch --stop-at-entry -- "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/sources" "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/stage2" --debug-symbols
+Process 25066 launched: '/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/stage1' (arm64)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/initial.json",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+26
+(lldb) continue
+sources
+parse
+allocator
+runtime
+program
+Process 25066 resuming
+Process 25066 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+    frame #0: 0x000000010100e210 stage1`runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_75] at nursery.ts:501:19
+   498 	      }
+   499 	      for (let i = 0; i < plan.fixups; i++) {
+   500 	        const slot = o.slots[i],
+-> 501 	          value = o.values[i];
+    	                  ^
+   502 	        if (slot === undefined || value === undefined || !o.write(slot, value))
+   503 	          throw "NURSERY_COMMIT_FAILED";
+   504 	      }
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/selfbuild-v2/final.json",'w').write(json.dumps({'state':s,'exit':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None
+Process 25066 exited with status = 9 (0x00000009) killed
+24
+success
