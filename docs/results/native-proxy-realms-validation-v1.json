@@ -1,0 +1,104 @@
+{
+  "kind": "native-proxy-realms-validation",
+  "conformance": false,
+  "accepted": true,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bdxVgK/test",
+  "imageSha256": "939d5accf2ca55ee4c22a878c270827b3584f47638dfe9575f47daad4c25b909",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bdxVgK/fixture.json",
+  "fixtureSha256": "80b5fa5470690c81ec6d30d37f335acc0c253f7b71614eafec74afcec9ab9d1f",
+  "fixtureTool": "tools/verify-test262-native-proxy-realms.ts",
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "provenance": "Build-only image produced with TINT_BUILD_ONLY=1 by the committed fixture tool at the recorded source snapshot; image hash, fixture case hashes and committed case sources verified before execution.",
+  "expected": "Every case stops at entry and exits with raw status 42 (completed).",
+  "nodeReference": "Disabled: case 6 follows ECMA-262 9.1.1.2 HasProperty steps that V8 omits.",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "sourceSha256": "05338075539a633592766e368e01b07d21e5b326ead623573bb47ccb9a8e2513",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-0-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 1,
+      "sourceSha256": "b9c269d60ca9bc542fb28ba558e35068d5f976d79f925f04e9ab926e74b2b8b3",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-1-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 2,
+      "sourceSha256": "f3a8157a5bda9b5a5aeca6abdce4ed884715274ed230afd61ace7de3aa1c0d30",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-2-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 3,
+      "sourceSha256": "71521837bcd1062c912de22c3fff5dcfd86fa7d69021800fa8f8c3afb2c83c2a",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-3-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 4,
+      "sourceSha256": "d496dd479cc8db4d6721b9e5c142f62d87ae508458faed9fcadf6cd9506600bc",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-4-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 5,
+      "sourceSha256": "5cd0aad0c01da6c85ab9802cdc3b7303609aa22ffcac897efb7e9071b2adedd1",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-5-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 6,
+      "sourceSha256": "879d92e0061fa6d66bfffc3de45e3738994cf793c74b8e4f13e40dad86be1184",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-6-v1.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 7,
+      "sourceSha256": "74a8dc49a2bdfc7e4714606cb252ff5f0bfca3058c6ce35c0546bf996061051c",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-proxy-realms-case-7-v1.json",
+      "phase": "completed-after-entry"
+    }
+  ],
+  "serialization": {
+    "lease": {
+      "pid": 60992,
+      "thread": "proxy-reflect-native-acceptance",
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58",
+      "phase": "fixture",
+      "acquiredAt": "2026-11-06T00:07:52.892Z"
+    },
+    "request": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+    "borrowedRunner": 21082,
+    "parent": 21898,
+    "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+  }
+}
