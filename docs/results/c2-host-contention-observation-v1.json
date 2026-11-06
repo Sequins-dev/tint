@@ -1,0 +1,37 @@
+{
+  "kind": "c2-host-contention-observation",
+  "conformance": false,
+  "observedAt": "2026-11-06T21:10:32.075375+00:00",
+  "runnerPid": 82722,
+  "phase": "compiling batch37(14variants)",
+  "observedPasses": 1023,
+  "processSamples": [
+    {
+      "elapsed": "59:30",
+      "cpu": "37:12.92"
+    },
+    {
+      "elapsed": "01:00:31",
+      "cpu": "37:21.15"
+    }
+  ],
+  "interval": {
+    "wallSeconds": 61,
+    "cpuSeconds": 8.23,
+    "cpuEquivalentCoreShare": 0.13491803278688524,
+    "scope": "Compiler Node process, including its helper threads; not a native inferior."
+  },
+  "host": {
+    "loadAverages": [47.43, 38.26, 34.53],
+    "logicalOrPhysicalCoreReference": 18,
+    "swapTotalMiB": 4096,
+    "swapUsedMiB": 2577.5,
+    "memoryPressureReportedFreePercent": 84
+  },
+  "runner": {
+    "state": "R",
+    "rssKiB": 2640384,
+    "heartbeatAgeSeconds": 8
+  },
+  "interpretation": "Runnable compiler received about13.5percent of one CPU-equivalent over this interval. Memory-pressure report has improved since coordinator emergency, but CPU load remains high. Retain wall/CPU distinction; no timeout or conformance failure observed. No extra runners launched."
+}
