@@ -7,7 +7,11 @@ import {
   type BindingResult,
   type BindingError,
 } from "../records/index.ts";
-import { setProperty } from "../../objects/index.ts";
+import {
+  setProperty,
+  throwIfRuntimeError,
+  type ErrorRealm,
+} from "../../objects/index.ts";
 import {
   hasGlobalBinding,
   getGlobalBinding,
@@ -157,6 +161,24 @@ export function getBindingReferenceForTypeof<Key, Value>(
   if (reference.scope === undefined)
     return { error: "none", value: reference.global.hooks.undefinedValue };
   return getBindingReference<Key, Value>(reference);
+}
+
+/** GetValue(ResolveBinding(name)) for an identifier read, in one runtime call.
+ * Resolution and the read are adjacent, so no user code can run between them;
+ * abrupt results complete exactly as lowered result checks do. */
+export function getIdentifierValue<Key, Value>(
+  start: EnvironmentScope<Key, Value>,
+  name: string,
+  strict: boolean,
+  realm: ErrorRealm,
+  forTypeof: boolean,
+): Value {
+  const reference = resolveBinding<Key, Value>(start, name, strict);
+  const result = forTypeof
+    ? getBindingReferenceForTypeof<Key, Value>(reference)
+    : getBindingReference<Key, Value>(reference);
+  throwIfRuntimeError(realm, result.error);
+  return result.value;
 }
 
 /** Delete the resolved binding without GetValue, including an uninitialized binding.

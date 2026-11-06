@@ -94,7 +94,11 @@ test("dynamic body retains constructor identity and nested source spans", () => 
   const context = calls(module, "runScriptContext")[0];
   assert.ok(context);
   assert.match(JSON.stringify(context.arguments[1]), /hostDefined/);
-  const names = calls(module, "resolveBinding").map((c) => c.arguments[1]);
+  // Runtime-compiled bodies read identifiers through the fused helper.
+  const names = [
+    ...calls(module, "resolveBinding"),
+    ...calls(module, "getIdentifierValue"),
+  ].map((c) => c.arguments[1]);
   assert.ok(names.some((n) => n?.kind === "string" && n.value === "anonymous"));
   assert.ok(
     !calls(module, "createBinding").some((c) =>

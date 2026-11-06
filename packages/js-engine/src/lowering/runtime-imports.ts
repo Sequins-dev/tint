@@ -65,6 +65,7 @@ export function scriptRuntimeImports(
   usesTailCalls: boolean = false,
   usesAsyncModule: boolean = false,
   usesTemplateSites: boolean = false,
+  usesCompactResults: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -174,6 +175,7 @@ export function scriptRuntimeImports(
         "requireObjectCoercible",
         "createAccessorProperty",
         "rejectUnsupportedExecution",
+        ...(usesCompactResults ? ["throwIfRuntimeError"] : []),
         "finishScriptExecution",
         "createRuntimeError",
         "objectValueTypeof",
@@ -215,6 +217,7 @@ export function scriptRuntimeImports(
         "deleteBindingReference",
         "createDeclarativeScope",
         "resolveBinding",
+        ...(usesCompactResults ? ["getIdentifierValue"] : []),
         "getBindingReference",
         "getBindingReferenceForTypeof",
         "putBindingReference",
@@ -310,6 +313,7 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
     case "deleteBindingReference":
     case "createDeclarativeScope":
     case "resolveBinding":
+    case "getIdentifierValue":
     case "getBindingReference":
     case "getBindingReferenceForTypeof":
     case "putBindingReference":
@@ -350,11 +354,14 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
 /** Captured tools use this marker before exposing runtime import helpers. */
 export const scriptRuntimeSupportsDynamicImport = true;
 export const scriptRuntimeSupportsTemplateSites = true;
+/** Runtime-compiled entries complete results through out-of-line helpers. */
+export const scriptRuntimeSupportsCompactResults = true;
 /** Complete vocabulary, including optional disposal paths. Values versus types
  * must be classified by the linked export, not by legacy import flags. */
 export function scriptRuntimeSurface(
   usesImportCall: boolean = true,
   usesTemplateSites: boolean = true,
+  usesCompactResults: boolean = true,
 ): readonly ScriptRuntimeSurfaceEntry[] {
   const entries: ScriptRuntimeSurfaceEntry[] = [];
   for (const declaration of scriptRuntimeImports(
@@ -369,6 +376,7 @@ export function scriptRuntimeSurface(
     true,
     false,
     usesTemplateSites,
+    usesCompactResults,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

@@ -202,6 +202,7 @@ export {
   installErrorIntrinsics,
   createRuntimeError,
   rejectUnsupportedExecution,
+  throwIfRuntimeError,
   finishScriptExecution,
   type ScriptCompletionRecord,
   type ErrorRealm,

@@ -239,7 +239,7 @@ function createEntryEvaluator(
       return undefined;
     const lowered =
       kind === "script"
-        ? lowerScript(parsed.value, source)
+        ? lowerScript(parsed.value, source, { runtimeCompiled: true })
         : lowerEvalScript(parsed.value, source);
     if (!lowered.ok) return rejectLowering(realm, lowered.error.code);
     const done = runner.run(lowered.value, undefined, kind === "indirect-eval");

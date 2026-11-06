@@ -590,6 +590,14 @@ export function rejectUnsupportedExecution(realm: ErrorRealm): never {
   realm.unsupported = true;
   throw undefined;
 }
+/** Complete a lowered runtime result's error: "none" continues, "unsupported"
+ * rejects the execution, and any other kind throws its engine-created error.
+ * Lowered Scripts call this once per result instead of inlining both checks. */
+export function throwIfRuntimeError(realm: ErrorRealm, error: string): void {
+  if (error === "none") return;
+  if (error === "unsupported") rejectUnsupportedExecution(realm);
+  throw createRuntimeError(realm, error);
+}
 /** Shared result identity for AOT Scripts and runtime-compiled entries. */
 export interface ScriptCompletionRecord {
   readonly error: string;

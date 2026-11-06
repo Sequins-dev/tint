@@ -61,6 +61,7 @@ export function createManagedScriptFixture() {
       true,
       false,
       true,
+      true,
     ),
   ];
   const append = (specifier: string) =>

@@ -18,6 +18,7 @@ export {
   scriptRuntimeSurface,
   scriptRuntimeSupportsDynamicImport,
   scriptRuntimeSupportsTemplateSites,
+  scriptRuntimeSupportsCompactResults,
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
@@ -63,6 +64,12 @@ export interface ScriptLoweringError extends Span {
 export type ScriptLoweringResult =
   | { readonly ok: true; readonly value: Module }
   | { readonly ok: false; readonly error: ScriptLoweringError };
+/** Code compiled at runtime shares a per-entry native code budget. Such entries
+ * complete runtime results through out-of-line helpers (throwIfRuntimeError,
+ * getIdentifierValue) with unchanged semantics; AOT output keeps inline checks. */
+export interface ScriptLoweringOptions {
+  readonly runtimeCompiled?: boolean;
+}
 
 interface ScriptResourceScope {
   readonly outer: Expression | undefined;
@@ -133,8 +140,16 @@ export function lowerStrictScript(
 export function lowerScript(
   script: Module,
   sourceText?: string,
+  options: ScriptLoweringOptions = {},
 ): ScriptLoweringResult {
-  return lowerScriptEntry(script, sourceText, "script");
+  return lowerScriptEntry(
+    script,
+    sourceText,
+    "script",
+    0,
+    undefined,
+    options.runtimeCompiled === true,
+  );
 }
 /** Lower source-module bodies through the shared execution lowering. */
 export function lowerSourceTextModule(
@@ -148,13 +163,27 @@ export function lowerEvalScript(
   script: Module,
   sourceText?: string,
 ): ScriptLoweringResult {
-  return lowerScriptEntry(script, sourceText, "indirect-eval");
+  return lowerScriptEntry(
+    script,
+    sourceText,
+    "indirect-eval",
+    0,
+    undefined,
+    true,
+  );
 }
 /** Lower a CreateDynamicFunction body of any kind behind a hidden callable carrier. */
 export function lowerDynamicFunctionImplementation(
   syntax: DynamicFunctionSyntax,
 ): ScriptLoweringResult {
-  return lowerScriptEntry(syntax.module, syntax.parseText, "dynamic-function");
+  return lowerScriptEntry(
+    syntax.module,
+    syntax.parseText,
+    "dynamic-function",
+    0,
+    undefined,
+    true,
+  );
 }
 /** Direct eval retains its caller's scopes, receiver and effective Script identity. */
 export function lowerDirectEvalScript(
@@ -163,7 +192,14 @@ export function lowerDirectEvalScript(
   flags: number,
   context: EvalBindingContext,
 ): ScriptLoweringResult {
-  return lowerScriptEntry(script, sourceText, "direct-eval", flags, context);
+  return lowerScriptEntry(
+    script,
+    sourceText,
+    "direct-eval",
+    flags,
+    context,
+    true,
+  );
 }
 function lowerScriptEntry(
   script: Module,
@@ -172,6 +208,7 @@ function lowerScriptEntry(
     "script" | "indirect-eval" | "dynamic-function" | "direct-eval" | "module",
   directFlags: number = 0,
   directContext: EvalBindingContext | undefined = undefined,
+  compactResults: boolean = false,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -436,6 +473,18 @@ function lowerScriptEntry(
     });
   }
   function check(error: Expression, span: Span): void {
+    if (compactResults) {
+      // One out-of-line call: inlining both string checks at every result
+      // multiplies native entry size (see throwIfRuntimeError).
+      expression({
+        ...at(span),
+        kind: "call",
+        callee: id("throwIfRuntimeError", span),
+        arguments: [id("$errors"), error],
+        typeArguments: [],
+      });
+      return;
+    }
     statements.push({
       ...at(span),
       kind: "if",
@@ -534,6 +583,30 @@ function lowerScriptEntry(
     );
     check(member(result, "error", span), span);
     return member(result, "value", span);
+  }
+  /** An identifier read whose reference is not needed afterwards. Resolution
+   * and GetValue are adjacent, so compact entries fuse them into one call. */
+  function identifierValue(
+    name: string,
+    span: Span,
+    readSpan: Span = span,
+    forTypeof: boolean = false,
+  ): Expression {
+    if (!compactResults)
+      return read(reference(name, span), readSpan, forTypeof);
+    return temporary(
+      call(
+        "getIdentifierValue",
+        [
+          scope,
+          text(name, span),
+          { ...at(span), kind: "boolean", value: strict },
+          id("$errors"),
+          { ...at(span), kind: "boolean", value: forTypeof },
+        ],
+        span,
+      ),
+    );
   }
   function propertyValue(
     base: Expression,
@@ -2929,7 +3002,7 @@ function lowerScriptEntry(
           while (operand.kind === "group") operand = operand.expression;
           let evaluated: Expression;
           if (operand.kind === "identifier") {
-            evaluated = read(reference(operand.name, operand), node, true);
+            evaluated = identifierValue(operand.name, operand, node, true);
           } else evaluated = value(operand);
           return objectRuntime(
             "objectValueTypeof",
@@ -3023,7 +3096,7 @@ function lowerScriptEntry(
           : { ...at(node), kind: "unary", operator: "!", operand: equal };
       }
       case "identifier": {
-        return read(reference(node.name, node), node);
+        return identifierValue(node.name, node);
       }
       case "assignment": {
         if (node.target.kind === "object" || node.target.kind === "array") {
@@ -5142,6 +5215,8 @@ function lowerScriptEntry(
     usesImportMeta,
     usesTailCalls,
     moduleSuspends,
+    false,
+    compactResults,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

@@ -102,6 +102,7 @@ test("Script surface instantiations match the real linked export namespaces and 
         true,
         false,
         true,
+        true,
       ),
     ],
     entry = "runtime-surface-fixture";
@@ -212,7 +213,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 110, types: 23, genericFunctions: 29, genericTypes: 11 },
+    { functions: 112, types: 23, genericFunctions: 30, genericTypes: 11 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -241,7 +242,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     typeExports,
   );
   assert.ok(selections.ok, JSON.stringify(selections));
-  assert.equal(selections.value.roots.length, 29);
+  assert.equal(selections.value.roots.length, 30);
   const specialized = specializeModule(normalized.value, rebound.value, {
     roots: selections.value.roots,
     maxSpecializations: 4096,
@@ -255,7 +256,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 110);
+  assert.equal(table.value.surface.entries.length, 112);
   assert.equal(table.value.surface.types.length, 23);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -644,7 +645,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 110);
+  assert.equal(finalValues.length, 112);
   assert.equal(collectionOperations.length, 98);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,

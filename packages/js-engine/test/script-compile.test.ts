@@ -10,6 +10,7 @@ import {
   lowerScript,
   lowerEvalScript,
   lowerDirectEvalScript,
+  directEvalInFunction,
 } from "../src/lowering/index.ts";
 import { createEngineCodeStorage } from "../src/native/code-storage.ts";
 import { createScriptEntryCompiler } from "../src/native/script-compile.ts";
@@ -57,6 +58,42 @@ test("async template loops retain the shared per-entry code budget", () => {
   );
   assert.ok(compiled.ok, JSON.stringify(compiled));
   assert.equal(bounded.state.writes, 1);
+});
+// The largest annexB/language/eval-code/direct eval body (from
+// func-if-decl-else-decl-*-eval-func-skip-early-err-for-of.js, line
+// continuations removed). Inline result checks emitted 360960 bytes and the
+// native host rejected it as unsupported at the per-entry budget.
+const skipEarlyErrForOf =
+  'assert.throws(ReferenceError, function() {      f;    }, "An initialized binding is not created prior to evaluation");    assert.sameValue(      typeof f,      "undefined",      "An uninitialized binding is not created prior to evaluation"    );        for (let f of [0]) {if (true) function f() {  } else function _f() {}}        assert.throws(ReferenceError, function() {      f;    }, "An initialized binding is not created following evaluation");    assert.sameValue(      typeof f,      "undefined",      "An uninitialized binding is not created following evaluation"    );';
+test("function-level direct eval closures fit the native per-entry code budget", () => {
+  const parsed = parseEvalScript(createSourceTextView(skipEarlyErrForOf), {
+    strict: false,
+    newTarget: true,
+    superProperty: false,
+    superCall: false,
+  });
+  assert.ok(parsed.ok);
+  const lowered = lowerDirectEvalScript(
+    parsed.value,
+    skipEarlyErrForOf,
+    directEvalInFunction,
+    { privateEnvironment: false, fieldInitializer: false },
+  );
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  const h = host();
+  const result = createScriptEntryCompiler(fixture, h.authority, {
+    maxScriptCodeBytes: 262144,
+  })(lowered.value);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(h.state.writes, 1);
+  const prepared = prepareManagedSurfaceEntry({
+    ...fixture,
+    module: lowered.value,
+    entry: "execute",
+  });
+  assert.ok(prepared.ok);
+  // Retain headroom rather than passing at the boundary.
+  assert.ok(prepared.value.native.code.length < 262144 * 0.95);
 });
 function lower(text: string) {
   const parsed = parseScript(createSourceTextView(text));

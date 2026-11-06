@@ -52,6 +52,14 @@ export function capturedScriptTemplateSites(
     "scriptRuntimeSupportsTemplateSites",
   );
 }
+export function capturedScriptCompactResults(
+  snapshot?: WorkspaceSourceSnapshot,
+): boolean {
+  return capturedScriptRuntimeMarker(
+    snapshot,
+    "scriptRuntimeSupportsCompactResults",
+  );
+}
 export const scriptRuntimeDependencies: readonly [string, string][] = [
   ["@tint/js-runtime/modules", "packages/js-runtime/src/modules/index.ts"],
   ["@tint/js-runtime/objects", "packages/js-runtime/src/objects/index.ts"],
@@ -93,7 +101,8 @@ export function createScriptRuntimeRequest(
   snapshot?: WorkspaceSourceSnapshot,
 ): ManagedSurfaceRequest {
   const dynamicImport = capturedScriptDynamicImport(snapshot),
-    templateSites = capturedScriptTemplateSites(snapshot);
+    templateSites = capturedScriptTemplateSites(snapshot),
+    compactResults = capturedScriptCompactResults(snapshot);
   const runtimeDependencies = scriptRuntimeDependencies.filter(
     ([specifier]) => dynamicImport || specifier !== "@tint/js-runtime/modules",
   );
@@ -109,6 +118,7 @@ export function createScriptRuntimeRequest(
       true,
       false,
       templateSites,
+      compactResults,
     ),
     root = "$surface-kinds";
   const linked = linkModules(
@@ -141,7 +151,11 @@ export function createScriptRuntimeRequest(
   const dependencies = new Map(runtimeDependencies),
     values: ManagedSurfaceSelection[] = [],
     types: ManagedSurfaceSelection[] = [];
-  for (const item of scriptRuntimeSurface(dynamicImport, templateSites)) {
+  for (const item of scriptRuntimeSurface(
+    dynamicImport,
+    templateSites,
+    compactResults,
+  )) {
     const module = dependencies.get(item.specifier);
     assert.ok(module);
     const exported =

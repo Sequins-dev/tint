@@ -53,6 +53,48 @@ test("unsupported execution remains an embedding outcome after a user catches th
   });
 });
 
+test("lowered result completion continues, rejects or throws exactly like inline checks", () => {
+  const root = objects.createObject<ScriptPropertyKey, unknown>(undefined);
+  const realm = objects.createErrorRealm(root, hooks);
+  assert.equal(objects.throwIfRuntimeError(realm, "none"), undefined);
+  assert.equal(realm.unsupported, false);
+  for (const [kind, name] of [
+    ["reference", "ReferenceError"],
+    ["type", "TypeError"],
+  ]) {
+    let thrown: unknown;
+    try {
+      objects.throwIfRuntimeError(realm, kind!);
+    } catch (error) {
+      thrown = error;
+    }
+    const error = thrown as objects.OrdinaryObject<ScriptPropertyKey, unknown>;
+    assert.equal(
+      error.prototype,
+      objects.createRuntimeError(realm, kind!).prototype,
+    );
+    assert.equal(objects.getProperty(error, "name", error, hooks), name);
+    assert.equal(realm.unsupported, false);
+  }
+  // Unknown kinds remain engine invariants, never fabricated JavaScript errors.
+  assert.throws(
+    () => objects.throwIfRuntimeError(realm, "not-a-kind"),
+    (error) => error === "UNKNOWN_RUNTIME_ERROR_KIND",
+  );
+  let payload: unknown = "unset";
+  try {
+    objects.throwIfRuntimeError(realm, "unsupported");
+  } catch (error) {
+    payload = error;
+  }
+  assert.equal(payload, undefined);
+  assert.equal(realm.unsupported, true);
+  assert.deepEqual(objects.finishScriptExecution(realm, "none", 1), {
+    error: "unsupported",
+    value: undefined,
+  });
+});
+
 test("Error intrinsics expose realm-local constructors and standard property attributes", () => {
   assert.equal(typeof objects.installErrorIntrinsics, "function");
   const root = objects.createObject<ScriptPropertyKey, unknown>(undefined);

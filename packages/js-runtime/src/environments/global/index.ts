@@ -25,6 +25,7 @@ export {
   getBindingThisValue,
   createDeclarativeScope,
   resolveBinding,
+  getIdentifierValue,
   getBindingReference,
   getBindingReferenceForTypeof,
   putBindingReference,

@@ -15,9 +15,10 @@ function parsed(source: string) {
 }
 function lower(source: string, evalMode = true) {
   const module = parsed(source),
+    // Eval entries are always runtime-compiled; compare under the same mode.
     result = evalMode
       ? lowering.lowerEvalScript(module, source)
-      : lowering.lowerScript(module, source);
+      : lowering.lowerScript(module, source, { runtimeCompiled: true });
   assert.ok(result.ok, JSON.stringify(result));
   return result.value;
 }

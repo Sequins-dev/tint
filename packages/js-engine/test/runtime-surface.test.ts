@@ -51,13 +51,18 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 133);
+  assert.equal(surface.length, 135);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 133);
+  assert.equal(names.size, 135);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
-    40,
+    41,
   );
+  assert.deepEqual(names.get("getIdentifierValue")?.typeArguments, [
+    "ScriptPropertyKey",
+    "unknown",
+  ]);
+  assert.deepEqual(names.get("throwIfRuntimeError")?.typeArguments, []);
   assert.deepEqual(names.get("runScriptContext")?.typeArguments, [
     "ScriptCompletionRecord",
   ]);
