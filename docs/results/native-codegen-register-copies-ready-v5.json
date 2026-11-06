@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "kind": "merge-ready-validation",
+  "branch": "perf/test262-throughput",
+  "validatedHead": "704584d36b6f0bdd5ea842d9f58fae35886e41d5",
+  "base": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "workspace": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4514,
+    "passed": 4514,
+    "failed": 0,
+    "typecheck": 0,
+    "boundaries": 0,
+    "format": 0,
+    "log": "native-codegen-register-copies-ready-v5-check.log"
+  },
+  "nativeSelfbuild": "native-codegen-register-copies-selfbuild-v4.json",
+  "nativeCPUBenchmark": "native-codegen-register-copies-cpu-v3.json",
+  "nativeEquivalence": "Same-source record walk completed in every before/after run. Frozen stage1/stage2 images are byte-identical, validly signed, and contain verified nonempty DWARF.",
+  "Test262": "Addition A1 remains two post-entry 300000 ms timeouts before and after the copy-only change; retained as equal classifications, not completed-result equivalence.",
+  "scope": "Journal analysis plus FP storage-copy codegen slice only. Later inline-union, boolean/control-flow and array benchmark work is stashed separately and is not part of this range.",
+  "mergeReady": true
+}
