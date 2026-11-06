@@ -69,8 +69,9 @@ word before comparison. Async immediate results are fresh method-realm ordinary
 objects with `async: false` and a string value. The fast path linearizes at the
 read and never registers a waiter; it cannot lose a notification for a parked
 agent because it does not park. [Five native regressions](results/native-immediate-waits-validation-v1.json)
-cover conversion/order, results and cross-realm behavior. The matching-value,
-positive-timeout path still explicitly reports unsupported.
+cover conversion/order, results and cross-realm behavior. The matching-value synchronous path can now use explicit native waiter authority
+and an absolute monotonic deadline; positive-timeout asynchronous waiting still
+explicitly reports unsupported pending owner-agent delivery.
 
 The [complete unchanged waitAsync selection](results/test262-wait-async-immediate-native-v1.json) passes 88/202, with no semantic failures, crashes or timeouts. The remaining outcomes are 106 missing-agent harness errors and eight unsupported parking cases.
 
@@ -118,3 +119,14 @@ alone never complete a registration. The [native registry fixture](results/nativ
 checks two isolated worker facades, cross-width FIFO notification, native parking
 and timeout ownership. Script adapters and owner-agent promise delivery are still
 pending; this does not change the Test262 agent-host status above.
+
+
+Native shared services opt in to waiting through a parking/clock capability and
+publish a scalar waiter descriptor for other agents to attach. Unconfigured
+services retain no notification or waiting authority. Synchronous `Atomics.wait`
+rechecks terminal state after every kernel return, retains its absolute deadline
+across bounded park intervals, and releases enrollment on abrupt host failure.
+The [Script-wait native fixture](results/native-sync-atomics-wait-v1.json) verifies
+a real notification from an isolated worker, finite deadlines, exact BigInt
+wrapping and immediate mismatch. This does not install `$262.agent` or make the
+positive-timeout `waitAsync` path available.

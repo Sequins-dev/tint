@@ -1,0 +1,111 @@
+{
+  "kind": "native-sync-atomics-wait-fixture",
+  "outcome": {
+    "kind": "completed"
+  },
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "b3eb4741d19aae4f22e641d6c3f6048aee5227953103ea3888c3e82f79f3107e",
+      "files": 571
+    },
+    "imageSha256": "3025993f3227acb348cc3b4a57e790cd3155d9b781f11820b140239fad9a7f54",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-script-sync-wait-v1-F2FLbK/native-script-sync-wait-v1.source.ts",
+    "fixtureSha256": "e3b0f3a0899dc4711afc874a8edc565d644826196fae9776e0afbfe79302fc67",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/build-sync-wait-v1.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "threaded": true,
+      "managedBytes": 16777216,
+      "allocationCapacity": 262144,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "hostBindings": [
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "mapMemory",
+          "operation": "memory-map"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "unmapMemory",
+          "operation": "memory-unmap"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "readMemoryWord",
+          "operation": "memory-read-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "writeMemoryWord",
+          "operation": "memory-write-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "startNativeThread",
+          "operation": "thread-start"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "joinNativeThread",
+          "operation": "thread-join"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "hostedThreadEntry",
+          "operation": "hosted-thread-entry"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "parkNativeWord",
+          "operation": "word-park"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "wakeNativeWord",
+          "operation": "word-wake"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedUnsigned",
+          "operation": "shared-read-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedUnsigned",
+          "operation": "shared-write-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedWord64",
+          "operation": "shared-read-word64"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedWord64",
+          "operation": "shared-write-word64"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "compareExchangeSharedWord64",
+          "operation": "shared-compare-exchange-word64"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "compareExchangeSharedUnsigned",
+          "operation": "shared-compare-exchange-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/clock.ts",
+          "name": "monotonicMilliseconds",
+          "operation": "monotonic-time"
+        }
+      ]
+    },
+    "debugSymbols": false
+  },
+  "scope": "One short process; Script Atomics.wait receives a native cross-agent notification, then verifies timed waits, BigInt words and immediate mismatch. Not Test262 conformance."
+}
