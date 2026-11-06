@@ -56,7 +56,10 @@ test("partial-date equality and year-month comparison have intrinsic method cont
       .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
     const prototype = objects.getOwnProperty(constructor, "prototype")!
       .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
-    const targets = [{ object: prototype, name: "equals", length: 1 }];
+    const targets = [
+      { object: prototype, name: "equals", length: 1 },
+      { object: prototype, name: "toPlainDate", length: 1 },
+    ];
     if (name === "PlainYearMonth")
       targets.push({ object: constructor, name: "compare", length: 2 });
     else

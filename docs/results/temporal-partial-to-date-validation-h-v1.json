@@ -1,0 +1,78 @@
+{
+  "kind": "implementation-validation-checkpoint",
+  "conformance": false,
+  "baseMain": "4ef8ab8",
+  "implemented": [
+    "Temporal.PlainYearMonth.prototype.toPlainDate",
+    "Temporal.PlainMonthDay.prototype.toPlainDate"
+  ],
+  "workspaceGateSource": {
+    "sha256": "c5e754fd5939838036ca633e955abd86dff2ee2d17e784243feb661d71499533",
+    "files": 568
+  },
+  "nativeFixtureSource": {
+    "sha256": "3e545b786aadda466edbd4205a052f6b43cefcf2c30f15e68cbb56cf4c68a1fe",
+    "files": 568
+  },
+  "nativeFixtureNote": "The immutable native fixture build began before the main rebase. Its own build manifest and image hashes identify the tested native sources; later measurements use frozen toolchain v3.",
+  "checks": [
+    {
+      "command": "pnpm build after rebase",
+      "exitStatus": 0
+    },
+    {
+      "command": "focused partial-date metadata tests",
+      "exitStatus": 0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check after rebase",
+      "exitStatus": 0,
+      "passed": 4515,
+      "total": 4515,
+      "otherGates": [
+        "typecheck",
+        "boundaries",
+        "format:check"
+      ],
+      "log": ".tint-bootstrap/temporal-h-check-v5.log"
+    },
+    {
+      "command": "native green fixture under LLDB",
+      "exitStatus": 1,
+      "passed": 2,
+      "total": 3,
+      "preEntryDebuggerFailures": 1,
+      "report": "docs/results/native-temporal-partial-to-date-green-h-v1.json"
+    },
+    {
+      "command": "separate traced field-order diagnostic on original image case 1",
+      "exitStatus": 0,
+      "report": "docs/results/native-temporal-partial-to-date-field-order-diagnostic-h-v1.json"
+    }
+  ],
+  "retainedPriorObservations": [
+    {
+      "run": "red method-contract test",
+      "exitStatus": 1,
+      "reason": "PlainYearMonth.toPlainDate absent"
+    },
+    {
+      "run": "native red fixture",
+      "report": "docs/results/native-temporal-partial-to-date-red-h-v1.json",
+      "runtimeTypeErrors": 3,
+      "total": 3
+    },
+    {
+      "run": "workspace gate v4",
+      "exitStatus": 143,
+      "reason": "Only queued wrapper and its sleep child existed; stopped before acquiring a slot so the branch could rebase onto main. No gate result was produced."
+    }
+  ],
+  "pending": [
+    "Cumulative frozen native self-build, stage-image comparison and artifact validation under the selfbuild slot limiter",
+    "Complete affected selections: YearMonth/prototype/toPlainDate (24), MonthDay/prototype/toPlainDate (24)"
+  ],
+  "mergeReady": false
+}

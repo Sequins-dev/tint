@@ -120,8 +120,11 @@ internal slots; calendar conversion reads those slots rather than public getters
   same date-time range checks as construction.
 - **PlainYearMonth/PlainMonthDay:** reference ISO components, class-specific
   calendar fields and calendar-name formatting. YearMonth checks month-level
-  limits independently of PlainDate's day limits. Static conversion supports ISO strings and property bags, canonicalizes reference
-  components and preserves them when cloning.
+  limits independently of PlainDate's day limits. Static conversion supports ISO
+  strings and property bags, canonicalizes reference components and preserves
+  them when cloning. YearMonth comparison and both equality methods include the
+  complete reference ISO date. PlainDate conversion reads only the required day
+  or year, constrains overflow and allocates with the intrinsic PlainDate prototype.
 - **PlainTime:** constructor, clock fields, ISO time strings with ambiguity checks,
   property-bag/Temporal conversion, overflow options and comparison. Shared clock
   records contain no artificial calendar date. Time-only arithmetic, equality,

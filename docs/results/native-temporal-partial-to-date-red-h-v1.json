@@ -1,0 +1,91 @@
+{
+  "kind": "native-script-fixture-observation",
+  "conformance": false,
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "336e8ed54f566c173af13a2cf8e420b36b549bd0644e4a86d0b444280bbccb9c",
+      "files": 568
+    },
+    "imageSha256": "6076529f7588a3c3c3886dc465676e76e9b701320c5bb7a0e86f511c2d4a29ef",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const ym=new Temporal.PlainYearMonth(2023,2,\"iso8601\",7);const d=ym.toPlainDate({day:29});if(d.toString()!==\"2023-02-28\"||Object.getPrototypeOf(d)!==Temporal.PlainDate.prototype)throw 1;const md=new Temporal.PlainMonthDay(2,29);if(md.toPlainDate({year:2023}).toString()!==\"2023-02-28\"||md.toPlainDate({year:2024}).toString()!==\"2024-02-29\")throw 2;",
+        "sha256": "f3e23b98a7c0c77f0348b75fedc6771c50cda7399c02c53d90653b9d45c4374a"
+      },
+      {
+        "index": 1,
+        "source": "const log=[];const fields={get day(){log.push(\"day\");return{valueOf(){log.push(\"number\");return 2.9;}}},get year(){throw 1;},get month(){throw 2;},get calendar(){throw 3;}};if(new Temporal.PlainYearMonth(2000,1).toPlainDate(fields).day!==2||log.join()!==\"day,number\")throw 4;const md=new Temporal.PlainMonthDay(5,2);if(md.toPlainDate({get year(){return 2001.9;},get day(){throw 5;},get calendar(){throw 6;}}).year!==2001)throw 7;",
+        "sha256": "d4a518311abdcc6764a486003d94fe9f514c35b9c349662cf4526cf8a629a120"
+      },
+      {
+        "index": 2,
+        "source": "const lo=new Temporal.PlainYearMonth(-271821,4),hi=new Temporal.PlainYearMonth(275760,9);if(lo.toPlainDate({day:19}).day!==19||hi.toPlainDate({day:13}).day!==13)throw 1;for(const [ym,day]of[[lo,18],[hi,14]]){let ok=false;try{ym.toPlainDate({day});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;}for(const C of[Temporal.PlainYearMonth,Temporal.PlainMonthDay]){let touched=false,ok=false;try{C.prototype.toPlainDate.call({}, {get day(){touched=true;return 1;},get year(){touched=true;return 2000;}});}catch(e){ok=e instanceof TypeError;}if(!ok||touched)throw 3;const x=C===Temporal.PlainYearMonth?new C(2000,1):new C(1,1);for(const value of[undefined,null,1,true,\"2000-01-01\",{}]){let rejected=false;try{x.toPlainDate(value);}catch(e){rejected=e instanceof TypeError;}if(!rejected)throw 4;}}",
+        "sha256": "31ae54fd6a22fa2dede974b541b9551edbd5d062857c5677ec6aed9e8ac8da00"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ]
+}

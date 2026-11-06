@@ -6,6 +6,7 @@ import {
 } from "@tint/foundation/chrono/gregorian-calendar";
 import { formatISODate } from "@tint/foundation/chrono/iso-date-time";
 import {
+  getProperty,
   createObject,
   createConstructorObject,
   type OrdinaryObject,
@@ -14,6 +15,7 @@ import {
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { temporalInteger, requireISOCalendar } from "./temporal-coercion.ts";
 import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
+import { regulateISODateFields } from "./temporal-date-fields.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import {
   builtinProperty,
@@ -191,6 +193,53 @@ export function installTemporalPartialDates(
           // Conversion currently admits only ISO calendars, so equality of the
           // entire reference date also establishes calendar equality.
           return comparePartialDates(first, second) === 0;
+        },
+        hooks,
+      ),
+      true,
+      true,
+      hooks,
+    );
+    builtinProperty(
+      prototype,
+      "toPlainDate",
+      builtinFunction(
+        realm.functionPrototype,
+        "toPlainDate",
+        1,
+        (receiver, args): unknown => {
+          const date = extract(receiver);
+          const item = args[0];
+          const fields = viewObjectValue(item, realm.objectPrototype);
+          if (fields === undefined) throw createRuntimeError(realm, "type");
+          const supplied = getProperty<ScriptPropertyKey, unknown>(
+            fields,
+            yearMonth ? "day" : "year",
+            item,
+            hooks,
+          );
+          if (supplied === undefined) throw createRuntimeError(realm, "type");
+          const field = temporalInteger(supplied, realm, hooks);
+          const result = regulateISODateFields(
+            {
+              present: true,
+              year: yearMonth ? date.year : field,
+              month: date.month,
+              monthCode: undefined,
+              day: yearMonth ? field : date.day,
+              time: [],
+              offsetNanoseconds: undefined,
+              timeZone: undefined,
+            },
+            "constrain",
+            realm,
+          );
+          const object = createObject<ScriptPropertyKey, unknown>(
+            realm.temporalPlainDatePrototype,
+          );
+          object.internalTemporalPlainDate = result;
+          object.internalTemporalCalendar = "iso8601";
+          return object;
         },
         hooks,
       ),
