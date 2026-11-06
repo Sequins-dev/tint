@@ -88,9 +88,6 @@ test("connected launch publishes the stub before requesting the inferior", () =>
       script.indexOf("HandleCommand('gdb-remote"),
   );
   assert.ok(
-    script.indexOf("StopListeningForEvents") < script.indexOf(".RemoteLaunch("),
-  );
-  assert.ok(
     script.indexOf("lldb.debugger.SetAsync(False)") >
       script.indexOf("HandleCommand('gdb-remote"),
   );
@@ -193,7 +190,7 @@ def remote_launch(argv, envp, stdin, stdout, stderr, cwd, flags, stop, error):
     assert flags & 4 and stop
     state.update(value=5, pid=1234, calls=state['calls']+1)
     return True
-process = types.SimpleNamespace(GetState=lambda:state['value'], GetProcessID=lambda:state['pid'], GetBroadcaster=lambda:process, RemoteLaunch=remote_launch)
+process = types.SimpleNamespace(GetState=lambda:state['value'], GetProcessID=lambda:state['pid'], RemoteLaunch=remote_launch)
 def replace_process(info, error):
     error.message = 'a process is already being debugged'
     return types.SimpleNamespace(GetState=lambda:0)
@@ -203,8 +200,7 @@ interpreter = types.SimpleNamespace(HandleCommand=lambda command,result:None)
 debugger = types.SimpleNamespace(SetAsync=lambda flag:None, GetCommandInterpreter=lambda:interpreter, GetSelectedTarget=lambda:target)
 info = lambda args:types.SimpleNamespace(SetExecutableFile=lambda *args:None, SetLaunchFlags=lambda flags:None)
 support = types.SimpleNamespace(GetDirectory=lambda:'/toolchain', GetFilename=lambda:'bin')
-listener = lambda *args:types.SimpleNamespace(StartListeningForEvents=lambda broadcaster,mask:mask, StopListeningForEvents=lambda *args:True, WaitForEvent=lambda *args:False)
-lldb = types.SimpleNamespace(SBListener=listener, SBEvent=lambda:object(), SBProcess=types.SimpleNamespace(eBroadcastBitStateChanged=1), debugger=debugger, SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda kind:support), ePathTypeSupportExecutableDir=0, SBCommandReturnObject=result, SBLaunchInfo=info, SBFileSpec=lambda path:path, SBError=Error, eStateConnected=2, eStateStopped=5, eLaunchFlagDebug=1, eLaunchFlagStopAtEntry=2, eLaunchFlagDisableSTDIO=4)
+lldb = types.SimpleNamespace(debugger=debugger, SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda kind:support), ePathTypeSupportExecutableDir=0, SBCommandReturnObject=result, SBLaunchInfo=info, SBFileSpec=lambda path:path, SBError=Error, eStateConnected=2, eStateStopped=5, eLaunchFlagDebug=1, eLaunchFlagStopAtEntry=2, eLaunchFlagDisableSTDIO=4)
 chunks = iter([b'12345', b''])
 connection = types.SimpleNamespace(settimeout=lambda timeout:None, recv=lambda size:next(chunks), close=lambda:None)
 model_socket = types.SimpleNamespace(settimeout=lambda timeout:None, bind=lambda path:None, listen=lambda count:None, accept=lambda:(connection,None), close=lambda:None)
@@ -231,7 +227,7 @@ sys.modules['subprocess'] = types.SimpleNamespace(Popen=lambda *args,**kwargs:ty
 );
 
 test(
-  "connected launch waits for process readiness before launching exactly once",
+  "connected launch waits for asynchronous readiness before launching exactly once",
   { skip: process.platform !== "darwin" },
   async () => {
     const { execFileSync } = await import("node:child_process");
@@ -248,7 +244,7 @@ test(
         "connected",
       ).slice("script exec(".length, -1),
     );
-    // Model the LLDB contract: connection can return before its
+    // Model the LLDB contract: asynchronous connection can return before its
     // process state is published. Launch is legal only after eStateConnected.
     const driver = `
 import sys, types
@@ -272,7 +268,6 @@ class Process:
  def __init__(self): self.state=4
  def GetState(self): return self.state
  def GetBroadcaster(self): return self
- def GetProcessID(self): return 1234 if self.state==5 else 0
  def RemoteLaunch(self,argv,envp,stdin,stdout,stderr,cwd,flags,stop,error):
   assert self.GetState()==2
   target.launches+=1
@@ -280,12 +275,8 @@ class Process:
   return True
 class Listener:
  def __init__(self): self.events=0
- def StartListeningForEvents(self,broadcaster,mask):
-  self.broadcaster=broadcaster
-  return mask
- def StopListeningForEvents(self,broadcaster,mask): return True
- def WaitForEvent(self,seconds,event):
-  broadcaster=self.broadcaster
+ def GetNextEventForBroadcasterWithType(self,broadcaster,mask,event):
+  assert broadcaster is target.process and mask==1
   self.events+=1
   broadcaster.state=2
   return True
@@ -304,7 +295,7 @@ class Target:
 target=Target()
 listener=Listener()
 debugger=types.SimpleNamespace(GetListener=lambda:listener,SetAsync=lambda value:None,GetSelectedTarget=lambda:target,GetCommandInterpreter=lambda:types.SimpleNamespace(HandleCommand=lambda *args:None))
-lldb=types.SimpleNamespace(SBListener=lambda *args:listener,eStateCrashed=8,eStateDetached=9,eStateExited=10,debugger=debugger,SBEvent=lambda:object(),SBProcess=types.SimpleNamespace(eBroadcastBitStateChanged=1),SBCommandReturnObject=Result,SBLaunchInfo=Info,SBError=Error,SBFileSpec=lambda path:path,eStateInvalid=0,eStateUnloaded=1,eStateConnected=2,eStateAttaching=3,eStateLaunching=4,eLaunchFlagDebug=1,eLaunchFlagStopAtEntry=2,eLaunchFlagDisableSTDIO=4,ePathTypeSupportExecutableDir=1,SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda value:types.SimpleNamespace(GetDirectory=lambda:'/tmp',GetFilename=lambda:'support')))
+lldb=types.SimpleNamespace(debugger=debugger,SBEvent=lambda:object(),SBProcess=types.SimpleNamespace(eBroadcastBitStateChanged=1),SBCommandReturnObject=Result,SBLaunchInfo=Info,SBError=Error,SBFileSpec=lambda path:path,eStateInvalid=0,eStateUnloaded=1,eStateConnected=2,eStateAttaching=3,eStateLaunching=4,eLaunchFlagDebug=1,eLaunchFlagStopAtEntry=2,eLaunchFlagDisableSTDIO=4,ePathTypeSupportExecutableDir=1,SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda value:types.SimpleNamespace(GetDirectory=lambda:'/tmp',GetFilename=lambda:'support')))
 exec(${JSON.stringify(script)})
 assert target.launches==1 and listener.events==1
 `;
@@ -317,12 +308,12 @@ assert target.launches==1 and listener.events==1
         [
           "self.state=4",
           "self.state=8",
-          /unexpected process before remote launch: 8/,
+          /unexpected remote connection state: 8/,
         ],
         [
           "broadcaster.state=2",
           "broadcaster.state=4",
-          /debugserver did not reach connected state/,
+          /remote connection did not reach eStateConnected/,
         ],
       ] as const)
         assert.throws(
