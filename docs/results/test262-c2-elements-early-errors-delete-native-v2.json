@@ -1,0 +1,5527 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/elements/syntax/early-errors/delete",
+  "sourceSnapshot": {
+    "sha256": "123935ef906ff413ccbc14759243a25d66e8ad9cf4a26ce1dfdea9504cc9378c",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v11/source-snapshot.json",
+  "frozenToolchainSha256": "1c53b5eca597c20fc79f86f0ec9b371e00964a76e70ff324be0c72198eedc407",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/elements-delete-family-prefix-v2.jsonl",
+    "journalSha256": "92cef331bc75953bbb89d276a1b90e7f32ff562a9f4af2087066aed05565fdff",
+    "journalBytes": 325174,
+    "observedVariants": 478
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 4,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 22728.276958999922,
+        "outcome": "compiled"
+      },
+      {
+        "id": 5,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 23801.637832999928,
+        "outcome": "compiled"
+      },
+      {
+        "id": 6,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 12746.293291999958,
+        "outcome": "compiled"
+      },
+      {
+        "id": 7,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 14925.01016700035,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 192,
+    "passed": 184,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 8,
+    "passFraction": 0.9583333333333334
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "277425f33b9a37dab789496b957b54190782493259155b03cdc097a124879fd9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 131396.54091700003,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "277425f33b9a37dab789496b957b54190782493259155b03cdc097a124879fd9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 137424.9920000001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "bd927434a62aa3bedfb8b1ce875db36da876bc8cf93e3a85dda9b9eb666a7fd9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 143343.71725,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "bd927434a62aa3bedfb8b1ce875db36da876bc8cf93e3a85dda9b9eb666a7fd9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 151347.92833300005,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "d69fb458a958c39f23da529a3d90cd59d44a3cbcfdad907f2c18bf2a3d3e6b8a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 158323.41925000004,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "d69fb458a958c39f23da529a3d90cd59d44a3cbcfdad907f2c18bf2a3d3e6b8a",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 164870.05258400016,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "530509795528836a1cf37f2a1e0c2d2e92e48c26a2179bb81bf5bff1e4dc5f37",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 167267.84591599996,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "530509795528836a1cf37f2a1e0c2d2e92e48c26a2179bb81bf5bff1e4dc5f37",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 170566.53787499992,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "f000ff642985a4f2636a392e64e52602168bb7b7d740e3a92ac4e75e0b209948",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 173481.2567080001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "f000ff642985a4f2636a392e64e52602168bb7b7d740e3a92ac4e75e0b209948",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 177236.20216699992,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method.js",
+      "sha256": "722f2f65102d29e89e9bbdc716dfa379e3cfca2e1a29c11967b51d9599ed81eb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 180127.37170799985,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-method.js",
+      "sha256": "722f2f65102d29e89e9bbdc716dfa379e3cfca2e1a29c11967b51d9599ed81eb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 183310.830542,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "58c37b0cc3eb9452420f3e14b751b97a9f40bec8899e35be49fb606a32ca8dd2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 189427.58987499983,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "58c37b0cc3eb9452420f3e14b751b97a9f40bec8899e35be49fb606a32ca8dd2",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 197531.95037500001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-privatename.js",
+      "sha256": "d553ae026ba77ecc06bc88342be22bcaf5c1b375e7fb1cf938367cf04ca5971a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 204431.18329199986,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-call-expression-privatename.js",
+      "sha256": "d553ae026ba77ecc06bc88342be22bcaf5c1b375e7fb1cf938367cf04ca5971a",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-g4xZ87/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"33\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-g4xZ87/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-g4xZ87/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-g4xZ87/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 212336.07833399996,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "b3e428f6bc9636fafa03941110918cc3f275a791e917d497d35db617a8daa17b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 219545.59895899985,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "b3e428f6bc9636fafa03941110918cc3f275a791e917d497d35db617a8daa17b",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 226603.05070799985,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "d040777a4d50c38e854ab742f92c76eddf1f276f02ab381022c89ce2a741e57e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 234410.84499999997,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "d040777a4d50c38e854ab742f92c76eddf1f276f02ab381022c89ce2a741e57e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 240329.1509159999,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "40c2e0bbbe5d22adb8022adb6ac606e8f4cf3eb1237fbd95a82a04b69fe8d483",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 247329.98579200008,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "40c2e0bbbe5d22adb8022adb6ac606e8f4cf3eb1237fbd95a82a04b69fe8d483",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 253495.22550000018,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "7bde4df23339dcfe4dc7fe1e75578772e3c69f76da7c7f9abf31774edab77822",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 259829.72775000008,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "7bde4df23339dcfe4dc7fe1e75578772e3c69f76da7c7f9abf31774edab77822",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 265328.6638750001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "d4509c617040e00bc06b69fa175fcd4aded87fb5f89f88bae52abdc5bfe84724",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 272420.443459,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "d4509c617040e00bc06b69fa175fcd4aded87fb5f89f88bae52abdc5bfe84724",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 280417.6559579999,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "5fc10934c399ddb9708849e04bb98ce121845306b7d4c037e5bab811a0a5570c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 287347.01695800014,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "5fc10934c399ddb9708849e04bb98ce121845306b7d4c037e5bab811a0a5570c",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 294416.56850000005,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "6a8f46ed9367788548e464da323589370c895b491f54073b2e055e76efb0f55a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 301443.1309170001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "6a8f46ed9367788548e464da323589370c895b491f54073b2e055e76efb0f55a",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 308461.45333299995,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-privatename.js",
+      "sha256": "ac47062559e363adf9e8e699df67882ed2de94568ff4b5bd7c2dee9c47f6c247",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 314326.6755000001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-covered-err-delete-member-expression-privatename.js",
+      "sha256": "ac47062559e363adf9e8e699df67882ed2de94568ff4b5bd7c2dee9c47f6c247",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 321311.993792,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "bb96e4c985928bc35ffdb76b0e8b2643e42ce2b58a37ea144a909fccd86e9689",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 328310.1086250001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "bb96e4c985928bc35ffdb76b0e8b2643e42ce2b58a37ea144a909fccd86e9689",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 335376.1149169998,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "7829396350c2d46817e0ce0ccefd4884c286d8e8573510ee068794542e943124",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 339844.119708,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "7829396350c2d46817e0ce0ccefd4884c286d8e8573510ee068794542e943124",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 346610.03633300005,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "015c4a3fed5f489b9ba328ba3397222ddbd7d7c7da66ba7c05f3059876735625",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 351927.7860000001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "015c4a3fed5f489b9ba328ba3397222ddbd7d7c7da66ba7c05f3059876735625",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 358323.30374999996,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-async.js",
+      "sha256": "3c05df65d6fd85d9e9532d97966f741afb4e771d25bae55b7c8d2c8632b1e101",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 362616.08154199994,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-async.js",
+      "sha256": "3c05df65d6fd85d9e9532d97966f741afb4e771d25bae55b7c8d2c8632b1e101",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 370356.7586670001,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-gen.js",
+      "sha256": "4990dbbb1bad0e1e4294b87fb039b5032349c40341d9224c9aa5494dc2cfa8a7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 376315.11899999995,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method-gen.js",
+      "sha256": "4990dbbb1bad0e1e4294b87fb039b5032349c40341d9224c9aa5494dc2cfa8a7",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 383469.569041,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method.js",
+      "sha256": "8512b1617ef0f5dc26d5d4011ded4217619c913242f040e645757f892a497b5a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 389341.8295,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-method.js",
+      "sha256": "8512b1617ef0f5dc26d5d4011ded4217619c913242f040e645757f892a497b5a",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 396322.6642499999,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-no-reference.js",
+      "sha256": "04bcb954d6b7fa499113e31bd163001cd42408eedcfd56edb755f2d0b1128e6a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Qxjae/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"62\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Qxjae/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Qxjae/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5Qxjae/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 403210.48600000003,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-private-no-reference.js",
+      "sha256": "04bcb954d6b7fa499113e31bd163001cd42408eedcfd56edb755f2d0b1128e6a",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 409433.199208,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-privatename.js",
+      "sha256": "aa87fbfdc93f1d21e2fd81c6edb6f0e9e3824780dd024f0012d91a481c8a2aca",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30627.191749999998,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-call-expression-privatename.js",
+      "sha256": "aa87fbfdc93f1d21e2fd81c6edb6f0e9e3824780dd024f0012d91a481c8a2aca",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 37126.914124999894,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "c3e3de8d29aebe9e9a53534fc34cfa197424e280308ce404849140bdd2ebff66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 43579.38508299994,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "c3e3de8d29aebe9e9a53534fc34cfa197424e280308ce404849140bdd2ebff66",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 49983.73433299991,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "a1c26fe2a2f782777ae1d31aa8a9d1be8d580928bf6de7694553c3fde97013d5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xTa0nz/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"4\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xTa0nz/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xTa0nz/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xTa0nz/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 53045.15816599992,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "a1c26fe2a2f782777ae1d31aa8a9d1be8d580928bf6de7694553c3fde97013d5",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 56334.58049999992,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "484d4f84dba2cff95b5568ba6f367e6f0309561fce0989cca5f349ccc7a7331e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 63172.30912499991,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "484d4f84dba2cff95b5568ba6f367e6f0309561fce0989cca5f349ccc7a7331e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 68889.30475000013,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-async.js",
+      "sha256": "efda19a9c2a4cdfb0842ce15032940928d6afb9cf6572f3b7853d9dac64de670",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 76065.06024999986,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-async.js",
+      "sha256": "efda19a9c2a4cdfb0842ce15032940928d6afb9cf6572f3b7853d9dac64de670",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 83083.13054199982,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-gen.js",
+      "sha256": "b611374c556e5f87831c4d8f2dce2f3c378b45a4c0248c37ff25e400fc4389d0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 88973.37504199985,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method-gen.js",
+      "sha256": "b611374c556e5f87831c4d8f2dce2f3c378b45a4c0248c37ff25e400fc4389d0",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 94274.63091699989,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method.js",
+      "sha256": "e52deb3dcf27ead2d6fcb8497b5a5ca08ece26713e97762f82008620e48d1bc3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 100940.64158400008,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-method.js",
+      "sha256": "e52deb3dcf27ead2d6fcb8497b5a5ca08ece26713e97762f82008620e48d1bc3",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 103749.2700420001,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-no-reference.js",
+      "sha256": "22f938979c7d393560f06619c7e14ded59fe35fd869edb84850a1c06fe579db6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 108948.03966700006,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-private-no-reference.js",
+      "sha256": "22f938979c7d393560f06619c7e14ded59fe35fd869edb84850a1c06fe579db6",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 112964.15258400002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-privatename.js",
+      "sha256": "d2f7fa35895d6638b40ab9125852fc0236c815d0301b307e236da6f65e0d9dbb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 116560.72595899994,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-err-delete-member-expression-privatename.js",
+      "sha256": "d2f7fa35895d6638b40ab9125852fc0236c815d0301b307e236da6f65e0d9dbb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 121463.961167,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "1a6fe942c740e5c47b115fbb953bc5f4205b64f838afbf1e23fc28f4d0be4966",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 124420.52670799987,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "1a6fe942c740e5c47b115fbb953bc5f4205b64f838afbf1e23fc28f4d0be4966",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 128610.29524999997,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "1d346c3f2e5e41e04a08a67c3eabaa4703801cb7242df7068bc8421513b4a41f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 131565.66458300012,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "1d346c3f2e5e41e04a08a67c3eabaa4703801cb7242df7068bc8421513b4a41f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 136707.831,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "603f582b9392393af070b1dad0b0cb3aa4be438a2a127fce84e64f989dcbef99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 140282.8720829999,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "603f582b9392393af070b1dad0b0cb3aa4be438a2a127fce84e64f989dcbef99",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 144625.80895800004,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "2f890a4bd6b7e8a92037d322986a8c0a82f07e3490a54cc858d02d9e90f1c487",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 148671.30229100003,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "2f890a4bd6b7e8a92037d322986a8c0a82f07e3490a54cc858d02d9e90f1c487",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 153921.39583400008,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "9b53b0d4e3b2020c151ba1c285c45e1d6cb7342a5613f25b47fd9d68876a1625",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 158116.35745900008,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "9b53b0d4e3b2020c151ba1c285c45e1d6cb7342a5613f25b47fd9d68876a1625",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 161909.69637499982,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method.js",
+      "sha256": "c5f2834da3218e490211c547123328466452dedef33704e2589deac989bdc287",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 168030.50295799994,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-method.js",
+      "sha256": "c5f2834da3218e490211c547123328466452dedef33704e2589deac989bdc287",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 172736.70591700007,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "eaf127decb169286e702cc9b6b288bd0c39953d6c55479c1e86f26f517a281a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 177790.74670800008,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "eaf127decb169286e702cc9b6b288bd0c39953d6c55479c1e86f26f517a281a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 180284.31666700006,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-privatename.js",
+      "sha256": "1995598a05d05cf634230de3397a8ab748a447dcd777b19f08fa62646095f624",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 182773.03775000013,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-call-expression-privatename.js",
+      "sha256": "1995598a05d05cf634230de3397a8ab748a447dcd777b19f08fa62646095f624",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 185231.96841600002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "f76911195bfb2836dcde3c9bda31972c64078ec1070a8f05e431542ce94531ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 188487.4296250001,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "f76911195bfb2836dcde3c9bda31972c64078ec1070a8f05e431542ce94531ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 189575.1337090002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "a16130ce7e364e7c9c09e01804c9eb7917b383d65f986d79b8d380271c9c3298",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 190468.24537500017,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "a16130ce7e364e7c9c09e01804c9eb7917b383d65f986d79b8d380271c9c3298",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 191365.27770800004,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "b786d06ee7cbe11f7ec57612c6560be1929cbf07150160e33cb9ebed61704cf3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 193158.01708300016,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "b786d06ee7cbe11f7ec57612c6560be1929cbf07150160e33cb9ebed61704cf3",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 198875.8240840002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "493e84a91f053758717b9d7520f5d1027c1d727a26b79dc8d972299e3639f834",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 203912.8720829999,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "493e84a91f053758717b9d7520f5d1027c1d727a26b79dc8d972299e3639f834",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 205137.79545899993,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "37f7a09bed65f2ed6fcd06b70f04f2a656173b4a8c8d57db5c3a1ca7386a79f3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XbDjDI/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"42\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XbDjDI/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XbDjDI/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-XbDjDI/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 206594.97491600015,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "37f7a09bed65f2ed6fcd06b70f04f2a656173b4a8c8d57db5c3a1ca7386a79f3",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 208388.1545409998,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method.js",
+      "sha256": "1fcc51a6dfcd3173cba32697074c87658e9e80ef32180194d785612d08562e10",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 213871.72045899997,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-method.js",
+      "sha256": "1fcc51a6dfcd3173cba32697074c87658e9e80ef32180194d785612d08562e10",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class",
+          "class-fields-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 218834.18766699987,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "c387db05c9c738d936c520e2b8ecc0f8a59ed0b7a7953bad7a6f19b716ab3e2d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 225933.05304199993,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "c387db05c9c738d936c520e2b8ecc0f8a59ed0b7a7953bad7a6f19b716ab3e2d",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 232856.69279200002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-privatename.js",
+      "sha256": "5e63fb468a27634be5e5536520180572a7dc8476aecaf35c654a34c861304600",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 239845.18662499986,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/field-delete-twice-covered-err-delete-member-expression-privatename.js",
+      "sha256": "5e63fb468a27634be5e5536520180572a7dc8476aecaf35c654a34c861304600",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private", "class-fields-public"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 245627.43154100003,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "62528d98b9c9dcaa996ac32fe417c9a24c431e13edd91d23858c72c83d1145b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 247613.52174999984,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "62528d98b9c9dcaa996ac32fe417c9a24c431e13edd91d23858c72c83d1145b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 250017.29949999996,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "99c19bf67c07d34c5fd63edefb44719c81e848b73ba847277876022f51784eae",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nHVpNr/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"52\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nHVpNr/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nHVpNr/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nHVpNr/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 250487.07445800002,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "99c19bf67c07d34c5fd63edefb44719c81e848b73ba847277876022f51784eae",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 251065.70758399996,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "a9574655df80de10af5bd990869139283fcd6ade1e59b9310b8dbe90f781c796",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SOykv5/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"54\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SOykv5/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SOykv5/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SOykv5/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 251639.969666,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "a9574655df80de10af5bd990869139283fcd6ade1e59b9310b8dbe90f781c796",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 252676.79941700003,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "7b2195cdad49fc863bd9cb6b43b9ac00d75bbab20f02c55d5999d37076238fe7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rq5faJ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"56\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rq5faJ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rq5faJ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rq5faJ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 253755.560542,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "7b2195cdad49fc863bd9cb6b43b9ac00d75bbab20f02c55d5999d37076238fe7",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 255437.97325000004,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "7cc010c800bb7ccdd3820324c0e627d147d5f7a890eb614d26782351ee1ba37e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 257531.9264159999,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "7cc010c800bb7ccdd3820324c0e627d147d5f7a890eb614d26782351ee1ba37e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 259342.59716699994,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method.js",
+      "sha256": "f1425a9bc5da84a9f0be86bc0d2058c7c560801fae292b123ed90383060df6ff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 261300.98212499986,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-method.js",
+      "sha256": "f1425a9bc5da84a9f0be86bc0d2058c7c560801fae292b123ed90383060df6ff",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 262328.26966700004,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "1707a49b0d8d93c7aa300fcfd3ddc0330e852cc78b4fd041db90e106ebe34ceb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 264287.4778750001,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "1707a49b0d8d93c7aa300fcfd3ddc0330e852cc78b4fd041db90e106ebe34ceb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 266132.07745800004,
+      "batch": 5
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-privatename.js",
+      "sha256": "ed364f299bf8edb0ed522e72b8fe63f3640d1f29ef3a0917becc448d89e004d5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16817.085124999983,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-call-expression-privatename.js",
+      "sha256": "ed364f299bf8edb0ed522e72b8fe63f3640d1f29ef3a0917becc448d89e004d5",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18633.248458000133,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "e8f0e30e9b317bdabfbd86d1c3e6f97a08a98a217b515cf01e878128fd9b4b13",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19545.343541999813,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "e8f0e30e9b317bdabfbd86d1c3e6f97a08a98a217b515cf01e878128fd9b4b13",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20320.854333000025,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "39c5d653977fa11e4b3029de15ba0db4ce83e93d3e3233954baf40b37a7a8615",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20970.368583000032,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "39c5d653977fa11e4b3029de15ba0db4ce83e93d3e3233954baf40b37a7a8615",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21468.30370800011,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "dae62a69bb67eded59c57784eab59269807885f2502e27b2f336eace2409a5c0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22360.95520800003,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "dae62a69bb67eded59c57784eab59269807885f2502e27b2f336eace2409a5c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23054.403041000012,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "391766062c0b1cc1ac8120b730ea774f77a872b7b3094e7fe737cfe269642884",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26546.65879200003,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "391766062c0b1cc1ac8120b730ea774f77a872b7b3094e7fe737cfe269642884",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29074.561999999918,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "5ce06800da3386d570ba9f6846687408b3004f191727fe1b57181b73e7ae41d5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32889.158125000075,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "5ce06800da3386d570ba9f6846687408b3004f191727fe1b57181b73e7ae41d5",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 36068.78262499999,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "f53173a5ad59029290385f6f1e806e7648a31c0221cc74dcc3a9201e45b9cc3c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 38610.721249999944,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-method.js",
+      "sha256": "f53173a5ad59029290385f6f1e806e7648a31c0221cc74dcc3a9201e45b9cc3c",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 40572.25766699994,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "1b96d0f286377b5326881bc0c2470aee8343d46523d84e8775ba9d93856c7abe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 41987.21900000004,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "1b96d0f286377b5326881bc0c2470aee8343d46523d84e8775ba9d93856c7abe",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 45407.3232499999,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-privatename.js",
+      "sha256": "04108c1afe9d2818a6d62da9c55a8e4ebd37f21292ad44eb13d57fe7cfedba44",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 48411.42599999998,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-covered-err-delete-member-expression-privatename.js",
+      "sha256": "04108c1afe9d2818a6d62da9c55a8e4ebd37f21292ad44eb13d57fe7cfedba44",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 49737.32425000006,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "5f4d37c6d380357c374733874e28544cbf762b4f0f5ac62a81e73b3f208edf7d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 50872.00112499995,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "5f4d37c6d380357c374733874e28544cbf762b4f0f5ac62a81e73b3f208edf7d",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 56386.55916599999,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "a5bd5e2efb94eb1bfeea346282e86adb7535e5175a371ba75a0e529bccd74282",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 59790.67383300001,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "a5bd5e2efb94eb1bfeea346282e86adb7535e5175a371ba75a0e529bccd74282",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 63302.57837500004,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "d1d9aadd26e4e5bfc03efd527b09c90d8cf2dce27d3baeadf76470c58e7e1a88",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 68815.56058300007,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "d1d9aadd26e4e5bfc03efd527b09c90d8cf2dce27d3baeadf76470c58e7e1a88",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 75907.48112499993,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-async.js",
+      "sha256": "905fab702df8ba3d3b38ad45a9c5c82fa72983cc136fa4227efe41c23abb292f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 81832.86666700011,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-async.js",
+      "sha256": "905fab702df8ba3d3b38ad45a9c5c82fa72983cc136fa4227efe41c23abb292f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 88381.19983300008,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-gen.js",
+      "sha256": "b699dd2e4b542fc5b42c9ebe94b148b992025ae87fc8387baedb021ad969b8bb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 94831.27812499995,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method-gen.js",
+      "sha256": "b699dd2e4b542fc5b42c9ebe94b148b992025ae87fc8387baedb021ad969b8bb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 101782.37829199992,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method.js",
+      "sha256": "a661ec3e987e4f2ab23072f9f5a99ede9b506c558ac476c11700404e5da86f5f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 108772.73645900004,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-method.js",
+      "sha256": "a661ec3e987e4f2ab23072f9f5a99ede9b506c558ac476c11700404e5da86f5f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 114629.650166,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-no-reference.js",
+      "sha256": "8361eb0390a3a0f481a4bb6a84604bfa8ba9096bd03e03486fe07a1079795adf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 120843.06108300015,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-private-no-reference.js",
+      "sha256": "8361eb0390a3a0f481a4bb6a84604bfa8ba9096bd03e03486fe07a1079795adf",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 127833.4004579999,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-privatename.js",
+      "sha256": "3fbe3a1a34882a8d0feaf84d48e09cf25f3d09e7748fb598aab8f46dc9eafd1b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 132753.222542,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-call-expression-privatename.js",
+      "sha256": "3fbe3a1a34882a8d0feaf84d48e09cf25f3d09e7748fb598aab8f46dc9eafd1b",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 138442.305834,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "db5d6e4c8c953502f3a644acac48d3de0e934fb041dd79b542c2efa6d3dc9391",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 143824.66395800002,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "db5d6e4c8c953502f3a644acac48d3de0e934fb041dd79b542c2efa6d3dc9391",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 148635.59791599982,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "1107f22caa160517e2a85b92c9ea73a1650aafb0c8534240272bcc8d71b6d865",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 152367.38070899993,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "1107f22caa160517e2a85b92c9ea73a1650aafb0c8534240272bcc8d71b6d865",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 157769.09987500007,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "fb84e44270180eed24b54828909e0837de82a947be5a8891a076171c6e79b924",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 162813.39583399985,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "fb84e44270180eed24b54828909e0837de82a947be5a8891a076171c6e79b924",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 164666.094208,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-async.js",
+      "sha256": "e015573f9117f103792fab6f89b4501760c7a13d0e9c0d062fe409c8571255cc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 167665.94379199995,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-async.js",
+      "sha256": "e015573f9117f103792fab6f89b4501760c7a13d0e9c0d062fe409c8571255cc",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eeoc4U/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"41\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eeoc4U/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eeoc4U/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eeoc4U/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 171179.1984590001,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-gen.js",
+      "sha256": "5e7b432bb4f3163ee21ae7aa34d1638be45d8efe3ec987cb945b43ff45d5211d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 173605.90654200013,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method-gen.js",
+      "sha256": "5e7b432bb4f3163ee21ae7aa34d1638be45d8efe3ec987cb945b43ff45d5211d",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 177448.29783300008,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method.js",
+      "sha256": "ae83ea43da122cb538f9336034505121606329d58a165e769680fb8ca524d1ad",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 181169.17420799984,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-method.js",
+      "sha256": "ae83ea43da122cb538f9336034505121606329d58a165e769680fb8ca524d1ad",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 183875.61070900015,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-no-reference.js",
+      "sha256": "626458c977ed3c8d76a754f77557ea932ab2820c75bebce870a8d44ce7612559",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 187686.26124999998,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-private-no-reference.js",
+      "sha256": "626458c977ed3c8d76a754f77557ea932ab2820c75bebce870a8d44ce7612559",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 190657.0895,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-privatename.js",
+      "sha256": "47c00e2d7282edfe4614e60b71406d282167c27d39e2877b30252763ce713160",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 194527.47729099984,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-err-delete-member-expression-privatename.js",
+      "sha256": "47c00e2d7282edfe4614e60b71406d282167c27d39e2877b30252763ce713160",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 196944.67062500026,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "c2b3e40864b6570efabfd8fbf8f44d458f663604931d7afe65c3b4de8e78d709",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 198425.03845800017,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-accessor-get.js",
+      "sha256": "c2b3e40864b6570efabfd8fbf8f44d458f663604931d7afe65c3b4de8e78d709",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "class-fields-public",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 200820.66670899978,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "5ceea138b5f0a60d7c41295d66b4d2797df75e6e3741da1727d9496fd950d3b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 202499.16854100022,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-accessor-set.js",
+      "sha256": "5ceea138b5f0a60d7c41295d66b4d2797df75e6e3741da1727d9496fd950d3b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class",
+          "class-fields-private",
+          "class-methods-private",
+          "class-fields-public"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 204042.89583400008,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "829df3e205cc9f71a80796b42fc78370f59dad8e5821263811c1eff049b686c3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 207402.04449999984,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-async-gen.js",
+      "sha256": "829df3e205cc9f71a80796b42fc78370f59dad8e5821263811c1eff049b686c3",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 208798.68429200002,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "d93d5e60f49581fa82946e3403e0e10cacdbb9d5611219177c4a8b19ecd33607",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 210384.36924999976,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-async.js",
+      "sha256": "d93d5e60f49581fa82946e3403e0e10cacdbb9d5611219177c4a8b19ecd33607",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 213399.49445900018,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "f4862c5da452f4acaa8085423a6c17fc2584adde39145793ae667c08feb24527",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 215688.71037500002,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method-gen.js",
+      "sha256": "f4862c5da452f4acaa8085423a6c17fc2584adde39145793ae667c08feb24527",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 216926.0902920002,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method.js",
+      "sha256": "54599c980ee2f560f7342bf9067e353956395f545c6433ef3a0fb24c3f806b77",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 218685.79041599995,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-method.js",
+      "sha256": "54599c980ee2f560f7342bf9067e353956395f545c6433ef3a0fb24c3f806b77",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 219840.33358400012,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "03aa0b533bb531392179b3a5ca7f4c7e34db657e0fa1c1a5ab14caf0d4912d1f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 220943.5807909998,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-private-no-reference.js",
+      "sha256": "03aa0b533bb531392179b3a5ca7f4c7e34db657e0fa1c1a5ab14caf0d4912d1f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 221941.04875000007,
+      "batch": 6
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-privatename.js",
+      "sha256": "e9e19676db82783a28c923fcdfd75689897f360f1cacc3b32faf2b524a4926b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16666.901916999836,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-call-expression-privatename.js",
+      "sha256": "e9e19676db82783a28c923fcdfd75689897f360f1cacc3b32faf2b524a4926b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17928.140707999934,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "f7318df2fbf7d641d978eb77dd5e187826dee88ab15a7f678548ab2af085bc07",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19027.732333000284,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-accessor-get.js",
+      "sha256": "f7318df2fbf7d641d978eb77dd5e187826dee88ab15a7f678548ab2af085bc07",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20470.35474999994,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "84619a5ec42163fe14d2bd433e6e2b58bc1fbe1e186e7822af253a8e47712233",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21723.198458000086,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-accessor-set.js",
+      "sha256": "84619a5ec42163fe14d2bd433e6e2b58bc1fbe1e186e7822af253a8e47712233",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23185.187042000238,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "e62750de60ed653a323ce0b0bc850cbdb1a2c59f452874c3f5023eddfd888580",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24075.042625000235,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-async-gen.js",
+      "sha256": "e62750de60ed653a323ce0b0bc850cbdb1a2c59f452874c3f5023eddfd888580",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-iteration",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24771.506707999855,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "cda9a4df090dd5db9a7025b33023c0ea0d79dc4352adae765bbbe1eb9efa2880",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25716.033625000156,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-async.js",
+      "sha256": "cda9a4df090dd5db9a7025b33023c0ea0d79dc4352adae765bbbe1eb9efa2880",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "async-functions",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27412.206790999975,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "41393e31dcb4f73e26e0e12c44614d54580f6ae0d5b900d262c0f498e2657351",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29790.42916599987,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method-gen.js",
+      "sha256": "41393e31dcb4f73e26e0e12c44614d54580f6ae0d5b900d262c0f498e2657351",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-private"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30832.205707999878,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method.js",
+      "sha256": "a6e5cbc33fb7830041c38a725587520974fda99519b0671695f5afa83541430d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32154.88691599993,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-method.js",
+      "sha256": "a6e5cbc33fb7830041c38a725587520974fda99519b0671695f5afa83541430d",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class-methods-private", "class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 35129.51754199993,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "10c4305c30c2a87954f766b9e87a94e3167c80e99246594c005985b9ca3358b4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 37050.32491700025,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-private-no-reference.js",
+      "sha256": "10c4305c30c2a87954f766b9e87a94e3167c80e99246594c005985b9ca3358b4",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 40186.621375000104,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-privatename.js",
+      "sha256": "e23559e4322b3f02c3e19af87baa77537a20573d667f04defa29e7b0fa956aaa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 42840.97295799991,
+      "batch": 7
+    },
+    {
+      "path": "language/statements/class/elements/syntax/early-errors/delete/method-delete-twice-covered-err-delete-member-expression-privatename.js",
+      "sha256": "e23559e4322b3f02c3e19af87baa77537a20573d667f04defa29e7b0fa956aaa",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "class-fields-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 44525.3567499998,
+      "batch": 7
+    }
+  ]
+}
