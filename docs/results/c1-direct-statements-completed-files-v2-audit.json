@@ -1,0 +1,16 @@
+{
+  "kind": "c1-direct-file-extraction-audit",
+  "conformance": false,
+  "checkpoint": "docs/results/c1-direct-statements-completed-files-v2.json",
+  "prefixObservedVariants": 90,
+  "completeFileVariants": 89,
+  "completeFiles": 46,
+  "notYetCompleteFiles": [
+    {
+      "path": "language/statements/class/cpn-class-decl-computed-property-name-from-additive-expression-add.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "reason": "The compilation batch boundary split one two-variant file. Its single observed pass is retained in the journal prefix but is not published as a complete per-file selection; both variants must be verified before extraction. No non-pass was filtered."
+}
