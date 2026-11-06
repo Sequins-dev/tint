@@ -1830,9 +1830,9 @@ export function emitModule(
           callHelper("to-uint32");
         }
       }
-      function floatLoad(rt: number, id: number): void {
+      function floatLoad(rt: number, id: number, byteOffset: number = 0): void {
         const storage = scalarRegisters,
-          offset = value(id).offset,
+          offset = value(id).offset + byteOffset,
           register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
         if (register !== 0) emit({ op: "fmov-d-d", rd: rt, rn: register });
         else emit({ op: "ldr-d", rt, rn: "sp", offset });
@@ -2858,18 +2858,8 @@ export function emitModule(
               const finishRaw = instructions.length;
               emit({ op: "b", displacement: 0 });
               const numberLabel = instructions.length;
-              emit({
-                op: "ldr-d",
-                rt: 0,
-                rn: "sp",
-                offset: value(op.left).offset + 8,
-              });
-              emit({
-                op: "ldr-d",
-                rt: 1,
-                rn: "sp",
-                offset: value(op.right).offset + 8,
-              });
+              floatLoad(0, op.left, 8);
+              floatLoad(1, op.right, 8);
               emit({ op: "fcmp", rn: 0, rm: 1 });
               emit({ op: "cset", rd: 9, condition: "eq" });
               const finishNumber = instructions.length;

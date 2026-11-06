@@ -1,0 +1,35 @@
+{
+  "kind": "bespoke-native-performance",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-Vu38BL/collection-dedup",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "a902ae9848038ec6ec3219dae91e117e47c521837c621cb9667332ea44fe8115",
+      "files": 568
+    },
+    "imageSha256": "1fa14e0db326158f777327e82e3535691ac9f0e89bc505c9ad1c8f462878e2c7",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-Vu38BL/collection-dedup.source.ts",
+    "fixtureSha256": "a80bc463d4df72a43b8ee51c312409919548e547a1365b46c13c1fb0af49e555",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/verify-native-collection-dedup-v1.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": true
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "crash",
+        "detail": "unexpected native exit status 202"
+      },
+      "elapsedMs": 892.806125
+    }
+  ]
+}

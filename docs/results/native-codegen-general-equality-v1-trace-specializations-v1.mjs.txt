@@ -1,0 +1,12 @@
+import {registerHooks} from 'node:module';
+import {openSync,writeSync} from 'node:fs';
+const fd=openSync(process.env.TINT_P_TRACE,'wx');let calls=0;
+globalThis.__tintPerfTrace=(row)=>writeSync(fd,JSON.stringify(row)+'\n');
+globalThis.__tintPerfTraceStart=(options)=>{const id=calls++;globalThis.__tintPerfTrace({kind:'start',call:id,max:options.maxSpecializations,roots:options.roots?.length||0});return id;};
+registerHooks({load(url,context,nextLoad){const result=nextLoad(url,context);if(!url.includes('/codegen-inline-union-toolchain-v4/packages/ts-native/dist/'))return result;let source=String(result.source);const prior=source;
+if(url.endsWith('/modules/specialization.js')){
+ source=source.replace('export function specializeModule(module, bound, options = {}) {','$&\n const traceId=globalThis.__tintPerfTraceStart(options);');
+ source=source.replace('instances.push({ source: template, arguments: args, name });',`globalThis.__tintPerfTrace({kind:'instance',call:traceId,n:instances.length,identity,template:template.name});$&`);
+ source=source.replace('const completedStatements = [];',`globalThis.__tintPerfTrace({kind:'done',call:traceId,count:instances.length});$&`);
+}else if(url.endsWith('/runtime/index.js')){source=source.replace('const demand = collectRuntimeRequirements(checked);',`$&\nglobalThis.__tintPerfTrace({kind:'demand',types:checked.types.length,lists:demand.lists.length,sets:demand.sets.length,maps:demand.maps.length,sorts:demand.sorts.length});`);}
+if(prior===source&&(/modules\/specialization.js$|runtime\/index.js$/.test(url)))throw Error('trace patch missing '+url);return {...result,source};}});

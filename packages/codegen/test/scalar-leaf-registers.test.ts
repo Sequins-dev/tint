@@ -204,3 +204,46 @@ test("reusable leaf code can promote slots without a closed-world type proof", a
   );
   assert.ok(words.includes(move.value));
 });
+
+test("general numeric equality reads payloads from their planned leaf storage", async () => {
+  const { emitModule } = await import("../src/aarch64/scalar/index.ts");
+  const emitted = emitModule(
+    {
+      functions: [
+        {
+          ...fn,
+          slots: ["general", "general"],
+          parameters: [0, 1],
+          returnType: "boolean",
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...s },
+                { kind: "load", id: 1, slot: 1, ...s },
+                { kind: "general-equal", id: 2, left: 0, right: 1, ...s },
+              ],
+              terminator: { kind: "return", value: 2, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { closedRoots: [0] },
+  );
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const body = emitted.value.functions[0]!;
+  const view = new DataView(emitted.value.code.buffer);
+  const words = Array.from({ length: body.byteLength / 4 }, (_, index) =>
+    view.getUint32(body.offset + index * 4, true),
+  );
+  assert.ok(
+    words.some((word) => (word & 0xfffffc00) >>> 0 === 0x1e604000),
+    "leaf frame words are promoted to FP storage",
+  );
+  assert.equal(
+    words.filter((word) => (word & 0xffc003e0) >>> 0 === 0xfd4003e0).length,
+    0,
+    "numeric equality must not read stale stack payloads after promotion",
+  );
+});

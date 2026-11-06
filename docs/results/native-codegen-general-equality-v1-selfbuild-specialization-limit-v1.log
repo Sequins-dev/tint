@@ -1,0 +1,44 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild-perf/slot-1 after 0s
+2026-11-06T19:43:43.377Z [Test262] selection="native register-copy codegen selfbuild" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T19:43:43.380Z [Test262] selection="native register-copy codegen selfbuild" phase="resuming existing frozen stage1; prior debugger handoff failed before execution" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+stage1 sha256=db7de146a063503f9172f831d4616032d6df7c19e6fc716e7183cda904f7f265
+2026-11-06T19:43:43.441Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+debugger session=/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) command script import /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/p_capture_report_v1.py
+(lldb) command script import /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/p_specialization_limit_v1.py
+(lldb) script bp=lldb.debugger.GetSelectedTarget().BreakpointCreateBySBAddress(lldb.debugger.GetSelectedTarget().ResolveFileAddress(0x1021b75a8)); assert bp.GetNumLocations()>0; bp.SetScriptCallbackFunction("p_specialization_limit_v1.capture")
+(lldb) script bp=lldb.debugger.GetSelectedTarget().BreakpointCreateByName("program:packages/compiler/src/cli.ts:report [@1:value:19$14430]"); assert bp.GetNumLocations()>0; bp.SetScriptCallbackFunction("p_capture_report_v1.capture")
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/source\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-specialization-limit-v1/stage2\",\"--debug-symbols\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-lyoKnX/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-specialization-limit-v1/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+33
+(lldb) continue
+native report: {"utc": "2026-11-06T19:43:44Z", "address": 4418039568, "message": "sources"}
+native report: {"utc": "2026-11-06T19:43:44Z", "address": 4417954896, "message": "parse"}
+native report: {"utc": "2026-11-06T19:43:52Z", "address": 4417950400, "message": "allocator"}
+native report: {"utc": "2026-11-06T19:43:53Z", "address": 4417897248, "message": "runtime"}
+native report: {"utc": "2026-11-06T19:44:06Z", "address": 4417951680, "message": "program"}
+2026-11-06T19:44:13.435Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=29994ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T19:44:43.436Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=59995ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T19:45:13.437Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=89996ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T19:45:43.440Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=119999ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T19:46:13.442Z [Test262 STALL] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=150001ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=1462 child/inferior=1463,1542,1543
+specialization limit operands: {"utc": "2026-11-06T19:46:28Z", "sp": 4789190032, "pc": 4407129512, "registers": {"d0": {"bits": 4670232813583204352, "double": 16384.0}, "d1": {"bits": 4670232813583204352, "double": 16384.0}, "d8": {"bits": 4607182418800017408, "double": 1.0}, "d9": {"bits": 4607182418800017408, "double": 1.0}, "d10": {"bits": 4649060617678749696, "double": 665.0}, "d11": {"bits": 4670232813583204352, "double": 16384.0}, "d12": {"bits": 4607182418800017408, "double": 1.0}, "d13": {"bits": 4607182418800017408, "double": 1.0}, "d14": {"bits": 4607182418800017408, "double": 1.0}, "d15": {"bits": 0, "double": 0.0}}, "length": 16384.0, "strings": {"0x80": "665:n21:__tint_contract_25261[]"}}
+native report: {"utc": "2026-11-06T19:46:28Z", "address": 18249255776, "message": "runtime: generic specialization limit exceeded"}
+Process 1543 resuming
+Process 1543 exited with status = 1 (0x00000001)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-specialization-limit-v1/final.json",'w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); p.Kill() if p.GetState()!=lldb.eStateExited else None
+36
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-specialization-limit-v1.ts:37
+  if(second.status!==0||start.state!=='stopped'||end.state!=='exited'||end.exitStatus!==0)throw Error('native stage2 failed: '+JSON.stringify(end));
+                                                                                                ^
+
+Error: native stage2 failed: {"state":"exited","exitStatus":1}
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-specialization-limit-v1.ts:37:97
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0

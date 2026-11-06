@@ -1,0 +1,27 @@
+import json,struct,os,lldb,time
+output=os.environ['TINT_P_SPECIALIZATION_CAPTURE']
+def capture(frame,location,internal):
+    process=frame.GetThread().GetProcess(); error=lldb.SBError()
+    sp=frame.FindRegister('sp').GetValueAsUnsigned()
+    data=process.ReadMemory(sp,0x5f0,error)
+    result={'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'sp':sp,'pc':frame.GetPC(),'stackHex':data.hex(),'registers':{}}
+    for name in ['d0','d1','d8','d9','d10','d11','d12','d13','d14','d15']:
+        bits=frame.FindRegister(name).GetData().GetUnsignedInt64(error,0)
+        result['registers'][name]={'bits':bits,'double':struct.unpack('<d',struct.pack('<Q',bits))[0]}
+    result['length']=struct.unpack_from('<d',data,0x320)[0]
+    result['strings']={}
+    for offset in range(0,0x5f0,8):
+        address=struct.unpack_from('<Q',data,offset)[0]
+        if address<0x100000000 or address>0x8000000000 or address%8:continue
+        header=process.ReadMemory(address,24,error)
+        if not error.Success() or len(header)!=24:continue
+        length=struct.unpack_from('<I',header,16)[0]
+        if length<1 or length>1000:continue
+        payload=process.ReadMemory(address+24,length*2,error)
+        if not error.Success():continue
+        value=payload.decode('utf-16le',errors='replace')
+        if value.isprintable():result['strings'][hex(offset)]=value
+    result['frames']=[str(f) for f in frame.GetThread()]
+    with open(output,'a') as stream:stream.write(json.dumps(result)+'\n')
+    print('specialization limit operands: '+json.dumps({k:v for k,v in result.items() if k not in ['stackHex','frames']}),flush=True)
+    return False

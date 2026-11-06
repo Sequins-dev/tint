@@ -1,0 +1,194 @@
+{
+  "kind": "native-codegen-correctness-blocker-reduction",
+  "schemaVersion": 1,
+  "mergeReady": false,
+  "cause": "general-equal numeric payload loads bypassed the leaf storage plan and read stale stack words. The inline primitive-union draft exposes this in collection element deduplication, inflating runtime specialization requests. No specialization cap was changed.",
+  "nativeReproducer": {
+    "before": {
+      "kind": "bespoke-native-performance",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-Vu38BL/collection-dedup",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "a902ae9848038ec6ec3219dae91e117e47c521837c621cb9667332ea44fe8115",
+          "files": 568
+        },
+        "imageSha256": "1fa14e0db326158f777327e82e3535691ac9f0e89bc505c9ad1c8f462878e2c7",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-Vu38BL/collection-dedup.source.ts",
+        "fixtureSha256": "a80bc463d4df72a43b8ee51c312409919548e547a1365b46c13c1fb0af49e555",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/verify-native-collection-dedup-v1.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      },
+      "observations": [
+        {
+          "index": 0,
+          "outcome": {
+            "kind": "crash",
+            "detail": "unexpected native exit status 202"
+          },
+          "elapsedMs": 892.806125
+        }
+      ]
+    },
+    "after": {
+      "kind": "bespoke-native-performance",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-8hhbSs/collection-dedup",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "e4cf68d53f79d191dbf0b69962fd5865a1067bfe8f23f7c4e700b664301c1370",
+          "files": 568
+        },
+        "imageSha256": "7b2b12833c59b22b8db93e4b2351927dbcd4e1db6771134ffcb58f0eef6a52ec",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-collection-dedup-8hhbSs/collection-dedup.source.ts",
+        "fixtureSha256": "a80bc463d4df72a43b8ee51c312409919548e547a1365b46c13c1fb0af49e555",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/verify-native-collection-dedup-v1.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      },
+      "observations": [
+        {
+          "index": 0,
+          "outcome": {
+            "kind": "completed"
+          },
+          "elapsedMs": 801.497291
+        },
+        {
+          "index": 1,
+          "outcome": {
+            "kind": "completed"
+          },
+          "elapsedMs": 390.67954199999997
+        },
+        {
+          "index": 2,
+          "outcome": {
+            "kind": "completed"
+          },
+          "elapsedMs": 397.83270800000014
+        }
+      ]
+    }
+  },
+  "limitOperands": {
+    "utc": "2026-11-06T19:46:28Z",
+    "sp": 4789190032,
+    "pc": 4407129512,
+    "stackHex": "0100000000000000000000000000000000000000000000000000000000000000603e781d010000009043751d01000000600000000000000000000000000000000000000000000000c043751d0100000088bc700701000000a09febe60300000000000000008053404082bd3f04000000c02bb4d303000000e0bd8dd003000000d089bd3f04000000000000000000000000000000000000004cee2a050100000000000000000000000000000000000000000debe6030000002051ece603000000000000000000000000000000000000000000000000000000000000000000000020e1ebe603000000e00eebe60300000040e1ebe603000000800febe60300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a099f7e603000000000000000000f03f01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080e438e70300000000000000000000000000000000003e40010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c884400000000000000000000000000000000000000000000000009042751d0100000044ccdf04010000000100000000000000000000000000000080e438e70300000000000000000000000000000000000000a042751d01000000d042751d010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d040000000800c044441000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f039afe80300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ef1400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f03f000000000000f03f00000000000000000000000000000000000000000000f03f000000000000f03f00000000000000000000000000000000000000000000f03f000000000000f03f00000000000000000000000000000000000000000000f03f000000000000f03f00000000000000000000000000000000000000000000d040000000000000d040000000000000000000000000000000009043751d01000000c043751d01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000f03f0100000000000000a0550ae7030000000000000000000000000000000000000000000000000000000000000000000000000000000000f03f0000000000000000000000007f7f444100000000000000000000000000000000",
+    "registers": {
+      "d0": {
+        "bits": 4670232813583204352,
+        "double": 16384.0
+      },
+      "d1": {
+        "bits": 4670232813583204352,
+        "double": 16384.0
+      },
+      "d8": {
+        "bits": 4607182418800017408,
+        "double": 1.0
+      },
+      "d9": {
+        "bits": 4607182418800017408,
+        "double": 1.0
+      },
+      "d10": {
+        "bits": 4649060617678749696,
+        "double": 665.0
+      },
+      "d11": {
+        "bits": 4670232813583204352,
+        "double": 16384.0
+      },
+      "d12": {
+        "bits": 4607182418800017408,
+        "double": 1.0
+      },
+      "d13": {
+        "bits": 4607182418800017408,
+        "double": 1.0
+      },
+      "d14": {
+        "bits": 4607182418800017408,
+        "double": 1.0
+      },
+      "d15": {
+        "bits": 0,
+        "double": 0.0
+      }
+    },
+    "length": 16384.0,
+    "strings": {
+      "0x80": "665:n21:__tint_contract_25261[]"
+    },
+    "frames": [
+      "frame #0: 0x0000000106af75a8 stage1`program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13278] + 6600",
+      "frame #1: 0x0000000107441b20 stage1`program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13285] at specialization.ts:281:24",
+      "frame #2: 0x000000010666ce98 stage1`program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12926] at rewrite.ts:379:22",
+      "frame #3: 0x00000001066b4ee4 stage1`program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12928] at rewrite.ts:525:19",
+      "frame #4: 0x00000001066a3970 stage1`program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12928] at rewrite.ts:423:43",
+      "frame #5: 0x00000001066a9234 stage1`program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12928] at rewrite.ts:443:19",
+      "frame #6: 0x00000001056ba59c stage1`program:packages/typescript/src/syntax/rewrite.ts:rewriteModule [@125:value:1$12914] at rewrite.ts:568:22",
+      "frame #7: 0x0000000106afbb78 stage1`program:packages/ts-native/src/modules/specialization.ts:rewrite [@163:value:25$13279] at specialization.ts:210:12",
+      "frame #8: 0x00000001058ed6d8 stage1`program:packages/ts-native/src/modules/specialization.ts:specializeModule [@163:value:4$13273] at specialization.ts:399:25",
+      "frame #9: 0x0000000105929320 stage1`program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots [@165:value:3$13312] at checked-specialization.ts:91:10",
+      "frame #10: 0x0000000105f51cb8 stage1`program:packages/ts-native/src/runtime/index.ts:prepareCollectionPass [@71:value:10$13973] at index.ts:251:25",
+      "frame #11: 0x0000000105f41834 stage1`program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@71:value:9$13972] at index.ts:77:20",
+      "frame #12: 0x0000000106219808 stage1`program:packages/compiler/src/native/index.ts:compileArm64Program [@32:value:28$14262] at index.ts:449:20",
+      "frame #13: 0x00000001062f71ac stage1`program:packages/compiler/src/build.ts:buildMacOSProgram [@13:value:12$14357] at build.ts:247:19",
+      "frame #14: 0x00000001063e7c54 stage1`program:packages/compiler/src/cli.ts:main [@1:value:14$14429] at cli.ts:68:19",
+      "frame #15: 0x000000010516bf60 stage1`program:__tint_invoke$14446 + 320",
+      "frame #16: 0x0000000104940ebc stage1`tint:process-entry + 2764"
+    ]
+  },
+  "NodeReference": {
+    "specializations": 8607,
+    "runtimeTypes": 24683,
+    "lists": 411,
+    "sets": 11,
+    "maps": 68,
+    "sorts": 7,
+    "rootRequests": 4144,
+    "frozen": "6fe100d24d58fadbb314aeddb8e322d9534fb1fb375c76282530e2763f58f768",
+    "instrumentation": "Read-only Node loader hook records newly created instance identities; preserves all frozen files. Full observed Node output is byte-identical to uninstrumented bootstrap.",
+    "imageSha256": "db7de146a063503f9172f831d4616032d6df7c19e6fc716e7183cda904f7f265"
+  },
+  "fixedFrozen": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/source-snapshot.json",
+    "sha256": "f95ec9eb55ec35358e1d6a86873bfdceadc22aa9a9607b0f98f683eb543c979c"
+  },
+  "pending": "Corrected frozen full self-build and workspace gates. This correctness commit is not yet merge-ready.",
+  "artifacts": {
+    "general-equality-leaf-red-v2.log": "native-codegen-general-equality-v1-general-equality-leaf-red-v2.log",
+    "general-equality-leaf-green-v2.log": "native-codegen-general-equality-v1-general-equality-leaf-green-v2.log",
+    "collection-dedup-native-v1.log": "native-codegen-general-equality-v1-collection-dedup-native-v1.log",
+    "collection-dedup-native-v2.log": "native-codegen-general-equality-v1-collection-dedup-native-v2.log",
+    "collection-dedup-native-v1.json": "native-codegen-general-equality-v1-collection-dedup-native-v1.json",
+    "collection-dedup-native-v2.json": "native-codegen-general-equality-v1-collection-dedup-native-v2.json",
+    "selfbuild-specialization-limit-v1.log": "native-codegen-general-equality-v1-selfbuild-specialization-limit-v1.log",
+    "p_specialization_limit_v1.py": "native-codegen-general-equality-v1-p_specialization_limit_v1.py.txt",
+    "trace-specializations-v1.mjs": "native-codegen-general-equality-v1-trace-specializations-v1.mjs.txt",
+    "node-specialization-trace-v1.log": "native-codegen-general-equality-v1-node-specialization-trace-v1.log"
+  }
+}
