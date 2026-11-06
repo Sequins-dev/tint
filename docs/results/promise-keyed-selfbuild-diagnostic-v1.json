@@ -1,0 +1,37 @@
+{
+  "kind": "promise-keyed-self-build-progress-diagnostic",
+  "conformance": false,
+  "accepted": false,
+  "timeoutReport": "docs/results/bootstrap-promise-keyed-v1.json",
+  "causeEstablished": "900000ms containment expired after initial native stop; no final native outcome or stage2 image. Samples demonstrate forward progress, so this is not evidence of a deadlock or a native fault.",
+  "samples": [
+    {
+      "path": "docs/results/promise-keyed-selfbuild-progress-sample-1.txt",
+      "phase": "prepareCollectionRuntimes / nursery commit"
+    },
+    {
+      "path": "docs/results/promise-keyed-selfbuild-progress-sample-2.txt",
+      "phase": "lowerModuleEntries / closure lowering"
+    }
+  ],
+  "subsequentValidation": {
+    "report": "docs/results/bootstrap-promise-keyed-v2.json",
+    "status": "running",
+    "budgetMs": 3600000,
+    "sameFrozenStage1": true,
+    "sameFrozenSources": true
+  },
+  "baselineControl": {
+    "report": "docs/results/bootstrap-promise-keyed-baseline-v1.json",
+    "status": "running",
+    "policy": "Same frozen sources with exactly the two modified Promise runtime files restored from main. No baseline verdict yet."
+  },
+  "latestWorkspaceCheck": {
+    "log": "docs/results/promise-keyed-workspace-check-rebased-v3.log",
+    "exitStatus": 0,
+    "tests": 4458,
+    "failed": 0,
+    "rebasedMain": "5c21ca4029dbda7bb15018a095582afdd1173ad4"
+  },
+  "mergeReady": false
+}

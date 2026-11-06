@@ -1,0 +1,1029 @@
+Analysis of sampling stage1 (pid 60027) every 1 millisecond
+Process:         stage1 [60027]
+Path:            /Users/USER/*/stage1
+Load Address:    0x104034000
+Identifier:      stage1
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [60026]
+Target Type:     live task
+
+Date/Time:       2026-11-06 23:56:16.413 +0800
+Launch Time:     2026-11-06 23:41:44.916 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         4.5G
+Physical footprint (peak):  4.5G
+Idle exit:                  untracked
+----
+
+Call graph:
+    731 Thread_15818713   DispatchQueue_1: com.apple.main-thread  (serial)
+      731 tint:process-entry  (in stage1) + 2764  [0x104034ebc]
+        731 program:__tint_invoke$14333  (in stage1) + 324  [0x1048f856c]
+          731 program:packages/compiler/src/cli.ts:main [@1:value:14$14316]  (in stage1) + 28836  [0x105bea134]  cli.ts:68
+            731 program:packages/compiler/src/build.ts:buildMacOSProgram [@13:value:12$14244]  (in stage1) + 97612  [0x105af515c]  build.ts:247
+              731 program:packages/compiler/src/native/index.ts:compileArm64Program [@32:value:28$14149]  (in stage1) + 105436  [0x105a17c84]  index.ts:574
+                731 program:packages/ts-native/src/closure/lowering/index.ts:lowerModuleEntries [@35:value:22$13768]  (in stage1) + 25532  [0x1055f4a08]  index.ts:215
+                  731 program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries [@35:value:23$13769]  (in stage1) + 437944  [0x1056601b8]  index.ts:2565
+                    731 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+                      731 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 69120  [0x106a9d930]  index.ts:2425
+                        731 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+                          730 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 68672  [0x106a9d770]  index.ts:2420
+                          + 444 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+                          + ! 184 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50936  [0x106a99228]  index.ts:2391
+                          + ! : 184 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+                          + ! :   184 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50052  [0x106a98eb4]  index.ts:2387
+                          + ! :     184 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 175296  [0x106a4c0a0]  index.ts:1819
+                          + ! :       116 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 51260  [0x106a2dc1c]  index.ts:1499
+                          + ! :       | 116 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 101740  [0x106a3a14c]  index.ts:1647
+                          + ! :       |   115 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 122176  [0x106a3f120]  index.ts:1749
+                          + ! :       |   + 114 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 121344  [0x106a3ede0]  index.ts:1744
+                          + ! :       |   + ! 114 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          + ! :       |   + !   114 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 6276  [0x106553a14]  records.ts:1056
+                          + ! :       |   + !     114 program:packages/typescript/src/types/index.ts:property [@95:value:57$12870]  (in stage1) + 5248  [0x105f52254]  index.ts:822
+                          + ! :       |   + !       114 program:packages/typescript/src/types/index.ts:computeProperty [@95:value:60$12873]  (in stage1) + 6652  [0x105f55c68]  index.ts:907
+                          + ! :       |   + !         77 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2368  [0x105f53f04]  index.ts:863
+                          + ! :       |   + !         : 63 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :       |   + !         : | 35 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         : | + 28 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         : | + ! 8 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         : | + ! : 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       |   + !         : | + ! : | 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :       |   + !         : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + ! :       |   + !         : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 532  [0x104478e5c]  sparse-list.ts:65
+                          + ! :       |   + !         : | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 496  [0x104260f5c]  sparse-list.ts:123
+                          + ! :       |   + !         : | + ! : 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       |   + !         : | + ! : | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! : |   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472,572  [0x104478e20,0x104478e84]  sparse-list.ts:65
+                          + ! :       |   + !         : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          + ! :       |   + !         : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          + ! :       |   + !         : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 620  [0x10426558c]  sparse-list.ts:123
+                          + ! :       |   + !         : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52576  [0x105f10590]  index.ts:343
+                          + ! :       |   + !         : | + ! :   1 program:packages/typescript/src/types/index.ts:cacheRelation [@95:value:28$12858]  (in stage1) + 48  [0x105f02f34]
+                          + ! :       |   + !         : | + ! 8 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          + ! :       |   + !         : | + ! : 3 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          + ! :       |   + !         : | + ! : | 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 76  [0x10447c264]  sparse-list.ts:63
+                          + ! :       |   + !         : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 124  [0x10447c294]  sparse-list.ts:64
+                          + ! :       |   + !         : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 380  [0x10447c394]  sparse-list.ts:65
+                          + ! :       |   + !         : | + ! : 2 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6184  [0x105f1ce04]  index.ts:441
+                          + ! :       |   + !         : | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 148  [0x1042653b4]  sparse-list.ts:121
+                          + ! :       |   + !         : | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 280  [0x10447c330]  sparse-list.ts:64
+                          + ! :       |   + !         : | + ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6184  [0x105f1ce04]  index.ts:441
+                          + ! :       |   + !         : | + ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11352  [0x105f1e234]  index.ts:444
+                          + ! :       |   + !         : | + ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 7056  [0x105f1d16c]  index.ts:446
+                          + ! :       |   + !         : | + ! 7 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       |   + !         : | + ! : 7 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! :   4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,380,...  [0x104478e24,0x104478dc4,...]  sparse-list.ts:65
+                          + ! :       |   + !         : | + ! :   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120,140,...  [0x104478cc0,0x104478cd4,...]  sparse-list.ts:64
+                          + ! :       |   + !         : | + ! 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       |   + !         : | + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 92  [0x104478ca4]  sparse-list.ts:63
+                          + ! :       |   + !         : | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 532  [0x104478e5c]  sparse-list.ts:65
+                          + ! :       |   + !         : | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 464  [0x105f03a00]
+                          + ! :       |   + !         : | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8728  [0x105f05a48]  index.ts:284
+                          + ! :       |   + !         : | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 24912  [0x105f09980]  index.ts:317
+                          + ! :       |   + !         : | + 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       |   + !         : | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,344  [0x104478d30,0x104478da0]  sparse-list.ts:64
+                          + ! :       |   + !         : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       |   + !         : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 564  [0x104478e7c]  sparse-list.ts:65
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :       |   + !         : | + ! 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + ! :       |   + !         : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 53076  [0x105f10784]  index.ts:305
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18308  [0x105f07fb4]  index.ts:306
+                          + ! :       |   + !         : | 18 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :       |   + !         : | + 18 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         : | +   18 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         : | +     18 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :       |   + !         : | +       17 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :       |   + !         : | +       ! 16 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :       |   + !         : | +       ! : 16 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :   16 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :       |   + !         : | +       ! :     16 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :       11 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         : | +       ! :       | 9 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :       | + 5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :       |   + !         : | +       ! :       | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | +       ! :       | + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 464,476  [0x104478e18,0x104478e24]  sparse-list.ts:65
+                          + ! :       |   + !         : | +       ! :       | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 48  [0x104478c78]  sparse-list.ts:63
+                          + ! :       |   + !         : | +       ! :       | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 944  [0x10426111c]  sparse-list.ts:121
+                          + ! :       |   + !         : | +       ! :       | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 412  [0x104260f08]  sparse-list.ts:122
+                          + ! :       |   + !         : | +       ! :       | + 3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :       |   + !         : | +       ! :       | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | +       ! :       | + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36,76  [0x104478c6c,0x104478c94]  sparse-list.ts:63
+                          + ! :       |   + !         : | +       ! :       | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :       |   + !         : | +       ! :       | + 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 156  [0x105f11ee8]
+                          + ! :       |   + !         : | +       ! :       | 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 3416  [0x105f115e0]  index.ts:366
+                          + ! :       |   + !         : | +       ! :       | 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4596  [0x105f11a7c]  index.ts:371
+                          + ! :       |   + !         : | +       ! :       5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :       |   + !         : | +       ! :         5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :           5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         : | +       ! :             5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :               5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         : | +       ! :                 4 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         : | +       ! :                 + 3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :       |   + !         : | +       ! :                 + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | +       ! :                 + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,280  [0x104478d30,0x104478d60]  sparse-list.ts:64
+                          + ! :       |   + !         : | +       ! :                 + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 492  [0x104478e34]  sparse-list.ts:65
+                          + ! :       |   + !         : | +       ! :                 + 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :       |   + !         : | +       ! :                 +   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | +       ! :                 +     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + ! :       |   + !         : | +       ! :                 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 1604  [0x105f10ecc]  index.ts:359
+                          + ! :       |   + !         : | +       ! 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6184  [0x105f1ce04]  index.ts:441
+                          + ! :       |   + !         : | +       !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 572  [0x10426555c]  sparse-list.ts:123
+                          + ! :       |   + !         : | +       1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 118448  [0x105f3f28c]  index.ts:686
+                          + ! :       |   + !         : | +         1 program:packages/typescript/src/types/index.ts:findProperty [@95:value:5$12885]  (in stage1) + 172  [0x104eb6e1c]  index.ts:1057
+                          + ! :       |   + !         : | +           1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 640  [0x1042655a0]  sparse-list.ts:123
+                          + ! :       |   + !         : | 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :       |   + !         : | + 2 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 5320  [0x105efa4d0]  discriminants.ts:87
+                          + ! :       |   + !         : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1345$1502]  (in stage1) + 372  [0x1042627b4]  sparse-list.ts:122
+                          + ! :       |   + !         : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6074$6556]  (in stage1) + 80  [0x104479b48]  sparse-list.ts:63
+                          + ! :       |   + !         : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6074$6556]  (in stage1) + 272  [0x104479c08]  sparse-list.ts:64
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 5312  [0x105efa4c8]  discriminants.ts:87
+                          + ! :       |   + !         : | + 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 6072  [0x105efa7c0]  discriminants.ts:92
+                          + ! :       |   + !         : | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       |   + !         : | + 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | +   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380,476,...  [0x104478dc4,0x104478e24,...]  sparse-list.ts:65
+                          + ! :       |   + !         : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 504  [0x105f03a28]
+                          + ! :       |   + !         : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 4696  [0x105f04a88]  index.ts:271
+                          + ! :       |   + !         : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 2872  [0x105f04368]  index.ts:557
+                          + ! :       |   + !         : 8 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       |   + !         : | 6 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280,232  [0x104478d60,0x104478d30]  sparse-list.ts:64
+                          + ! :       |   + !         : | + 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380,476  [0x104478dc4,0x104478e24]  sparse-list.ts:65
+                          + ! :       |   + !         : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 32  [0x104260d8c]
+                          + ! :       |   + !         : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 348  [0x104260ec8]  sparse-list.ts:122
+                          + ! :       |   + !         : 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       |   + !         : | 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :       |   + !         : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          + ! :       |   + !         : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 576  [0x104478e88]  sparse-list.ts:65
+                          + ! :       |   + !         : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 496  [0x104260f5c]  sparse-list.ts:123
+                          + ! :       |   + !         : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5688  [0x105f04e68]  index.ts:274
+                          + ! :       |   + !         : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10316  [0x105f0607c]  index.ts:286
+                          + ! :       |   + !         36 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2716  [0x105f54060]  index.ts:864
+                          + ! :       |   + !         : 36 program:packages/typescript/src/types/index.ts:allAssignable [@95:value:58$12871]  (in stage1) + 848  [0x105f5341c]  index.ts:840
+                          + ! :       |   + !         :   36 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :       |   + !         :     36 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       |   + !         :       36 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :       |   + !         :         31 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :       |   + !         :         | 28 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :       |   + !         :         | + 28 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   26 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :       |   + !         :         | +   ! 26 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   !   21 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         :         | +   !   : 19 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   !   : | 7 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :       |   + !         :         | +   !   : | + 7 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !   : | +   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76,36  [0x104478c94,0x104478c6c]  sparse-list.ts:63
+                          + ! :       |   + !         :         | +   !   : | +   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380,424  [0x104478dc4,0x104478df0]  sparse-list.ts:65
+                          + ! :       |   + !         :         | +   !   : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          + ! :       |   + !         :         | +   !   : | 7 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :       |   + !         :         | +   !   : | + 6 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !   : | + ! 4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + ! :       |   + !         :         | +   !   : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140,300  [0x104478cd4,0x104478d74]  sparse-list.ts:64
+                          + ! :       |   + !         :         | +   !   : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 336  [0x104260ebc]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !   : | 3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 356,436  [0x105f11fb0,0x105f12000]
+                          + ! :       |   + !         :         | +   !   : | 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 4668  [0x105f13088]  index.ts:387
+                          + ! :       |   + !         :         | +   !   : | 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 11280  [0x105f14a5c]  index.ts:399
+                          + ! :       |   + !         :         | +   !   : |   1 program:helper:string-equal  (in stage1) + 12  [0x106d4e2e0]
+                          + ! :       |   + !         :         | +   !   : 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 2644  [0x105f112dc]  index.ts:363
+                          + ! :       |   + !         :         | +   !   : 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 5128  [0x105f11c90]  index.ts:374
+                          + ! :       |   + !         :         | +   !   5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :       |   + !         :         | +   !     5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   !       5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         :         | +   !         5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   !           4 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :       |   + !         :         | +   !           | 3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :       |   + !         :         | +   !           | + 2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :       |   + !         :         | +   !           | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !           | + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,268  [0x104478d30,0x104478d54]  sparse-list.ts:64
+                          + ! :       |   + !         :         | +   !           | + 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 356  [0x105f11fb0]
+                          + ! :       |   + !         :         | +   !           | 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 1696  [0x105f10f28]  index.ts:360
+                          + ! :       |   + !         :         | +   !           1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :       |   + !         :         | +   !             1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !               1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + ! :       |   + !         :         | +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :       |   + !         :         | +   ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 424  [0x104478df0]  sparse-list.ts:65
+                          + ! :       |   + !         :         | +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 9992  [0x105f14554]  index.ts:391
+                          + ! :       |   + !         :         | +     1 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 672  [0x1041a50d4]  number-list.ts:51
+                          + ! :       |   + !         :         | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6320  [0x105f1ce8c]  index.ts:441
+                          + ! :       |   + !         :         | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          + ! :       |   + !         :         | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :       |   + !         :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 468  [0x10447c3ec]  sparse-list.ts:65
+                          + ! :       |   + !         :         | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11384  [0x105f1e254]  index.ts:444
+                          + ! :       |   + !         :         2 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 20808  [0x105f27524]  index.ts:569
+                          + ! :       |   + !         :         | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   + !         :         |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + ! :       |   + !         :         |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 532  [0x104478e5c]  sparse-list.ts:65
+                          + ! :       |   + !         :         1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 47868  [0x105f2ded8]  index.ts:603
+                          + ! :       |   + !         :         | 1 program:packages/typescript/src/types/index.ts:dependency [@95:value:53$12867]  (in stage1) + 2564  [0x105f21d58]  index.ts:547
+                          + ! :       |   + !         :         1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 174632  [0x105f4ce04]  index.ts:767
+                          + ! :       |   + !         :         1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 176496  [0x105f4d54c]  index.ts:775
+                          + ! :       |   + !         1 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 1712  [0x105f53c74]  index.ts:860
+                          + ! :       |   + !           1 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 464  [0x1041a5004]  number-list.ts:49
+                          + ! :       |   + 1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 107820  [0x106a3b90c]  index.ts:1670
+                          + ! :       |   +   1 program:packages/ts-native/src/closure/lowering/index.ts:closure@62682 [closure_13819]  (in stage1) + 1712  [0x106d27150]  index.ts:1675
+                          + ! :       |   +     1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 20868  [0x105487518]  records.ts:241
+                          + ! :       |   +       1 program:packages/ts-native/src/closure/lowering/planning.ts:scalarType [@96:value:5$13495]  (in stage1) + 21708  [0x10546f2c8]  planning.ts:113
+                          + ! :       |   +         1 program:packages/ts-native/src/closure/lowering/planning.ts:closure@4030 [closure_13496]  (in stage1) + 544  [0x10650ab94]  planning.ts:113
+                          + ! :       |   +           1 program:packages/ts-native/src/closure/lowering/planning.ts:scalarType [@96:value:5$13495]  (in stage1) + 26372  [0x105470500]  planning.ts:123
+                          + ! :       |   +             1 program:packages/ts-native/src/closure/lowering/planning.ts:closure@4381 [closure_13499]  (in stage1) + 3408  [0x10650bbb0]  planning.ts:127
+                          + ! :       |   +               1 program:packages/ts-native/src/closure/lowering/planning.ts:scalarType [@96:value:5$13495]  (in stage1) + 21708  [0x10546f2c8]  planning.ts:113
+                          + ! :       |   +                 1 program:packages/ts-native/src/closure/lowering/planning.ts:closure@4030 [closure_13496]  (in stage1) + 544  [0x10650ab94]  planning.ts:113
+                          + ! :       |   +                   1 program:packages/ts-native/src/closure/lowering/planning.ts:scalarType [@96:value:5$13495]  (in stage1) + 1356  [0x10546a348]  planning.ts:94
+                          + ! :       |   +                     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       |   +                       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 492  [0x104478e34]  sparse-list.ts:65
+                          + ! :       |   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 123056  [0x106a3f490]  index.ts:1751
+                          + ! :       |     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+                          + ! :       |       1 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 41504  [0x106551430]  records.ts:1051
+                          + ! :       |         1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5849]  (in stage1) + 7100  [0x1049b1908]  key-index.ts:126
+                          + ! :       |           1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_291$448]  (in stage1) + 220  [0x1041f1b5c]  sparse-list.ts:135
+                          + ! :       |             1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_290$447]  (in stage1) + 340  [0x1041f1708]  sparse-list.ts:131
+                          + ! :       |               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5547$6029]  (in stage1) + 1528  [0x104423e30]  sparse-list.ts:80
+                          + ! :       68 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+                          + ! :         68 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 40480  [0x106551030]  records.ts:1048
+                          + ! :           42 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11400  [0x10653bc48]  records.ts:683
+                          + ! :           + 41 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           + ! 17 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,380,...  [0x104478e24,0x104478dc4,...]  sparse-list.ts:65
+                          + ! :           + ! 14 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,120,...  [0x104478d30,0x104478cc0,...]  sparse-list.ts:64
+                          + ! :           + ! 9 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76,36,...  [0x104478c94,0x104478c6c,...]  sparse-list.ts:63
+                          + ! :           + ! 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 0  [0x104478c48]
+                          + ! :           + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 692  [0x104261020]  sparse-list.ts:123
+                          + ! :           17 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14236  [0x10653c75c]  records.ts:684
+                          + ! :           + 17 program:packages/typescript/src/types/index.ts:assignable [@95:value:30$12859]  (in stage1) + 1124  [0x105f037b4]  index.ts:263
+                          + ! :           +   11 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :           +   ! 10 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :           +   ! : 10 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :           +   ! :   9 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   | 9 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :           +   ! :   |   9 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   |     5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :           +   ! :   |     + 5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   |     +   5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :           +   ! :   |     +     5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   |     +       5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :           +   ! :   |     +         4 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   |     +         ! 3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :           +   ! :   |     +         ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           +   ! :   |     +         ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :           +   ! :   |     +         ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          + ! :           +   ! :   |     +         ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 700  [0x104261028]  sparse-list.ts:123
+                          + ! :           +   ! :   |     +         ! 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :           +   ! :   |     +         !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 528  [0x104260f7c]  sparse-list.ts:123
+                          + ! :           +   ! :   |     +         1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 168  [0x105f10930]
+                          + ! :           +   ! :   |     4 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :           +   ! :   |       4 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   ! :   |         1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 516  [0x105f12050]  index.ts:353
+                          + ! :           +   ! :   |         1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :           +   ! :   |         ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 1020  [0x104261168]  sparse-list.ts:121
+                          + ! :           +   ! :   |         1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :           +   ! :   |         ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           +   ! :   |         !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :           +   ! :   |         1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 3012  [0x105f12a10]  index.ts:386
+                          + ! :           +   ! :   1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 168  [0x105f10930]
+                          + ! :           +   ! 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 117164  [0x105f3ed88]  index.ts:684
+                          + ! :           +   !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :           +   !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 96  [0x10447c278]  sparse-list.ts:63
+                          + ! :           +   3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          + ! :           +   ! 2 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          + ! :           +   ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :           +   ! :   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 280  [0x10447c330]  sparse-list.ts:64
+                          + ! :           +   ! 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 2404  [0x105f1bf40]  index.ts:434
+                          + ! :           +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 424  [0x105f039d8]
+                          + ! :           +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5912  [0x105f04f48]  index.ts:274
+                          + ! :           +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 22784  [0x105f09130]  index.ts:317
+                          + ! :           4 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11128,11364,...  [0x10653bb38,0x10653bc24,...]  records.ts:683
+                          + ! :           4 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14608  [0x10653c8d0]  records.ts:687
+                          + ! :           + 4 program:packages/ts-native/src/closure/lowering/records.ts:shapesForType [@94:value:132$13526]  (in stage1) + 484  [0x10652e068]  records.ts:516
+                          + ! :           +   3 program:packages/ts-native/src/closure/lowering/records.ts:record [@94:value:137$13527]  (in stage1) + 28040  [0x106535454]  records.ts:617
+                          + ! :           +   ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1017$1174]  (in stage1) + 452  [0x10423520c]  sparse-list.ts:122
+                          + ! :           +   !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5910$6392]  (in stage1) + 60,76  [0x10445a5dc,0x10445a5ec]  sparse-list.ts:63
+                          + ! :           +   !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5910$6392]  (in stage1) + 120  [0x10445a618]  sparse-list.ts:64
+                          + ! :           +   1 program:packages/ts-native/src/closure/lowering/records.ts:record [@94:value:137$13527]  (in stage1) + 28192  [0x1065354ec]  records.ts:617
+                          + ! :           +     1 program:packages/ts-native/src/closure/lowering/records.ts:closure@22136 [closure_13528]  (in stage1) + 1268  [0x106ca0064]  records.ts:619
+                          + ! :           1 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 21980  [0x10653e59c]  records.ts:720
+                          + ! :             1 program:packages/ts-native/src/closure/lowering/records.ts:optionalPrimitiveField [@94:value:138$13531]  (in stage1) + 1568  [0x106537254]  records.ts:646
+                          + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :                 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! 93 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 51716  [0x106a99534]  index.ts:2392
+                          + ! : 93 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+                          + ! :   93 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50052  [0x106a98eb4]  index.ts:2387
+                          + ! :     93 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 175296  [0x106a4c0a0]  index.ts:1819
+                          + ! :       60 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 51260  [0x106a2dc1c]  index.ts:1499
+                          + ! :       | 58 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 122176  [0x106a3f120]  index.ts:1749
+                          + ! :       | + 58 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 121344  [0x106a3ede0]  index.ts:1744
+                          + ! :       | +   58 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          + ! :       | +     57 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 6276  [0x106553a14]  records.ts:1056
+                          + ! :       | +     ! 57 program:packages/typescript/src/types/index.ts:property [@95:value:57$12870]  (in stage1) + 5248  [0x105f52254]  index.ts:822
+                          + ! :       | +     !   57 program:packages/typescript/src/types/index.ts:computeProperty [@95:value:60$12873]  (in stage1) + 6652  [0x105f55c68]  index.ts:907
+                          + ! :       | +     !     30 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2368  [0x105f53f04]  index.ts:863
+                          + ! :       | +     !     : 22 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :       | +     !     : | 14 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       | +     !     : | + 9 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       | +     !     : | + ! 8 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | + ! : 6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380,464,...  [0x104478dc4,0x104478e18,...]  sparse-list.ts:65
+                          + ! :       | +     !     : | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 56  [0x104478c80]  sparse-list.ts:63
+                          + ! :       | +     !     : | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :       | +     !     : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 336  [0x104260ebc]  sparse-list.ts:122
+                          + ! :       | +     !     : | + 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       | +     !     : | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 424,564  [0x104478df0,0x104478e7c]  sparse-list.ts:65
+                          + ! :       | +     !     : | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          + ! :       | +     !     : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 36  [0x104260d90]
+                          + ! :       | +     !     : | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 3952  [0x105f047a0]  index.ts:269
+                          + ! :       | +     !     : | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 340,544,...  [0x105f03984,0x105f03a50,...]
+                          + ! :       | +     !     : | 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :       | +     !     : | + 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + ! :       | +     !     : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + ! :       | +     !     : | + 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + ! :       | +     !     : | +   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | +     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + ! :       | +     !     : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       | +     !     : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :       | +     !     : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       | +     !     : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + ! :       | +     !     : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10324  [0x105f06084]  index.ts:286
+                          + ! :       | +     !     : |   1 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 748  [0x1041a5120]  number-list.ts:49
+                          + ! :       | +     !     : 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       | +     !     : | 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     : |   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,272  [0x104478d30,0x104478d58]  sparse-list.ts:64
+                          + ! :       | +     !     : |   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380,476  [0x104478dc4,0x104478e24]  sparse-list.ts:65
+                          + ! :       | +     !     : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 1196  [0x105f03cdc]  index.ts:220
+                          + ! :       | +     !     : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 9012  [0x105f05b64]  index.ts:284
+                          + ! :       | +     !     : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10324  [0x105f06084]  index.ts:286
+                          + ! :       | +     !     : | 1 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 836  [0x1041a5178]  number-list.ts:49
+                          + ! :       | +     !     : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 11200  [0x105f063f0]  index.ts:293
+                          + ! :       | +     !     :   1 program:packages/typescript/src/types/index.ts:cacheRelation [@95:value:28$12858]  (in stage1) + 508  [0x105f03100]  index.ts:257
+                          + ! :       | +     !     24 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2716  [0x105f54060]  index.ts:864
+                          + ! :       | +     !     : 24 program:packages/typescript/src/types/index.ts:allAssignable [@95:value:58$12871]  (in stage1) + 848  [0x105f5341c]  index.ts:840
+                          + ! :       | +     !     :   11 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :       | +     !     :   | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 384,540,...  [0x105f039b0,0x105f03a4c,...]
+                          + ! :       | +     !     :   | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       | +     !     :   | + 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     :   | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472,532  [0x104478e20,0x104478e5c]  sparse-list.ts:65
+                          + ! :       | +     !     :   | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 800  [0x10426108c]  sparse-list.ts:121
+                          + ! :       | +     !     :   | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 3824  [0x105f04720]  index.ts:269
+                          + ! :       | +     !     :   | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 19184  [0x105f08320]  index.ts:315
+                          + ! :       | +     !     :   | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 41516  [0x105f0da5c]  index.ts:333
+                          + ! :       | +     !     :   | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 46716  [0x105f0eeac]  index.ts:337
+                          + ! :       | +     !     :   | + 1 program:packages/native-runtime/src/values/index.ts:strictEqual [@6:value:20$83]  (in stage1) + 1516  [0x1041aa29c]  index.ts:114
+                          + ! :       | +     !     :   | +   1 program:helper:string-equal  (in stage1) + 24  [0x106d4e2ec]
+                          + ! :       | +     !     :   | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51516  [0x105f1016c]  index.ts:340
+                          + ! :       | +     !     :   |   1 program:packages/typescript/src/types/index.ts:cacheRelation [@95:value:28$12858]  (in stage1) + 676  [0x105f031a8]  index.ts:258
+                          + ! :       | +     !     :   6 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :       | +     !     :   | 4 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + ! :       | +     !     :   | + 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     :   | +   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,532  [0x104478e24,0x104478e5c]  sparse-list.ts:65
+                          + ! :       | +     !     :   | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 48  [0x104478c78]  sparse-list.ts:63
+                          + ! :       | +     !     :   | 2 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     :   |   ! 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 668  [0x104261008]  sparse-list.ts:123
+                          + ! :       | +     !     :   3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :       | +     !     :   | 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 60  [0x104478c84]  sparse-list.ts:63
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 284  [0x104478d64]  sparse-list.ts:64
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 424  [0x104478df0]  sparse-list.ts:65
+                          + ! :       | +     !     :   2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :       | +     !     :   | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 92  [0x104478ca4]  sparse-list.ts:63
+                          + ! :       | +     !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          + ! :       | +     !     :   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 3824  [0x105f04720]  index.ts:269
+                          + ! :       | +     !     :   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 16208  [0x105f07780]  index.ts:301
+                          + ! :       | +     !     2 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 1712  [0x105f53c74]  index.ts:860
+                          + ! :       | +     !     : 2 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 320  [0x1041a4f74]  number-list.ts:49
+                          + ! :       | +     !     1 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2368  [0x105f53f04]  index.ts:863
+                          + ! :       | +     1 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 13876  [0x1065557c4]  records.ts:1076
+                          + ! :       | +       1 program:packages/ts-native/src/closure/lowering/records.ts:optionalPrimitiveField [@94:value:138$13531]  (in stage1) + 1568  [0x106537254]  records.ts:646
+                          + ! :       | +         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :       | +           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :       | 2 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 21656  [0x106a26878]  index.ts:1416
+                          + ! :       |   2 program:packages/ts-native/src/closure/lowering/index.ts:scalar [@35:value:74$13774]  (in stage1) + 7532  [0x106a0339c]  index.ts:308
+                          + ! :       |     1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 18112  [0x105486a54]  records.ts:237
+                          + ! :       |     ! 1 program:packages/ts-native/src/closure/lowering/records.ts:generalType [@94:value:12$13506]  (in stage1) + 9020  [0x10547b784]  records.ts:164
+                          + ! :       |     !   1 program:packages/ts-native/src/closure/lowering/records.ts:visit [@94:value:43$13507]  (in stage1) + 5868  [0x106511030]  records.ts:132
+                          + ! :       |     !     1 program:packages/ts-native/src/closure/lowering/records.ts:visit [@94:value:43$13507]  (in stage1) + 5868  [0x106511030]  records.ts:132
+                          + ! :       |     !       1 program:packages/ts-native/src/closure/lowering/records.ts:visit [@94:value:43$13507]  (in stage1) + 5868  [0x106511030]  records.ts:132
+                          + ! :       |     !         1 program:packages/ts-native/src/closure/lowering/records.ts:visit [@94:value:43$13507]  (in stage1) + 2392  [0x10651029c]  records.ts:127
+                          + ! :       |     !           1 program:packages/foundation/src/collections/linked-set.ts:addSet [__tint_specialized_4452$4609]  (in stage1) + 152  [0x104331ce4]  linked-set.ts:29
+                          + ! :       |     !             1 program:packages/foundation/src/collections/linked-set.ts:hasSet [__tint_specialized_4451$4608]  (in stage1) + 488  [0x104331b34]  linked-set.ts:20
+                          + ! :       |     1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 69384  [0x10549329c]  records.ts:355
+                          + ! :       |       1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 69384  [0x10549329c]  records.ts:355
+                          + ! :       |         1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 69384  [0x10549329c]  records.ts:355
+                          + ! :       |           1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 19800  [0x1054870ec]  records.ts:239
+                          + ! :       |             1 program:packages/ts-native/src/closure/lowering/records.ts:referenceType [@94:value:9$13502]  (in stage1) + 4244  [0x105474068]  records.ts:71
+                          + ! :       |               1 program:packages/ts-native/src/closure/lowering/records.ts:collect [@94:value:28$13503]  (in stage1) + 708  [0x10650c1f8]  records.ts:43
+                          + ! :       33 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+                          + ! :         33 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 40480  [0x106551030]  records.ts:1048
+                          + ! :           22 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11400  [0x10653bc48]  records.ts:683
+                          + ! :           + 21 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           + ! 10 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120,280,...  [0x104478cc0,0x104478d60,...]  sparse-list.ts:64
+                          + ! :           + ! 9 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 464,476,...  [0x104478e18,0x104478e24,...]  sparse-list.ts:65
+                          + ! :           + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36,76  [0x104478c6c,0x104478c94]  sparse-list.ts:63
+                          + ! :           + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 528  [0x104260f7c]  sparse-list.ts:123
+                          + ! :           8 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14236  [0x10653c75c]  records.ts:684
+                          + ! :           + 8 program:packages/typescript/src/types/index.ts:assignable [@95:value:30$12859]  (in stage1) + 1124  [0x105f037b4]  index.ts:263
+                          + ! :           +   3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          + ! :           +   ! 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 484  [0x105f1b7c0]  index.ts:434
+                          + ! :           +   ! 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          + ! :           +   ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :           +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 292  [0x10447c33c]  sparse-list.ts:64
+                          + ! :           +   ! 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11356  [0x105f1e238]  index.ts:444
+                          + ! :           +   3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :           +   ! 3 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :           +   !   3 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :           +   !     3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   !       3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :           +   !         3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   !           3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :           +   !             2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :           +   !             : 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :           +   !             : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           +   !             : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :           +   !             : 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :           +   !             :   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :           +   !             :     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 60  [0x104478c84]  sparse-list.ts:63
+                          + ! :           +   !             1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 936  [0x105f10c30]  index.ts:358
+                          + ! :           +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :           +   ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 528  [0x104260f7c]  sparse-list.ts:123
+                          + ! :           +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8456  [0x105f05938]  index.ts:284
+                          + ! :           3 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11168,11596,...  [0x10653bb60,0x10653bd0c,...]  records.ts:683
+                          + ! 86 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50052  [0x106a98eb4]  index.ts:2387
+                          + ! : 86 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 175296  [0x106a4c0a0]  index.ts:1819
+                          + ! :   82 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+                          + ! :   | 82 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 40480  [0x106551030]  records.ts:1048
+                          + ! :   |   40 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11400  [0x10653bc48]  records.ts:683
+                          + ! :   |   + 40 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   17 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280,232,...  [0x104478d60,0x104478d30,...]  sparse-list.ts:64
+                          + ! :   |   +   14 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,472,...  [0x104478e24,0x104478e20,...]  sparse-list.ts:65
+                          + ! :   |   +   9 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76,96,...  [0x104478c94,0x104478ca8,...]  sparse-list.ts:63
+                          + ! :   |   35 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14236  [0x10653c75c]  records.ts:684
+                          + ! :   |   + 35 program:packages/typescript/src/types/index.ts:assignable [@95:value:30$12859]  (in stage1) + 1124  [0x105f037b4]  index.ts:263
+                          + ! :   |   +   20 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :   |   +   ! 11 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :   |   +   ! : 10 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :   |   +   ! : | 10 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :   |   +   ! : |   10 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! : |     10 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :   |   +   ! : |       10 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! : |         8 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :   |   +   ! : |         + 7 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! : |         + ! 5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :   |   +   ! : |         + ! : 5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   ! : |         + ! :   4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36,40,...  [0x104478c6c,0x104478c70,...]  sparse-list.ts:63
+                          + ! :   |   +   ! : |         + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          + ! :   |   +   ! : |         + ! 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 496  [0x105f1203c]  index.ts:116
+                          + ! :   |   +   ! : |         + ! 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 21116  [0x105f170c8]  index.ts:415
+                          + ! :   |   +   ! : |         + 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 132  [0x105f1090c]
+                          + ! :   |   +   ! : |         2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :   |   +   ! : |           2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! : |             2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :   |   +   ! : |               2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! : |                 2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :   |   +   ! : |                   1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 1900  [0x105f10ff4]  index.ts:361
+                          + ! :   |   +   ! : |                   1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 3776  [0x105f11748]  index.ts:366
+                          + ! :   |   +   ! : 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 23108  [0x105f27e20]  index.ts:575
+                          + ! :   |   +   ! 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :   |   +   ! : 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   ! :   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140,232  [0x104478cd4,0x104478d30]  sparse-list.ts:64
+                          + ! :   |   +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :   |   +   ! 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          + ! :   |   +   ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 1548  [0x105f1bbe8]  index.ts:434
+                          + ! :   |   +   ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 7112  [0x105f1d1a4]  index.ts:446
+                          + ! :   |   +   ! : 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :   |   +   ! :   1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! :     1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :   |   +   ! :       1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :   |   +   ! :         1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 2592  [0x105f1286c]  index.ts:386
+                          + ! :   |   +   ! 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :   |   +   ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 48  [0x104478c78]  sparse-list.ts:63
+                          + ! :   |   +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :   |   +   ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 60  [0x105f0386c]
+                          + ! :   |   +   7 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :   |   +   ! 4 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 6728  [0x105efaa50]  discriminants.ts:94
+                          + ! :   |   +   ! : 3 program:packages/typescript/src/types/discriminants.ts:literal [@185:value:7$12847]  (in stage1) + 192  [0x105ef4cc8]  discriminants.ts:26
+                          + ! :   |   +   ! : | 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   ! : |   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140,232,...  [0x104478cd4,0x104478d30,...]  sparse-list.ts:64
+                          + ! :   |   +   ! : 1 program:packages/typescript/src/types/discriminants.ts:literal [@185:value:7$12847]  (in stage1) + 2564  [0x105ef560c]  discriminants.ts:30
+                          + ! :   |   +   ! 2 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + ! :   |   +   ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 64  [0x104478c88]  sparse-list.ts:63
+                          + ! :   |   +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          + ! :   |   +   ! 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + ! :   |   +   !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :   |   +   2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5912  [0x105f04f48]  index.ts:274
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 504  [0x105f03a28]
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5956  [0x105f04f74]  index.ts:276
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 6884  [0x105f05314]  index.ts:279
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :   |   +   ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +   !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7120  [0x105f05400]  index.ts:280
+                          + ! :   |   +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :   |   +     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :   |   +       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 464  [0x104478e18]  sparse-list.ts:65
+                          + ! :   |   4 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14608  [0x10653c8d0]  records.ts:687
+                          + ! :   |   + 4 program:packages/ts-native/src/closure/lowering/records.ts:shapesForType [@94:value:132$13526]  (in stage1) + 484  [0x10652e068]  records.ts:516
+                          + ! :   |   +   2 program:packages/ts-native/src/closure/lowering/records.ts:record [@94:value:137$13527]  (in stage1) + 28040  [0x106535454]  records.ts:617
+                          + ! :   |   +   ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1017$1174]  (in stage1) + 452  [0x10423520c]  sparse-list.ts:122
+                          + ! :   |   +   !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5910$6392]  (in stage1) + 380,476  [0x10445a71c,0x10445a77c]  sparse-list.ts:65
+                          + ! :   |   +   2 program:packages/ts-native/src/closure/lowering/records.ts:record [@94:value:137$13527]  (in stage1) + 28192  [0x1065354ec]  records.ts:617
+                          + ! :   |   +     2 program:packages/ts-native/src/closure/lowering/records.ts:closure@22136 [closure_13528]  (in stage1) + 1456,1472  [0x106ca0120,0x106ca0130]  records.ts:619
+                          + ! :   |   3 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 12500,12572,...  [0x10653c094,0x10653c0dc,...]  records.ts:683
+                          + ! :   4 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 51260  [0x106a2dc1c]  index.ts:1499
+                          + ! :     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 101740  [0x106a3a14c]  index.ts:1647
+                          + ! :     + 1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 122176  [0x106a3f120]  index.ts:1749
+                          + ! :     +   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 107820  [0x106a3b90c]  index.ts:1670
+                          + ! :     +     1 program:packages/ts-native/src/closure/lowering/index.ts:closure@62682 [closure_13819]  (in stage1) + 1712  [0x106d27150]  index.ts:1675
+                          + ! :     +       1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 19104  [0x105486e34]  records.ts:238
+                          + ! :     +         1 program:packages/ts-native/src/closure/lowering/records.ts:stringType [@94:value:8$13500]  (in stage1) + 8872  [0x105472e18]  records.ts:36
+                          + ! :     +           1 program:packages/ts-native/src/closure/lowering/records.ts:closure@1206 [closure_13501]  (in stage1) + 536  [0x10650bea0]  records.ts:36
+                          + ! :     +             1 program:packages/ts-native/src/closure/lowering/records.ts:stringType [@94:value:8$13500]  (in stage1) + 256  [0x105470c70]  records.ts:32
+                          + ! :     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 247188  [0x106a5d974]  index.ts:1965
+                          + ! :     + 1 program:packages/ts-native/src/closure/lowering/records.ts:arrayElement [@94:value:13$13508]  (in stage1) + 18440  [0x10548023c]  records.ts:203
+                          + ! :     +   1 program:packages/ts-native/src/closure/lowering/records.ts:collectionElement [@94:value:11$13505]  (in stage1) + 17828  [0x105478fb0]  records.ts:107
+                          + ! :     +     1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 69384  [0x10549329c]  records.ts:355
+                          + ! :     +       1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 19800  [0x1054870ec]  records.ts:239
+                          + ! :     +         1 program:packages/ts-native/src/closure/lowering/records.ts:referenceType [@94:value:9$13502]  (in stage1) + 4244  [0x105474068]  records.ts:71
+                          + ! :     +           1 program:packages/ts-native/src/closure/lowering/records.ts:collect [@94:value:28$13503]  (in stage1) + 1932  [0x10650c6c0]  records.ts:49
+                          + ! :     +             1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :     +               1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 262284  [0x106a6146c]  index.ts:2004
+                          + ! :     + 1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 428780  [0x106a89ecc]  index.ts:2321
+                          + ! :     +   1 program:packages/ts-native/src/closure/lowering/records.ts:arrayElement [@94:value:13$13508]  (in stage1) + 18440  [0x10548023c]  records.ts:203
+                          + ! :     +     1 program:packages/ts-native/src/closure/lowering/records.ts:collectionElement [@94:value:11$13505]  (in stage1) + 17828  [0x105478fb0]  records.ts:107
+                          + ! :     +       1 program:packages/ts-native/src/closure/lowering/records.ts:entryType [@94:value:16$13515]  (in stage1) + 64772  [0x105492098]  records.ts:339
+                          + ! :     +         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :     +           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 385828  [0x106a7f704]  index.ts:2270
+                          + ! :       1 program:packages/ts-native/src/closure/lowering/index.ts:exprArguments [@35:value:295$13809]  (in stage1) + 1132  [0x106a212b4]  index.ts:1401
+                          + ! :         1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          + ! :           1 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 10696  [0x106554b58]  records.ts:1069
+                          + ! :             1 program:packages/ts-native/src/closure/lowering/records.ts:shapesForType [@94:value:132$13526]  (in stage1) + 1924  [0x10652e608]  records.ts:519
+                          + ! 61 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 34024  [0x106a95018]  index.ts:2354
+                          + ! : 61 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          + ! :   61 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 6276  [0x106553a14]  records.ts:1056
+                          + ! :     61 program:packages/typescript/src/types/index.ts:property [@95:value:57$12870]  (in stage1) + 5248  [0x105f52254]  index.ts:822
+                          + ! :       61 program:packages/typescript/src/types/index.ts:computeProperty [@95:value:60$12873]  (in stage1) + 6652  [0x105f55c68]  index.ts:907
+                          + ! :         32 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2368  [0x105f53f04]  index.ts:863
+                          + ! :         | 24 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :         | + 14 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :         | + ! 9 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :         | + ! : 5 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :         | + ! : | 2 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :         | + ! : | + 2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         | + ! : | +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :         | + ! : | +   ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! : | +   !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 284  [0x104478d64]  sparse-list.ts:64
+                          + ! :         | + ! : | +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :         | + ! : | +     1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         | + ! : | +       1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :         | + ! : | +         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! : | +           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + ! :         | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 636  [0x105f1b858]  index.ts:434
+                          + ! :         | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11356  [0x105f1e238]  index.ts:444
+                          + ! :         | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 7136  [0x105f1d1bc]  index.ts:446
+                          + ! :         | + ! : 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 21392  [0x105f2776c]  index.ts:570
+                          + ! :         | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 352  [0x104478da8]  sparse-list.ts:64
+                          + ! :         | + ! : 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 22512  [0x105f27bcc]  index.ts:573
+                          + ! :         | + ! : 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 22656  [0x105f27c5c]  index.ts:574
+                          + ! :         | + ! : 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 181268  [0x105f4e7f0]  index.ts:601
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 344  [0x105f03988]
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :         | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :         | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8060  [0x105f057ac]  index.ts:284
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 19472  [0x105f08440]  index.ts:315
+                          + ! :         | + 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :         | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 404,472  [0x104478ddc,0x104478e20]  sparse-list.ts:65
+                          + ! :         | + 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :         | + ! : 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + ! :         | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! :     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :         | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :         | + !   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :         | + !     1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 21392  [0x105f2776c]  index.ts:570
+                          + ! :         | + !       1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + !         1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 284  [0x104478d64]  sparse-list.ts:64
+                          + ! :         | + 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + ! :         | + ! 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + ! :         | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 532  [0x104478e5c]  sparse-list.ts:65
+                          + ! :         | + ! 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 5320  [0x105efa4d0]  discriminants.ts:87
+                          + ! :         | + !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1345$1502]  (in stage1) + 372  [0x1042627b4]  sparse-list.ts:122
+                          + ! :         | + !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6074$6556]  (in stage1) + 464  [0x104479cc8]  sparse-list.ts:65
+                          + ! :         | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 544  [0x105f03a50]
+                          + ! :         | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7168  [0x105f05430]  index.ts:281
+                          + ! :         | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8536  [0x105f05988]  index.ts:284
+                          + ! :         | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 11436  [0x105f064dc]  index.ts:299
+                          + ! :         | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + ! :         | + 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + ! :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + ! :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 424  [0x104478df0]  sparse-list.ts:65
+                          + ! :         | 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 3952,4228  [0x105f047a0,0x105f048b4]  index.ts:269
+                          + ! :         | 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + ! :         | + 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + ! :         | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :         | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5912  [0x105f04f48]  index.ts:274
+                          + ! :         28 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2716  [0x105f54060]  index.ts:864
+                          + ! :         | 28 program:packages/typescript/src/types/index.ts:allAssignable [@95:value:58$12871]  (in stage1) + 848  [0x105f5341c]  index.ts:840
+                          + ! :         |   28 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + ! :         |     28 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          + ! :         |       24 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          + ! :         |       + 21 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          + ! :         |       + ! 21 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   19 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :         |       + !   : 19 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   :   13 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :         |       + !   :   | 13 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   :   |   6 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :         |       + !   :   |   + 5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       + !   :   |   + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 48,76  [0x104478c78,0x104478c94]  sparse-list.ts:63
+                          + ! :         |       + !   :   |   + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380  [0x104478dc4]  sparse-list.ts:65
+                          + ! :         |       + !   :   |   + ! 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + ! :         |       + !   :   |   + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 512  [0x104260f6c]  sparse-list.ts:123
+                          + ! :         |       + !   :   |   4 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :         |       + !   :   |   + 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       + !   :   |   +   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120,232  [0x104478cc0,0x104478d30]  sparse-list.ts:64
+                          + ! :         |       + !   :   |   +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36  [0x104478c6c]  sparse-list.ts:63
+                          + ! :         |       + !   :   |   +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :         |       + !   :   |   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 8016  [0x105f13d9c]  index.ts:388
+                          + ! :         |       + !   :   |   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 11708  [0x105f14c08]  index.ts:399
+                          + ! :         |       + !   :   |   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 35764  [0x105f1aa00]  index.ts:426
+                          + ! :         |       + !   :   5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          + ! :         |       + !   :   | 5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   :   |   5 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :         |       + !   :   |     5 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   :   |       4 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          + ! :         |       + !   :   |       + 4 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          + ! :         |       + !   :   |       +   2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          + ! :         |       + !   :   |       +   ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       + !   :   |       +   !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,280  [0x104478d30,0x104478d60]  sparse-list.ts:64
+                          + ! :         |       + !   :   |       +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 356  [0x105f11fb0]
+                          + ! :         |       + !   :   |       +   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :         |       + !   :   |       +     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       + !   :   |       +       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 56  [0x104478c80]  sparse-list.ts:63
+                          + ! :         |       + !   :   |       1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 516  [0x105f12050]  index.ts:353
+                          + ! :         |       + !   :   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          + ! :         |       + !   :     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       + !   :       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :         |       + !   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 2976  [0x105f129ec]  index.ts:386
+                          + ! :         |       + !   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 38412  [0x105f1b458]  index.ts:391
+                          + ! :         |       + 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 336  [0x105f1b72c]
+                          + ! :         |       + 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6228  [0x105f1ce30]  index.ts:442
+                          + ! :         |       + 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 7036  [0x105f1d158]  index.ts:446
+                          + ! :         |       1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 20808  [0x105f27524]  index.ts:569
+                          + ! :         |       + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + ! :         |       1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 21392  [0x105f2776c]  index.ts:570
+                          + ! :         |       + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + ! :         |       1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 45000  [0x105f2d3a4]  index.ts:600
+                          + ! :         |       + 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + ! :         |       +   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + ! :         |       +     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380  [0x104478dc4]  sparse-list.ts:65
+                          + ! :         |       1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 117164  [0x105f3ed88]  index.ts:684
+                          + ! :         |         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          + ! :         |           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 476  [0x10447c3f4]  sparse-list.ts:65
+                          + ! :         1 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 3036  [0x105f541a0]  index.ts:859
+                          + ! 20 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50460  [0x106a9904c]  index.ts:2390
+                          + !   20 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 121344  [0x106a3ede0]  index.ts:1744
+                          + !     20 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          + !       20 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 6276  [0x106553a14]  records.ts:1056
+                          + !         20 program:packages/typescript/src/types/index.ts:property [@95:value:57$12870]  (in stage1) + 5248  [0x105f52254]  index.ts:822
+                          + !           20 program:packages/typescript/src/types/index.ts:computeProperty [@95:value:60$12873]  (in stage1) + 6652  [0x105f55c68]  index.ts:907
+                          + !             16 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2368  [0x105f53f04]  index.ts:863
+                          + !             | 10 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+                          + !             | + 6 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + !             | + ! 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + !             | + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !             | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 140  [0x104478cd4]  sparse-list.ts:64
+                          + !             | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 532  [0x104478e5c]  sparse-list.ts:65
+                          + !             | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 348  [0x104260ec8]  sparse-list.ts:122
+                          + !             | + ! 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + !             | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !             | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          + !             | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 604  [0x104260fc8]  sparse-list.ts:123
+                          + !             | + ! 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 3812  [0x105f04714]  index.ts:269
+                          + !             | + 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 36,264,...  [0x105f03854,0x105f03938,...]
+                          + !             | + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + !             | +   1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          + !             | +     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !             | +       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232  [0x104478d30]  sparse-list.ts:64
+                          + !             | 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          + !             | + 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !             | +   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76,84  [0x104478c94,0x104478c9c]  sparse-list.ts:63
+                          + !             | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          + !             | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + !             | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !             | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 424  [0x104478df0]  sparse-list.ts:65
+                          + !             | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8084  [0x105f057c4]  index.ts:284
+                          + !             | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52932  [0x105f106f4]  index.ts:286
+                          + !             4 program:packages/typescript/src/types/index.ts:widerProperty [@95:value:59$12872]  (in stage1) + 2716  [0x105f54060]  index.ts:864
+                          + !               3 program:packages/typescript/src/types/index.ts:allAssignable [@95:value:58$12871]  (in stage1) + 848  [0x105f5341c]  index.ts:840
+                          + !               + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + !               + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !               + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 96  [0x104478ca8]  sparse-list.ts:63
+                          + !               + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          + !               + ! 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          + !               + !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !               + !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476  [0x104478e24]  sparse-list.ts:65
+                          + !               + 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          + !               +   1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          + !               +     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          + !               +       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          + !               1 program:packages/typescript/src/types/index.ts:allAssignable [@95:value:58$12871]  (in stage1) + 308  [0x105f53200]  index.ts:838
+                          + !                 1 program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 240  [0x1041a4f24]  number-list.ts:49
+                          + 286 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 50052  [0x106a98eb4]  index.ts:2387
+                          +   285 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 175296  [0x106a4c0a0]  index.ts:1819
+                          +   : 281 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+                          +   : | 279 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 40480  [0x106551030]  records.ts:1048
+                          +   : | + 169 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11400  [0x10653bc48]  records.ts:683
+                          +   : | + ! 163 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : 82 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,380,...  [0x104478e24,0x104478dc4,...]  sparse-list.ts:65
+                          +   : | + ! : 53 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280,120,...  [0x104478d60,0x104478cc0,...]  sparse-list.ts:64
+                          +   : | + ! : 28 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36,76,...  [0x104478c6c,0x104478c94,...]  sparse-list.ts:63
+                          +   : | + ! 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 120,780,...  [0x104260de4,0x104261078,...]  sparse-list.ts:121
+                          +   : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 0  [0x104260d6c]
+                          +   : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 692  [0x104261020]  sparse-list.ts:123
+                          +   : | + 86 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 14236  [0x10653c75c]  records.ts:684
+                          +   : | + ! 85 program:packages/typescript/src/types/index.ts:assignable [@95:value:30$12859]  (in stage1) + 1124  [0x105f037b4]  index.ts:263
+                          +   : | + ! : 17 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          +   : | + ! : | 9 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          +   : | + ! : | + 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          +   : | + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 280,284  [0x10447c330,0x10447c334]  sparse-list.ts:64
+                          +   : | + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 392,532  [0x10447c3a0,0x10447c42c]  sparse-list.ts:65
+                          +   : | + ! : | + 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 616,504  [0x104265588,0x104265518]  sparse-list.ts:123
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 76  [0x10426536c]  sparse-list.ts:121
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 392  [0x1042654a8]  sparse-list.ts:122
+                          +   : | + ! : | 2 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          +   : | + ! : | + 2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   2 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          +   : | + ! : | +     2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +       1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          +   : | + ! : | +       ! 1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +       !   1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          +   : | + ! : | +       !     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +       !       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380  [0x104478dc4]  sparse-list.ts:65
+                          +   : | + ! : | +       1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 18736  [0x105f1677c]  index.ts:412
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 92  [0x105f1b638]
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 4896  [0x105f1c8fc]  index.ts:437
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 5228  [0x105f1ca48]  index.ts:438
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6184  [0x105f1ce04]  index.ts:441
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          +   : | + ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 272  [0x10447c328]  sparse-list.ts:64
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11356  [0x105f1e238]  index.ts:444
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6804  [0x105f1d070]  index.ts:445
+                          +   : | + ! : 16 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          +   : | + ! : | 14 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | + 8 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 376,444,...  [0x104478dc0,0x104478e04,...]  sparse-list.ts:65
+                          +   : | + ! : | + 4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 36,56,...  [0x104478c6c,0x104478c80,...]  sparse-list.ts:63
+                          +   : | + ! : | + 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 232,272  [0x104478d30,0x104478d58]  sparse-list.ts:64
+                          +   : | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 972  [0x104261138]  sparse-list.ts:121
+                          +   : | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 444  [0x104260f28]  sparse-list.ts:122
+                          +   : | + ! : 10 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          +   : | + ! : | 10 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : |   6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 476,376,...  [0x104478e24,0x104478dc0,...]  sparse-list.ts:65
+                          +   : | + ! : |   4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280,272  [0x104478d60,0x104478d58]  sparse-list.ts:64
+                          +   : | + ! : 10 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+                          +   : | + ! : | 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+                          +   : | + ! : | + 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472,464  [0x104478e20,0x104478e18]  sparse-list.ts:65
+                          +   : | + ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          +   : | + ! : | 4 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+                          +   : | + ! : | + 3 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+                          +   : | + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          +   : | + ! : | + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 464,532  [0x10447c3e8,0x10447c42c]  sparse-list.ts:65
+                          +   : | + ! : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 612  [0x104265584]  sparse-list.ts:123
+                          +   : | + ! : | + 1 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 11368  [0x105f1e244]  index.ts:444
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 380  [0x104478dc4]  sparse-list.ts:65
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51788  [0x105f1027c]  index.ts:342
+                          +   : | + ! : 9 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+                          +   : | + ! : | 8 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+                          +   : | + ! : | + 8 program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+                          +   : | + ! : | +   7 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! 6 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          +   : | + ! : | +   ! : 6 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! :   3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+                          +   : | + ! : | +   ! :   | 3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! :   |   3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          +   : | + ! : | +   ! :   |     3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! :   |       3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          +   : | + ! : | +   ! :   |         3 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! :   |           1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          +   : | + ! : | +   ! :   |           + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   ! :   |           +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          +   : | + ! : | +   ! :   |           1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          +   : | + ! : | +   ! :   |           + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   ! :   |           +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 492  [0x104478e34]  sparse-list.ts:65
+                          +   : | + ! : | +   ! :   |           1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 11536  [0x105f14b5c]  index.ts:399
+                          +   : | + ! : | +   ! :   3 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+                          +   : | + ! : | +   ! :     2 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+                          +   : | + ! : | +   ! :     + 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 156  [0x105f11ee8]
+                          +   : | + ! : | +   ! :     + 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+                          +   : | + ! : | +   ! :     +   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   ! :     +     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 472  [0x104478e20]  sparse-list.ts:65
+                          +   : | + ! : | +   ! :     1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 28  [0x105f108a4]
+                          +   : | + ! : | +   ! 1 program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+                          +   : | + ! : | +   !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   !     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          +   : | + ! : | +   1 program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 2392  [0x105f111e0]  index.ts:362
+                          +   : | + ! : | 1 program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 21392  [0x105f2776c]  index.ts:570
+                          +   : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : |     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 76  [0x104478c94]  sparse-list.ts:63
+                          +   : | + ! : 7 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+                          +   : | + ! : | 4 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 6728  [0x105efaa50]  discriminants.ts:94
+                          +   : | + ! : | + 2 program:packages/typescript/src/types/discriminants.ts:literal [@185:value:7$12847]  (in stage1) + 2168  [0x105ef5480]  discriminants.ts:28
+                          +   : | + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+                          +   : | + ! : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 20  [0x10447c22c]
+                          +   : | + ! : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 280  [0x10447c330]  sparse-list.ts:64
+                          +   : | + ! : | + 1 program:packages/typescript/src/types/discriminants.ts:literal [@185:value:7$12847]  (in stage1) + 192  [0x105ef4cc8]  discriminants.ts:26
+                          +   : | + ! : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 124  [0x104478cc4]  sparse-list.ts:64
+                          +   : | + ! : | + 1 program:packages/typescript/src/types/discriminants.ts:literal [@185:value:7$12847]  (in stage1) + 252  [0x105ef4d04]  discriminants.ts:27
+                          +   : | + ! : | 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 280  [0x104478d60]  sparse-list.ts:64
+                          +   : | + ! : | 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+                          +   : | + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+                          +   : | + ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 120  [0x104478cc0]  sparse-list.ts:64
+                          +   : | + ! : | 1 program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 5320  [0x105efa4d0]  discriminants.ts:87
+                          +   : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1345$1502]  (in stage1) + 372  [0x1042627b4]  sparse-list.ts:122
+                          +   : | + ! : |     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6074$6556]  (in stage1) + 492  [0x104479ce4]  sparse-list.ts:65
+                          +   : | + ! : 5 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 308,464,...  [0x105f03964,0x105f03a00,...]
+                          +   : | + ! : 3 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 12124,12260,...  [0x105f0678c,0x105f06814,...]  index.ts:299
+                          +   : | + ! : 2 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 33148  [0x105f0b9ac]  index.ts:326
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 5912  [0x105f04f48]  index.ts:274
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 6012  [0x105f04fac]  index.ts:276
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 8876  [0x105f05adc]  index.ts:284
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 16536  [0x105f078c8]  index.ts:301
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 20072  [0x105f08698]  index.ts:315
+                          +   : | + ! : 1 program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 21584  [0x105f08c80]  index.ts:316
+                          +   : | + ! 1 program:packages/typescript/src/types/index.ts:assignable [@95:value:30$12859]  (in stage1) + 488  [0x105f03538]  index.ts:263
+                          +   : | + 18 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 12624,12664,...  [0x10653c110,0x10653c138,...]  records.ts:683
+                          +   : | + 3 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 10408,10428,...  [0x10653b868,0x10653b87c,...]  records.ts:681
+                          +   : | + 2 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 13380,13840  [0x10653c404,0x10653c5d0]  records.ts:684
+                          +   : | + 1 program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1) + 11080  [0x10653bb08]  records.ts:683
+                          +   : | +   1 program:helper:string-equal  (in stage1) + 12  [0x106d4e2e0]
+                          +   : | 2 program:packages/ts-native/src/closure/lowering/records.ts:closure@31929 [closure_13544]  (in stage1) + 40564  [0x106551084]  records.ts:1048
+                          +   : |   2 program:packages/foundation/src/collections/linked-map.ts:setMap [__tint_specialized_4871$5056]  (in stage1) + 2628  [0x104376540]  linked-map.ts:95
+                          +   : |     2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_8460]  (in stage1) + 2036  [0x104a94c20]  key-index.ts:104
+                          +   : |       2 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$8456]  (in stage1) + 1732  [0x104a920a4]  key-index.ts:59
+                          +   : |         2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_545$702]  (in stage1) + 372  [0x10420d954]  sparse-list.ts:122
+                          +   : |           2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5674$6156]  (in stage1) + 476  [0x10443b264]  sparse-list.ts:65
+                          +   : 4 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 51260  [0x106a2dc1c]  index.ts:1499
+                          +   :   2 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 385828  [0x106a7f704]  index.ts:2270
+                          +   :   + 2 program:packages/ts-native/src/closure/lowering/index.ts:exprArguments [@35:value:295$13809]  (in stage1) + 1132  [0x106a212b4]  index.ts:1401
+                          +   :   +   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 15364  [0x106a24fe4]  index.ts:1407
+                          +   :   +   ! 1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5693]  (in stage1) + 980  [0x10493fcc4]  key-index.ts:94
+                          +   :   +   !   1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5691]  (in stage1) + 1732  [0x10493e434]  key-index.ts:59
+                          +   :   +   !     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_145$302]  (in stage1) + 372  [0x1041e1d90]  sparse-list.ts:122
+                          +   :   +   !       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5474$5956]  (in stage1) + 280  [0x1044170e0]  sparse-list.ts:64
+                          +   :   +   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+                          +   :   +     1 program:packages/ts-native/src/closure/lowering/records.ts:closure@38062 [closure_13550]  (in stage1) + 12420  [0x106555214]  records.ts:1073
+                          +   :   +       1 program:packages/foundation/src/collections/sparse-list.ts:hasList [__tint_specialized_5$162]  (in stage1) + 284  [0x1041d4d34]  sparse-list.ts:154
+                          +   :   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 305436  [0x106a6bcfc]  index.ts:2155
+                          +   :   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 381604  [0x106a7e684]  index.ts:2247
+                          +   :     1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 14772  [0x106a24d94]  index.ts:1406
+                          +   :       1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5693]  (in stage1) + 816  [0x10493fc20]  key-index.ts:94
+                          +   :         1 program:packages/foundation/src/collections/key-index.ts:index [@20:value:14$5690]  (in stage1) + 364  [0x10493d8a8]  key-index.ts:39
+                          +   :           1 program:packages/typescript/src/syntax/rewrite.ts:syntaxHash [@125:value:0$12805]  (in stage1) + 1104  [0x104e7b410]  rewrite.ts:17
+                          +   1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 14772  [0x106a24d94]  index.ts:1406
+                          +     1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5693]  (in stage1) + 980  [0x10493fcc4]  key-index.ts:94
+                          +       1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5691]  (in stage1) + 1056  [0x10493e190]  key-index.ts:55
+                          1 program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 67472  [0x106a9d2c0]  index.ts:2416
+                            1 program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 435904  [0x106a8baa0]  index.ts:2296
+                              1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5745]  (in stage1) + 2036  [0x104966000]  key-index.ts:104
+                                1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5741]  (in stage1) + 1732  [0x104963484]  key-index.ts:59
+                                  1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_185$342]  (in stage1) + 372  [0x1041e66d8]  sparse-list.ts:122
+                                    1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5494$5976]  (in stage1) + 472  [0x10441aeb8]  sparse-list.ts:65
+
+Total number in stack (recursive counted multiple, when >=5):
+        93       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 452  [0x104260f30]  sparse-list.ts:122
+        53       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 0  [0x104478c48]  sparse-list.ts:65
+        47       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 0  [0x104478c48]  sparse-list.ts:64
+        45       program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1) + 4796  [0x105f11b44]  index.ts:371
+        42       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1) + 0  [0x104478c48]  sparse-list.ts:63
+        20       program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 13964  [0x105f154d8]  index.ts:404
+        19       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7440  [0x105f05540]  index.ts:281
+        18       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 7128  [0x105f05408]  index.ts:280
+        16       program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 10520  [0x105f14764]  index.ts:393
+        15       program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 1172  [0x105f122e0]  index.ts:384
+        15       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 18732  [0x105f0815c]  index.ts:307
+        13       program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 908  [0x105f121d8]  index.ts:383
+        11       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 0  [0x104260d6c]  sparse-list.ts:123
+        11       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 372  [0x104265494]  sparse-list.ts:122
+        11       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 0  [0x105f03830]
+        10       program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 9936  [0x105f1dcac]  index.ts:455
+        10       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 17716  [0x105f07d64]  index.ts:304
+        9       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 52832  [0x105f10690]  index.ts:347
+        8       program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1) + 27312  [0x105f28e8c]  index.ts:585
+        7       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 0  [0x10447c218]  sparse-list.ts:64
+        7       program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 1160  [0x105ef9490]  discriminants.ts:79
+        7       program:packages/typescript/src/types/discriminants.ts:closure@3015 [closure_12850]  (in stage1) + 952  [0x105ef93c0]  discriminants.ts:78
+        7       program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 6728  [0x105f1d024]  index.ts:444
+        7       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 0  [0x105f03830]  index.ts:284
+        7       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 10852  [0x105f06294]  index.ts:288
+        7       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 51876  [0x105f102d4]  index.ts:342
+        6       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 0  [0x104260d6c]  sparse-list.ts:122
+        6       program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 100644  [0x106a39d04]  index.ts:1635
+        6       program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1) + 0  [0x105f1b5dc]  index.ts:444
+        5       program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1) + 0  [0x1041a4e34]  number-list.ts:49
+        5       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1) + 0  [0x10447c218]  sparse-list.ts:65
+        5       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1) + 0  [0x104260d6c]  sparse-list.ts:121
+        5       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1) + 0  [0x104265320]  sparse-list.ts:123
+        5       program:packages/ts-native/src/closure/lowering/index.ts:expr [@35:value:296$13810]  (in stage1) + 50200  [0x106a2d7f8]  index.ts:1496
+        5       program:packages/ts-native/src/closure/lowering/index.ts:stmt [@35:value:297$13831]  (in stage1) + 29048  [0x106a93ca8]  index.ts:2343
+        5       program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1) + 0  [0x105f11e4c]
+        5       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 0  [0x105f03830]  index.ts:269
+        5       program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1) + 0  [0x105f03830]  index.ts:274
+
+Sort by top of stack, same collapsed (when >= 5):
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6070$6552]  (in stage1)        464
+        program:packages/typescript/src/types/index.ts:relates [@95:value:31$12860]  (in stage1)        68
+        program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties [@94:value:139$13533]  (in stage1)        33
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1337$1494]  (in stage1)        28
+        program:packages/typescript/src/types/index.ts:objectRelation [@95:value:35$12863]  (in stage1)        22
+        program:packages/typescript/src/types/index.ts:computeScalarRelation [@95:value:34$12862]  (in stage1)        21
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_6090$6572]  (in stage1)        19
+        program:packages/typescript/src/types/index.ts:scalarRelation [@95:value:33$12861]  (in stage1)        14
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1377$1534]  (in stage1)        10
+        program:packages/foundation/src/collections/number-list.ts:readNumberList [@2:value:4$53]  (in stage1)        7
+        program:packages/typescript/src/types/index.ts:solveRelation [@95:value:55$12869]  (in stage1)        6
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5910$6392]  (in stage1)        5
+
+Binary Images:
+       0x104034000 -        0x106f966cf +stage1 (???) <EEF6973F-2B90-8C97-B1B7-930EB1E82C3C> /Users/*/stage1
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib
