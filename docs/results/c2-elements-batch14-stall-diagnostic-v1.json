@@ -1,0 +1,117 @@
+{
+  "kind": "c2-elements-compilation-stall-diagnostic",
+  "conformance": false,
+  "createdAt": "2026-11-06T19:23:48.386138+00:00",
+  "selection": "language/statements/class/elements",
+  "batch": 14,
+  "batchSize": 64,
+  "observedBeforeBatch": 722,
+  "allObservedPassed": true,
+  "toolchain": "docs/results/c2-frozen-toolchain-v9.json",
+  "runnerPid": 38740,
+  "phase": "compiling batch 14 (64 variants)",
+  "stallElapsedMs": 243405,
+  "cumulativeProcessWall": "02:21:25",
+  "cumulativeProcessCpu": "69:35.58",
+  "instantCpuPercent": 83.1,
+  "hostLoad": [37.3, 46.76, 59.32],
+  "osSample": ".tint-bootstrap/c2/elements-batch14-stall-sample.txt",
+  "profile": {
+    "path": ".tint-bootstrap/c2/elements-batch14-compilation.cpuprofile",
+    "sha256": "4755875c9ea2fba5034033c1f2fe37dc394760c9a4b340bd1f9118916a0f5512",
+    "samples": 919,
+    "topFrames": [
+      {
+        "function": "(garbage collector)",
+        "file": "",
+        "line": 0,
+        "samples": 240
+      },
+      {
+        "function": "set",
+        "file": "packages/foundation/dist/collections/key-index.js",
+        "line": 69,
+        "samples": 36
+      },
+      {
+        "function": "set",
+        "file": "packages/foundation/dist/collections/key-index.js",
+        "line": 69,
+        "samples": 25
+      },
+      {
+        "function": "set",
+        "file": "packages/foundation/dist/collections/key-index.js",
+        "line": 69,
+        "samples": 17
+      },
+      {
+        "function": "set",
+        "file": "packages/foundation/dist/collections/key-index.js",
+        "line": 69,
+        "samples": 17
+      },
+      {
+        "function": "collect",
+        "file": "packages/typescript/dist/checker/closures.js",
+        "line": 112,
+        "samples": 10
+      },
+      {
+        "function": "collect",
+        "file": "packages/typescript/dist/checker/closures.js",
+        "line": 112,
+        "samples": 7
+      },
+      {
+        "function": "fn",
+        "file": "packages/typescript/dist/binding/index.js",
+        "line": 374,
+        "samples": 6
+      },
+      {
+        "function": "expr",
+        "file": "packages/typescript/dist/binding/index.js",
+        "line": 572,
+        "samples": 6
+      },
+      {
+        "function": "expression",
+        "file": "packages/ts-native/dist/modules/invocation.js",
+        "line": 34,
+        "samples": 5
+      },
+      {
+        "function": "(program)",
+        "file": "",
+        "line": 0,
+        "samples": 5
+      },
+      {
+        "function": "position",
+        "file": "packages/foundation/dist/collections/key-index.js",
+        "line": 16,
+        "samples": 5
+      },
+      {
+        "function": "collectFunction",
+        "file": "packages/typescript/dist/checker/closures.js",
+        "line": 64,
+        "samples": 5
+      },
+      {
+        "function": "collect",
+        "file": "packages/typescript/dist/checker/closures.js",
+        "line": 112,
+        "samples": 5
+      },
+      {
+        "function": "collect",
+        "file": "packages/typescript/dist/checker/closures.js",
+        "line": 112,
+        "samples": 5
+      }
+    ]
+  },
+  "finding": "Runner remains active in JavaScript. Short profile shows GC, binding/rewrite and key-index activity; this is not evidence of stableFacts/forgetNarrowed recurrence. Cumulative CPU and wall cover entire run, not this batch. No general performance changes made. Run continues."
+}
