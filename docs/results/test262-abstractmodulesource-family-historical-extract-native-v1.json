@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v4-shared-image",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "lldb-local-stdio",
+    "debuggerStdio": "debugger-managed",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/AbstractModuleSource",
+  "sourceSnapshot": {
+    "sha256": "438d7748be1da9064d98fbb2f8d8640c1fa73bd9adf4ac43c73469d06d12e0f4",
+    "files": 506
+  },
+  "sourceSnapshotFile": ".tint-bootstrap/node-toolchain-native-behavior-v9-collations-v1/source-snapshot.json",
+  "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 1048576,
+    "maxDynamicCodeBytes": 65536,
+    "managedBytes": 67108864,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 1048576,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/test262-full-suite-native-v9.jsonl",
+    "journalSha256": "a38e8cc60b34b0eedd28f8b9d1e8ec381abe7b847ddafe2d60b188c1ba226909",
+    "journalBytes": 6771452,
+    "observedVariants": 10814
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": []
+  },
+  "totals": {
+    "total": 8,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 8,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "built-ins/AbstractModuleSource/length.js",
+      "sha256": "e7169f48e791e47ce00d8aa6170149e3d8b6068b2176ff93a45355ae6f1839c4",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 87348.49529199954
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/name.js",
+      "sha256": "9fdd2179c08004f33e47c345078443ca5cde28f2e1ba26460f6e98facfdb0ff3",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.13787500001490116
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/proto.js",
+      "sha256": "2a5e21fb569805504733865a07b0c9d84ebd4c2dcd556137f390c94e15a855c7",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.07216699980199337
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/Symbol.toStringTag.js",
+      "sha256": "4b5dabb617f6679467465602387772849a8ce9879dc3002d16b175398dec5adb",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06858400069177151
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/constructor.js",
+      "sha256": "a69052071183bab1174fb23d501f6a1526c5c8cbb149d91500715ab1f4ccefa5",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.06483299937099218
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/proto.js",
+      "sha256": "2ad218a3b288a26dfdedc5f388a686e5231e15c6a120a90493af822d96ec4d85",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.0434170002117753
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype.js",
+      "sha256": "b03a94bb55ce21b86bc548b4200c7d26f5bb027cbc69c75751f8a9ee95b3edfc",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.060832999646663666
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/throw-from-constructor.js",
+      "sha256": "84450c8583e11867ba5d015dc702a2d33cbb8de1f2c462cd307dd766f47f551e",
+      "variant": "module",
+      "metadata": {
+        "flags": ["module"],
+        "features": ["source-phase-imports"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.03762499988079071
+    }
+  ]
+}
