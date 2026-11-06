@@ -1,0 +1,873 @@
+Analysis of sampling test (pid 53792) every 1 millisecond
+Process:         test [53792]
+Path:            /private/var/folders/*/test
+Load Address:    0x1024a4000
+Identifier:      test
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [53791]
+Target Type:     live task
+
+Date/Time:       2026-11-07 00:25:57.805 +0800
+Launch Time:     2026-11-07 00:22:25.945 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         341.5M
+Physical footprint (peak):  341.5M
+Idle exit:                  untracked
+----
+
+Call graph:
+    720 Thread_16091784   DispatchQueue_1: com.apple.main-thread  (serial)
+      720 tint:process-entry  (in test) + 2764  [0x1024a4ebc]
+        720 program:__tint_invoke$21316  (in test) + 412  [0x104698b90]
+          720 program:test262-host:run [@1:value:6$21051]  (in test) + 5300  [0x107376640]
+            720 program:test262-case-2-host:run [@27:value:4$21050]  (in test) + 1892  [0x1073750d0]
+              720 program:test262-runtime:runNativeScripts [@147:value:114$21029]  (in test) + 23100  [0x10735c06c]  operations.ts:417
+                720 program:test262-shared-script-4:execute [@149:value:108$21048]  (in test) + 6772  [0x1073748e0]  jobs.ts:76
+                  720 program:packages/js-runtime/src/objects/jobs.ts:runScriptContext [__tint_specialized_7116$21237]  (in test) + 648  [0x1073e37b4]  jobs.ts:84
+                    720 program:test262-shared-script-4:execute [closure_21049]  (in test) + 193200  [0x10ac5817c]  declarations.ts:61
+                      720 program:packages/js-runtime/src/objects/global-properties.ts:callEvalCandidate [@72:value:9$18012]  (in test) + 980  [0x10501c690]  global-properties.ts:89
+                        720 program:packages/js-runtime/src/objects/global-properties.ts:evalCandidate [@72:value:11$18014]  (in test) + 6468  [0x10501e538]  global-properties.ts:144
+                          720 program:packages/js-engine/src/script-evaluation.ts:closure@3845 [closure_19341]  (in test) + 16552  [0x109cf66fc]  script-evaluation.ts:128
+                            720 program:packages/js-engine/src/script-evaluation.ts:run [@294:value:59$19347]  (in test) + 2436  [0x109cfa734]  script-evaluation.ts:194
+                              720 program:test262-runtime:closure@11701 [closure_21009]  (in test) + 652  [0x10abb0148]
+                                720 program:packages/js-engine/src/native/script-compile.ts:closure@8585 [closure_20860]  (in test) + 6156  [0x10ab6f0d8]  script-compile.ts:260
+                                  720 program:packages/compiler/src/native/managed-jit-entry.ts:prepareManagedSurfaceEntry [@180:value:13$20816]  (in test) + 40468  [0x106eb9470]  managed-jit-entry.ts:98
+                                    720 program:packages/compiler/src/native/managed-jit-program.ts:prepareManagedJitProgram [@393:value:14$20784]  (in test) + 69316  [0x106e4fe1c]  managed-jit-program.ts:143
+                                      551 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 351596  [0x1062307e0]  index.ts:1378
+                                      + 236 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 80616  [0x10a2028f0]  index.ts:1153
+                                      + ! 203 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 720  [0x10273532c]  sparse-list.ts:122
+                                      + ! : 100 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 696,700,...  [0x102f7e834,0x102f7e838,...]  sparse-list.ts:65
+                                      + ! : 53 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 76,60,...  [0x102f7e5c8,0x102f7e5b8,...]  sparse-list.ts:63
+                                      + ! : 50 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 444,436,...  [0x102f7e738,0x102f7e730,...]  sparse-list.ts:64
+                                      + ! 21 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 92,228,...  [0x1027350b8,0x102735140,...]  sparse-list.ts:121
+                                      + ! 8 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 1128,832,...  [0x1027354c4,0x10273539c,...]  sparse-list.ts:123
+                                      + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 588,684  [0x1027352a8,0x102735308]  sparse-list.ts:122
+                                      + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 128  [0x1027350dc]  sparse-list.ts:121
+                                      + !   1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 108  [0x102696ad4]  sparse-list.ts:15
+                                      + 143 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 86544  [0x10a204018]  index.ts:1171
+                                      + ! 51 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 34820  [0x10a1a60d0]  index.ts:589
+                                      + ! : 19 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 58096  [0x10a1abbbc]  index.ts:621
+                                      + ! : | 19 program:packages/ts-native/src/modules/index.ts:closure@22172 [closure_19707]  (in test) + 800  [0x10b0aeab8]  index.ts:622
+                                      + ! : |   10 program:packages/ts-native/src/modules/index.ts:parameter [@164:value:97$19702]  (in test) + 23584  [0x10a19d800]  index.ts:536
+                                      + ! : |   + 9 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7154$19732]  (in test) + 40120  [0x10a22bc48]  index.ts:475
+                                      + ! : |   + ! 5 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! : |   + ! : 4 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! : |   + ! : | 4 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! : |   + ! : |   4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |     4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       + 2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +   2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     ! 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     !   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     !     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     !       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     !         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |   + ! : |       +     !           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |   + ! : |       +     !             1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 3000  [0x10352b040]  sparse-list.ts:55
+                                      + ! : |   + ! : |       +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |   + ! : |       +       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 3036  [0x10352b064]  sparse-list.ts:55
+                                      + ! : |   + ! : |       +         1 program:packages/foundation/src/collections/sparse-list.ts:rotateLeft [__tint_specialized_12217$13890]  (in test) + 36  [0x10393a5a4]  sparse-list.ts:26
+                                      + ! : |   + ! : |       2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |   + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! : |   + ! : |         ! 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+                                      + ! : |   + ! : |         !   1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 148  [0x10393a498]  sparse-list.ts:18
+                                      + ! : |   + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 756  [0x10352a77c]  sparse-list.ts:47
+                                      + ! : |   + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 76  [0x10273c248]
+                                      + ! : |   + ! 2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : |   + ! : 2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! : |   + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 432  [0x10273b980]  sparse-list.ts:121
+                                      + ! : |   + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! : |   + ! :     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 624  [0x102f821b8]  sparse-list.ts:65
+                                      + ! : |   + ! 2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+                                      + ! : |   + !   1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 2840  [0x1047817e4]  key-index.ts:83
+                                      + ! : |   + !   1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3448  [0x104781a44]  key-index.ts:85
+                                      + ! : |   + !     1 program:packages/foundation/src/collections/sparse-list.ts:lengthList [__tint_specialized_556$1056]  (in test) + 140  [0x10273c4e8]  sparse-list.ts:147
+                                      + ! : |   + 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7154$19732]  (in test) + 26656  [0x10a2287b0]  index.ts:473
+                                      + ! : |   9 program:packages/ts-native/src/modules/index.ts:parameter [@164:value:97$19702]  (in test) + 21504  [0x10a19cfe0]  index.ts:545
+                                      + ! : |     7 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+                                      + ! : |     ! 7 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! : |     !   6 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : |     !   : 5 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! : |     !   : | 4 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! : |     !   : | + 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 664,696,...  [0x102f821e0,0x102f82200,...]  sparse-list.ts:65
+                                      + ! : |     !   : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 212  [0x102f8201c]  sparse-list.ts:64
+                                      + ! : |     !   : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 128  [0x10273b850]  sparse-list.ts:121
+                                      + ! : |     !   : |   1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 468  [0x102696c3c]  sparse-list.ts:15
+                                      + ! : |     !   : 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2672  [0x104780170]  key-index.ts:60
+                                      + ! : |     !   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! : |     !     1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! : |     !       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! : |     !         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     !           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     !             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     !               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |     !                 1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! : |     !                   1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 492  [0x10393a26c]  sparse-list.ts:23
+                                      + ! : |     2 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 11848  [0x10a1a0714]  index.ts:558
+                                      + ! : |       2 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + ! : |         2 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      + ! : |           1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1060  [0x10481ba90]  key-index.ts:94
+                                      + ! : |           : 1 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$10954]  (in test) + 516  [0x10481866c]  key-index.ts:39
+                                      + ! : |           :   1 program:packages/foundation/src/collections/linked-map.ts:closure@2931 [closure_6512]  (in test) + 144  [0x1046a0b38]  linked-map.ts:101
+                                      + ! : |           :     1 program:packages/foundation/src/collections/linked-map.ts:keyHash [@9:value:2$79]  (in test) + 656  [0x1026703e0]  linked-map.ts:24
+                                      + ! : |           :       1 program:packages/foundation/src/collections/key-index.ts:hashString [@135:value:1$73]  (in test) + 556  [0x10266d854]  key-index.ts:177
+                                      + ! : |           1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      + ! : |             1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + ! : |               1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! : |                 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 444  [0x102f8ce68]  sparse-list.ts:64
+                                      + ! : 13 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 59060  [0x10a1abf80]  index.ts:624
+                                      + ! : | 13 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+                                      + ! : |   13 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! : |     12 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! : |     + 12 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! : |     +   12 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! : |     +     12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +       12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +         12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +           12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +             12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +               12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +                 12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +                   12 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +                     11 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +                     ! 11 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |     +                     !   10 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 68  [0x102f82304]
+                                      + ! : |     +                     !   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |     +                     !     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 604  [0x10352a6e4]  sparse-list.ts:47
+                                      + ! : |     +                     !       1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 44  [0x10393a430]  sparse-list.ts:18
+                                      + ! : |     +                     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |     +                       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! : |     +                         1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 528  [0x10393a290]  sparse-list.ts:23
+                                      + ! : |     1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : |       1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! : |           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 108  [0x102f81fb4]  sparse-list.ts:63
+                                      + ! : 12 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 39460  [0x10a1a72f0]  index.ts:597
+                                      + ! : | 12 program:packages/ts-native/src/modules/index.ts:closure@21353 [closure_19705]  (in test) + 772  [0x10b0ae33c]  index.ts:597
+                                      + ! : |   8 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 11848  [0x10a1a0714]  index.ts:558
+                                      + ! : |   + 8 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + ! : |   +   8 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      + ! : |   +     8 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      + ! : |   +       7 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + ! : |   +       ! 6 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! : |   +       ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 144,160  [0x102f8cd3c,0x102f8cd4c]  sparse-list.ts:63
+                                      + ! : |   +       ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 444,448  [0x102f8ce68,0x102f8ce6c]  sparse-list.ts:64
+                                      + ! : |   +       ! : 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 664,700  [0x102f8cf44,0x102f8cf68]  sparse-list.ts:65
+                                      + ! : |   +       ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 680  [0x10274f0d4]  sparse-list.ts:122
+                                      + ! : |   +       1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2532  [0x1048198f4]  key-index.ts:59
+                                      + ! : |   3 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+                                      + ! : |   + 3 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! : |   +   3 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : |   +     2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! : |   +     ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! : |   +     !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 696  [0x102f82200]  sparse-list.ts:65
+                                      + ! : |   +     1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 1588  [0x10477fd34]  key-index.ts:55
+                                      + ! : |   1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 11116  [0x10a1a0438]  index.ts:557
+                                      + ! : |     1 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + ! : |       1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 52  [0x1032c843c]
+                                      + ! : 4 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 40636  [0x10a1a7788]  index.ts:594
+                                      + ! : | 3 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! : | + 2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! : | + !   2 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! : | + !     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : | + !     : 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : | + !     :   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : | + !     :     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : | + !     :       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : | + !     :         1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2004  [0x10352ac5c]  sparse-list.ts:52
+                                      + ! : | + !     :           1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 228  [0x10393a4e8]  sparse-list.ts:18
+                                      + ! : | + !     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2940  [0x102f82e3c]  sparse-list.ts:82
+                                      + ! : | + 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : | +   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 5088  [0x104780ae0]  key-index.ts:69
+                                      + ! : | 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 28404  [0x10a232c08]  index.ts:473
+                                      + ! : 3 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 62976  [0x10a1acecc]  index.ts:618
+                                      + ! :   3 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :     1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 1572  [0x104783844]  key-index.ts:103
+                                      + ! :     1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :     + 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! :     +   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 768  [0x10273bad0]  sparse-list.ts:123
+                                      + ! :     1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+                                      + ! :       1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3316  [0x1047819c0]  key-index.ts:84
+                                      + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :           1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :                 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 84  [0x10393a0d4]  sparse-list.ts:21
+                                      + ! 43 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 51020  [0x10a1aa018]  index.ts:611
+                                      + ! : 43 program:packages/ts-native/src/modules/index.ts:closure@21880 [closure_19706]  (in test) + 772  [0x10b0ae6ec]  index.ts:612
+                                      + ! :   21 program:packages/ts-native/src/modules/index.ts:property [@164:value:96$19701]  (in test) + 4352  [0x10a1973c8]  index.ts:504
+                                      + ! :   | 12 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+                                      + ! :   | + 11 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   | + ! 4 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 1864  [0x104783968]  key-index.ts:103
+                                      + ! :   | + ! : 4 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$7887]  (in test) + 1476  [0x10477f21c]  key-index.ts:44
+                                      + ! :   | + ! 3 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :   | + ! : 2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! :   | + ! : | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! :   | + ! : |   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 436,444  [0x102f820fc,0x102f82104]  sparse-list.ts:64
+                                      + ! :   | + ! : 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2564  [0x104780104]  key-index.ts:59
+                                      + ! :   | + ! 3 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! :   | + ! : 3 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :   | + ! :   3 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :   | + ! :     3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       | 2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   + 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | + ! :       |   +               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | + ! :       |   +                 1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :   | + ! :       |   +                   1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 48  [0x10393a0b0]
+                                      + ! :   | + ! :       |   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | + ! :       |     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2236  [0x10352ad44]  sparse-list.ts:52
+                                      + ! :   | + ! :       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 604  [0x10352a6e4]  sparse-list.ts:47
+                                      + ! :   | + ! :           1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 76  [0x10393a450]  sparse-list.ts:18
+                                      + ! :   | + ! 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 8652  [0x1047853ec]  key-index.ts:125
+                                      + ! :   | + 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 12812  [0x10a22ef20]  index.ts:471
+                                      + ! :   | 9 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 11848  [0x10a1a0714]  index.ts:558
+                                      + ! :   |   9 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + ! :   |     9 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      + ! :   |       6 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      + ! :   |       ! 6 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + ! :   |       !   6 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! :   |       !     6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 696,700,...  [0x102f8cf64,0x102f8cf68,...]  sparse-list.ts:65
+                                      + ! :   |       2 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 2108  [0x10481bea8]  key-index.ts:95
+                                      + ! :   |       ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 128  [0x10274eeac]  sparse-list.ts:121
+                                      + ! :   |       ! : 1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 256  [0x102696b68]  sparse-list.ts:15
+                                      + ! :   |       ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! :   |       !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 108  [0x102f8cd18]  sparse-list.ts:63
+                                      + ! :   |       1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1060  [0x10481ba90]  key-index.ts:94
+                                      + ! :   |         1 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$10954]  (in test) + 1272  [0x104818960]  key-index.ts:44
+                                      + ! :   20 program:packages/ts-native/src/modules/index.ts:property [@164:value:96$19701]  (in test) + 6220  [0x10a197b14]  index.ts:503
+                                      + ! :   | 20 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7153$19731]  (in test) + 28648  [0x10a221ec4]  index.ts:475
+                                      + ! :   |   11 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! :   |   + 11 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :   |   +   11 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :   |   +     9 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +     ! 9 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +     !   9 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   |   +     !     9 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2096  [0x10352acb8]  sparse-list.ts:52
+                                      + ! :   |   +     !       9 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 152  [0x10393a49c]  sparse-list.ts:18
+                                      + ! :   |   +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 112  [0x102f82330]
+                                      + ! :   |   +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2608  [0x102f82cf0]  sparse-list.ts:81
+                                      + ! :   |   4 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :   |   + 3 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! :   |   + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! :   |   + !   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 700  [0x102f82204]  sparse-list.ts:65
+                                      + ! :   |   + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 144  [0x102f81fd8]  sparse-list.ts:63
+                                      + ! :   |   + 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3028  [0x1047802d4]  key-index.ts:62
+                                      + ! :   |   4 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+                                      + ! :   |   + 4 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3316  [0x1047819c0]  key-index.ts:84
+                                      + ! :   |   +   4 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :   |   +     4 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :   |   +       4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         ! 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !   3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !     3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !       3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !         3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !           2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !           : 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !           : | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   |   +         !           : |   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   |   +         !           : |     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2096  [0x10352acb8]  sparse-list.ts:52
+                                      + ! :   |   +         !           : |       1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 116  [0x10393a478]  sparse-list.ts:18
+                                      + ! :   |   +         !           : 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   |   +         !           :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 3000  [0x10352b040]  sparse-list.ts:55
+                                      + ! :   |   +         !           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   |   +         !             1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :   |   +         !               1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+                                      + ! :   |   +         !                 1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 160  [0x10393a4a4]  sparse-list.ts:18
+                                      + ! :   |   +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   |   +           1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 160  [0x10352a528]  sparse-list.ts:45
+                                      + ! :   |   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 10188  [0x1047859ec]  key-index.ts:128
+                                      + ! :   2 program:packages/ts-native/src/modules/index.ts:property [@164:value:96$19701]  (in test) + 3432,4212  [0x10a197030,0x10a19733c]  index.ts:504
+                                      + ! 17 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 35848  [0x10a1a64d4]  index.ts:588
+                                      + ! : 17 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   15 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+                                      + ! :   | 13 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3316  [0x1047819c0]  key-index.ts:84
+                                      + ! :   | + 13 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :   | +   12 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :   | +   ! 10 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : 7 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | 6 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + 5 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! 4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : | 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   + 2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   +   2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   +     ! 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :   | +   ! : | + ! : |   +     !   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2776  [0x102f82d98]  sparse-list.ts:82
+                                      + ! :   | +   ! : | + ! : |   +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   ! : | + ! : |   +       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 696  [0x10352a740]  sparse-list.ts:47
+                                      + ! :   | +   ! : | + ! : |   +         1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 152  [0x10393a49c]  sparse-list.ts:18
+                                      + ! :   | +   ! : | + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   ! : | + ! : |     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :   | +   ! : | + ! : |       1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 364  [0x10393a1ec]  sparse-list.ts:22
+                                      + ! :   | +   ! : | + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 48  [0x10393a434]  sparse-list.ts:18
+                                      + ! :   | +   ! : | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   ! : | + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2396  [0x10352ade4]  sparse-list.ts:52
+                                      + ! :   | +   ! : | + ! 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2908  [0x102f82e1c]  sparse-list.ts:82
+                                      + ! :   | +   ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   ! : | +   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :   | +   ! : | +     1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 364  [0x10393a1ec]  sparse-list.ts:22
+                                      + ! :   | +   ! : | +       1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 272  [0x10393a514]  sparse-list.ts:18
+                                      + ! :   | +   ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2888  [0x102f82e08]  sparse-list.ts:82
+                                      + ! :   | +   ! : 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 360  [0x10352a5f0]  sparse-list.ts:47
+                                      + ! :   | +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2096  [0x10352acb8]  sparse-list.ts:52
+                                      + ! :   | +   ! :   + 1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 272  [0x10393a514]  sparse-list.ts:18
+                                      + ! :   | +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 3208  [0x10352b110]  sparse-list.ts:57
+                                      + ! :   | +   ! 2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :   | +   !   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :   | +   !   | 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+                                      + ! :   | +   !   |   1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 348  [0x10393a560]  sparse-list.ts:18
+                                      + ! :   | +   !   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 408  [0x10352a620]  sparse-list.ts:47
+                                      + ! :   | +   1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 536  [0x10273bec0]  sparse-list.ts:131
+                                      + ! :   | 1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 2404  [0x104781630]  key-index.ts:82
+                                      + ! :   | 1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3448  [0x104781a44]  key-index.ts:85
+                                      + ! :   |   1 program:packages/foundation/src/collections/sparse-list.ts:lengthList [__tint_specialized_556$1056]  (in test) + 44  [0x10273c488]  sparse-list.ts:147
+                                      + ! :   2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :     2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! :       2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 444  [0x102f82104]  sparse-list.ts:64
+                                      + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 664  [0x102f821e0]  sparse-list.ts:65
+                                      + ! 15 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 51168  [0x10a1aa0ac]  index.ts:611
+                                      + ! : 15 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_1874$2374]  (in test) + 584  [0x10289f4c8]  sparse-list.ts:131
+                                      + ! :   15 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_8129$8886]  (in test) + 2848  [0x1030499e4]  sparse-list.ts:82
+                                      + ! :     15 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10940$12619]  (in test) + 124  [0x103622f30]  sparse-list.ts:44
+                                      + ! :       15 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12875$14548]  (in test) + 188  [0x1039b4374]  sparse-list.ts:21
+                                      + ! :         15 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12876$14549]  (in test) + 64  [0x1039b467c]  sparse-list.ts:18
+                                      + ! 6 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+                                      + ! : 6 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   6 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+                                      + ! :     6 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7889]  (in test) + 3316  [0x1047819c0]  key-index.ts:84
+                                      + ! :       6 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :         6 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :           6 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             5 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | 4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | + 4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | +   3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | +   ! 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | +   !   3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | +   !     2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :             | +   !     : 2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :             | +   !     :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :             | +   !     :   | 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+                                      + ! :             | +   !     :   |   1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 160  [0x10393a4a4]  sparse-list.ts:18
+                                      + ! :             | +   !     :   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 3036  [0x10352b064]  sparse-list.ts:55
+                                      + ! :             | +   !     :     1 program:packages/foundation/src/collections/sparse-list.ts:rotateLeft [__tint_specialized_12217$13890]  (in test) + 732  [0x10393a85c]  sparse-list.ts:31
+                                      + ! :             | +   !     :       1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+                                      + ! :             | +   !     :         1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 68  [0x10393a448]  sparse-list.ts:18
+                                      + ! :             | +   !     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 1824  [0x102f829e0]  sparse-list.ts:80
+                                      + ! :             | +   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :             | +     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :             | +       1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 504  [0x10393a278]  sparse-list.ts:23
+                                      + ! :             | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 68  [0x102f82304]
+                                      + ! :             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+                                      + ! :                 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 84  [0x10393a0d4]  sparse-list.ts:21
+                                      + ! 5 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 23376  [0x10a1a341c]  index.ts:572
+                                      + ! : 4 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! : | 3 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! : | + 2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! : | + ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 124  [0x102f81fc4]  sparse-list.ts:63
+                                      + ! : | + !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 696  [0x102f82200]  sparse-list.ts:65
+                                      + ! : | + 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 5324  [0x104780bcc]  key-index.ts:70
+                                      + ! : | 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! : |   1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! : |     1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! : |       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! : |               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! : |                 1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2004  [0x10352ac5c]  sparse-list.ts:52
+                                      + ! : |                   1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 132  [0x10393a488]  sparse-list.ts:18
+                                      + ! : 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 15904  [0x10a22fb34]  index.ts:471
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 556  [0x10a19daf8]
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 15984  [0x10a1a173c]  index.ts:561
+                                      + ! : 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :     1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 1892  [0x10477fe64]  key-index.ts:56
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 32116  [0x10a1a5640]  index.ts:583
+                                      + ! : 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + ! :     1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + ! :       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + ! :           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + ! :             1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 696  [0x10352a740]  sparse-list.ts:47
+                                      + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 76  [0x10393a450]  sparse-list.ts:18
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 31008  [0x10a1a51ec]  index.ts:584
+                                      + ! : 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 34820  [0x10a1a60d0]  index.ts:589
+                                      + ! :   1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 11848  [0x10a1a0714]  index.ts:558
+                                      + ! :     1 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + ! :       1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      + ! :         1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      + ! :           1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + ! :             1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 664  [0x102f8cf44]  sparse-list.ts:65
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 52620  [0x10a1aa658]  index.ts:602
+                                      + ! : 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + ! :   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + ! :     1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + ! :       1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 700  [0x102f82204]  sparse-list.ts:65
+                                      + ! 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 50836  [0x10a1a9f60]  index.ts:611
+                                      + !   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_1873$2373]  (in test) + 1136  [0x10289f218]  sparse-list.ts:123
+                                      + 132 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 104808  [0x10a208770]  index.ts:1200
+                                      + ! 132 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 54296  [0x10a1fc220]  index.ts:1114
+                                      + !   132 program:packages/ts-native/src/modules/index.ts:block [@164:value:107$19722]  (in test) + 5276  [0x10a1ecfe0]  index.ts:1047
+                                      + !     112 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 111740  [0x10a20a284]  index.ts:1213
+                                      + !     : 112 program:packages/ts-native/src/modules/index.ts:variableBinding [@164:value:105$19718]  (in test) + 15472  [0x10a1e8210]  index.ts:1010
+                                      + !     :   51 program:packages/ts-native/src/modules/index.ts:binding [@164:value:104$19717]  (in test) + 6608  [0x10a1e3ee0]  index.ts:983
+                                      + !     :   | 31 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 185296  [0x10a1dfa88]  index.ts:954
+                                      + !     :   | + 30 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 39556  [0x10a1bc13c]  index.ts:737
+                                      + !     :   | + ! 27 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 138716  [0x10a26d850]  index.ts:475
+                                      + !     :   | + ! : 27 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + !     :   | + ! :   21 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + !     :   | + ! :   | 19 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + !     :   | + ! :   | + 9 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 696,700,...  [0x102f82200,0x102f82204,...]  sparse-list.ts:65
+                                      + !     :   | + ! :   | + 5 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 144,68,...  [0x102f81fd8,0x102f81f8c,...]  sparse-list.ts:63
+                                      + !     :   | + ! :   | + 5 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 436,444,...  [0x102f820fc,0x102f82104,...]  sparse-list.ts:64
+                                      + !     :   | + ! :   | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 128  [0x10273b850]  sparse-list.ts:121
+                                      + !     :   | + ! :   | + 1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 36  [0x102696a8c]  sparse-list.ts:15
+                                      + !     :   | + ! :   | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 844  [0x10273bb1c]  sparse-list.ts:123
+                                      + !     :   | + ! :   2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3236,3440  [0x1047803a4,0x104780470]  key-index.ts:63
+                                      + !     :   | + ! :   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 1508  [0x10477fce4]  key-index.ts:55
+                                      + !     :   | + ! :   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 1820  [0x10477fe1c]  key-index.ts:56
+                                      + !     :   | + ! :   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3040  [0x1047802e0]  key-index.ts:62
+                                      + !     :   | + ! :   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 5324  [0x104780bcc]  key-index.ts:70
+                                      + !     :   | + ! 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 456  [0x10a24bc3c]
+                                      + !     :   | + ! 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 55560  [0x10a25937c]  index.ts:470
+                                      + !     :   | + ! 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 65768  [0x10a25bb5c]  index.ts:471
+                                      + !     :   | + 1 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 38196  [0x10a1bbbec]  index.ts:738
+                                      + !     :   | +   1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_7880]  (in test) + 1240  [0x104778138]  key-index.ts:94
+                                      + !     :   | +     1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7878]  (in test) + 5088  [0x104776918]  key-index.ts:69
+                                      + !     :   | 19 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 186912  [0x10a1e00d8]  index.ts:953
+                                      + !     :   | + 19 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 138716  [0x10a26d850]  index.ts:475
+                                      + !     :   | +   19 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + !     :   | +     16 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + !     :   | +     ! 16 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + !     :   | +     !   11 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 700,716,...  [0x102f82204,0x102f82214,...]  sparse-list.ts:65
+                                      + !     :   | +     !   4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 144,68,...  [0x102f81fd8,0x102f81f8c,...]  sparse-list.ts:63
+                                      + !     :   | +     !   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 448  [0x102f82108]  sparse-list.ts:64
+                                      + !     :   | +     2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2944,3124  [0x104780280,0x104780334]  key-index.ts:62
+                                      + !     :   | +     1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 4092  [0x1047806fc]  key-index.ts:64
+                                      + !     :   | 1 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 179672  [0x10a1de490]  index.ts:948
+                                      + !     :   |   1 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 185296  [0x10a1dfa88]  index.ts:954
+                                      + !     :   |     1 program:packages/ts-native/src/modules/index.ts:expression [@164:value:103$19712]  (in test) + 39556  [0x10a1bc13c]  index.ts:737
+                                      + !     :   |       1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7158$19736]  (in test) + 138716  [0x10a26d850]  index.ts:475
+                                      + !     :   |         1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + !     :   |           1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + !     :   |             1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + !     :   |               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   |                 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   |                   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   |                     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + !     :   |                       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 2060  [0x10352ac94]  sparse-list.ts:52
+                                      + !     :   40 program:packages/ts-native/src/modules/index.ts:binding [@164:value:104$19717]  (in test) + 8132  [0x10a1e44d4]  index.ts:972
+                                      + !     :   | 39 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7160$19738]  (in test) + 27548  [0x10a27d938]  index.ts:475
+                                      + !     :   | + 38 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + !     :   | + ! 36 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + !     :   | + ! : 34 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + !     :   | + ! : | 25 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 624,700,...  [0x102f821b8,0x102f82204,...]  sparse-list.ts:65
+                                      + !     :   | + ! : | 6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 144,36,...  [0x102f81fd8,0x102f81f6c,...]  sparse-list.ts:63
+                                      + !     :   | + ! : | 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 228,376  [0x102f8202c,0x102f820c0]  sparse-list.ts:64
+                                      + !     :   | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 128  [0x10273b850]  sparse-list.ts:121
+                                      + !     :   | + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 156  [0x102696b04]  sparse-list.ts:15
+                                      + !     :   | + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 584  [0x10273ba18]  sparse-list.ts:122
+                                      + !     :   | + ! 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3236  [0x1047803a4]  key-index.ts:63
+                                      + !     :   | + ! 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3780  [0x1047805c4]  key-index.ts:64
+                                      + !     :   | + 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + !     :   | +   1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + !     :   | +     1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + !     :   | +       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 148  [0x102f82354]
+                                      + !     :   | 1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7160$19738]  (in test) + 14880  [0x10a27a7bc]  index.ts:473
+                                      + !     :   18 program:packages/ts-native/src/modules/index.ts:binding [@164:value:104$19717]  (in test) + 5608  [0x10a1e3af8]  index.ts:979
+                                      + !     :   | 17 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 15984  [0x10a1a173c]  index.ts:561
+                                      + !     :   | + 17 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+                                      + !     :   | +   16 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + !     :   | +   ! 15 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + !     :   | +   ! : 13 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + !     :   | +   ! : | 10 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 700,696,...  [0x102f82204,0x102f82200,...]  sparse-list.ts:65
+                                      + !     :   | +   ! : | 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 76,160  [0x102f81f94,0x102f81fe8]  sparse-list.ts:63
+                                      + !     :   | +   ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 228  [0x102f8202c]  sparse-list.ts:64
+                                      + !     :   | +   ! : 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 832,840  [0x10273bb10,0x10273bb18]  sparse-list.ts:123
+                                      + !     :   | +   ! 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 1588  [0x10477fd34]  key-index.ts:55
+                                      + !     :   | +   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      + !     :   | +     1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      + !     :   | +       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      + !     :   | +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +                 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +                   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      + !     :   | +                     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+                                      + !     :   | +                       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 696  [0x10352a740]  sparse-list.ts:47
+                                      + !     :   | +                         1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 44  [0x10393a430]  sparse-list.ts:18
+                                      + !     :   | 1 program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 9788  [0x10a19ff08]  index.ts:553
+                                      + !     :   2 program:packages/ts-native/src/modules/index.ts:binding [@164:value:104$19717]  (in test) + 3888  [0x10a1e3440]  index.ts:975
+                                      + !     :   | 2 program:packages/ts-native/src/modules/index.ts:renamed [@164:value:94$19699]  (in test) + 684  [0x10a195af4]  index.ts:484
+                                      + !     :   |   2 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_7900]  (in test) + 1240  [0x10478c4c8]  key-index.ts:94
+                                      + !     :   |     2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7898]  (in test) + 2600  [0x10478a2f0]  key-index.ts:59
+                                      + !     :   |       2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_561$1061]  (in test) + 720  [0x10273dd1c]  sparse-list.ts:122
+                                      + !     :   |         2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7472$8229]  (in test) + 696,772  [0x102f83544,0x102f83590]  sparse-list.ts:65
+                                      + !     :   1 program:packages/ts-native/src/modules/index.ts:binding [@164:value:104$19717]  (in test) + 388  [0x10a1e2694]  index.ts:483
+                                      + !     20 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 113212  [0x10a20a844]  index.ts:1209
+                                      + !       19 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7164$19742]  (in test) + 117240  [0x10a2add08]  index.ts:475
+                                      + !       | 19 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      + !       |   17 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      + !       |   + 16 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      + !       |   + ! 9 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 572,700,...  [0x102f82184,0x102f82204,...]  sparse-list.ts:65
+                                      + !       |   + ! 6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 124,68,...  [0x102f81fc4,0x102f81f8c,...]  sparse-list.ts:63
+                                      + !       |   + ! 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 228  [0x102f8202c]  sparse-list.ts:64
+                                      + !       |   + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 880  [0x10273bb40]  sparse-list.ts:123
+                                      + !       |   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2752  [0x1047801c0]  key-index.ts:60
+                                      + !       |   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 3068  [0x1047802fc]  key-index.ts:62
+                                      + !       1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7164$19742]  (in test) + 33264  [0x10a299500]  index.ts:471
+                                      + 20 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 82200  [0x10a202f20]  index.ts:1159
+                                      + ! 20 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+                                      + !   19 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      + !   : 17 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      + !   : | 13 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + !   : | + 12 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + !   : | + ! 6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 700,696  [0x102f8cf68,0x102f8cf64]  sparse-list.ts:65
+                                      + !   : | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 72,108,...  [0x102f8ccf4,0x102f8cd18,...]  sparse-list.ts:63
+                                      + !   : | + ! 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 444,380  [0x102f8ce68,0x102f8ce28]  sparse-list.ts:64
+                                      + !   : | + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 888  [0x10274f1a4]  sparse-list.ts:123
+                                      + !   : | 2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2944,3124  [0x104819a90,0x104819b44]  key-index.ts:62
+                                      + !   : | 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 1876  [0x104819664]  key-index.ts:56
+                                      + !   : | 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 5128  [0x10481a318]  key-index.ts:69
+                                      + !   : 1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1060  [0x10481ba90]  key-index.ts:94
+                                      + !   : | 1 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$10954]  (in test) + 2068  [0x104818c7c]  key-index.ts:44
+                                      + !   : 1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 2108  [0x10481bea8]  key-index.ts:95
+                                      + !   :   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + !   :     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 92  [0x102f8cd08]  sparse-list.ts:63
+                                      + !   1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 940  [0x1032c87b4]  linked-map.ts:55
+                                      + 11 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 80524,80472,...  [0x10a202894,0x10a202860,...]  index.ts:1153
+                                      + 9 program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test) + 87960  [0x10a2045a0]  index.ts:1166
+                                      +   6 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7164$19742]  (in test) + 117240  [0x10a2add08]  index.ts:475
+                                      +   : 4 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+                                      +   : | 3 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+                                      +   : | + 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+                                      +   : | +   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 664,696  [0x102f821e0,0x102f82200]  sparse-list.ts:65
+                                      +   : | +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 72  [0x102f81f90]  sparse-list.ts:63
+                                      +   : | 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 744  [0x10477f9e8]  key-index.ts:50
+                                      +   : 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 1864  [0x104783968]  key-index.ts:103
+                                      +   : | 1 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$7887]  (in test) + 516  [0x10477ee5c]  key-index.ts:39
+                                      +   : |   1 program:packages/typescript/src/syntax/rewrite.ts:syntaxHash [@309:value:0$19120]  (in test) + 20660  [0x10544f37c]  rewrite.ts:17
+                                      +   : 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+                                      +   :   1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+                                      +   :     1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+                                      +   :       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      +   :         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      +   :           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      +   :             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+                                      +   :               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2564  [0x102f82cc4]  sparse-list.ts:81
+                                      +   2 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7164$19742]  (in test) + 12300,20752  [0x10a29431c,0x10a296420]  index.ts:471
+                                      +   1 program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7164$19742]  (in test) + 83988  [0x10a2a5b24]  index.ts:470
+                                      +     1 program:helper:string-equal  (in test) + 0  [0x10b2a6be8]
+                                      106 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 205416  [0x10620ccdc]  index.ts:342
+                                      + 105 program:packages/typescript/src/modules/exports.ts:resolveModuleExports [@352:value:4$19619]  (in test) + 11712  [0x106034790]  exports.ts:361
+                                      + ! 59 program:packages/typescript/src/modules/exports.ts:resolve [@352:value:34$19624]  (in test) + 13580  [0x10a10cd74]  exports.ts:273
+                                      + ! : 56 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 696  [0x10a104594]  exports.ts:172
+                                      + ! : | 53 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 720  [0x10273532c]  sparse-list.ts:122
+                                      + ! : | + 29 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 212,444,...  [0x102f7e650,0x102f7e738,...]  sparse-list.ts:64
+                                      + ! : | + 18 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 696,700,...  [0x102f7e834,0x102f7e838,...]  sparse-list.ts:65
+                                      + ! : | + 6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 92,144,...  [0x102f7e5d8,0x102f7e60c,...]  sparse-list.ts:63
+                                      + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 128  [0x1027350dc]  sparse-list.ts:121
+                                      + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 284  [0x102696b84]  sparse-list.ts:15
+                                      + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 668  [0x1027352f8]  sparse-list.ts:122
+                                      + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 1072  [0x10273548c]  sparse-list.ts:123
+                                      + ! : 2 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 560,696  [0x10a10450c,0x10a104594]  exports.ts:172
+                                      + ! : 1 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 1636  [0x10a104940]  exports.ts:174
+                                      + ! 26 program:packages/typescript/src/modules/exports.ts:resolve [@352:value:34$19624]  (in test) + 12592  [0x10a10c998]  exports.ts:270
+                                      + ! : 23 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_289$789]  (in test) + 720  [0x1026f48a4]  sparse-list.ts:122
+                                      + ! : | 14 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7336$8093]  (in test) + 700,664,...  [0x102f5a640,0x102f5a61c,...]  sparse-list.ts:65
+                                      + ! : | 5 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7336$8093]  (in test) + 184,216,...  [0x102f5a43c,0x102f5a45c,...]  sparse-list.ts:64
+                                      + ! : | 4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7336$8093]  (in test) + 144,160  [0x102f5a414,0x102f5a424]  sparse-list.ts:63
+                                      + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_289$789]  (in test) + 128  [0x1026f4654]  sparse-list.ts:121
+                                      + ! : | 1 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 116  [0x102696adc]  sparse-list.ts:15
+                                      + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_289$789]  (in test) + 588  [0x1026f4820]  sparse-list.ts:122
+                                      + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_289$789]  (in test) + 976  [0x1026f49a4]  sparse-list.ts:123
+                                      + ! 18 program:packages/typescript/src/modules/exports.ts:resolve [@352:value:34$19624]  (in test) + 20752  [0x10a10e978]  exports.ts:292
+                                      + ! : 15 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 696  [0x10a104594]  exports.ts:172
+                                      + ! : | 13 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 720  [0x10273532c]  sparse-list.ts:122
+                                      + ! : | + 8 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 696,700,...  [0x102f7e834,0x102f7e838,...]  sparse-list.ts:65
+                                      + ! : | + 4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 444,536  [0x102f7e738,0x102f7e794]  sparse-list.ts:64
+                                      + ! : | + 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 144  [0x102f7e60c]  sparse-list.ts:63
+                                      + ! : | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 128  [0x1027350dc]  sparse-list.ts:121
+                                      + ! : |   2 program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 384,492  [0x102696be8,0x102696c54]  sparse-list.ts:15
+                                      + ! : 2 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 1556,1656  [0x10a1048f0,0x10a104954]  exports.ts:174
+                                      + ! : 1 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 520  [0x10a1044e4]  exports.ts:172
+                                      + ! :   1 program:packages/foundation/src/collections/sparse-list.ts:lengthList [__tint_specialized_532$1032]  (in test) + 44  [0x102735d14]  sparse-list.ts:147
+                                      + ! 2 program:packages/typescript/src/modules/exports.ts:resolve [@352:value:34$19624]  (in test) + 12640,12672  [0x10a10c9c8,0x10a10c9e8]  exports.ts:270
+                                      + 1 program:packages/typescript/src/modules/exports.ts:resolveModuleExports [@352:value:4$19619]  (in test) + 15112  [0x1060354d8]  exports.ts:375
+                                      +   1 program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test) + 696  [0x10a104594]  exports.ts:172
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test) + 720  [0x10273532c]  sparse-list.ts:122
+                                      +       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test) + 92  [0x102f7e5d8]  sparse-list.ts:63
+                                      41 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 281644  [0x10621f6a0]  index.ts:388
+                                      + 28 program:packages/foundation/src/collections/linked-map.ts:setMap [__tint_specialized_6002$6511]  (in test) + 3328  [0x102d08ff8]  linked-map.ts:95
+                                      + ! 13 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 2292  [0x10481d358]  key-index.ts:104
+                                      + ! : 10 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      + ! : | 8 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      + ! : | + 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 72,96,...  [0x102f8ccf4,0x102f8cd0c,...]  sparse-list.ts:63
+                                      + ! : | + 3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 688,696,...  [0x102f8cf5c,0x102f8cf64,...]  sparse-list.ts:65
+                                      + ! : | + 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 228,380  [0x102f8cd90,0x102f8ce28]  sparse-list.ts:64
+                                      + ! : | 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 800,1128  [0x10274f14c,0x10274f294]  sparse-list.ts:123
+                                      + ! : 2 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2280,2496  [0x1048197f8,0x1048198d0]  key-index.ts:59
+                                      + ! : 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 5292  [0x10481a3bc]  key-index.ts:70
+                                      + ! 10 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 6520  [0x10481e3dc]  key-index.ts:115
+                                      + ! : 9 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$10956]  (in test) + 3316  [0x10481b204]  key-index.ts:84
+                                      + ! : | 9 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_627$1127]  (in test) + 304  [0x10274f988]  sparse-list.ts:135
+                                      + ! : |   9 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_626$1126]  (in test) + 584  [0x10274f54c]  sparse-list.ts:131
+                                      + ! : |     9 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! : |       8 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! : |       + 8 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! : |       +   8 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! : |       +     6 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2596  [0x102f8da48]  sparse-list.ts:81
+                                      + ! : |       +     2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2848  [0x102f8db44]  sparse-list.ts:82
+                                      + ! : |       +       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10628$12307]  (in test) + 124  [0x103537e00]  sparse-list.ts:44
+                                      + ! : |       +       : 1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12251$13924]  (in test) + 780  [0x103940e24]  sparse-list.ts:20
+                                      + ! : |       +       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10628$12307]  (in test) + 500  [0x103537f78]  sparse-list.ts:47
+                                      + ! : |       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2848  [0x102f8db44]  sparse-list.ts:82
+                                      + ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10628$12307]  (in test) + 384  [0x103537f04]  sparse-list.ts:47
+                                      + ! : 1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$10956]  (in test) + 2628  [0x10481af54]  key-index.ts:83
+                                      + ! 2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 9304  [0x10481eebc]  key-index.ts:126
+                                      + ! : 2 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_627$1127]  (in test) + 304  [0x10274f988]  sparse-list.ts:135
+                                      + ! :   2 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_626$1126]  (in test) + 584  [0x10274f54c]  sparse-list.ts:131
+                                      + ! :     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! :     | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! :     |   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! :     |     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! :     |       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+                                      + ! :     |         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2848  [0x102f8db44]  sparse-list.ts:82
+                                      + ! :     |           1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10628$12307]  (in test) + 64  [0x103537dc4]  sparse-list.ts:44
+                                      + ! :     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2520  [0x102f8d9fc]  sparse-list.ts:81
+                                      + ! 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 232  [0x10481cb4c]
+                                      + ! 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 1864  [0x10481d1ac]  key-index.ts:103
+                                      + ! : 1 program:packages/foundation/src/collections/key-index.ts:index [@135:value:14$10954]  (in test) + 516  [0x10481866c]  key-index.ts:39
+                                      + ! :   1 program:packages/foundation/src/collections/linked-map.ts:closure@2931 [closure_6512]  (in test) + 144  [0x1046a0b38]  linked-map.ts:101
+                                      + ! :     1 program:packages/foundation/src/collections/linked-map.ts:keyHash [@9:value:2$79]  (in test) + 656  [0x1026703e0]  linked-map.ts:24
+                                      + ! :       1 program:packages/foundation/src/collections/key-index.ts:hashString [@135:value:1$73]  (in test) + 456  [0x10266d7f0]  key-index.ts:177
+                                      + ! :         1 program:helper:string-code-unit  (in test) + 40  [0x10b2a6a58]
+                                      + ! 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_10959]  (in test) + 1408  [0x10481cfe4]  key-index.ts:74
+                                      + 13 program:packages/foundation/src/collections/linked-map.ts:setMap [__tint_specialized_6002$6511]  (in test) + 568  [0x102d08530]  linked-map.ts:79
+                                      +   13 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+                                      +     13 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+                                      +       9 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 1820  [0x10481962c]  key-index.ts:56
+                                      +       4 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+                                      +         3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+                                      +         | 2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 64,92  [0x102f8ccec,0x102f8cd08]  sparse-list.ts:63
+                                      +         | 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 696  [0x102f8cf64]  sparse-list.ts:65
+                                      +         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 416  [0x10274efcc]  sparse-list.ts:121
+                                      5 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 351808  [0x1062308b4]  index.ts:1378
+                                      + 5 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_531$1031]  (in test) + 304  [0x102735bb8]  sparse-list.ts:135
+                                      +   5 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_530$1030]  (in test) + 584  [0x10273577c]  sparse-list.ts:131
+                                      +     5 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +       5 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         ! 4 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   : 3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   :   3 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   :     2 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   :     | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+                                      +         !   :     | + 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 268  [0x102f7ea00]  sparse-list.ts:74
+                                      +         !   :     | 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2848  [0x102f7f414]  sparse-list.ts:82
+                                      +         !   :     |   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10604$12283]  (in test) + 124  [0x103525cb0]  sparse-list.ts:44
+                                      +         !   :     |     1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12203$13876]  (in test) + 188  [0x103937db4]  sparse-list.ts:21
+                                      +         !   :     |       1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12204$13877]  (in test) + 164  [0x103938120]  sparse-list.ts:18
+                                      +         !   :     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2848  [0x102f7f414]  sparse-list.ts:82
+                                      +         !   :       1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10604$12283]  (in test) + 1900  [0x1035263a0]  sparse-list.ts:52
+                                      +         !   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2848  [0x102f7f414]  sparse-list.ts:82
+                                      +         !     1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10604$12283]  (in test) + 532  [0x103525e48]  sparse-list.ts:47
+                                      +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 188  [0x102f7e9b0]
+                                      5 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 332152  [0x10622bbec]  index.ts:466
+                                      + 5 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7882]  (in test) + 2292  [0x10477994c]  key-index.ts:104
+                                      +   4 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7878]  (in test) + 2600  [0x104775f60]  key-index.ts:59
+                                      +   ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_545$1045]  (in test) + 720  [0x102739824]  sparse-list.ts:122
+                                      +   ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7464$8221]  (in test) + 464  [0x102f80dd4]  sparse-list.ts:64
+                                      +   ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7464$8221]  (in test) + 700  [0x102f80ec0]  sparse-list.ts:65
+                                      +   ! 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_545$1045]  (in test) + 888,1128  [0x1027398cc,0x1027399bc]  sparse-list.ts:123
+                                      +   1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7878]  (in test) + 5012  [0x1047768cc]  key-index.ts:69
+                                      4 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 317108  [0x106228128]  index.ts:447
+                                      + 4 program:packages/foundation/src/collections/linked-map.ts:setMap [__tint_specialized_6255$6787]  (in test) + 3208  [0x102d7333c]  linked-map.ts:95
+                                      +   2 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_11235]  (in test) + 2212  [0x1049042ec]  key-index.ts:104
+                                      +   ! 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$11231]  (in test) + 2440  [0x104900ac4]  key-index.ts:59
+                                      +   ! : 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_809$1309]  (in test) + 720  [0x102780a20]  sparse-list.ts:122
+                                      +   ! :   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7596$8353]  (in test) + 464  [0x102fa8998]  sparse-list.ts:64
+                                      +   ! 1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$11231]  (in test) + 2892  [0x104900c88]  key-index.ts:62
+                                      +   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_11235]  (in test) + 6364  [0x104905324]  key-index.ts:115
+                                      +   ! 1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$11232]  (in test) + 3316  [0x10490226c]  key-index.ts:84
+                                      +   !   1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_811$1311]  (in test) + 304  [0x1027812ac]  sparse-list.ts:135
+                                      +   !     1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_810$1310]  (in test) + 584  [0x102780e70]  sparse-list.ts:131
+                                      +   !       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7597$8354]  (in test) + 2528  [0x102fa9520]  sparse-list.ts:81
+                                      +   !         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7597$8354]  (in test) + 200  [0x102fa8c08]
+                                      +   1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_11235]  (in test) + 9092  [0x104905dcc]  key-index.ts:126
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_811$1311]  (in test) + 304  [0x1027812ac]  sparse-list.ts:135
+                                      +       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_810$1310]  (in test) + 584  [0x102780e70]  sparse-list.ts:131
+                                      +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7597$8354]  (in test) + 2528  [0x102fa9520]  sparse-list.ts:81
+                                      +           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7597$8354]  (in test) + 1184  [0x102fa8fe0]  sparse-list.ts:76
+                                      2 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 210740  [0x10620e1a8]  index.ts:348
+                                      + 2 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_299$799]  (in test) + 304  [0x1026f73ac]  sparse-list.ts:135
+                                      +   2 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_298$798]  (in test) + 584  [0x1026f6f70]  sparse-list.ts:131
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +     ! 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +     !   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +     !     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +     !       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +     !         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 188  [0x102f5bafc]
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2776  [0x102f5c518]  sparse-list.ts:82
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 335348  [0x10622c868]  index.ts:1368
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 267880  [0x10621c0dc]  index.ts:367
+                                      + 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_297$797]  (in test) + 720  [0x1026f6b20]  sparse-list.ts:122
+                                      +   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7340$8097]  (in test) + 228  [0x102f5b7ac]  sparse-list.ts:64
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 271544  [0x10621cf2c]  index.ts:374
+                                      + 1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_299$799]  (in test) + 304  [0x1026f73ac]  sparse-list.ts:135
+                                      +   1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_298$798]  (in test) + 584  [0x1026f6f70]  sparse-list.ts:131
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+                                      +       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2564  [0x102f5c444]  sparse-list.ts:81
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 316168  [0x106227d7c]  index.ts:445
+                                      + 1 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6253$6785]  (in test) + 208  [0x102d72294]  linked-map.ts:73
+                                      +   1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10183$11228]  (in test) + 904  [0x103339354]  linked-map.ts:55
+                                      +     1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_11233]  (in test) + 1212  [0x104902b90]  key-index.ts:94
+                                      +       1 program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$11231]  (in test) + 2440  [0x104900ac4]  key-index.ts:59
+                                      +         1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_809$1309]  (in test) + 720  [0x102780a20]  sparse-list.ts:122
+                                      +           1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7596$8353]  (in test) + 144  [0x102fa8858]  sparse-list.ts:63
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 319788  [0x106228ba0]  index.ts:448
+                                      + 1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7902]  (in test) + 6520  [0x10478ed60]  key-index.ts:115
+                                      +   1 program:packages/foundation/src/collections/key-index.ts:rebuild [@135:value:16$7899]  (in test) + 3316  [0x10478bb88]  key-index.ts:84
+                                      +     1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_563$1063]  (in test) + 304  [0x10273e5a8]  sparse-list.ts:135
+                                      +       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_562$1062]  (in test) + 584  [0x10273e16c]  sparse-list.ts:131
+                                      +         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7473$8230]  (in test) + 2528  [0x102f83fe4]  sparse-list.ts:81
+                                      +           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7473$8230]  (in test) + 2528  [0x102f83fe4]  sparse-list.ts:81
+                                      +             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7473$8230]  (in test) + 2528  [0x102f83fe4]  sparse-list.ts:81
+                                      +               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7473$8230]  (in test) + 2528  [0x102f83fe4]  sparse-list.ts:81
+                                      +                 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7473$8230]  (in test) + 2848  [0x102f84124]  sparse-list.ts:82
+                                      +                   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10612$12291]  (in test) + 2720  [0x10352c744]  sparse-list.ts:53
+                                      1 program:packages/ts-native/src/modules/index.ts:linkModules [@164:value:8$19693]  (in test) + 222780  [0x1062110b0]  index.ts:469
+
+Total number in stack (recursive counted multiple, when >=5):
+        93       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2528  [0x102f82ca0]  sparse-list.ts:81
+        29       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test) + 2848  [0x102f82de0]  sparse-list.ts:82
+        18       program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 2292  [0x104783b14]  key-index.ts:104
+        17       program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test) + 0  [0x10393a404]  sparse-list.ts:18
+        16       program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test) + 2600  [0x104780128]  key-index.ts:59
+        16       program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_555$1055]  (in test) + 304  [0x10273c32c]  sparse-list.ts:135
+        16       program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_554$1054]  (in test) + 584  [0x10273bef0]  sparse-list.ts:131
+        15       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test) + 720  [0x10273baa0]  sparse-list.ts:122
+        13       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 0  [0x102f81f48]  sparse-list.ts:65
+        13       program:packages/ts-native/src/modules/index.ts:mark [__tint_specialized_7155$19733]  (in test) + 51416  [0x10a2385ec]  index.ts:475
+        12       program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 9304  [0x104785678]  key-index.ts:126
+        12       program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test) + 124  [0x10352a504]  sparse-list.ts:44
+        9       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 0  [0x102f81f48]  sparse-list.ts:63
+        9       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7457$8214]  (in test) + 2528  [0x102f7f2d4]  sparse-list.ts:81
+        9       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test) + 2528  [0x102f8da04]  sparse-list.ts:81
+        9       program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test) + 720  [0x10274f0fc]  sparse-list.ts:122
+        8       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test) + 0  [0x102f81f48]  sparse-list.ts:64
+        8       program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test) + 0  [0x102696a68]  sparse-list.ts:15
+        7       program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test) + 2600  [0x104819938]  key-index.ts:59
+        6       program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_10957]  (in test) + 1240  [0x10481bb44]  key-index.ts:94
+        6       program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_10114$10952]  (in test) + 984  [0x1032c87e0]  linked-map.ts:55
+        6       program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_6000$6509]  (in test) + 216  [0x102d07ecc]  linked-map.ts:73
+        6       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 0  [0x102f8ccac]  sparse-list.ts:63
+        6       program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test) + 0  [0x102f8ccac]  sparse-list.ts:65
+        6       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7341$8098]  (in test) + 2528  [0x102f5c420]  sparse-list.ts:81
+        5       program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_7892]  (in test) + 6520  [0x104784b98]  key-index.ts:115
+        5       program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test) + 188  [0x10393a13c]  sparse-list.ts:21
+        5       program:packages/ts-native/src/modules/index.ts:type [@164:value:98$19703]  (in test) + 20700  [0x10a1a29a8]  index.ts:562
+
+Sort by top of stack, same collapsed (when >= 5):
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7456$8213]  (in test)        270
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7468$8225]  (in test)        119
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7504$8261]  (in test)        39
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_529$1029]  (in test)        34
+        program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12216$13889]  (in test)        25
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_7336$8093]  (in test)        23
+        program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$7888]  (in test)        22
+        program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7469$8226]  (in test)        20
+        program:packages/foundation/src/collections/key-index.ts:position [@135:value:15$10955]  (in test)        17
+        program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_12876$14549]  (in test)        15
+        program:packages/ts-native/src/modules/index.ts:statement [@164:value:108$19724]  (in test)        11
+        program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_10610$12289]  (in test)        10
+        program:packages/foundation/src/collections/sparse-list.ts:validIndex [@10:value:0$176]  (in test)        9
+        program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_7505$8262]  (in test)        7
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_553$1053]  (in test)        7
+        program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_12215$13888]  (in test)        6
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_625$1125]  (in test)        5
+        program:packages/typescript/src/modules/exports.ts:declarations [@352:value:31$19620]  (in test)        5
+
+Binary Images:
+       0x1024a4000 -        0x10b9803e7 +test (???) <4414F171-E234-8C5F-8A75-1056AA2C3E80> /var/folders/*/test
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib
