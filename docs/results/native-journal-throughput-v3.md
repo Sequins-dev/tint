@@ -42,7 +42,7 @@ the separate attribution in [the hot-function reports](native-hot-functions-v3.m
 
 At the v19 historical occupancy mixture, compilation-only extrapolation is
 223.05 hours for 103,264 variants. Holding the 160.298-second compiled-execution
-median fixed while filling every 64-variant batch would instead give 71.88 wall
+median fixed while filling every 64-variant batch would instead give 71.87 wall
 hours. Both are scenarios excluding execution, load correction and preparation.
 B's matched tiny CPU measurement gives a different, explicitly CPU-based
 scenario: 327.530 seconds per 64-variant batch would cost 146.84 CPU hours, versus
