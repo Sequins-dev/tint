@@ -1,0 +1,33 @@
+{
+  "kind": "c2-inherited-evidence-audit",
+  "createdAt": "2026-11-06T16:02:32.505424+00:00",
+  "toolchain": {
+    "path": "docs/results/c2-frozen-toolchain-v1.json",
+    "status": "valid",
+    "verifiedManifestFiles": 2408,
+    "manifestSha256": "0a016c5accbb0638d8960da3cb56fb2d4ba8a93e1e8fc7b5925f72e6277964a3",
+    "action": "reuse immutable frozen toolchain"
+  },
+  "discarded": [
+    {
+      "path": "docs/results/test262-c2-dstr-canary-native-v1.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "Cancelled attempt left an empty stdout placeholder: invalid JSON, no completion, no outcomes."
+    },
+    {
+      "path": "docs/results/test262-c2-private-methods-native-v1.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "Cancelled attempt left an empty stdout placeholder: invalid JSON, no completion, no outcomes."
+    }
+  ],
+  "inheritedJournal": {
+    "path": ".tint-bootstrap/c2/representative-v1.jsonl",
+    "originalRecords": 1,
+    "observations": 0,
+    "originalSha256": "25ce412425c927c529ed12a0223d4a5020d8d6f48bf0e81b4a556322896c8d9f",
+    "action": "resume with identical frozen toolchain and run settings; original prefix retained"
+  },
+  "processAudit": "No inherited C2 runner active before continuation; other clusters left untouched."
+}

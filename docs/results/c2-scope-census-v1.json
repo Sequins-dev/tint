@@ -1,0 +1,458 @@
+{
+  "kind": "c2-scope-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "groups": [
+    {
+      "selection": "language/statements/class/elements",
+      "files": 1585,
+      "variants": 3156,
+      "subgroups": [
+        {
+          "selection": "language/statements/class/elements",
+          "files": 1098,
+          "variants": 2190,
+          "syntaxNegatives": 174,
+          "features": {
+            "class-fields-public": 1872,
+            "class-static-fields-public": 174,
+            "class": 2182,
+            "computed-property-names": 104,
+            "generators": 332,
+            "Symbol": 36,
+            "class-fields-private": 697,
+            "class-methods-private": 438,
+            "class-static-methods-private": 398,
+            "class-static-fields-private": 332,
+            "async-iteration": 160,
+            "async-functions": 164,
+            "arrow-function": 22,
+            "new.target": 24,
+            "Proxy": 8,
+            "Symbol.toPrimitive": 4,
+            "decorators": 2,
+            "optional-chaining": 4,
+            "nonextensible-applies-to-private": 1,
+            "BigInt": 4
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/async-gen-private-method",
+          "files": 79,
+          "variants": 156,
+          "syntaxNegatives": 26,
+          "features": {
+            "async-iteration": 156,
+            "class-methods-private": 156,
+            "object-spread": 3,
+            "Symbol.iterator": 106,
+            "Symbol.asyncIterator": 88
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/async-gen-private-method-static",
+          "files": 79,
+          "variants": 156,
+          "syntaxNegatives": 26,
+          "features": {
+            "async-iteration": 156,
+            "class-static-methods-private": 156,
+            "object-spread": 3,
+            "Symbol.iterator": 106,
+            "Symbol.asyncIterator": 88
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method",
+          "files": 12,
+          "variants": 24,
+          "syntaxNegatives": 12,
+          "features": {
+            "async-functions": 24,
+            "class-methods-private": 24
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/async-private-method-static",
+          "files": 12,
+          "variants": 24,
+          "syntaxNegatives": 12,
+          "features": {
+            "async-functions": 24,
+            "class-static-methods-private": 24
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/evaluation-error",
+          "files": 6,
+          "variants": 12,
+          "syntaxNegatives": 0,
+          "features": {
+            "class-fields-public": 12,
+            "computed-property-names": 12,
+            "class": 12,
+            "Symbol.toPrimitive": 6
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/gen-private-method",
+          "files": 11,
+          "variants": 20,
+          "syntaxNegatives": 14,
+          "features": {
+            "generators": 20,
+            "class-methods-private": 20,
+            "object-spread": 3
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/gen-private-method-static",
+          "files": 11,
+          "variants": 20,
+          "syntaxNegatives": 14,
+          "features": {
+            "generators": 20,
+            "class-static-methods-private": 20,
+            "object-spread": 3
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/private-accessor-name",
+          "files": 20,
+          "variants": 40,
+          "syntaxNegatives": 0,
+          "features": {
+            "class": 40,
+            "class-methods-private": 20,
+            "class-static-methods-private": 20
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/private-methods",
+          "files": 5,
+          "variants": 10,
+          "syntaxNegatives": 0,
+          "features": {
+            "async-iteration": 2,
+            "class": 10,
+            "class-methods-private": 10,
+            "async-functions": 2,
+            "generators": 2,
+            "class-fields-private": 2,
+            "class-fields-public": 2
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/syntax/early-errors",
+          "files": 98,
+          "variants": 196,
+          "syntaxNegatives": 196,
+          "features": {
+            "class": 196,
+            "class-fields-public": 22,
+            "class-fields-private": 56,
+            "destructuring-binding": 2,
+            "class-methods-private": 56,
+            "async-iteration": 22,
+            "async-functions": 20,
+            "generators": 22,
+            "class-static-fields-private": 8,
+            "class-static-methods-private": 30
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/syntax/early-errors/delete",
+          "files": 96,
+          "variants": 192,
+          "syntaxNegatives": 192,
+          "features": {
+            "class-methods-private": 144,
+            "class-fields-public": 108,
+            "class": 192,
+            "class-fields-private": 192,
+            "async-iteration": 24,
+            "async-functions": 24,
+            "generators": 24
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/syntax/early-errors/invalid-names",
+          "files": 28,
+          "variants": 56,
+          "syntaxNegatives": 56,
+          "features": {
+            "class-fields-private": 56,
+            "class": 56,
+            "class-fields-public": 16
+          }
+        },
+        {
+          "selection": "language/statements/class/elements/syntax/valid",
+          "files": 30,
+          "variants": 60,
+          "syntaxNegatives": 0,
+          "features": {
+            "class": 60,
+            "decorators": 2,
+            "class-fields-public": 14,
+            "class-static-fields-public": 2,
+            "generators": 8,
+            "class-methods-private": 4,
+            "class-fields-private": 10,
+            "async-iteration": 6,
+            "async-functions": 6,
+            "class-static-methods-private": 8
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/class/dstr",
+      "files": 1920,
+      "variants": 3840,
+      "subgroups": [
+        {
+          "selection": "language/statements/class/dstr",
+          "files": 1920,
+          "variants": 3840,
+          "syntaxNegatives": 288,
+          "features": {
+            "Symbol.iterator": 312,
+            "async-iteration": 1280,
+            "generators": 1680,
+            "object-rest": 144,
+            "class": 1608,
+            "class-methods-private": 804,
+            "class-static-methods-private": 804,
+            "destructuring-binding": 2560,
+            "default-parameters": 1280
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/class/elements",
+      "files": 1478,
+      "variants": 2943,
+      "subgroups": [
+        {
+          "selection": "language/expressions/class/elements",
+          "files": 993,
+          "variants": 1981,
+          "syntaxNegatives": 158,
+          "features": {
+            "class-fields-public": 1822,
+            "computed-property-names": 96,
+            "generators": 332,
+            "class": 1972,
+            "Symbol": 36,
+            "class-fields-private": 598,
+            "class-methods-private": 360,
+            "class-static-methods-private": 390,
+            "class-static-fields-private": 330,
+            "async-iteration": 160,
+            "async-functions": 164,
+            "new.target": 24,
+            "arrow-function": 20,
+            "class-static-fields-public": 159,
+            "Symbol.toPrimitive": 4,
+            "decorators": 2,
+            "optional-chaining": 4
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/async-gen-private-method",
+          "files": 79,
+          "variants": 156,
+          "syntaxNegatives": 26,
+          "features": {
+            "async-iteration": 156,
+            "class-methods-private": 156,
+            "object-spread": 3,
+            "Symbol.iterator": 106,
+            "Symbol.asyncIterator": 88
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/async-gen-private-method-static",
+          "files": 79,
+          "variants": 156,
+          "syntaxNegatives": 26,
+          "features": {
+            "async-iteration": 156,
+            "class-static-methods-private": 156,
+            "object-spread": 3,
+            "Symbol.iterator": 106,
+            "Symbol.asyncIterator": 88
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method",
+          "files": 12,
+          "variants": 24,
+          "syntaxNegatives": 12,
+          "features": {
+            "async-functions": 24,
+            "class-methods-private": 24
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/async-private-method-static",
+          "files": 12,
+          "variants": 24,
+          "syntaxNegatives": 12,
+          "features": {
+            "async-functions": 24,
+            "class-static-methods-private": 24
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/evaluation-error",
+          "files": 6,
+          "variants": 12,
+          "syntaxNegatives": 0,
+          "features": {
+            "class-fields-public": 12,
+            "computed-property-names": 12,
+            "class": 12,
+            "Symbol.toPrimitive": 6
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method",
+          "files": 11,
+          "variants": 20,
+          "syntaxNegatives": 14,
+          "features": {
+            "generators": 20,
+            "class-methods-private": 20,
+            "object-spread": 3
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/gen-private-method-static",
+          "files": 11,
+          "variants": 20,
+          "syntaxNegatives": 14,
+          "features": {
+            "generators": 20,
+            "class-static-methods-private": 20,
+            "object-spread": 3
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/private-accessor-name",
+          "files": 20,
+          "variants": 40,
+          "syntaxNegatives": 0,
+          "features": {
+            "class": 40,
+            "class-methods-private": 20,
+            "class-static-methods-private": 20
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/private-methods",
+          "files": 5,
+          "variants": 10,
+          "syntaxNegatives": 0,
+          "features": {
+            "async-iteration": 2,
+            "class": 10,
+            "class-methods-private": 10,
+            "async-functions": 2,
+            "generators": 2,
+            "class-fields-private": 2,
+            "class-fields-public": 2
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/syntax/early-errors",
+          "files": 98,
+          "variants": 196,
+          "syntaxNegatives": 196,
+          "features": {
+            "class": 196,
+            "class-fields-public": 22,
+            "class-fields-private": 56,
+            "destructuring-binding": 2,
+            "class-methods-private": 56,
+            "async-iteration": 22,
+            "async-functions": 20,
+            "generators": 22,
+            "class-static-fields-private": 8,
+            "class-static-methods-private": 30
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/syntax/early-errors/delete",
+          "files": 96,
+          "variants": 192,
+          "syntaxNegatives": 192,
+          "features": {
+            "class-methods-private": 144,
+            "class-fields-public": 108,
+            "class": 192,
+            "class-fields-private": 192,
+            "async-iteration": 24,
+            "async-functions": 24,
+            "generators": 24
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/syntax/early-errors/invalid-names",
+          "files": 28,
+          "variants": 56,
+          "syntaxNegatives": 56,
+          "features": {
+            "class-fields-private": 56,
+            "class": 56,
+            "class-fields-public": 16
+          }
+        },
+        {
+          "selection": "language/expressions/class/elements/syntax/valid",
+          "files": 28,
+          "variants": 56,
+          "syntaxNegatives": 0,
+          "features": {
+            "class": 56,
+            "decorators": 2,
+            "class-fields-public": 10,
+            "class-methods-private": 4,
+            "class-fields-private": 10,
+            "async-iteration": 6,
+            "async-functions": 6,
+            "generators": 6,
+            "class-static-methods-private": 8
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/expressions/class/dstr",
+      "files": 1920,
+      "variants": 3840,
+      "subgroups": [
+        {
+          "selection": "language/expressions/class/dstr",
+          "files": 1920,
+          "variants": 3840,
+          "syntaxNegatives": 288,
+          "features": {
+            "Symbol.iterator": 312,
+            "async-iteration": 1280,
+            "generators": 1680,
+            "object-rest": 144,
+            "class": 1608,
+            "class-methods-private": 804,
+            "class-static-methods-private": 804,
+            "destructuring-binding": 2560,
+            "default-parameters": 1280
+          }
+        }
+      ]
+    }
+  ]
+}
