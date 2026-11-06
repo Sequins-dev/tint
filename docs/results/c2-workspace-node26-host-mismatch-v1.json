@@ -1,0 +1,29 @@
+{
+  "kind": "c2-workspace-host-mismatch",
+  "conformance": false,
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 1,
+  "node": "v26.0.0 (ambient host; unsupported by package engines)",
+  "typecheckExitStatus": 0,
+  "tests": {
+    "total": 4517,
+    "passed": 4516,
+    "failed": 1
+  },
+  "failure": {
+    "test": "Unicode identifier properties retain agreement for Unicode 16 assigned characters",
+    "file": "packages/foundation/test/unicode-identifiers-index.test.ts",
+    "actualOracleUnicode": "17.0",
+    "expectedOracleUnicode": "16.0"
+  },
+  "unreachedGates": ["boundaries", "format:check"],
+  "log": "docs/results/c2-workspace-node26-host-mismatch-v1.log",
+  "logSha256": "a6a7400b55c6b2b98595ac034b2e3020cb33e6904c469cb6d1e9f80514f70a9c",
+  "focusedDiagnosis": {
+    "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node --test --test-concurrency=2 packages/foundation/test/unicode-identifiers-index.test.ts",
+    "exitStatus": 0,
+    "passed": 3,
+    "total": 3
+  },
+  "resolution": "No compiler changes. Rerun slotted full gate with Node24.12.0 first on PATH; native runners already explicitly used Node24.12.0."
+}
