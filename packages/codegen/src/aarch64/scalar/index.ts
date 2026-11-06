@@ -1776,7 +1776,7 @@ export function emitModule(
         address(9, rootOffset);
         emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
       }
-      branch({ op: "b" }, fn.id, fn.entry);
+      if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
       // Facts describe actual IR operations, never unchecked source annotations.
       // 1: a constant modulo word; 2: a signed/unsigned 32-bit integer result;
       // 3: an exact unsigned 32-bit constant, also valid as a memory argument.
@@ -2439,7 +2439,9 @@ export function emitModule(
       const deadSlots = hasRoots
         ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
         : undefined;
-      for (const b of fn.blocks) {
+      for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
+        const b = fn.blocks[blockIndex],
+          nextBlock = fn.blocks[blockIndex + 1]?.id;
         if (b === undefined) throw "block invariant";
         const transient = transientRegisters,
           storage = scalarRegisters;
@@ -5520,11 +5522,17 @@ export function emitModule(
           rawStore(9, resultOffset + 16);
           imm(0, 2);
           exceptionalBranch({ op: "b" });
-        } else if (t.kind === "jump") branch({ op: "b" }, fn.id, t.target);
-        else if (t.kind === "branch") {
+        } else if (t.kind === "jump") {
+          if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
+        } else if (t.kind === "branch") {
           rawValue(9, t.condition);
-          branch({ op: "cbnz", width: 64, rt: 9 }, fn.id, t.consequent);
-          branch({ op: "b" }, fn.id, t.alternate);
+          if (t.consequent === nextBlock)
+            branch({ op: "cbz", width: 64, rt: 9 }, fn.id, t.alternate);
+          else {
+            branch({ op: "cbnz", width: 64, rt: 9 }, fn.id, t.consequent);
+            if (t.alternate !== nextBlock)
+              branch({ op: "b" }, fn.id, t.alternate);
+          }
         } else if (t.kind === "record") {
           const layout = module.records?.[t.record],
             field = layout?.fields[t.field];

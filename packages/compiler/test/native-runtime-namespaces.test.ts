@@ -62,10 +62,10 @@ test("runtime contract namespaces are independent from physical modules and reta
   };
   const result = compileArm64Program(input);
   assert.ok(result.ok, JSON.stringify(result));
-  assert.equal(result.value.native.code.length, 24032);
+  assert.equal(result.value.native.code.length, 22816);
   assert.equal(
     createHash("sha256").update(result.value.native.code).digest("hex"),
-    "36d675048a8bae9665e6be543e956b21d3befeb169a8f40f49ba31f008b3f895",
+    "410c1ab45c86ca9877f2e028555428318d373e798fd1c13b90f3fc7ebf2971aa",
   );
   const wrong = compileArm64Program({
     ...input,

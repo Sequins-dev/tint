@@ -93,7 +93,10 @@ test("function-level direct eval closures fit the native per-entry code budget",
   });
   assert.ok(prepared.ok);
   // Retain headroom rather than passing at the boundary.
-  assert.ok(prepared.value.native.code.length < 262144 * 0.95);
+  assert.ok(
+    prepared.value.native.code.length < 262144 * 0.95,
+    "direct eval code bytes: " + prepared.value.native.code.length,
+  );
 });
 function lower(text: string) {
   const parsed = parseScript(createSourceTextView(text));

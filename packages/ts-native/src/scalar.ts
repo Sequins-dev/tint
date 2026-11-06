@@ -1352,6 +1352,9 @@ export function lowerFunction(
     return slot;
   }
   function truth(slot: number, node: Span): number {
+    // A branch already tests the boolean carrier's zero/nonzero bits. Avoid
+    // normalizing them into another boolean first, even for noncanonical bits.
+    if (slots[slot] === "boolean") return load(slot, node);
     if (slots[slot] === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
       return primitiveCall(
