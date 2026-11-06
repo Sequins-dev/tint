@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/for-await-of/async-gen-dstr-let-ary-ptrn-rest-not-final-id.js",
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/node-toolchain-cluster-f-for-await-of-statements-v1/source-snapshot.json",
+  "frozenToolchainSha256": "9cadd25621435ced6d92c78fe69a216dea726339fb133887edacd0bdc9492da5",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/cluster-f-for-await-completed-files-prefix-v1.jsonl",
+    "journalSha256": "6073ac4f7743b6318d9a1fe6704ab9167dd0efaaf09f28b34a11e958f6c73549",
+    "journalBytes": 253708,
+    "observedVariants": 242
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 13747.034333000003,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/for-await-of/async-gen-dstr-let-ary-ptrn-rest-not-final-id.js",
+      "sha256": "ed4d2d8e11b9ea4f208d64a0118f9ad8e2838c8d054cc918d4f04354d1dafece",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 91236.913208,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/for-await-of/async-gen-dstr-let-ary-ptrn-rest-not-final-id.js",
+      "sha256": "ed4d2d8e11b9ea4f208d64a0118f9ad8e2838c8d054cc918d4f04354d1dafece",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "destructuring-binding",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 91708.109625,
+      "batch": 1
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "cluster-f-docs-only-slice-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-06T23:12:56.059521+00:00",
+  "base": "11cc7e6375c45e8092f1b8847a9ed6ffb798d04c",
+  "gatePolicy": "Coordinator-authorized reuse of exact-code current-main gate for docs-only slice. No new F check queued.",
+  "gate": "docs/results/c1-current-main-workspace-gate-v11.json",
+  "validatedCodeHead": "c24cb9b7aae9ff8ba6d0da859f4413a4f133ca1a",
+  "codeDiffExitStatus": 0,
+  "gateExitStatus": 0,
+  "gateTests": 4578,
+  "gateLogSha256Verified": true,
+  "checkpoint": "docs/results/cluster-f-for-await-completed-files-v1.json",
+  "completeFiles": 127,
+  "fileTotals": {
+    "total": 241,
+    "passed": 229,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 12
+  },
+  "parentComplete": false,
+  "nativeRunStillActive": 14181,
+  "debuggerLaunch": "debugserver-connected",
+  "recheckPolicy": "Let current connected parent finish; recheck pre-entry outcomes with debugserver-direct on freshly frozen current main.",
+  "selfBuild": "No portable-code changes in this slice. Existing F iterator cleanup self-build evidence is merged and linked from cluster-f-phase2-ready-v3.json."
+}
