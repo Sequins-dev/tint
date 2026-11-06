@@ -1,0 +1,129 @@
+{
+  "kind": "native-debugger-protocol-validation",
+  "conformance": false,
+  "protocol": "debugserver-connected/SBProcess.RemoteLaunch",
+  "api": "https://lldb.llvm.org/python_reference/lldb.SBProcess-class.html#RemoteLaunch",
+  "schedule": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    0
+  ],
+  "policy": "Fixed schedule selected before execution; no outcome-driven retries. Existing immutable fixture image isolates debugger control from compilation.",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "fcb0e10666eb49d2632448375efd163f0dbba7ca9989390e936ca03dbe253350",
+      "files": 568
+    },
+    "imageSha256": "e2db8bcd23012b22a52f2f4cee17daf7ef5607193bc6e8198fd6e6760d25ba96",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const units=Intl.supportedValuesOf(\"unit\");if(units.length!==45||units[0]!==\"acre\"||units[44]!==\"year\")throw 1;for(let i=1;i<units.length;i++)if(units[i-1]>=units[i]||units[i].includes(\"-per-\"))throw 2;",
+        "sha256": "75966105df74c36b8f9baaaae56863e86a500112c9463e3febdc33db79b033f4"
+      },
+      {
+        "index": 1,
+        "source": "const a=Intl.supportedValuesOf(\"unit\"),b=Intl.supportedValuesOf(\"unit\");if(a===b||Object.getPrototypeOf(a)!==Array.prototype)throw 1;a[0]=\"changed\";if(b[0]!==\"acre\")throw 2;",
+        "sha256": "b036e8ff9c900c51a6b8cf5deb31c4a10245afc704fe4c5cf3b2f9d3aa58b8bf"
+      },
+      {
+        "index": 2,
+        "source": "let log=\"\";const key={toString(){log+=\"s\";return \"unit\";}};if(Intl.supportedValuesOf(key)[0]!==\"acre\"||log!==\"s\")throw 1;const sentinel={};try{Intl.supportedValuesOf({toString(){throw sentinel;}});throw 2;}catch(e){if(e!==sentinel)throw e;}",
+        "sha256": "368b8abb3849317031d50523d5cb6d5c65acd77384d20b86ddee42558af8b5ee"
+      },
+      {
+        "index": 3,
+        "source": "Object.defineProperty(Array.prototype,\"0\",{set(){throw 1;},configurable:true});Array.prototype.push=function(){throw 2;};const units=Intl.supportedValuesOf(\"unit\");if(units[0]!==\"acre\"||units.length!==45)throw 3;",
+        "sha256": "f919ec45672458f87ffd932becbf3b6deab7d387f724d27ac0cbc9a71bbe0b8b"
+      },
+      {
+        "index": 4,
+        "source": "const other=$262.createRealm().global;const units=other.Intl.supportedValuesOf(\"unit\");if(Object.getPrototypeOf(units)!==other.Array.prototype)throw 1;",
+        "sha256": "0f303bc21b056f716bc18dd7cc9c89b6055cb91f95a9b04a0ac83e05443f9c80"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "selectedCase": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "selectedCase": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "selectedCase": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "selectedCase": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "selectedCase": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "selectedCase": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "passed": 6,
+  "total": 6
+}

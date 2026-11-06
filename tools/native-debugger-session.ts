@@ -58,13 +58,15 @@ export function debugserverLaunchCommand(
   if (mode === "connected")
     script.push(
       "lldb.debugger.SetAsync(False)",
-      `launch_info = lldb.SBLaunchInfo(${JSON.stringify(arguments_)})`,
-      `launch_info.SetExecutableFile(lldb.SBFileSpec(${JSON.stringify(binary)}), True)`,
-      "launch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)",
+      "launch_process = lldb.debugger.GetSelectedTarget().GetProcess()",
+      "assert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'",
       "launch_error = lldb.SBError()",
-      "launch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)",
+      // Launch through the connected process rather than asking SBTarget to
+      // launch another process; retain the existing connection and listener.
+      // https://lldb.llvm.org/python_reference/lldb.SBProcess-class.html#RemoteLaunch
+      `launch_succeeded = launch_process.RemoteLaunch(${JSON.stringify(arguments_)}, None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)`,
       `open(${JSON.stringify(join(directory, "launch.log"))}, 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))`,
-      "assert launch_error.Success(), launch_error.GetCString()",
+      "assert launch_succeeded and launch_error.Success(), launch_error.GetCString()",
     );
   return "script exec(" + JSON.stringify(script.join("\n")) + ")";
 }

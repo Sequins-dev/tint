@@ -1,0 +1,39 @@
+{
+  "kind": "native-debugger-argument-regression",
+  "conformance": false,
+  "mode": "debugserver-connected/SBProcess.RemoteLaunch",
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "8ff76f949a1ea72a8ffdc981b262254d68c5fa11f54210530702978812fc10d9",
+      "files": 568
+    },
+    "imageSha256": "e3aea4a8fdee3fe433be5a28dba6ed03b13e5ff76014833b3503263e57e91f3e",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-6DkI3v/native-arguments.source.ts",
+    "fixtureSha256": "f9f15370879e59f7efe19b69711d21abb42fa9e8f6e3529a2720c4f3ce633703",
+    "generatorArguments": [],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": false
+  },
+  "arguments": [
+    "--debug-symbols",
+    "-c"
+  ],
+  "initial": {
+    "stopped": true,
+    "pid": 2370
+  },
+  "outcome": {
+    "exited": true,
+    "exitStatus": 42
+  },
+  "status": 0,
+  "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-6DkI3v/native-arguments\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-arguments-6DkI3v/native-arguments' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-i-args-SZnX03/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-i-args-SZnX03/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-i-args-SZnX03/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-i-args-SZnX03/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-i-args-SZnX03/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"--debug-symbols\\\",\\\"-c\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/tmp/tint-i-args-SZnX03/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-i-args-SZnX03/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\nProcess 2370 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001043c89c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1043c89c0 <+0>:  mov    x0, sp\n    0x1043c89c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1043c89c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1043c89cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (native-arguments) stopped.\n30\n(lldb) continue\nProcess 2370 resuming\nProcess 2370 exited with status = 42 (0x0000002a)\n(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-i-args-SZnX03/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None\n34\n",
+  "stderr": "",
+  "directory": "/tmp/tint-i-args-SZnX03"
+}
