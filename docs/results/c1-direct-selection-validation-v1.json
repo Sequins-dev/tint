@@ -1,0 +1,34 @@
+{
+  "kind": "node-test262-direct-file-selection-validation",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "scope": "Node-only checkout traversal: terminal *.js is a direct-file selection. Ordinary directory recursion, fixture exclusion, path boundaries, source bytes, ordering and checkout provenance remain intact.",
+  "red": {
+    "tests": 3,
+    "passed": 1,
+    "failed": 2,
+    "exitStatus": 1,
+    "log": "docs/results/c1-direct-selection-red-v1.txt"
+  },
+  "green": {
+    "tests": 3,
+    "passed": 3,
+    "exitStatus": 0,
+    "log": "docs/results/c1-direct-selection-green-v1.txt"
+  },
+  "workspace": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "node": "24.12.0",
+    "tests": 4492,
+    "passed": 4492,
+    "exitStatus": 0,
+    "log": "docs/results/c1-check-v5.txt",
+    "progress": "docs/results/c1-check-v5-progress.txt"
+  },
+  "population": "docs/results/c1-direct-selection-census-node-v1.json",
+  "directClassVariants": {
+    "statements": 504,
+    "expressions": 495
+  },
+  "nativeGate": "Host-only selector; direct-file native conformance remains to be measured in the C1 scope loop. No portable compiler/runtime code changed."
+}

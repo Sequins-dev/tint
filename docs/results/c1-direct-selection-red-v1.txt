@@ -1,0 +1,51 @@
+✔ recursive Test262 directory selections retain nested populations and omit fixtures (85.089042ms)
+✖ terminal *.js selections cover only direct files with stable order and unchanged bytes (76.6015ms)
+✖ root direct-file selections preserve the pinned checkout boundary and missing-directory errors (78.960375ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 329.998916
+
+✖ failing tests:
+
+test at tools/test262-checkout.test.ts:49:1
+✖ terminal *.js selections cover only direct files with stable order and unchanged bytes (76.6015ms)
+  Error: ENOENT: no such file or directory, stat '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-selection-1ReqGp/test/language/class/*.js'
+      at statSync (node:fs:1725:25)
+      at files (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.ts:13:8)
+      at test262Checkout (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.ts:39:12)
+      at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:52:22
+      at fixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:31:5)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:50:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'stat',
+    path: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-selection-1ReqGp/test/language/class/*.js'
+  }
+
+test at tools/test262-checkout.test.ts:64:1
+✖ root direct-file selections preserve the pinned checkout boundary and missing-directory errors (78.960375ms)
+  Error: ENOENT: no such file or directory, stat '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-selection-YFzwRJ/test/*.js'
+      at statSync (node:fs:1725:25)
+      at files (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.ts:13:8)
+      at test262Checkout (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.ts:39:12)
+      at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:66:22
+      at fixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:31:5)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-checkout.test.ts:65:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19) {
+    errno: -2,
+    code: 'ENOENT',
+    syscall: 'stat',
+    path: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-selection-YFzwRJ/test/*.js'
+  }
