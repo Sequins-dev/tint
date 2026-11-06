@@ -1,0 +1,36 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-06T22:07:35.666Z",
+  "head": "df1fdb7fa35ba50b065b7434000b7d7740e93fa1",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v2",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v2/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v2/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v2/source-snapshot.json",
+    "sha256": "7d64dac337e19f2328ef81dcc808912311d557398d081e6a5c3733192069e8a4"
+  },
+  "runIdentity": "a3042355f8bb862dfad08a42c1c97a04dc2613369297eb0da5afd686123f085f",
+  "selection": "built-ins/Object",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/object-breadth-build-v2.log"
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 6,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Complete Object breadth measurement on rebased current main; connected debugger launch and current native selection ordering."
+}

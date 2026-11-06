@@ -1,0 +1,48 @@
+{
+  "kind": "native-selection-launch",
+  "conformance": false,
+  "startedAt": "2026-11-06T22:08:20.869532+00:00",
+  "selection": "built-ins/Object",
+  "requestedVariants": 6802,
+  "batchSize": 64,
+  "mainAtFreeze": "df1fdb7fa35ba50b065b7434000b7d7740e93fa1",
+  "frozenToolchainMetadata": "docs/results/frozen-node-toolchain-builtins-object-v2.json",
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "frozenToolchainSha256": "7d64dac337e19f2328ef81dcc808912311d557398d081e6a5c3733192069e8a4",
+  "argv": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "6",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v2/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins/Object",
+    "64"
+  ],
+  "journal": "docs/results/test262-object-family-native-v1.jsonl",
+  "stdoutStaging": ".tint-bootstrap/object-family-native-v1.stdout.json",
+  "stderr": ".tint-bootstrap/object-family-native-v1.stderr.log",
+  "exitStatusFile": ".tint-bootstrap/object-family-native-v1.exit",
+  "ownerPid": 38972,
+  "passiveDiagnosticObserverPid": 38973,
+  "debuggerLaunch": "debugserver-connected",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 6,
+    "clusterRunners": 1
+  },
+  "priorRunner": {
+    "selection": "built-ins/Promise",
+    "pid": 5789,
+    "exitStatus": 0,
+    "observed": 1458,
+    "passed": 1458
+  },
+  "scope": "Launch receipt only; no Object outcomes claimed. Direct runner with passive sampling; no pause, hold or keeper machinery."
+}

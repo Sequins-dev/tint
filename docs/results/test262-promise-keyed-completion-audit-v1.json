@@ -1,0 +1,72 @@
+{
+  "kind": "native-selection-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-06T22:09:10.107372+00:00",
+  "report": "docs/results/test262-promise-keyed-native-v3.json",
+  "reportSha256": "0fe1e172741bb3430fbb692225966d6625962c83ac1cf8bc5cb84163730e4372",
+  "journal": "docs/results/test262-promise-keyed-native-v3.jsonl",
+  "journalSha256": "25a50e9e9e1b1a853b594427c579fd6a4dee04a2bea76386ed017a1985b80af2",
+  "journalComplete": true,
+  "runnerExitStatus": 0,
+  "totals": {
+    "total": 1458,
+    "passed": 1458,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "sourceSnapshot": {
+    "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+    "files": 568
+  },
+  "frozenToolchainSha256": "3c6542d9915427b74549f448f658a57f9957211b01c41edbf9f21e1027ece1e5",
+  "verification": {
+    "extractor": "tools/test262-native-extract.ts",
+    "extractorExitStatus": 0,
+    "completePinnedSelectionVerified": true,
+    "unchangedSourcesAndHarnessHashesVerified": true,
+    "reportObservationsExactlyMatchJournalAndVerifiedExtraction": true,
+    "uniqueVariants": 1458
+  },
+  "continuation": {
+    "sameExperiment": true,
+    "originalInterruptedPrefix": "docs/results/test262-promise-keyed-tool-interruption-v1.jsonl",
+    "prefixSha256": "8973d45854585d424cba22be14df3a3e4a1c58b585300282dc00b779c9d68ceb",
+    "byteExactPrefixPreserved": true,
+    "restoredVariants": 960,
+    "newVariantsAfterResume": 498,
+    "nativeRerunsOfObservedVariants": 0,
+    "resumptions": [
+      {
+        "kind": "resume",
+        "startedAt": "2026-11-06T20:12:54.625Z",
+        "previousJournalSha256": "8973d45854585d424cba22be14df3a3e4a1c58b585300282dc00b779c9d68ceb",
+        "observedVariants": 960
+      }
+    ]
+  },
+  "progress": {
+    "stderr": ".tint-bootstrap/test262-promise-keyed-native-v5.stderr.log",
+    "stderrSha256": "ac3e8267f81df3f0a964bc7dfd93d0a2bda7ee9f52fdbb818142aa81f75cff85",
+    "stderrBytes": 472908,
+    "diagnosticAudit": ".tint-bootstrap/promise-run-progress-audit-v5.jsonl",
+    "diagnosticAuditSha256": "9b40817352d1386ab96de05b0e7c8b45ec8d004b50f005fc827c19c57336b9a4",
+    "stallDiagnostics": 142,
+    "classifications": {
+      "CPU-active synchronous work": 140,
+      "waiting; inspect sampled wait and debugger logs": 2
+    },
+    "interpretation": "STALL warnings were sampled immediately. CPU-active compilation continued; transient waiting samples occurred when compilation completed and LLDB began native cases. All 1458 outcomes passed."
+  },
+  "ownership": {
+    "previousOwnerPid": 2284,
+    "previousRunnerPid": 5789,
+    "previousObserverPid": 2294,
+    "allExited": true
+  },
+  "selfbuildAcceptance": "docs/results/promise-keyed-native-compiler-acceptance-v1.json",
+  "currentWork": "Object breadth is a separate frozen experiment with its own source snapshot."
+}
