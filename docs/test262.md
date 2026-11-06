@@ -109,6 +109,8 @@ The [20-case native arguments/parameter/eval-scope fixture](results/native-argum
 
 The next queue continues function environments, arguments/rest parameters, function and arrow bodies, construction, and control flow using the same frozen compiler. It stops for triage on an unexpected non-pass. Full-suite measurement, compiler-performance work and broad Object/Array expansion remain deferred.
 
+The complete [logical-assignment selection](results/test262-reference-keys-logical-assignment-v4.json) passes **132/132** unchanged variants with the computed-reference-key fix. The three focused assignment computed-reference files pass **2/2 each** ([ordinary](results/test262-reference-keys-assignment-target-member-computed-reference-v6.json), [null](results/test262-reference-keys-assignment-target-member-computed-reference-null-v6.json), [undefined](results/test262-reference-keys-assignment-target-member-computed-reference-undefined-v6.json)); these overlap the complete assignment family and do not add to its denominator. The [Phase 1 handoff](results/cluster-e-phase1-handoff-v1.json) preserves the inherited controller retirement and validation provenance. Compound-assignment remains pending.
+
 ## Behavior inventory
 
 The [measurement-gap scan](test262-measurement-gaps.md) identifies unmeasured groups
