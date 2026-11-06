@@ -1,0 +1,25 @@
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/tools/test262-coverage-ledger.test.ts:14
+  fallbackEvidenceDate,
+  ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module './test262-coverage-ledger.ts' does not provide an export named 'fallbackEvidenceDate'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:302:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:405:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0
+✖ tools/test262-coverage-ledger.test.ts (135.312416ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 141.985375
+
+✖ failing tests:
+
+test at tools/test262-coverage-ledger.test.ts:1:1
+✖ tools/test262-coverage-ledger.test.ts (135.312416ms)
+  'test failed'

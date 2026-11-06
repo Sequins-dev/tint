@@ -11,6 +11,7 @@ import {
   readJournal,
   canonicalTable,
   compactEvidence,
+  fallbackEvidenceDate,
 } from "./test262-coverage-ledger.ts";
 import type { NativeObservation } from "./native-run-journal.ts";
 import { executionTotals } from "./test262-execution.ts";
@@ -99,6 +100,47 @@ function report(file: string, date: string, observations = [observation]) {
     totals: executionTotals(observations.map((o) => o.status)),
   };
 }
+test("historical extractions keep the linked journal date behind newer focused results", () => {
+  const additions = new Map([
+    ["old.jsonl", "2026-01-01"],
+    ["extracted.json", "2026-01-03"],
+  ]);
+  const historical = fallbackEvidenceDate(
+    "extracted.json",
+    "old.jsonl",
+    additions,
+  );
+  assert.deepEqual(historical, {
+    date: "2026-01-01",
+    dateSource:
+      "linked journal first Git addition commit (run date unavailable)",
+  });
+  const failed = {
+    ...observation,
+    outcome: { kind: "error", phase: "runtime", type: "Error", message: "old" },
+    status: "fail",
+  } as NativeObservation;
+  const result = aggregateEvidence(expected, [
+    report("extracted.json", historical.date, [failed]),
+    report("focused.json", "2026-01-02"),
+  ]);
+  assert.equal(result.ledger[0]!.status, "pass");
+  assert.equal(result.ledger[0]!.report, "focused.json");
+});
+test("evidence date fallback uses the report only without a dated linked journal", () => {
+  const additions = new Map([["report.json", "2026-01-03"]]);
+  assert.deepEqual(
+    fallbackEvidenceDate("report.json", "missing.jsonl", additions),
+    {
+      date: "2026-01-03",
+      dateSource: "first Git addition commit (run date unavailable)",
+    },
+  );
+  assert.equal(
+    fallbackEvidenceDate("missing.json", undefined, additions).date,
+    "",
+  );
+});
 test("latest complete overlap replaces passes with failures; ties use lexical filename", () => {
   const failed = {
     ...observation,

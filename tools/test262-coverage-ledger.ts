@@ -27,11 +27,31 @@ export const pinnedRevision = "91c70759363c46557b694792bf34a2551a7af5ba";
 const scope =
   "Deduplicated aggregate of separate complete native runs on varying toolchains; not a whole-suite run or a measurement of the current compiler. Pass fraction is a current-evidence lower bound over the full pinned denominator.";
 const precedence =
-  "Latest report generatedAt/timestamp/completedAt/startedAt, otherwise journal start time, otherwise first Git addition commit date. Equal dates: lexically greatest repository-relative filename wins. No filesystem mtimes. Missing dates reject evidence. Canonical reports and journals compete by this same rule; later failures replace earlier passes.";
+  "Latest report generatedAt/timestamp/completedAt/startedAt, otherwise linked journal start time or first Git addition commit date, otherwise report first Git addition commit date. Equal dates: lexically greatest repository-relative filename wins. No filesystem mtimes. Missing dates reject evidence. Canonical reports and journals compete by this same rule; later failures replace earlier passes.";
 const key = (row: Pick<NativeObservationInput, "path" | "variant">) =>
   row.path + "\0" + row.variant;
 const progress = (message: string) =>
   console.error(`[coverage-ledger ${new Date().toISOString()}] ${message}`);
+
+/** Publishing an extraction must not make its older observations appear newer. */
+export function fallbackEvidenceDate(
+  file: string,
+  linkedJournal: string | undefined,
+  additions: ReadonlyMap<string, string>,
+): { date: string; dateSource: string } {
+  const journalDate =
+    linkedJournal === undefined ? undefined : additions.get(linkedJournal);
+  return journalDate === undefined
+    ? {
+        date: additions.get(file) ?? "",
+        dateSource: "first Git addition commit (run date unavailable)",
+      }
+    : {
+        date: journalDate,
+        dateSource:
+          "linked journal first Git addition commit (run date unavailable)",
+      };
+}
 
 export function enumerateVariants(checkout: string) {
   progress("reading checkout revision, tracked state and file inventory");
@@ -460,16 +480,17 @@ export async function main(args: string[]) {
       let dateSource = "report timestamp";
       const journalName =
         header.provenance?.journal ?? header.derivation?.journal;
+      let linkedJournal: string | undefined;
       if (!recordedDate && journalName) {
         // Only read a linked journal's first line; never follow arbitrary external paths.
-        const local = files.find(
+        linkedJournal = files.find(
           (f) =>
             f === journalName ||
             f === "docs/results/" + journalName.split("/").at(-1),
         );
-        if (local) {
+        if (linkedJournal) {
           const reader = createInterface({
-            input: createReadStream(local),
+            input: createReadStream(linkedJournal),
             crlfDelay: Infinity,
           });
           try {
@@ -484,8 +505,9 @@ export async function main(args: string[]) {
         }
       }
       if (!recordedDate) {
-        recordedDate = additions.get(file);
-        dateSource = "first Git addition commit (run date unavailable)";
+        const fallback = fallbackEvidenceDate(file, linkedJournal, additions);
+        recordedDate = fallback.date;
+        dateSource = fallback.dateSource;
       }
       reports.push({
         file,
