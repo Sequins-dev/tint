@@ -82,8 +82,9 @@ These complete generator-language selections have zero failures, unsupported var
 | `language/statements/async-generator` | 590/590 | [Report](results/test262-async-generator-statements-current-native-v1.json) |
 | `language/expressions/yield` | 123/123 | [Report](results/test262-cluster-f-yield-expressions-v1.json) |
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
+| `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
 
-The [native self-hosting gate](results/cluster-f-phase2-first-slice-acceptance-v1.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Generator-expression selections remain pending.
+The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending.
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)

@@ -1,0 +1,57 @@
+{
+  "kind": "cluster-f-complete-generator-expression-acceptance",
+  "conformance": false,
+  "createdAt": "2026-11-06T22:27:30.744364+00:00",
+  "selection": "language/expressions/generators",
+  "totals": {
+    "total": 546,
+    "passed": 546,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "executionExitStatus": 0,
+  "report": "docs/results/test262-cluster-f-generator-expressions-v1.json",
+  "journal": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+  "stderr": "docs/results/test262-cluster-f-generator-expressions-v1.log",
+  "frozenManifest": "docs/results/frozen-node-toolchain-cluster-f-generator-expressions-v1.json",
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "resumedPrefix": "docs/results/cluster-f-generator-expressions-turn-interruption-v1.json",
+  "preEntryObservation": {
+    "path": "language/expressions/generators/yield-star-before-newline.js",
+    "variant": "sloppy",
+    "inferiorPid": 10827,
+    "state": "TX",
+    "cpuSeconds": 0,
+    "observedStoppedElapsedSeconds": 163,
+    "sample": "docs/results/cluster-f-generator-expressions-preentry-10827-v1.txt",
+    "rootCause": "Coordinator identified the LLDB async connection race fixed on main in 51ff615.",
+    "finalStatus": "pass",
+    "focusedInfraRecheckNeeded": false,
+    "reason": "Both variants eventually completed; the full report retains zero infrastructure errors. No outcome was replaced."
+  },
+  "workspaceGateReuse": {
+    "authorizedDocsOnly": true,
+    "baseMain": "089022a2aec0d8714aa72b3e5fc8fc521496054f",
+    "validatedCodeHead": "51ff615e8ac4fc7f325e3bef558a7625ea9a2d62",
+    "allNonDocsInputsIdentical": true,
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "counts": {
+      "tests": 4556,
+      "pass": 4556,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "evidence": "docs/results/cluster-a2-connected-readiness-workspace-gate-v1.json"
+  },
+  "next": "Complete for-await-of and for-of on a newly frozen current-main toolchain with connected RemoteLaunch and the async connection readiness fix."
+}

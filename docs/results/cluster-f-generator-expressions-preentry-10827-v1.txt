@@ -1,0 +1,32 @@
+Analysis of sampling test (pid 10827) every 1 millisecond
+Process:         test [10827]
+Path:            /private/var/folders/*/test
+Load Address:    0x102b6c000
+Identifier:      test
+Version:         ???
+Code Type:       ARM64
+Parent Process:  debugserver [10826]
+Target Type:     live task
+
+Date/Time:       2026-11-07 06:23:46.979 +0800
+Launch Time:     2026-11-07 06:22:05.643 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         112K
+Physical footprint (peak):  112K
+Idle exit:                  untracked
+----
+
+Call graph:
+    886 Thread_21798320: Main Thread   DispatchQueue_<multiple>
+      886 _dyld_start  (in dyld) + 0  [0x10c53c9c0]
+
+Total number in stack (recursive counted multiple, when >=5):
+
+Sort by top of stack, same collapsed (when >= 5):
+        _dyld_start  (in dyld)        886
+
+Binary images description not available
+
