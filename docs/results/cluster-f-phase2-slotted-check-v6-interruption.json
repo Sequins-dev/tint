@@ -1,0 +1,12 @@
+{
+  "kind": "workspace-gate-interruption",
+  "conformance": false,
+  "complete": false,
+  "command": "~/.t3/tint-slots/tint-check",
+  "validatedCodeBase": "1258d52fead683240336f42cc0e19518b110881a",
+  "exitStatus": 143,
+  "signal": "SIGTERM",
+  "reason": "Coordinator explicitly cancelled this superseded-main check and authorized reuse of the exact-code main gate for docs-only F slices. All owned check descendants were terminated; the native runner was not in that process tree.",
+  "log": "docs/results/cluster-f-phase2-slotted-check-v6-interrupted.log",
+  "policy": "Post-cancellation cancelled-test and pending-promise diagnostics are retained in the log. This interrupted command is not a passing workspace gate."
+}
