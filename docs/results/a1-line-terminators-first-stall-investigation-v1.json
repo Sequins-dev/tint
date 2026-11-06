@@ -1,0 +1,29 @@
+{
+  "kind": "heartbeat-stall-investigation",
+  "conformance": false,
+  "runner": 8570,
+  "slotWrapper": 8559,
+  "selection": "language/line-terminators",
+  "phase": "compiling batch 0 (6 variants)",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "diagnostics": [
+    "docs/results/a1-line-terminators-stall-sample-v1.txt",
+    "docs/results/a1-line-terminators-stall-sample-v2.txt"
+  ],
+  "finding": "CPU-active JavaScript compilation with differing sampled call stacks and increasing CPU time; stdin /dev/null; no child/inferior or pause marker. Compilation subsequently completed and native passes began.",
+  "compilation": {
+    "id": 0,
+    "variants": 6,
+    "kind": "execution",
+    "compileMs": 415597.65083299996,
+    "outcome": "compiled"
+  },
+  "observedPassesAtCapture": 11,
+  "build": {
+    "command": "~/.t3/tint-slots/slot check 2 -- pnpm build",
+    "exitStatus": 0,
+    "log": "docs/results/a1-line-terminators-build-heartbeat-v1.log"
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a1-phase1-language-line-terminators-heartbeat-v1.json"
+}
