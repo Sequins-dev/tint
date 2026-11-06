@@ -1,0 +1,31 @@
+{
+  "kind": "workspace-gate-interruption",
+  "conformance": false,
+  "time": "2026-11-06T21:59:22.541511+00:00",
+  "processGroup": 94328,
+  "gatesStarted": false,
+  "gateResult": null,
+  "signal": "SIGTERM",
+  "reason": "Superseded queued gate before making a diagnosed host-debugger fix; no checks or native inferiors were running.",
+  "observedProcesses": [
+    [
+      "2923",
+      "94329",
+      "94328",
+      "sleep"
+    ],
+    [
+      "94328",
+      "1",
+      "94328",
+      "/bin/zsh"
+    ],
+    [
+      "94329",
+      "94328",
+      "94328",
+      "/bin/zsh"
+    ]
+  ],
+  "log": ".tint-bootstrap/temporal-h-check-v6.log"
+}

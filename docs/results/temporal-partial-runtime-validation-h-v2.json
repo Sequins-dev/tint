@@ -1,0 +1,64 @@
+{
+  "kind": "temporal-partial-runtime-validation",
+  "conformance": false,
+  "mergeReady": false,
+  "portableSourceSnapshot": {
+    "sha256": "c32911f4e01ec225e1188ec10bfc86ec17876316fbb0db206f0c5a4f04b2b85d",
+    "files": 568
+  },
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v5.json",
+  "nativeFixtures": {
+    "arithmetic": {
+      "report": "docs/results/native-temporal-year-month-arithmetic-green-h-v1.json",
+      "passed": 5,
+      "total": 5
+    },
+    "updatesAndDifferences": {
+      "report": "docs/results/native-temporal-partial-updates-green-h-v1.json",
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "selfBuild": {
+    "report": "docs/results/temporal-partial-selfbuild-h-v5.json",
+    "success": true,
+    "byteIdentical": true,
+    "stage1Sha256": "b97bad5521dc62a4c506cc3c4e634aff58ae6c302c5c00898a3c6629064e59f7",
+    "stage2Sha256": "b97bad5521dc62a4c506cc3c4e634aff58ae6c302c5c00898a3c6629064e59f7",
+    "smokeExit": 42
+  },
+  "focusedChecks": {
+    "temporalTests": {
+      "passed": 86,
+      "total": 86,
+      "exitStatus": 0
+    },
+    "testTypesExitStatus": 0,
+    "boundariesExitStatus": 0,
+    "formatExitStatus": 0
+  },
+  "workspaceGate": {
+    "result": null,
+    "previousQueuedAttempt": "docs/results/temporal-h-check-v6-interruption.json",
+    "next": "After diagnosed debugger-state fix and current-main rebase"
+  },
+  "coverage": {
+    "completePlainTimeCompare": "docs/results/test262-temporal-plain-time-compare-h-v1.json",
+    "completeFiles": "docs/results/temporal-plain-time-batch0-complete-files-h-v1.json",
+    "wholePlainTimeFamilyComplete": false
+  },
+  "retainedObservation": {
+    "log": "docs/results/temporal-partial-focused-inconsistent-h-v1.log",
+    "reason": "Earlier focused tests overlapped stash/rebase; stable 86/86 rerun is archived separately."
+  },
+  "whitespace": {
+    "rawTranscriptDiffCheckExitStatus": 2,
+    "sourceAndDocumentationExcludingRawTranscriptsExitStatus": 0,
+    "reason": "Node assertion output contains original trailing spaces; immutable raw transcripts were retained."
+  },
+  "remaining": [
+    "Current-main workspace gates",
+    "Complete affected selection measurements",
+    "Remaining Temporal breadth selections; no family totals inferred from prefixes"
+  ]
+}
