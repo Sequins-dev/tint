@@ -1,0 +1,1756 @@
+{
+  "kind": "native-debugger-connection-state-proof",
+  "conformance": false,
+  "rootCause": "A connected debugserver can expose stopped state 5 with PID 0 before its public state becomes connected state 2. The old immediate assertion rejected the connection before RemoteLaunch.",
+  "change": "Subscribe to process state events, await connected state within the original startup budget, unsubscribe, then issue exactly one RemoteLaunch. No native execution is retried.",
+  "interpretation": [
+    "v1 retains the original prelaunch failure.",
+    "v2 reached the correct native exit 42 but the diagnostic incorrectly expected 0; its recorded false result is a diagnostic assertion error.",
+    "v3 used an instrumented original helper and passed 20 launches; it is baseline evidence.",
+    "v4 captured the original assertion before any RemoteLaunch.",
+    "v5 direct ConnectRemote still exposed stopped/PID 0 and was rejected after 26 passes and one failure.",
+    "v6 event-barrier prototype passed 60 launches.",
+    "v7 exact production helper passed 60 launches, each with stopped-at-entry PID and final exited/42 states."
+  ],
+  "hostHelper": {
+    "path": ".tint-bootstrap/native-debugger-session-fixed-h-v7.ts",
+    "sha256": "e51682e4a4a039fca535ec262ee64a153fc6344dc3b500dc971dd1737e9a270f"
+  },
+  "variants": [
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v1.json",
+      "observed": 1,
+      "passed": 0,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": false,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 2, \"pid\": 0}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v2.json",
+      "observed": 1,
+      "passed": 0,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": false,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 86864}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v3.json",
+      "observed": 20,
+      "passed": 20,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 93219}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 1,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 93478}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 2,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 93667}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 3,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 93808}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 4,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94052}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 5,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94097}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 6,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94189}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 7,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94348}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 8,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94540}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 9,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 94685}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 10,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 95021}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 11,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 95139}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 12,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 95303}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 13,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 95537}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 14,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 95724}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 15,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 96006}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 16,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 96222}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 17,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 96392}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 18,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 96729}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 19,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 96889}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v4.json",
+      "observed": 7,
+      "passed": 6,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 7619}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 1,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 7952}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 2,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 8167}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 3,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 8362}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 4,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 8651}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 5,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 9410}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 6,
+          "passed": false,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 2, \"launchSucceeded\": null, \"launchError\": null}",
+            "initial.json": "{\"state\": 2, \"pid\": 0}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v5.json",
+      "observed": 27,
+      "passed": 26,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 24942}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 1,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 25449}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 2,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 26124}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 3,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 26451}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 4,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 26832}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 5,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 27218}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 6,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 27388}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 7,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 27581}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 8,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 27843}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 9,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 28381}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 10,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 28979}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 11,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 29577}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 12,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 31810}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 13,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 32179}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 14,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 32548}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 15,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 33009}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 16,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 33496}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 17,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 33980}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 18,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 34465}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 19,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 34863}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 20,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 35217}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 21,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 35732}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 22,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 36069}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 23,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 36365}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 24,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 36838}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 25,
+          "passed": true,
+          "logs": {
+            "connection.log": "\nstate=2",
+            "after-launch.json": "{\"keys\": [\"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 37359}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 26,
+          "passed": false,
+          "logs": {
+            "connection.log": "\nstate=5",
+            "after-launch.json": "{\"keys\": [\"launch_process\"], \"connectionStatus\": null, \"connectionSucceeded\": null, \"connectionOutput\": null, \"connectionError\": null, \"processState\": 2, \"launchSucceeded\": null, \"launchError\": null}",
+            "initial.json": "{\"state\": 2, \"pid\": 0}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v6.json",
+      "observed": 60,
+      "passed": 60,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 67353}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 1,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 67795}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 2,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 68193}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 3,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 68679}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 4,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 69170}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 5,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 69951}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 6,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 70287}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 7,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 70901}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 8,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 71296}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 9,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 71726}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 10,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 72490}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 11,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 72762}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 12,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 73232}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 13,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 74234}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 14,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 74577}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 15,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 74804}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 16,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 75320}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 17,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 76228}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 18,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 77155}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 19,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 78086}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 20,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 78833}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 21,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 79401}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 22,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 79790}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 23,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 80057}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 24,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 80456}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 25,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 80856}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 26,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 81116}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 27,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 81243}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 28,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 81513}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 29,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 81645}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 30,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 82093}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 31,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 82437}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 32,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 82808}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 33,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 83130}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 34,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 83487}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 35,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 83724}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 36,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 84189}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 37,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 84645}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 38,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 84943}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 39,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 85026}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 40,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 85136}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 41,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 85776}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 42,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 85921}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 43,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 86000}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 44,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 86100}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 45,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 86151}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 46,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 86257}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 47,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 87922}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 48,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 88451}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 49,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 88596}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 50,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 88714}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 51,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 88930}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 52,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 89330}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 53,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 89702}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 54,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 90134}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 55,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 90667}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 56,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 91316}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 57,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 91476}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 58,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 91635}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 59,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "after-launch.json": "{\"keys\": [\"connection_result\", \"launch_process\", \"launch_succeeded\", \"launch_error\"], \"connectionStatus\": 1, \"connectionSucceeded\": true, \"connectionOutput\": \"\", \"connectionError\": \"\", \"processState\": 5, \"launchSucceeded\": true, \"launchError\": null}",
+            "initial.json": "{\"state\": 5, \"pid\": 91644}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "report": "docs/results/temporal-connected-launch-diagnosis-h-v7.json",
+      "observed": 60,
+      "passed": 60,
+      "retained": [
+        {
+          "attempt": 0,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 41022}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 1,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 41260}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 2,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 41489}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 3,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 41624}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 4,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 41827}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 5,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 42190}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 6,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 42356}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 7,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 42469}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 8,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 42589}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 9,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 42813}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 10,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 43218}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 11,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "initial.json": "{\"state\": 5, \"pid\": 43355}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 12,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 43563}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 13,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 43719}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 14,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 43766}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 15,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 43897}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 16,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 44111}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 17,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 44234}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 18,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "initial.json": "{\"state\": 5, \"pid\": 44352}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 19,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 44549}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 20,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 44760}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 21,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 44912}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 22,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 45311}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 23,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 45472}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 24,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "initial.json": "{\"state\": 5, \"pid\": 46329}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 25,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 46591}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 26,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 47108}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 27,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 47325}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 28,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 47793}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 29,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 48184}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 30,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 48570}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 31,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 48684}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 32,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 49078}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 33,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 49468}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 34,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 49645}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 35,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 50034}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 36,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 50230}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 37,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 50447}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 38,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 50932}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 39,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 51217}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 40,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 51620}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 41,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 51682}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 42,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 51746}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 43,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52352}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 44,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52461}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 45,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52540}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 46,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52578}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 47,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52771}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 48,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 52990}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 49,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "connection-wait.log": "5 pid=0\n",
+            "initial.json": "{\"state\": 5, \"pid\": 53550}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 50,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 53945}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 51,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 54743}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 52,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55126}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 53,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55202}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 54,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55311}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 55,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55427}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 56,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55580}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 57,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55702}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 58,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 55842}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        },
+        {
+          "attempt": 59,
+          "passed": true,
+          "logs": {
+            "connection.log": "",
+            "initial.json": "{\"state\": 5, \"pid\": 56038}",
+            "outcome.json": "{\"state\": 10, \"exitStatus\": 42, \"stopDescription\": null}"
+          }
+        }
+      ]
+    }
+  ]
+}

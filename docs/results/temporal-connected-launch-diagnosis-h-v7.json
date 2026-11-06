@@ -1,0 +1,1221 @@
+{
+  "kind": "native-debugger-startup-diagnosis",
+  "conformance": false,
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-rDmAl7/fixture.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "e39fe95ba03d559077d00ac108ee94edcce870b5ac3099054de727c0160b68af",
+      "files": 568
+    },
+    "imageSha256": "dcf208a74a2512eb0306cda9fdb80ad13a844ca4dd89c18d0fc382db5e7b9b14",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const x=new Temporal.PlainYearMonth(2023,1,\"iso8601\",31);const a=x.add({years:1,months:2},{overflow:\"reject\"}),b=x.subtract(\"P1Y2M\");if(a.year!==2024||a.month!==3||!a.equals(new Temporal.PlainYearMonth(2024,3))||b.year!==2021||b.month!==11||x.month!==1)throw 1;const feb=x.add({months:1},{overflow:\"reject\"});if(!feb.equals(new Temporal.PlainYearMonth(2023,2)))throw 2;",
+        "sha256": "368a35f83b1a36b47818208809b297d478b821d0110682613e487dae93d56344"
+      },
+      {
+        "index": 1,
+        "source": "const x=new Temporal.PlainYearMonth(2000,1);for(const field of[\"weeks\",\"days\",\"hours\",\"minutes\",\"seconds\",\"milliseconds\",\"microseconds\",\"nanoseconds\"]){for(const name of[\"add\",\"subtract\"]){let ok=false;try{x[name]({[field]:1});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;}}if(!x.add({seconds:-0}).equals(x))throw 2;",
+        "sha256": "4112fcd84ef04ec316f03a3d6bc6cf7ed8e9cb4aae9954c2b5cbabed58f1bd00"
+      },
+      {
+        "index": 2,
+        "source": "const x=new Temporal.PlainYearMonth(2000,1),log=[];const d={get months(){log.push(\"months\");return 1;}};const options={get overflow(){log.push(\"overflow\");return{toString(){log.push(\"string\");return\"reject\";}};}};if(x.add(d,options).month!==2||log.join()!==\"months,overflow,string\")throw 1;try{x.add({days:1},{get overflow(){throw 42;}});throw 2;}catch(e){if(e!==42)throw 3;}let touched=false;try{x.add({months:Infinity},{get overflow(){touched=true;return\"constrain\";}});throw 4;}catch(e){if(!(e instanceof RangeError)||touched)throw 5;}",
+        "sha256": "6f27245564bee99209077d4062a35d30b72602afa591f9f10da6c3f81e61047c"
+      },
+      {
+        "index": 3,
+        "source": "const lo=new Temporal.PlainYearMonth(-271821,4,\"iso8601\",30),hi=new Temporal.PlainYearMonth(275760,9,\"iso8601\",30);for(const name of[\"add\",\"subtract\"]){let ok=false;try{lo[name](new Temporal.Duration());}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;}const result=hi.add({months:-1});if(result.year!==275760||result.month!==8||!result.equals(new Temporal.PlainYearMonth(275760,8)))throw 2;let ok=false;try{hi.add({months:1});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 3;",
+        "sha256": "b6eb1fa9c95b7a91f8af4575f00d7d6f55e4fbb59c3da9d1a66f8b64ae46cb3f"
+      },
+      {
+        "index": 4,
+        "source": "class YM extends Temporal.PlainYearMonth{}const x=new YM(2023,1,\"iso8601\",31);for(const key of[\"constructor\",\"calendar\",\"year\",\"month\",\"monthCode\"])Object.defineProperty(x,key,{get(){throw 1;}});const result=x.add({months:-1});if(result instanceof YM||Object.getPrototypeOf(result)!==Temporal.PlainYearMonth.prototype||result.year!==2022||result.month!==12)throw 2;for(const name of[\"add\",\"subtract\"]){let touched=false,ok=false;try{Temporal.PlainYearMonth.prototype[name].call({}, {get months(){touched=true;return 1;}});}catch(e){ok=e instanceof TypeError;}if(!ok||touched)throw 3;}",
+        "sha256": "b049b5207baf60f157a3adf4f8e8d6a13074485e5c9f83ad17e368a60b4622a2"
+      }
+    ]
+  },
+  "hostHelper": {
+    "path": ".tint-bootstrap/native-debugger-session-fixed-h-v7.ts",
+    "sha256": "e51682e4a4a039fca535ec262ee64a153fc6344dc3b500dc971dd1737e9a270f"
+  },
+  "expectedNativeExitStatus": 42,
+  "policy": "At most 60 independent launch observations; stop on first non-pass, preserve every attempt; no Test262 retry or coverage claim.",
+  "observations": [
+    {
+      "attempt": 0,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-mMGcDX",
+      "elapsedMs": 3353,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 41022
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/0.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/0.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 1,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jXqbyT",
+      "elapsedMs": 2483,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 41260
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/1.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/1.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 2,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-eEO0J7",
+      "elapsedMs": 3095,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 41489
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/2.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/2.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 3,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-RH5R8m",
+      "elapsedMs": 2584,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 41624
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/3.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/3.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 4,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DkSjOY",
+      "elapsedMs": 3331,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 41827
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/4.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/4.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 5,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-IL0tQh",
+      "elapsedMs": 3838,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 42190
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/5.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/5.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 6,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-69Nxs0",
+      "elapsedMs": 2931,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 42356
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/6.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/6.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 7,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-RMKLlf",
+      "elapsedMs": 3015,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 42469
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/7.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/7.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 8,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-hogbB9",
+      "elapsedMs": 3124,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 42589
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/8.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/8.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 9,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hb3SaM",
+      "elapsedMs": 3849,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 42813
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/9.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/9.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 10,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-di7Tkr",
+      "elapsedMs": 4719,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43218
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/10.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/10.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 11,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-lBhuG0",
+      "elapsedMs": 3626,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43355
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/11.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/11.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 12,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-sqt7Gp",
+      "elapsedMs": 2847,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43563
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/12.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/12.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 13,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-EFwllL",
+      "elapsedMs": 2505,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43719
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/13.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/13.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 14,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rl99GO",
+      "elapsedMs": 1881,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43766
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/14.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/14.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 15,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-N7a5ff",
+      "elapsedMs": 2282,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 43897
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/15.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/15.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 16,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-AW6niY",
+      "elapsedMs": 2387,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44111
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/16.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/16.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 17,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UWVdRr",
+      "elapsedMs": 1899,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44234
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/17.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/17.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 18,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-RiIQvv",
+      "elapsedMs": 3521,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44352
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/18.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/18.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 19,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-krpafR",
+      "elapsedMs": 3389,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44549
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/19.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/19.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 20,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-d99nG7",
+      "elapsedMs": 3925,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44760
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/20.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/20.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 21,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HFuYIT",
+      "elapsedMs": 2710,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 44912
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/21.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/21.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 22,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DbJlvO",
+      "elapsedMs": 3626,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 45311
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/22.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/22.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 23,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yCPYeo",
+      "elapsedMs": 4325,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 45472
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/23.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/23.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 24,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-StTc24",
+      "elapsedMs": 4990,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 46329
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/24.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/24.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 25,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gbKf3J",
+      "elapsedMs": 3121,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 46591
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/25.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/25.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 26,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4PAIpI",
+      "elapsedMs": 4503,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 47108
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/26.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/26.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 27,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-di1Chi",
+      "elapsedMs": 3043,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 47325
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/27.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/27.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 28,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yNaRhO",
+      "elapsedMs": 4126,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 47793
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/28.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/28.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 29,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pZPt5I",
+      "elapsedMs": 6316,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 48184
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/29.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/29.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 30,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-K9iGIS",
+      "elapsedMs": 5475,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 48570
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/30.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/30.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 31,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qqcuTt",
+      "elapsedMs": 2163,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 48684
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/31.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/31.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 32,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-9BcxdF",
+      "elapsedMs": 3033,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 49078
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/32.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/32.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 33,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gCINnj",
+      "elapsedMs": 3836,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 49468
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/33.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/33.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 34,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-p58sny",
+      "elapsedMs": 2477,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 49645
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/34.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/34.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 35,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-52bCOn",
+      "elapsedMs": 2898,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 50034
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/35.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/35.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 36,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-pI2YP3",
+      "elapsedMs": 2730,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 50230
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/36.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/36.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 37,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rl24v3",
+      "elapsedMs": 2982,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 50447
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/37.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/37.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 38,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-7DmxQp",
+      "elapsedMs": 2505,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 50932
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/38.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/38.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 39,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1XeY4y",
+      "elapsedMs": 2847,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 51217
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/39.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/39.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 40,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DjV4QK",
+      "elapsedMs": 2826,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 51620
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/40.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/40.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 41,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dp2FUJ",
+      "elapsedMs": 1823,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 51682
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/41.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/41.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 42,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5c3Hwx",
+      "elapsedMs": 1939,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 51746
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/42.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/42.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 43,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-oqsnil",
+      "elapsedMs": 3017,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52352
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/43.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/43.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 44,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xFjC8X",
+      "elapsedMs": 2406,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52461
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/44.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/44.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 45,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-EEAv2Z",
+      "elapsedMs": 2132,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52540
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/45.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/45.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 46,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bexEV8",
+      "elapsedMs": 1869,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52578
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/46.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/46.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 47,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-aGQkki",
+      "elapsedMs": 1965,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52771
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/47.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/47.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 48,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-S03iga",
+      "elapsedMs": 2507,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 52990
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/48.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/48.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 49,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-uZPlP3",
+      "elapsedMs": 3630,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 53550
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/49.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/49.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 50,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-GlP1H7",
+      "elapsedMs": 3251,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 53945
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/50.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/50.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 51,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-zlNk2x",
+      "elapsedMs": 3532,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 54743
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/51.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/51.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 52,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-WoSZet",
+      "elapsedMs": 2751,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55126
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/52.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/52.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 53,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-WcZsBC",
+      "elapsedMs": 2746,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55202
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/53.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/53.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 54,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fFAYrG",
+      "elapsedMs": 2895,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55311
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/54.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/54.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 55,
+      "selected": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-U0IJUG",
+      "elapsedMs": 2496,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55427
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/55.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/55.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 56,
+      "selected": 1,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-boAEbk",
+      "elapsedMs": 4066,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55580
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/56.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/56.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 57,
+      "selected": 2,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-DtNHc0",
+      "elapsedMs": 1835,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55702
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/57.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/57.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 58,
+      "selected": 3,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rZaYQn",
+      "elapsedMs": 2590,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 55842
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/58.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/58.stderr.log",
+      "passed": true
+    },
+    {
+      "attempt": 59,
+      "selected": 4,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JzUftN",
+      "elapsedMs": 1894,
+      "debuggerStatus": 0,
+      "initial": {
+        "state": 5,
+        "pid": 56038
+      },
+      "final": {
+        "state": 10,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/59.stdout.log",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/connected-launch-h-v7/59.stderr.log",
+      "passed": true
+    }
+  ]
+}
