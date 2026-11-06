@@ -1,0 +1,26 @@
+{
+  "kind": "cluster-j-workspace-acceptance",
+  "timestamp": "2026-11-06T22:28:12.175375+00:00",
+  "base": "f2608f08c37234b39f0914a083e6d56731afa542",
+  "head": "bff35bc482ff83b3210af302d5aad65ee9c8ccba",
+  "sourceSnapshot": {
+    "sha256": "4e9cf9167b2a8355ce4425c455b9d3a18d746ac86e3ce791f7b65f11e88c6547",
+    "files": 569
+  },
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "completionEvidence": "Detached fail-fast wrapper terminated, and anchored final success record appears only after every constituent exits zero.",
+  "tests": 4563,
+  "passed": 4563,
+  "failed": 0,
+  "testConcurrency": 4,
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "log": "docs/results/cluster-j-workspace-check-v9.log",
+  "logSha256": "4675ab22ea875dcb289eb0a383d7cc75221dd3b8f199b9504d27d7c175cc1e4d",
+  "note": "Source stayed stable throughout. Main subsequently landed LLDB connection-readiness tooling; portable source identity remains v8. A further rebased gate will cover that tool delta."
+}
