@@ -1,0 +1,408 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-matched-before-7Z7tyb/union-storage-matched-before"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-matched-before-7Z7tyb/union-storage-matched-before' (arm64).
+(lldb) disassemble --name "program:fixture:run [@1:value:0$177]"
+union-storage-matched-before`program:fixture:run [@1:value:0$177]:
+union-storage-matched-before[0x10014b5d4] <+0>:    stp    x29, x30, [sp, #-0x10]!
+union-storage-matched-before[0x10014b5d8] <+4>:    mov    x29, sp
+union-storage-matched-before[0x10014b5dc] <+8>:    sub    sp, sp, #0xd0
+union-storage-matched-before[0x10014b5e0] <+12>:   str    d8, [sp, #0xb8]
+union-storage-matched-before[0x10014b5e4] <+16>:   str    d9, [sp, #0xc0]
+union-storage-matched-before[0x10014b5e8] <+20>:   str    d10, [sp, #0xc8]
+union-storage-matched-before[0x10014b5ec] <+24>:   str    x0, [sp, #0x20]
+union-storage-matched-before[0x10014b5f0] <+28>:   str    x3, [sp, #0x28]
+union-storage-matched-before[0x10014b5f4] <+32>:   str    xzr, [sp, #0x40]
+union-storage-matched-before[0x10014b5f8] <+36>:   str    xzr, [sp, #0x58]
+union-storage-matched-before[0x10014b5fc] <+40>:   str    xzr, [sp, #0x60]
+union-storage-matched-before[0x10014b600] <+44>:   str    xzr, [sp, #0x68]
+union-storage-matched-before[0x10014b604] <+48>:   str    xzr, [sp, #0x70]
+union-storage-matched-before[0x10014b608] <+52>:   str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b60c] <+56>:   str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b610] <+60>:   str    xzr, [sp, #0x90]
+union-storage-matched-before[0x10014b614] <+64>:   ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014b618] <+68>:   ldr    x9, [x10]
+union-storage-matched-before[0x10014b61c] <+72>:   str    x9, [sp, #0x30]
+union-storage-matched-before[0x10014b620] <+76>:   adr    x9, 0x10014b620           ; <+76>
+union-storage-matched-before[0x10014b624] <+80>:   mov    x17, #0xa00               ; =2560 
+union-storage-matched-before[0x10014b628] <+84>:   movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b62c] <+88>:   add    x9, x9, x17
+union-storage-matched-before[0x10014b630] <+92>:   str    x9, [sp, #0x38]
+union-storage-matched-before[0x10014b634] <+96>:   add    x9, sp, #0x30
+union-storage-matched-before[0x10014b638] <+100>:  str    x9, [x10]
+union-storage-matched-before[0x10014b63c] <+104>:  b      0x10014b640               ; <+108> at fixture:3:18
+union-storage-matched-before[0x10014b640] <+108>:  mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014b644] <+112>:  movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014b648] <+116>:  movk   x9, #0x0, lsl #48
+union-storage-matched-before[0x10014b64c] <+120>:  str    x9, [sp, #0x98]
+union-storage-matched-before[0x10014b650] <+124>:  ldr    d0, [sp, #0x98]
+union-storage-matched-before[0x10014b654] <+128>:  ldr    x0, [sp, #0x20]
+union-storage-matched-before[0x10014b658] <+132>:  mov    x1, #0x0                  ; =0 
+union-storage-matched-before[0x10014b65c] <+136>:  mov    x2, #0x0                  ; =0 
+union-storage-matched-before[0x10014b660] <+140>:  mov    x3, sp
+union-storage-matched-before[0x10014b664] <+144>:  adr    x16, 0x10014b664          ; <+144> at fixture:3:18
+union-storage-matched-before[0x10014b668] <+148>:  mov    x17, #0xd84               ; =3460 
+union-storage-matched-before[0x10014b66c] <+152>:  movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b670] <+156>:  sub    x16, x16, x17
+union-storage-matched-before[0x10014b674] <+160>:  blr    x16
+union-storage-matched-before[0x10014b678] <+164>:  cmp    w0, #0x1
+union-storage-matched-before[0x10014b67c] <+168>:  b.eq   0x10014b684               ; <+176> at fixture:3:18
+union-storage-matched-before[0x10014b680] <+172>:  b      0x10014bbdc               ; <+1544> at fixture:9:2
+union-storage-matched-before[0x10014b684] <+176>:  str    x1, [sp, #0x80]
+union-storage-matched-before[0x10014b688] <+180>:  ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b68c] <+184>:  cbnz   x9, 0x10014b694           ; <+192> at fixture:3:18
+union-storage-matched-before[0x10014b690] <+188>:  brk    #0x3
+union-storage-matched-before[0x10014b694] <+192>:  str    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b698] <+196>:  ldr    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b69c] <+200>:  str    x9, [sp, #0x60]
+union-storage-matched-before[0x10014b6a0] <+204>:  b      0x10014b6a4               ; <+208>
+union-storage-matched-before[0x10014b6a4] <+208>:  str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b6a8] <+212>:  str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b6ac] <+216>:  ldr    x9, [sp, #0x60]
+union-storage-matched-before[0x10014b6b0] <+220>:  str    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b6b4] <+224>:  mov    x9, #0x20                 ; =32 
+union-storage-matched-before[0x10014b6b8] <+228>:  ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014b6bc] <+232>:  ldr    x12, [x10, #0x38]
+union-storage-matched-before[0x10014b6c0] <+236>:  cbz    x12, 0x10014b718          ; <+324> at fixture:3:18
+union-storage-matched-before[0x10014b6c4] <+240>:  ldr    w11, [x12]
+union-storage-matched-before[0x10014b6c8] <+244>:  ldr    w13, [x12, #0x4]
+union-storage-matched-before[0x10014b6cc] <+248>:  sub    x14, x13, x11
+union-storage-matched-before[0x10014b6d0] <+252>:  cmp    x9, x14
+union-storage-matched-before[0x10014b6d4] <+256>:  b.hi   0x10014b718               ; <+324> at fixture:3:18
+union-storage-matched-before[0x10014b6d8] <+260>:  add    w13, w11, w9
+union-storage-matched-before[0x10014b6dc] <+264>:  str    w13, [x12]
+union-storage-matched-before[0x10014b6e0] <+268>:  ldr    x13, [x12, #0x10]
+union-storage-matched-before[0x10014b6e4] <+272>:  lsr    w14, w11, #9
+union-storage-matched-before[0x10014b6e8] <+276>:  add    x14, x13, x14, lsl #2
+union-storage-matched-before[0x10014b6ec] <+280>:  ubfx   w15, w11, #4, #5
+union-storage-matched-before[0x10014b6f0] <+284>:  mov    x9, #0x1                  ; =1 
+union-storage-matched-before[0x10014b6f4] <+288>:  lsl    w9, w9, w15
+union-storage-matched-before[0x10014b6f8] <+292>:  ldr    w15, [x14]
+union-storage-matched-before[0x10014b6fc] <+296>:  orr    w15, w15, w9
+union-storage-matched-before[0x10014b700] <+300>:  str    w15, [x14]
+union-storage-matched-before[0x10014b704] <+304>:  ldr    w9, [x12, #0x8]
+union-storage-matched-before[0x10014b708] <+308>:  add    x9, x9, x11
+union-storage-matched-before[0x10014b70c] <+312>:  ldr    x10, [x10, #0x8]
+union-storage-matched-before[0x10014b710] <+316>:  add    x9, x10, x9
+union-storage-matched-before[0x10014b714] <+320>:  b      0x10014b7d0               ; <+508> at fixture:3:18
+union-storage-matched-before[0x10014b718] <+324>:  str    xzr, [sp]
+union-storage-matched-before[0x10014b71c] <+328>:  str    xzr, [sp, #0x8]
+union-storage-matched-before[0x10014b720] <+332>:  str    xzr, [sp, #0x10]
+union-storage-matched-before[0x10014b724] <+336>:  str    xzr, [sp, #0x18]
+union-storage-matched-before[0x10014b728] <+340>:  ldr    x0, [sp, #0x20]
+union-storage-matched-before[0x10014b72c] <+344>:  ldr    x1, [x0, #0x18]
+union-storage-matched-before[0x10014b730] <+348>:  ldr    x16, [x0, #0x10]
+union-storage-matched-before[0x10014b734] <+352>:  cbnz   x16, 0x10014b73c          ; <+360> at fixture:3:18
+union-storage-matched-before[0x10014b738] <+356>:  brk    #0x3
+union-storage-matched-before[0x10014b73c] <+360>:  mov    x2, #0x0                  ; =0 
+union-storage-matched-before[0x10014b740] <+364>:  mov    x3, sp
+union-storage-matched-before[0x10014b744] <+368>:  mov    x9, #0x20                 ; =32 
+union-storage-matched-before[0x10014b748] <+372>:  ucvtf  d0, w9
+union-storage-matched-before[0x10014b74c] <+376>:  blr    x16
+union-storage-matched-before[0x10014b750] <+380>:  cmp    w0, #0x1
+union-storage-matched-before[0x10014b754] <+384>:  b.eq   0x10014b75c               ; <+392> at fixture:3:18
+union-storage-matched-before[0x10014b758] <+388>:  b      0x10014bbdc               ; <+1544> at fixture:9:2
+union-storage-matched-before[0x10014b75c] <+392>:  ldr    x9, [sp, #0x18]
+union-storage-matched-before[0x10014b760] <+396>:  cmp    x9, #0x1
+union-storage-matched-before[0x10014b764] <+400>:  b.eq   0x10014b76c               ; <+408> at fixture:3:18
+union-storage-matched-before[0x10014b768] <+404>:  brk    #0x3
+union-storage-matched-before[0x10014b76c] <+408>:  ldr    x9, [sp, #0x10]
+union-storage-matched-before[0x10014b770] <+412>:  adr    x16, 0x10014b770          ; <+412> at fixture:3:18
+union-storage-matched-before[0x10014b774] <+416>:  mov    x17, #0x4b4               ; =1204 
+union-storage-matched-before[0x10014b778] <+420>:  movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b77c] <+424>:  add    x16, x16, x17
+union-storage-matched-before[0x10014b780] <+428>:  blr    x16
+union-storage-matched-before[0x10014b784] <+432>:  ucvtf  d0, w9
+union-storage-matched-before[0x10014b788] <+436>:  ldr    d1, [sp, #0x10]
+union-storage-matched-before[0x10014b78c] <+440>:  fcmp   d0, d1
+union-storage-matched-before[0x10014b790] <+444>:  b.eq   0x10014b798               ; <+452> at fixture:3:18
+union-storage-matched-before[0x10014b794] <+448>:  brk    #0x3
+union-storage-matched-before[0x10014b798] <+452>:  ubfx   w10, w9, #0, #4
+union-storage-matched-before[0x10014b79c] <+456>:  cbz    w10, 0x10014b7a4          ; <+464> at fixture:3:18
+union-storage-matched-before[0x10014b7a0] <+460>:  brk    #0x3
+union-storage-matched-before[0x10014b7a4] <+464>:  mov    x10, #0x20                ; =32 
+union-storage-matched-before[0x10014b7a8] <+468>:  add    x11, x9, x10
+union-storage-matched-before[0x10014b7ac] <+472>:  ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014b7b0] <+476>:  ldr    x12, [x10, #0x20]
+union-storage-matched-before[0x10014b7b4] <+480>:  cmp    x11, x12
+union-storage-matched-before[0x10014b7b8] <+484>:  b.ls   0x10014b7c0               ; <+492> at fixture:3:18
+union-storage-matched-before[0x10014b7bc] <+488>:  brk    #0x3
+union-storage-matched-before[0x10014b7c0] <+492>:  ldr    x10, [x10, #0x8]
+union-storage-matched-before[0x10014b7c4] <+496>:  cbnz   x10, 0x10014b7cc          ; <+504> at fixture:3:18
+union-storage-matched-before[0x10014b7c8] <+500>:  brk    #0x3
+union-storage-matched-before[0x10014b7cc] <+504>:  add    x9, x10, x9
+union-storage-matched-before[0x10014b7d0] <+508>:  adr    x11, 0x10014b7d0          ; <+508> at fixture:3:18
+union-storage-matched-before[0x10014b7d4] <+512>:  mov    x17, #0x790               ; =1936 
+union-storage-matched-before[0x10014b7d8] <+516>:  movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b7dc] <+520>:  add    x11, x11, x17
+union-storage-matched-before[0x10014b7e0] <+524>:  str    x11, [x9]
+union-storage-matched-before[0x10014b7e4] <+528>:  str    xzr, [x9, #0x8]
+union-storage-matched-before[0x10014b7e8] <+532>:  ldr    x10, [sp, #0x80]
+union-storage-matched-before[0x10014b7ec] <+536>:  str    x10, [x9, #0x10]
+union-storage-matched-before[0x10014b7f0] <+540>:  str    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b7f4] <+544>:  ldr    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b7f8] <+548>:  str    x9, [sp, #0x40]
+union-storage-matched-before[0x10014b7fc] <+552>:  mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014b800] <+556>:  movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014b804] <+560>:  movk   x9, #0x0, lsl #48
+union-storage-matched-before[0x10014b808] <+564>:  fmov   d16, x9
+union-storage-matched-before[0x10014b80c] <+568>:  fmov   d9, d16
+union-storage-matched-before[0x10014b810] <+572>:  mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014b814] <+576>:  movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014b818] <+580>:  movk   x9, #0x0, lsl #48
+union-storage-matched-before[0x10014b81c] <+584>:  fmov   d16, x9
+union-storage-matched-before[0x10014b820] <+588>:  fmov   d8, d16
+union-storage-matched-before[0x10014b824] <+592>:  b      0x10014b828               ; <+596>
+union-storage-matched-before[0x10014b828] <+596>:  str    xzr, [sp, #0x60]
+union-storage-matched-before[0x10014b82c] <+600>:  str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b830] <+604>:  str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b834] <+608>:  fmov   d16, d8
+union-storage-matched-before[0x10014b838] <+612>:  mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014b83c] <+616>:  movk   x9, #0xe360, lsl #32
+union-storage-matched-before[0x10014b840] <+620>:  movk   x9, #0x4146, lsl #48
+union-storage-matched-before[0x10014b844] <+624>:  fmov   d17, x9
+union-storage-matched-before[0x10014b848] <+628>:  fmov   d0, d16
+union-storage-matched-before[0x10014b84c] <+632>:  fmov   d1, d17
+union-storage-matched-before[0x10014b850] <+636>:  fcmp   d0, d1
+union-storage-matched-before[0x10014b854] <+640>:  cset   w9, mi
+union-storage-matched-before[0x10014b858] <+644>:  fmov   d18, x9
+union-storage-matched-before[0x10014b85c] <+648>:  fmov   x9, d18
+union-storage-matched-before[0x10014b860] <+652>:  cmp    x9, #0x0
+union-storage-matched-before[0x10014b864] <+656>:  cset   w9, ne
+union-storage-matched-before[0x10014b868] <+660>:  fmov   d16, x9
+union-storage-matched-before[0x10014b86c] <+664>:  fmov   x9, d16
+union-storage-matched-before[0x10014b870] <+668>:  cbz    x9, 0x10014b878           ; <+676> at fixture:4:14
+union-storage-matched-before[0x10014b874] <+672>:  b      0x10014b87c               ; <+680> at fixture:5:3
+union-storage-matched-before[0x10014b878] <+676>:  b      0x10014b93c               ; <+872>
+union-storage-matched-before[0x10014b87c] <+680>:  ldr    x9, [sp, #0x40]
+union-storage-matched-before[0x10014b880] <+684>:  str    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b884] <+688>:  str    d8, [sp, #0x98]
+union-storage-matched-before[0x10014b888] <+692>:  ldr    d0, [sp, #0x98]
+union-storage-matched-before[0x10014b88c] <+696>:  ldr    x0, [sp, #0x20]
+union-storage-matched-before[0x10014b890] <+700>:  mov    x1, #0x0                  ; =0 
+union-storage-matched-before[0x10014b894] <+704>:  mov    x2, #0x0                  ; =0 
+union-storage-matched-before[0x10014b898] <+708>:  mov    x3, sp
+union-storage-matched-before[0x10014b89c] <+712>:  adr    x16, 0x10014b89c          ; <+712> at fixture:5:3
+union-storage-matched-before[0x10014b8a0] <+716>:  mov    x17, #0xfbc               ; =4028 
+union-storage-matched-before[0x10014b8a4] <+720>:  movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b8a8] <+724>:  sub    x16, x16, x17
+union-storage-matched-before[0x10014b8ac] <+728>:  blr    x16
+union-storage-matched-before[0x10014b8b0] <+732>:  cmp    w0, #0x1
+union-storage-matched-before[0x10014b8b4] <+736>:  b.eq   0x10014b8bc               ; <+744> at fixture:5:3
+union-storage-matched-before[0x10014b8b8] <+740>:  b      0x10014bbdc               ; <+1544> at fixture:9:2
+union-storage-matched-before[0x10014b8bc] <+744>:  str    x1, [sp, #0x88]
+union-storage-matched-before[0x10014b8c0] <+748>:  ldr    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b8c4] <+752>:  cbnz   x9, 0x10014b8cc           ; <+760> at fixture:5:3
+union-storage-matched-before[0x10014b8c8] <+756>:  brk    #0x3
+union-storage-matched-before[0x10014b8cc] <+760>:  str    x9, [sp, #0x90]
+union-storage-matched-before[0x10014b8d0] <+764>:  ldr    x9, [sp, #0x90]
+union-storage-matched-before[0x10014b8d4] <+768>:  str    x9, [sp, #0x68]
+union-storage-matched-before[0x10014b8d8] <+772>:  ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b8dc] <+776>:  ldr    x10, [sp, #0x68]
+union-storage-matched-before[0x10014b8e0] <+780>:  str    x10, [x9, #0x10]
+union-storage-matched-before[0x10014b8e4] <+784>:  ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b8e8] <+788>:  ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014b8ec] <+792>:  adr    x16, 0x10014b8ec          ; <+792> at fixture:5:3
+union-storage-matched-before[0x10014b8f0] <+796>:  mov    x17, #0x394               ; =916 
+union-storage-matched-before[0x10014b8f4] <+800>:  movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014b8f8] <+804>:  add    x16, x16, x17
+union-storage-matched-before[0x10014b8fc] <+808>:  blr    x16
+union-storage-matched-before[0x10014b900] <+812>:  b      0x10014b98c               ; <+952>
+union-storage-matched-before[0x10014b904] <+816>:  str    xzr, [sp, #0x58]
+union-storage-matched-before[0x10014b908] <+820>:  str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b90c] <+824>:  str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b910] <+828>:  fmov   d16, d8
+union-storage-matched-before[0x10014b914] <+832>:  mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014b918] <+836>:  movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014b91c] <+840>:  movk   x9, #0x3ff0, lsl #48
+union-storage-matched-before[0x10014b920] <+844>:  fmov   d17, x9
+union-storage-matched-before[0x10014b924] <+848>:  fmov   d0, d16
+union-storage-matched-before[0x10014b928] <+852>:  fmov   d1, d17
+union-storage-matched-before[0x10014b92c] <+856>:  fadd   d0, d0, d1
+union-storage-matched-before[0x10014b930] <+860>:  fmov   d18, d0
+union-storage-matched-before[0x10014b934] <+864>:  fmov   d8, d18
+union-storage-matched-before[0x10014b938] <+868>:  b      0x10014b828               ; <+596>
+union-storage-matched-before[0x10014b93c] <+872>:  str    xzr, [sp, #0x40]
+union-storage-matched-before[0x10014b940] <+876>:  fmov   d16, d9
+union-storage-matched-before[0x10014b944] <+880>:  mov    x9, #0x8000               ; =32768 
+union-storage-matched-before[0x10014b948] <+884>:  movk   x9, #0x3f92, lsl #16
+union-storage-matched-before[0x10014b94c] <+888>:  movk   x9, #0x5ef3, lsl #32
+union-storage-matched-before[0x10014b950] <+892>:  movk   x9, #0x4290, lsl #48
+union-storage-matched-before[0x10014b954] <+896>:  fmov   d17, x9
+union-storage-matched-before[0x10014b958] <+900>:  fmov   d0, d16
+union-storage-matched-before[0x10014b95c] <+904>:  fmov   d1, d17
+union-storage-matched-before[0x10014b960] <+908>:  fcmp   d0, d1
+union-storage-matched-before[0x10014b964] <+912>:  cset   w9, eq
+union-storage-matched-before[0x10014b968] <+916>:  fmov   d18, x9
+union-storage-matched-before[0x10014b96c] <+920>:  fmov   x9, d18
+union-storage-matched-before[0x10014b970] <+924>:  cmp    x9, #0x0
+union-storage-matched-before[0x10014b974] <+928>:  cset   w9, ne
+union-storage-matched-before[0x10014b978] <+932>:  fmov   d16, x9
+union-storage-matched-before[0x10014b97c] <+936>:  fmov   x9, d16
+union-storage-matched-before[0x10014b980] <+940>:  cbz    x9, 0x10014b988           ; <+948> at fixture:9:9
+union-storage-matched-before[0x10014b984] <+944>:  b      0x10014bb70               ; <+1436> at fixture:9:29
+union-storage-matched-before[0x10014b988] <+948>:  b      0x10014bb88               ; <+1460> at fixture:9:32
+union-storage-matched-before[0x10014b98c] <+952>:  str    xzr, [sp, #0x68]
+union-storage-matched-before[0x10014b990] <+956>:  str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b994] <+960>:  str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b998] <+964>:  str    xzr, [sp, #0x90]
+union-storage-matched-before[0x10014b99c] <+968>:  ldr    x9, [sp, #0x40]
+union-storage-matched-before[0x10014b9a0] <+972>:  str    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b9a4] <+976>:  ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b9a8] <+980>:  ldr    x10, [x9, #0x10]
+union-storage-matched-before[0x10014b9ac] <+984>:  str    x10, [sp, #0x88]
+union-storage-matched-before[0x10014b9b0] <+988>:  ldr    x9, [sp, #0x88]
+union-storage-matched-before[0x10014b9b4] <+992>:  str    x9, [sp, #0x70]
+union-storage-matched-before[0x10014b9b8] <+996>:  mov    x9, #0x1                  ; =1 
+union-storage-matched-before[0x10014b9bc] <+1000>: str    x9, [sp, #0x98]
+union-storage-matched-before[0x10014b9c0] <+1004>: b      0x10014b9dc               ; <+1032>
+union-storage-matched-before[0x10014b9c4] <+1008>: str    xzr, [sp, #0x40]
+union-storage-matched-before[0x10014b9c8] <+1012>: str    xzr, [sp, #0x68]
+union-storage-matched-before[0x10014b9cc] <+1016>: str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b9d0] <+1020>: str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b9d4] <+1024>: str    xzr, [sp, #0x90]
+union-storage-matched-before[0x10014b9d8] <+1028>: brk    #0
+union-storage-matched-before[0x10014b9dc] <+1032>: str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014b9e0] <+1036>: str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014b9e4] <+1040>: ldr    x9, [sp, #0x70]
+union-storage-matched-before[0x10014b9e8] <+1044>: str    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b9ec] <+1048>: ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b9f0] <+1052>: str    x9, [sp, #0x58]
+union-storage-matched-before[0x10014b9f4] <+1056>: ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014b9f8] <+1060>: cbnz   x9, 0x10014ba00           ; <+1068> at fixture:6:6
+union-storage-matched-before[0x10014b9fc] <+1064>: brk    #0x3
+union-storage-matched-before[0x10014ba00] <+1068>: str    x9, [sp, #0x88]
+union-storage-matched-before[0x10014ba04] <+1072>: ldr    x4, [sp, #0x88]
+union-storage-matched-before[0x10014ba08] <+1076>: ldr    x0, [sp, #0x20]
+union-storage-matched-before[0x10014ba0c] <+1080>: mov    x1, #0x0                  ; =0 
+union-storage-matched-before[0x10014ba10] <+1084>: mov    x2, #0x0                  ; =0 
+union-storage-matched-before[0x10014ba14] <+1088>: mov    x3, sp
+union-storage-matched-before[0x10014ba18] <+1092>: adr    x16, 0x10014ba18          ; <+1092> at fixture:6:6
+union-storage-matched-before[0x10014ba1c] <+1096>: mov    x17, #0xe58               ; =3672 
+union-storage-matched-before[0x10014ba20] <+1100>: movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014ba24] <+1104>: sub    x16, x16, x17
+union-storage-matched-before[0x10014ba28] <+1108>: blr    x16
+union-storage-matched-before[0x10014ba2c] <+1112>: cmp    w0, #0x1
+union-storage-matched-before[0x10014ba30] <+1116>: b.eq   0x10014ba38               ; <+1124> at fixture:6:6
+union-storage-matched-before[0x10014ba34] <+1120>: b      0x10014bbdc               ; <+1544> at fixture:9:2
+union-storage-matched-before[0x10014ba38] <+1124>: str    x1, [sp, #0x80]
+union-storage-matched-before[0x10014ba3c] <+1128>: adr    x9, 0x10014ba3c           ; <+1128> at fixture:6:21
+union-storage-matched-before[0x10014ba40] <+1132>: mov    x17, #0x384               ; =900 
+union-storage-matched-before[0x10014ba44] <+1136>: movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014ba48] <+1140>: add    x9, x9, x17
+union-storage-matched-before[0x10014ba4c] <+1144>: str    x9, [sp, #0x88]
+union-storage-matched-before[0x10014ba50] <+1148>: ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014ba54] <+1152>: ldr    x10, [sp, #0x88]
+union-storage-matched-before[0x10014ba58] <+1156>: adr    x16, 0x10014ba58          ; <+1156> at fixture:6:6
+union-storage-matched-before[0x10014ba5c] <+1160>: mov    x17, #0x2cc               ; =716 
+union-storage-matched-before[0x10014ba60] <+1164>: movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014ba64] <+1168>: add    x16, x16, x17
+union-storage-matched-before[0x10014ba68] <+1172>: blr    x16
+union-storage-matched-before[0x10014ba6c] <+1176>: mov    x10, #0x1                 ; =1 
+union-storage-matched-before[0x10014ba70] <+1180>: eor    w9, w9, w10
+union-storage-matched-before[0x10014ba74] <+1184>: fmov   d16, x9
+union-storage-matched-before[0x10014ba78] <+1188>: fmov   x9, d16
+union-storage-matched-before[0x10014ba7c] <+1192>: cmp    x9, #0x0
+union-storage-matched-before[0x10014ba80] <+1196>: cset   w9, ne
+union-storage-matched-before[0x10014ba84] <+1200>: fmov   d17, x9
+union-storage-matched-before[0x10014ba88] <+1204>: fmov   x9, d17
+union-storage-matched-before[0x10014ba8c] <+1208>: cbz    x9, 0x10014ba94           ; <+1216> at fixture:6:3
+union-storage-matched-before[0x10014ba90] <+1212>: b      0x10014ba98               ; <+1220>
+union-storage-matched-before[0x10014ba94] <+1216>: b      0x10014baf4               ; <+1312>
+union-storage-matched-before[0x10014ba98] <+1220>: str    xzr, [sp, #0x40]
+union-storage-matched-before[0x10014ba9c] <+1224>: str    xzr, [sp, #0x58]
+union-storage-matched-before[0x10014baa0] <+1228>: str    xzr, [sp, #0x70]
+union-storage-matched-before[0x10014baa4] <+1232>: str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014baa8] <+1236>: str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014baac] <+1240>: mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014bab0] <+1244>: movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014bab4] <+1248>: movk   x9, #0x3ff0, lsl #48
+union-storage-matched-before[0x10014bab8] <+1252>: fmov   d16, x9
+union-storage-matched-before[0x10014babc] <+1256>: ldr    x10, [sp, #0x28]
+union-storage-matched-before[0x10014bac0] <+1260>: fmov   x9, d16
+union-storage-matched-before[0x10014bac4] <+1264>: str    x9, [x10, #0x10]
+union-storage-matched-before[0x10014bac8] <+1268>: mov    x0, #0x1                  ; =1 
+union-storage-matched-before[0x10014bacc] <+1272>: str    w0, [x10]
+union-storage-matched-before[0x10014bad0] <+1276>: ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014bad4] <+1280>: ldr    x9, [sp, #0x30]
+union-storage-matched-before[0x10014bad8] <+1284>: str    x9, [x10]
+union-storage-matched-before[0x10014badc] <+1288>: ldr    d8, [sp, #0xb8]
+union-storage-matched-before[0x10014bae0] <+1292>: ldr    d9, [sp, #0xc0]
+union-storage-matched-before[0x10014bae4] <+1296>: ldr    d10, [sp, #0xc8]
+union-storage-matched-before[0x10014bae8] <+1300>: add    sp, sp, #0xd0
+union-storage-matched-before[0x10014baec] <+1304>: ldp    x29, x30, [sp], #0x10
+union-storage-matched-before[0x10014baf0] <+1308>: ret    
+union-storage-matched-before[0x10014baf4] <+1312>: str    xzr, [sp, #0x70]
+union-storage-matched-before[0x10014baf8] <+1316>: str    xzr, [sp, #0x80]
+union-storage-matched-before[0x10014bafc] <+1320>: str    xzr, [sp, #0x88]
+union-storage-matched-before[0x10014bb00] <+1324>: b      0x10014bb04               ; <+1328> at fixture:7:3
+union-storage-matched-before[0x10014bb04] <+1328>: str    d9, [sp, #0x98]
+union-storage-matched-before[0x10014bb08] <+1332>: ldr    x9, [sp, #0x58]
+union-storage-matched-before[0x10014bb0c] <+1336>: str    x9, [sp, #0x80]
+union-storage-matched-before[0x10014bb10] <+1340>: ldr    x9, [sp, #0x80]
+union-storage-matched-before[0x10014bb14] <+1344>: cbnz   x9, 0x10014bb1c           ; <+1352> at fixture:7:8
+union-storage-matched-before[0x10014bb18] <+1348>: brk    #0x3
+union-storage-matched-before[0x10014bb1c] <+1352>: str    x9, [sp, #0x88]
+union-storage-matched-before[0x10014bb20] <+1356>: ldr    x4, [sp, #0x88]
+union-storage-matched-before[0x10014bb24] <+1360>: ldr    x0, [sp, #0x20]
+union-storage-matched-before[0x10014bb28] <+1364>: mov    x1, #0x0                  ; =0 
+union-storage-matched-before[0x10014bb2c] <+1368>: mov    x2, #0x0                  ; =0 
+union-storage-matched-before[0x10014bb30] <+1372>: mov    x3, sp
+union-storage-matched-before[0x10014bb34] <+1376>: adr    x16, 0x10014bb34          ; <+1376> at fixture:7:8
+union-storage-matched-before[0x10014bb38] <+1380>: mov    x17, #0xc00               ; =3072 
+union-storage-matched-before[0x10014bb3c] <+1384>: movk   x17, #0x0, lsl #16
+union-storage-matched-before[0x10014bb40] <+1388>: sub    x16, x16, x17
+union-storage-matched-before[0x10014bb44] <+1392>: blr    x16
+union-storage-matched-before[0x10014bb48] <+1396>: cmp    w0, #0x1
+union-storage-matched-before[0x10014bb4c] <+1400>: b.eq   0x10014bb54               ; <+1408> at fixture:7:8
+union-storage-matched-before[0x10014bb50] <+1404>: b      0x10014bbdc               ; <+1544> at fixture:9:2
+union-storage-matched-before[0x10014bb54] <+1408>: str    x1, [sp, #0xa0]
+union-storage-matched-before[0x10014bb58] <+1412>: ldr    d0, [sp, #0x98]
+union-storage-matched-before[0x10014bb5c] <+1416>: ldr    d1, [sp, #0xa0]
+union-storage-matched-before[0x10014bb60] <+1420>: fadd   d0, d0, d1
+union-storage-matched-before[0x10014bb64] <+1424>: fmov   d16, d0
+union-storage-matched-before[0x10014bb68] <+1428>: fmov   d9, d16
+union-storage-matched-before[0x10014bb6c] <+1432>: b      0x10014b904               ; <+816>
+union-storage-matched-before[0x10014bb70] <+1436>: mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014bb74] <+1440>: movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014bb78] <+1444>: movk   x9, #0x4045, lsl #48
+union-storage-matched-before[0x10014bb7c] <+1448>: fmov   d16, x9
+union-storage-matched-before[0x10014bb80] <+1452>: fmov   d10, d16
+union-storage-matched-before[0x10014bb84] <+1456>: b      0x10014bba0               ; <+1484> at fixture:9:2
+union-storage-matched-before[0x10014bb88] <+1460>: mov    x9, #0x0                  ; =0 
+union-storage-matched-before[0x10014bb8c] <+1464>: movk   x9, #0x0, lsl #32
+union-storage-matched-before[0x10014bb90] <+1468>: movk   x9, #0x4000, lsl #48
+union-storage-matched-before[0x10014bb94] <+1472>: fmov   d16, x9
+union-storage-matched-before[0x10014bb98] <+1476>: fmov   d10, d16
+union-storage-matched-before[0x10014bb9c] <+1480>: b      0x10014bba0               ; <+1484> at fixture:9:2
+union-storage-matched-before[0x10014bba0] <+1484>: fmov   d16, d10
+union-storage-matched-before[0x10014bba4] <+1488>: ldr    x10, [sp, #0x28]
+union-storage-matched-before[0x10014bba8] <+1492>: fmov   x9, d16
+union-storage-matched-before[0x10014bbac] <+1496>: str    x9, [x10, #0x10]
+union-storage-matched-before[0x10014bbb0] <+1500>: mov    x0, #0x1                  ; =1 
+union-storage-matched-before[0x10014bbb4] <+1504>: str    w0, [x10]
+union-storage-matched-before[0x10014bbb8] <+1508>: ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014bbbc] <+1512>: ldr    x9, [sp, #0x30]
+union-storage-matched-before[0x10014bbc0] <+1516>: str    x9, [x10]
+union-storage-matched-before[0x10014bbc4] <+1520>: ldr    d8, [sp, #0xb8]
+union-storage-matched-before[0x10014bbc8] <+1524>: ldr    d9, [sp, #0xc0]
+union-storage-matched-before[0x10014bbcc] <+1528>: ldr    d10, [sp, #0xc8]
+union-storage-matched-before[0x10014bbd0] <+1532>: add    sp, sp, #0xd0
+union-storage-matched-before[0x10014bbd4] <+1536>: ldp    x29, x30, [sp], #0x10
+union-storage-matched-before[0x10014bbd8] <+1540>: ret    
+union-storage-matched-before[0x10014bbdc] <+1544>: cmp    w0, #0x2
+union-storage-matched-before[0x10014bbe0] <+1548>: b.eq   0x10014bbe8               ; <+1556> at fixture:9:2
+union-storage-matched-before[0x10014bbe4] <+1552>: brk    #0
+union-storage-matched-before[0x10014bbe8] <+1556>: ldr    x10, [sp, #0x28]
+union-storage-matched-before[0x10014bbec] <+1560>: ldr    x9, [sp, #0x10]
+union-storage-matched-before[0x10014bbf0] <+1564>: ldr    x11, [sp, #0x18]
+union-storage-matched-before[0x10014bbf4] <+1568>: str    x9, [x10, #0x10]
+union-storage-matched-before[0x10014bbf8] <+1572>: str    x11, [x10, #0x18]
+union-storage-matched-before[0x10014bbfc] <+1576>: str    w0, [x10]
+union-storage-matched-before[0x10014bc00] <+1580>: ldr    x10, [sp, #0x20]
+union-storage-matched-before[0x10014bc04] <+1584>: ldr    x9, [sp, #0x30]
+union-storage-matched-before[0x10014bc08] <+1588>: str    x9, [x10]
+union-storage-matched-before[0x10014bc0c] <+1592>: ldr    d8, [sp, #0xb8]
+union-storage-matched-before[0x10014bc10] <+1596>: ldr    d9, [sp, #0xc0]
+union-storage-matched-before[0x10014bc14] <+1600>: ldr    d10, [sp, #0xc8]
+union-storage-matched-before[0x10014bc18] <+1604>: add    sp, sp, #0xd0
+union-storage-matched-before[0x10014bc1c] <+1608>: ldp    x29, x30, [sp], #0x10
+union-storage-matched-before[0x10014bc20] <+1612>: ret    

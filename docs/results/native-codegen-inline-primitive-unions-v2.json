@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-matched-performance-refresh",
+  "mergeReady": false,
+  "change": "Inline heterogeneous primitive unions, corrected general equality payload reads, and adjacent-block/boolean lowering. Matches native program/runtime source across compiler hosts; does not isolate these changes from each other.",
+  "benchmark": {
+    "sourceSnapshot": {
+      "sha256": "e4cf68d53f79d191dbf0b69962fd5865a1067bfe8f23f7c4e700b664301c1370",
+      "files": 568
+    },
+    "fixtureSha256": "c6238a974f40d00533d0ff17d1808415878c724018dcba8439df7bccb3c181ca",
+    "allEightExpectedNativeExits": true,
+    "pairs": 4,
+    "cpuLowerBoundMs": [
+      {
+        "median": 130.598,
+        "min": 129.13408333333334,
+        "max": 132.340875
+      },
+      {
+        "median": 44.463229166666665,
+        "min": 43.46341666666667,
+        "max": 45.629375
+      }
+    ],
+    "wallMsDiagnosticOnly": [
+      {
+        "median": 189.28104150000001,
+        "min": 185.481833,
+        "max": 199.090041
+      },
+      {
+        "median": 104.6624375,
+        "min": 101.530584,
+        "max": 110.440084
+      }
+    ],
+    "finalCPUUncertaintyBoundMs": [
+      {
+        "median": 1.3618329999999998,
+        "min": 1.317541,
+        "max": 1.668416
+      },
+      {
+        "median": 0.641854,
+        "min": 0.021417,
+        "max": 1.318875
+      }
+    ],
+    "speedup": 2.937213568327762,
+    "loadOneMinuteRange": [
+      23.67041015625,
+      23.77685546875
+    ],
+    "staticRunBody": {
+      "instructions": [
+        404,
+        444
+      ],
+      "indirectCalls": [
+        8,
+        4
+      ],
+      "stackStores": [
+        72,
+        96
+      ],
+      "interpretation": "The inline body is larger, but removes the numeric constructor/allocation from the repeated store path. Static whole-body counts are not dynamic instruction counts."
+    },
+    "method": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "rawData": "native-codegen-inline-primitive-unions-v2-union-storage-cpu-load-v3.json"
+  },
+  "test262": {
+    "report": "native-codegen-inline-primitive-unions-v2-inline-unions-addition-a1-v5.json",
+    "totals": {
+      "total": 2,
+      "passed": 0,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 2,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 0
+    },
+    "equivalence": "Same two post-entry timeout classifications as the accepted register-copy baseline; timeout classification is not proof of identical completed values. Original resources, source hashes, strictness and 300000 ms budget retained.",
+    "timing": "468875.568 ms Node batch wall; no compile CPU ledger for this run. Sloppy inferior CPU snapshot 178.3 s at 205 elapsed; strict CPU unavailable. No execution-speed claim from the timeouts."
+  },
+  "selfbuild": "Frozen native validation in progress: v3 reuses immutable v2 stage1 and source, compiler source e4cf68d5. The v2 live native run ended with the user-message session interruption after 388.745 CPU s, without a final image. This is not a semantic failure; logs and input image retained.",
+  "wholeSuiteProjection": "No projection from a primitive-union store loop. Whole-suite throughput also depends on Node compilation, sparse array access, JIT preparation and execution distribution."
+}
