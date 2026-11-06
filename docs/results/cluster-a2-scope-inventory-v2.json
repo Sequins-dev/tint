@@ -1,0 +1,399 @@
+{
+  "kind": "cluster-a2-scope-inventory",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "baseline": "5c21ca4029dbda7bb15018a095582afdd1173ad4",
+  "inventory": "docs/results/language-preparation-inventory-node-v5.json",
+  "ownershipNotes": [
+    "assignmenttargettype retained in A2 because the explicit E ownership lists assignment/compound-assignment/logical-assignment only.",
+    "concatenation and relational are operator families owned by B.",
+    "import-defer/source proposal cases are nested in dynamic-import and remain in its denominator."
+  ],
+  "variants": 4973,
+  "selections": [
+    {
+      "group": "language/expressions/object",
+      "variants": 2252,
+      "syntaxOnly": 300,
+      "prepared": 1952,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/arrow-function",
+      "variants": 643,
+      "syntaxOnly": 170,
+      "prepared": 473,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/assignmenttargettype",
+      "variants": 627,
+      "syntaxOnly": 614,
+      "prepared": 13,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/function",
+      "variants": 484,
+      "syntaxOnly": 66,
+      "prepared": 418,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/super",
+      "variants": 184,
+      "syntaxOnly": 0,
+      "prepared": 184,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-super-native-v1.json",
+          "totals": {
+            "total": 184,
+            "passed": 20,
+            "failed": 4,
+            "unsupported": 134,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 26,
+            "passFraction": 0.10869565217391304
+          },
+          "sourceSnapshot": null
+        },
+        {
+          "report": "docs/results/test262-reference-keys-super-v4.json",
+          "totals": {
+            "total": 184,
+            "passed": 184,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "0cdd910dd27c6efe0b43f01cd8c9989a297ecad24d2f541040fbaf89909aba2d",
+            "files": 568
+          }
+        },
+        {
+          "report": "docs/results/test262-language-super-reference-core-v1.json",
+          "totals": {
+            "total": 184,
+            "passed": 184,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+            "files": 566
+          }
+        },
+        {
+          "report": "docs/results/test262-super-native-v2.json",
+          "totals": {
+            "total": 184,
+            "passed": 67,
+            "failed": 11,
+            "unsupported": 46,
+            "timeouts": 0,
+            "harnessErrors": 3,
+            "crashes": 57,
+            "passFraction": 0.3641304347826087
+          },
+          "sourceSnapshot": null
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/call",
+      "variants": 171,
+      "syntaxOnly": 2,
+      "prepared": 169,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-language-call-tail-transfers-v1.json",
+          "totals": {
+            "total": 171,
+            "passed": 171,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "57b9366a908be5657eb3af243099b68c5218cb616607528967b077e2f03a67e2",
+            "files": 566
+          }
+        },
+        {
+          "report": "docs/results/test262-language-call-reference-core-v1.json",
+          "totals": {
+            "total": 171,
+            "passed": 165,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 6,
+            "passFraction": 0.9649122807017544
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          }
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/new",
+      "variants": 118,
+      "syntaxOnly": 0,
+      "prepared": 118,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/template-literal",
+      "variants": 114,
+      "syntaxOnly": 32,
+      "prepared": 82,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-template-literal-native-v1.json",
+          "totals": {
+            "total": 114,
+            "passed": 52,
+            "failed": 2,
+            "unsupported": 60,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.45614035087719296
+          },
+          "sourceSnapshot": null
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/array",
+      "variants": 104,
+      "syntaxOnly": 0,
+      "prepared": 104,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/optional-chaining",
+      "variants": 76,
+      "syntaxOnly": 24,
+      "prepared": 52,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-optional-chaining-native-v1.json",
+          "totals": {
+            "total": 76,
+            "passed": 28,
+            "failed": 4,
+            "unsupported": 44,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.3684210526315789
+          },
+          "sourceSnapshot": null
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/tagged-template",
+      "variants": 48,
+      "syntaxOnly": 0,
+      "prepared": 48,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-language-tagged-template-current-v1.json",
+          "totals": {
+            "total": 48,
+            "passed": 48,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+            "files": 568
+          }
+        },
+        {
+          "report": "docs/results/test262-tagged-template-native-v1.json",
+          "totals": {
+            "total": 48,
+            "passed": 25,
+            "failed": 3,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 2,
+            "crashes": 16,
+            "passFraction": 0.5208333333333334
+          },
+          "sourceSnapshot": null
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/conditional",
+      "variants": 42,
+      "syntaxOnly": 4,
+      "prepared": 38,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/property-accessors",
+      "variants": 42,
+      "syntaxOnly": 2,
+      "prepared": 40,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/new.target",
+      "variants": 28,
+      "syntaxOnly": 4,
+      "prepared": 24,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-new-target-native-v1.json",
+          "totals": {
+            "total": 28,
+            "passed": 3,
+            "failed": 2,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 15,
+            "passFraction": 0.10714285714285714
+          },
+          "sourceSnapshot": null
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/grouping",
+      "variants": 16,
+      "syntaxOnly": 0,
+      "prepared": 16,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/comma",
+      "variants": 11,
+      "syntaxOnly": 0,
+      "prepared": 11,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/this",
+      "variants": 11,
+      "syntaxOnly": 2,
+      "prepared": 9,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    },
+    {
+      "group": "language/expressions/member-expression",
+      "variants": 2,
+      "syntaxOnly": 0,
+      "prepared": 2,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    }
+  ],
+  "supersedes": "docs/results/cluster-a2-scope-inventory-v1.json",
+  "scopeChange": "Coordinator transferred dynamic-import and import.meta to cluster A3. Finish and commit the existing dynamic-import run for A3 to adopt; do not start further work in either directory.",
+  "transferredSelections": [
+    {
+      "group": "language/expressions/dynamic-import",
+      "variants": 1900,
+      "syntaxOnly": 717,
+      "prepared": 890,
+      "unsupported": 293,
+      "preparationThrew": 0,
+      "existingCompleteReports": [
+        {
+          "report": "docs/results/test262-script-dynamic-import-directory-v1.json",
+          "totals": {
+            "total": 1900,
+            "passed": 1559,
+            "failed": 0,
+            "unsupported": 341,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.8205263157894737
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          }
+        }
+      ]
+    },
+    {
+      "group": "language/expressions/import.meta",
+      "variants": 27,
+      "syntaxOnly": 13,
+      "prepared": 14,
+      "unsupported": 0,
+      "preparationThrew": 0,
+      "existingCompleteReports": []
+    }
+  ],
+  "activeTransferRun": {
+    "selection": "language/expressions/dynamic-import",
+    "pid": 11672,
+    "journal": ".tint-bootstrap/a2/dynamic-import-v2.jsonl",
+    "toolchain": "docs/results/frozen-node-toolchain-a2-v2.json",
+    "handoff": "Commit complete report on A2 branch for A3 adoption."
+  }
+}
