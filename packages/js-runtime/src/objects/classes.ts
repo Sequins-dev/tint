@@ -17,6 +17,7 @@ import {
   createConstructorObject,
   createDataProperty,
   defineOwnProperty,
+  isExtensible,
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectCall,
@@ -38,12 +39,20 @@ export interface ClassField {
 
 export type ClassPrivateMethod = PrivateMethod<unknown>;
 
-/** Install methods and complete accessor pairs before any instance/static fields. */
+/** Install methods and complete accessor pairs before any instance/static fields.
+ * Stage 3 nonextensible-applies-to-private: a non-empty batch first requires
+ * ? IsExtensible(receiver), observed once even for several methods; an empty
+ * batch never queries the receiver. */
 export function initializeClassPrivateMethods(
   receiver: OrdinaryObject<ScriptPropertyKey, unknown>,
   methods: readonly ClassPrivateMethod[],
   realm: ErrorRealm,
 ): void {
+  if (
+    methods.length !== 0 &&
+    !isExtensible<ScriptPropertyKey, unknown>(receiver)
+  )
+    throw createRuntimeError(realm, "type");
   for (const method of methods) {
     if (method === undefined) throw "PRIVATE_METHOD_INVARIANT";
     const error =

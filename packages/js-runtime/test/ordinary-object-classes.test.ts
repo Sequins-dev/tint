@@ -355,6 +355,160 @@ test("private class methods install before fields and remain separate from prope
   );
 });
 
+test("InitializeInstanceElements checks extensibility once before any private method", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const isTypeError = (error: unknown): boolean =>
+    (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>).prototype ===
+    realm.prototypes.get("type");
+  const log: string[] = [];
+  let mode: "extensible" | "sealed" | "throw" = "sealed";
+  const receiver = objects.createExoticObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+    {
+      isExtensible: () => {
+        log.push("isExtensible");
+        if (mode === "throw") throw "trap";
+        return mode === "extensible";
+      },
+    },
+  );
+  const first = objects.createPrivateName("#first"),
+    second = objects.createPrivateName("#second");
+  const methods: objects.ClassPrivateMethod[] = [
+    { name: first, kind: "method", value: 1 },
+    { name: second, kind: "accessor", get: 2, set: undefined },
+  ];
+  // An empty batch never queries the receiver.
+  objects.initializeClassPrivateMethods(receiver, [], realm);
+  assert.deepEqual(log, []);
+  assert.throws(
+    () => objects.initializeClassPrivateMethods(receiver, methods, realm),
+    isTypeError,
+  );
+  assert.deepEqual(log, ["isExtensible"]);
+  assert.equal(receiver.internalPrivateElements, undefined);
+  mode = "throw";
+  assert.throws(
+    () => objects.initializeClassPrivateMethods(receiver, methods, realm),
+    (error: unknown) => error === "trap",
+  );
+  assert.equal(receiver.internalPrivateElements, undefined);
+  mode = "extensible";
+  log.length = 0;
+  objects.initializeClassPrivateMethods(receiver, methods, realm);
+  assert.deepEqual(log, ["isExtensible"]);
+  assert.equal(objects.hasPrivateElement(receiver, first), true);
+  assert.equal(objects.hasPrivateElement(receiver, second), true);
+});
+
+test("private field definition evaluates its initializer before rejecting a non-extensible receiver", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const receiver = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  objects.preventExtensions(receiver);
+  const log: string[] = [];
+  const name = objects.createPrivateName("#x");
+  assert.throws(
+    () =>
+      objects.initializeClassFields(
+        receiver,
+        [
+          {
+            name: "#x",
+            privateName: name,
+            initialize: () => (log.push("initializer"), 1),
+          },
+          {
+            name: "#y",
+            privateName: objects.createPrivateName("#y"),
+            initialize: () => (log.push("unreached"), 2),
+          },
+        ],
+        realm,
+        hooks,
+      ),
+    (error: unknown) =>
+      (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>)
+        .prototype === realm.prototypes.get("type"),
+  );
+  assert.deepEqual(log, ["initializer"]);
+  assert.equal(objects.hasPrivateElement(receiver, name), false);
+});
+
+test("super() binds a non-extensible return-override object before private elements reject it", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const isTypeError = (error: unknown): boolean =>
+    (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>).prototype ===
+    realm.prototypes.get("type");
+  const field = objects.createPrivateName("#value");
+  const method = objects.createPrivateName("#method");
+  for (const name of [field, method]) {
+    for (const sealed of [false, true]) {
+      // TrojanBase: constructor(object) { return object; }
+      const returned = objects.createObject<ScriptPropertyKey, unknown>(
+        realm.objectPrototype,
+      );
+      if (sealed) objects.preventExtensions(returned);
+      const base = objects.createConstructorObject<ScriptPropertyKey, unknown>(
+        realm.functionPrototype,
+        () => undefined,
+        (args) => args[0],
+      );
+      const target = objects.createConstructorObject<
+        ScriptPropertyKey,
+        unknown
+      >(
+        base,
+        () => undefined,
+        () => undefined,
+      );
+      const context = objects.createDerivedConstruction<
+        ScriptPropertyKey,
+        unknown
+      >({ value: target, object: target }, undefined, (receiver) => {
+        const instance = receiver as objects.OrdinaryObject<
+          ScriptPropertyKey,
+          unknown
+        >;
+        objects.initializeClassPrivateMethods(
+          instance,
+          name === method ? [{ name, kind: "method", value: 7 }] : [],
+          realm,
+        );
+        objects.initializeClassFields(
+          instance,
+          name === field
+            ? [{ name: "#value", privateName: name, initialize: () => 42 }]
+            : [],
+          realm,
+          hooks,
+        );
+      });
+      const construct = () =>
+        objects.constructSuper(context, base, [returned], undefined);
+      if (!sealed) {
+        assert.equal(construct().value, returned);
+        assert.equal(objects.hasPrivateElement(returned, name), true);
+        continue;
+      }
+      assert.throws(construct, isTypeError);
+      assert.equal(objects.hasPrivateElement(returned, name), false);
+      // BindThisValue precedes InitializeInstanceElements, so this stays bound.
+      assert.equal(objects.getDerivedThis(context).value, returned);
+    }
+  }
+});
+
 test("public accessor metadata uses the source parameter length", () => {
   const realm = objects.createErrorRealm(
     objects.createObject<ScriptPropertyKey, unknown>(undefined),

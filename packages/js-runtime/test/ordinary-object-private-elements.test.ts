@@ -17,9 +17,10 @@ test("private fields use definition identities, ignore prototypes and survive no
   const parent = objects.createObject<string, number>(undefined);
   const child = objects.createObject(parent);
   assert.equal(parent.internalPrivateElements, undefined);
-  objects.preventExtensions(parent);
   assert.equal(objects.addPrivateField(parent, name, 41), "none");
   assert.equal(objects.addPrivateField(parent, name, 99), "type");
+  // Existing private elements remain usable once extensions are prevented.
+  objects.preventExtensions(parent);
   assert.equal(objects.hasPrivateElement(parent, name), true);
   assert.equal(objects.hasPrivateElement(parent, other), false);
   assert.equal(objects.hasPrivateElement(child, name), false);
@@ -145,4 +146,65 @@ test("undefined private field values remain present and accessor exceptions prop
     () => objects.getPrivateElement({ value: object, object }, getter, hooks),
     (error) => error === failure,
   );
+});
+
+test("PrivateFieldAdd rejects non-extensible objects before the duplicate check", () => {
+  const name = objects.createPrivateName("x"),
+    later = objects.createPrivateName("y");
+  const object = objects.createObject<string, number>(undefined);
+  assert.equal(objects.addPrivateField(object, name, 1), "none");
+  objects.preventExtensions(object);
+  assert.equal(objects.addPrivateField(object, later, 2), "type");
+  assert.equal(objects.hasPrivateElement(object, later), false);
+  assert.equal(object.internalPrivateElements?.length, 1);
+  // A frozen object's existing private field is still writable.
+  assert.equal(
+    objects.setPrivateElement({ value: 3, object }, name, 5, hooks),
+    "none",
+  );
+  assert.equal(
+    objects.getPrivateElement({ value: 3, object }, name, hooks).value,
+    5,
+  );
+});
+
+test("PrivateFieldAdd observes [[IsExtensible]] once, even for duplicates, and propagates abrupt checks", () => {
+  const name = objects.createPrivateName("x");
+  const log: string[] = [];
+  let mode: "extensible" | "sealed" | "throw" = "extensible";
+  const exotic = objects.createExoticObject<string, number>(undefined, {
+    isExtensible: () => {
+      log.push("isExtensible");
+      if (mode === "throw") throw "trap";
+      return mode === "extensible";
+    },
+  });
+  assert.equal(objects.addPrivateField(exotic, name, 1), "none");
+  assert.deepEqual(log, ["isExtensible"]);
+  // Duplicate additions still query extensibility first.
+  assert.equal(objects.addPrivateField(exotic, name, 2), "type");
+  assert.deepEqual(log, ["isExtensible", "isExtensible"]);
+  mode = "throw";
+  assert.throws(
+    () => objects.addPrivateField(exotic, objects.createPrivateName("y"), 3),
+    (error: unknown) => error === "trap",
+  );
+  mode = "sealed";
+  const fresh = objects.createPrivateName("z");
+  assert.equal(objects.addPrivateField(exotic, fresh, 4), "type");
+  assert.equal(objects.hasPrivateElement(exotic, fresh), false);
+  assert.equal(
+    objects.getPrivateElement({ value: 9, object: exotic }, name, hooks).value,
+    1,
+  );
+});
+
+test("PrivateMethodOrAccessorAdd itself checks only duplicates", () => {
+  const object = objects.createObject<string, number>(undefined);
+  objects.preventExtensions(object);
+  const method = objects.createPrivateName("m"),
+    accessor = objects.createPrivateName("a");
+  assert.equal(objects.addPrivateMethod(object, method, 1), "none");
+  assert.equal(objects.addPrivateAccessor(object, accessor, 2, 3), "none");
+  assert.equal(objects.addPrivateMethod(object, method, 1), "type");
 });

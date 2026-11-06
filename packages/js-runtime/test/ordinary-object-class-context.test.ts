@@ -299,3 +299,83 @@ test("base OrdinaryCreateFromConstructor runs before entering the class realm", 
   assert.deepEqual(order, ["prototype in caller"]);
   assert.ok(caller.agent.activeContext === undefined);
 });
+
+test("derived private elements reject a non-extensible return override in the class realm", () => {
+  const { caller, callee } = realms();
+  // TrojanBase: constructor(object) { return object; }
+  const base = objects.createBaseClass(
+    "TrojanBase",
+    1,
+    (_receiver, args) => args[0],
+    [],
+    callee,
+    hooks,
+  );
+  const basePrototype = objects.getOwnProperty(base, "prototype")!
+    .value as OrdinaryObject<ScriptPropertyKey, unknown>;
+  const field = objects.createPrivateName("#value");
+  const method = objects.createPrivateName("#method");
+  const order: string[] = [];
+  const classes = [
+    {
+      name: field,
+      constructor: objects.createDerivedClass(
+        "WithField",
+        1,
+        undefined,
+        [
+          {
+            name: "#value",
+            privateName: field,
+            initialize: () => (order.push("initializer"), 42),
+          },
+        ],
+        callee,
+        hooks,
+        base,
+        objects.createObject(basePrototype),
+      ),
+    },
+    {
+      name: method,
+      constructor: objects.createDerivedClass(
+        "WithMethod",
+        1,
+        undefined,
+        [],
+        callee,
+        hooks,
+        base,
+        objects.createObject(basePrototype),
+        [{ name: method, kind: "method", value: 7 }],
+      ),
+    },
+  ];
+  for (const { name, constructor } of classes) {
+    const construct = (object: OrdinaryObject<ScriptPropertyKey, unknown>) =>
+      caller.executionContext.run(
+        () =>
+          objects.constructObject(
+            constructor,
+            [object],
+            { value: constructor, object: constructor },
+            undefined,
+          ).value,
+      );
+    const open = objects.createObject<ScriptPropertyKey, unknown>(
+      caller.objectPrototype,
+    );
+    assert.ok(construct(open) === open);
+    assert.equal(objects.hasPrivateElement(open, name), true);
+    const sealed = objects.createObject<ScriptPropertyKey, unknown>(
+      caller.objectPrototype,
+    );
+    objects.preventExtensions(sealed);
+    // InitializeInstanceElements runs within the derived constructor.
+    throwsIn(() => construct(sealed), callee, "type");
+    assert.equal(objects.hasPrivateElement(sealed, name), false);
+    assert.ok(caller.agent.activeContext === undefined);
+  }
+  // The field initializer runs before PrivateFieldAdd rejects the receiver.
+  assert.deepEqual(order, ["initializer", "initializer"]);
+});

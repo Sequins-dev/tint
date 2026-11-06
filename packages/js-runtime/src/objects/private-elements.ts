@@ -1,4 +1,9 @@
-import type { OrdinaryObject, ObjectHooks, Receiver } from "./operations.ts";
+import {
+  isExtensible,
+  type OrdinaryObject,
+  type ObjectHooks,
+  type Receiver,
+} from "./operations.ts";
 
 /** Identity is allocated for each class evaluation; spelling is diagnostic only. */
 export interface PrivateName {
@@ -62,14 +67,22 @@ function addPrivateElement<Key, Value>(
   return "none";
 }
 
+/** PrivateFieldAdd with the Stage 3 nonextensible-applies-to-private step
+ * (tested by pinned Test262 under that feature flag; not yet in ES2025):
+ * ? IsExtensible(O) precedes the duplicate check, so proxy isExtensible traps
+ * observe (and may abort) every addition. Existing private elements remain
+ * readable and writable after extensions are prevented. */
 export function addPrivateField<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   name: PrivateName,
   value: Value,
 ): "none" | "type" {
+  if (!isExtensible<Key, Value>(object)) return "type";
   return addPrivateElement<Key, Value>(object, { name, kind: "field", value });
 }
 
+/** PrivateMethodOrAccessorAdd checks only duplicates; InitializeInstanceElements
+ * performs the single extensibility check before a class's method batch. */
 export function addPrivateMethod<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   name: PrivateName,
