@@ -1,0 +1,53 @@
+{
+  "kind": "native-selection-controller",
+  "selection": "language/comments",
+  "result": {
+    "code": null,
+    "signal": null,
+    "adopted": true
+  },
+  "sourceSnapshot": {
+    "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-annexb-eval-copy-v1.json",
+  "serialization": {
+    "protocol": "language-core v4 = iterator v4 grant rule (only already-compiled batches; up to 4 runners prepared outside the lease); lane v3 verified lease-only mode after for-of exits: parent round-robin turn; atomic lease; one grant covers consecutive compiled batches while execution<=64 and syntax<=64 variants; central pause verified per grant; runner held with TINT_TEST262_PAUSE between grants",
+    "lane": ".tint-bootstrap/native-lane-v3-language-core.mjs (native-lane-v2 protocol: identity, passTurnIfMine, verified lease-only mode)",
+    "adoptedFrom": {
+      "controllers": [
+        "run-language-core-families-v2.mjs",
+        "run-language-core-families-v3.mjs"
+      ],
+      "logs": [
+        ".tint-bootstrap/language-core-families-v2.log",
+        ".tint-bootstrap/language-core-families-v3.log"
+      ]
+    },
+    "readiness": "pids advertised only while a compiled batch is held; turn yielded when not ready",
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "grants": [
+      {
+        "selection": "language/comments",
+        "batch": 12,
+        "kind": "execution",
+        "size": 15,
+        "fromObserved": 0,
+        "variants": 15,
+        "grantStarted": "2026-11-06T13:07:31.264Z"
+      },
+      {
+        "selection": "language/comments",
+        "batch": 13,
+        "kind": "syntax",
+        "size": 4,
+        "fromObserved": 0,
+        "variants": 4,
+        "grantStarted": "2026-11-06T13:07:31.264Z"
+      }
+    ]
+  },
+  "report": "docs/results/test262-language-core-comments-v2.json",
+  "journal": "docs/results/test262-language-core-comments-v2.jsonl",
+  "runnerLog": ".tint-bootstrap/test262-language-core-comments-v2.json.log"
+}

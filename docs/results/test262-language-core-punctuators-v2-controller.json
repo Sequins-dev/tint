@@ -1,0 +1,42 @@
+{
+  "kind": "native-selection-controller",
+  "selection": "language/punctuators",
+  "result": {
+    "code": 0,
+    "signal": null
+  },
+  "sourceSnapshot": {
+    "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-annexb-eval-copy-v1.json",
+  "serialization": {
+    "protocol": "language-core v2 = iterator v4 grant rule: parent round-robin turn; atomic lease; one grant covers consecutive compiled batches while execution<=64 and syntax<=64 variants; central pause verified per grant; runner held with TINT_TEST262_PAUSE between grants",
+    "lane": ".tint-bootstrap/native-lane-v2-language-core.mjs (copy of t3-ffc74d90 native-lane-v2.mjs: identity plus passTurnIfMine)",
+    "readiness": "pids advertised only while a compiled batch is held; turn yielded when not ready",
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "grants": [
+      {
+        "selection": "language/punctuators",
+        "batch": 0,
+        "kind": "execution",
+        "size": 2,
+        "fromObserved": 0,
+        "variants": 2,
+        "grantStarted": "2026-11-06T10:26:45.355Z"
+      },
+      {
+        "selection": "language/punctuators",
+        "batch": 1,
+        "kind": "syntax",
+        "size": 20,
+        "fromObserved": 0,
+        "variants": 20,
+        "grantStarted": "2026-11-06T10:26:45.355Z"
+      }
+    ]
+  },
+  "report": "docs/results/test262-language-core-punctuators-v2.json",
+  "journal": "docs/results/test262-language-core-punctuators-v2.jsonl",
+  "runnerLog": ".tint-bootstrap/test262-language-core-punctuators-v2.json.log"
+}

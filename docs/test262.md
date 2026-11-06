@@ -135,6 +135,35 @@ The [complete group inventory](test262-inventory.md) lists all **139 families**,
 
 Completed reports contain outcomes for **33,707 distinct variants**; **69,557** have no outcome in those reports. This is a historical evidence footprint, not a combined pass rate. In-progress journals are excluded. All **103,264 variants** separately pass native syntax validation. Historical family ratios can predate current fixes.
 
+### Language execution inventory
+
+The [language execution inventory](results/test262-language-execution-inventory-v1.json)
+splits all **44,701 `language/*` variants** (23,828 files) into 125 subgroups:
+families, plus subdirectories of `expressions`, `statements` and `eval-code`.
+A subgroup is complete only when one clean native report covers its whole
+population at the pinned revision. Reports bound to a frozen toolchain are
+listed separately from older workspace-snapshot and unattributed reports. Node
+reference reports are excluded. Partial reports add an outcome footprint only;
+overlapping reports are never summed.
+
+New complete core-family selections run on the
+[annexb-eval-copy frozen host](results/frozen-node-toolchain-annexb-eval-copy-v1.json),
+with LLDB entry/exit containment and unchanged harnesses:
+
+| Family | Passed / total | Report |
+| --- | ---: | --- |
+| `language/source-text` | 2/2 | [Report](results/test262-language-core-source-text-v2.json) |
+| `language/identifier-resolution` | 22/22 | [Report](results/test262-language-core-identifier-resolution-v2.json) |
+| `language/punctuators` | 22/22 | [Report](results/test262-language-core-punctuators-v2.json) |
+| `language/reserved-words` | 53/53 | [Report](results/test262-language-core-reserved-words-v2.json) |
+| `language/directive-prologue` | 62/62 | [Report](results/test262-language-core-directive-prologue-v2.json) |
+| `language/comments` | 81/81 | [Report](results/test262-language-core-comments-v2.json) |
+
+The current direct-eval rerun passes [**336/336**](results/test262-language-direct-eval-current-v1.json).
+Proper tail calls remain a standard gap: the six `tail-call-optimization`
+variants in the complete [call report](results/test262-language-call-reference-core-v1.json)
+exhaust the native stack.
+
 ### Fully passing family reports
 
 Each row retains its own frozen source; these totals are not a combined current pass rate.
