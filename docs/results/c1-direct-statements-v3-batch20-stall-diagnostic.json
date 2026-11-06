@@ -1,0 +1,18 @@
+{
+  "kind": "c1-native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/*.js",
+  "phase": "compiling batch 20 (6 variants)",
+  "runnerPid": 81217,
+  "completedVariants": 450,
+  "passed": 450,
+  "firstObservedStallElapsedMs": 159735,
+  "cpuObservations": [
+    "84:42.72",
+    "85:14.25",
+    "85:20.04"
+  ],
+  "inferiorLaunched": false,
+  "sample": "docs/results/c1-direct-statements-v3-batch20-stall-sample.txt",
+  "interpretation": "CPU-active compilation overlapping the documented external saturation window. Sample retained; no interruption or retry."
+}
