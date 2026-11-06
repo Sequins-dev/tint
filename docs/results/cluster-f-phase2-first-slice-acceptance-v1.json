@@ -1,0 +1,43 @@
+{
+  "kind": "cluster-f-phase2-first-slice-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "branch": "test/native-iterator-generator-coverage",
+  "baseMain": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "scope": "Close the inherited iterator runtime-cleanup self-build evidence gap and measure the complete yield selection. No new implementation changes in this slice.",
+  "selfBuild": "docs/results/bootstrap-cluster-f-phase2-v1.json",
+  "artifacts": "docs/results/cluster-f-phase2-selfbuild-artifact-validation-v1.json",
+  "smokeBuild": "docs/results/cluster-f-phase2-smoke-build-v1.json",
+  "smokeExecution": "docs/results/cluster-f-phase2-smoke-execution-v1.json",
+  "nodeSmokeReference": {
+    "exitStatus": 0,
+    "log": "docs/results/cluster-f-phase2-smoke-node-v1.log"
+  },
+  "workspace": {
+    "command": "PATH=Node-24.12.0 ~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4504,
+    "passed": 4504,
+    "failed": 0,
+    "log": "docs/results/cluster-f-phase2-slotted-check-v3.log"
+  },
+  "conformanceReports": [
+    {
+      "selection": "language/expressions/yield",
+      "pass": 123,
+      "total": 123,
+      "failed": 0,
+      "unsupported": 0,
+      "infrastructureErrors": 0,
+      "report": "docs/results/test262-cluster-f-yield-expressions-v1.json"
+    }
+  ],
+  "provenance": "Self-build and yield use the immutable 5dd97f snapshot. Later upstream D compact-completion changes were integrated by rebase and passed the 4504-test workspace gates; these are distinct source provenance, not a new self-build of D changes.",
+  "remainingWork": {
+    "selection": "language/statements/generators",
+    "runnerPid": 89831,
+    "journal": ".tint-bootstrap/test262-cluster-f-generator-statements-v1.jsonl",
+    "state": "in progress; not a complete report"
+  },
+  "resourcePolicy": "Existing runners finished or continue on their original frozen toolchain. All new launches use shared slots; subsequent Test262 runs use one runner per F cluster, fresh frozen main, heartbeat 30000 ms and stall warning 150000 ms."
+}
