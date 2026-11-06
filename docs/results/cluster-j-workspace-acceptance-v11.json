@@ -1,0 +1,44 @@
+{
+  "pid": 68271,
+  "at": "2026-11-06T23:31:05.047435+00:00",
+  "base": "b196d8412af5ba96ac68670ec42da221b82d0480",
+  "head": "339c6e2e785087d0ece459f4a2077e5edee6f1a2",
+  "sourceSnapshot": "5fa339125a8f1676d8fe75599291b4a3f1a615ac4d773382575031bc54ceb512",
+  "nativeFixturePid": 68269,
+  "purpose": "Full combined gate after rebasing P codegen and numeric-equality fixes.",
+  "rebasesWhileQueued": [
+    {
+      "at": "2026-11-06T22:58:36.619840+00:00",
+      "fromBase": "41ef1b2805e68dfc4bb7f88c6c51fd4b16247e99",
+      "fromHead": "b15831b3434ce65d1bbd9e569712cff8b2a60ccd",
+      "reason": "While still queued, fold main default-direct launcher tooling and coverage reports into the worktree the gate will read. Portable source identity remains5fa3391."
+    },
+    {
+      "at": "2026-11-06T23:03:33.084324+00:00",
+      "fromBase": "3543f3b14eec84defa5e3447332202f19ec3f7a9",
+      "fromHead": "faecab271073359943e8a7c02e1bbfc680952c32",
+      "reason": "Docs-only Temporal evidence merged while gate queued; rebased worktree remains production-identical."
+    },
+    {
+      "at": "2026-11-06T23:20:33.227075+00:00",
+      "fromBase": "ac809570f1f93a4d1c3fbed84ee55cb62873df02",
+      "fromHead": "fbdd4e950fd8fe3b5b4635ae2d5fa8530d664c99",
+      "reason": "Docs-only scope reports landed while wrapper remained queued. Fold into current worktree; portable source5fa3391 unchanged."
+    }
+  ],
+  "kind": "cluster-j-workspace-acceptance",
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": 4586,
+  "passed": 4586,
+  "failed": 0,
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "log": "docs/results/cluster-j-workspace-check-v11.log",
+  "logSha256": "5cd566eb53cce4ae2ad283e7526a624acabd0e453483fb7b646474a7d1a34505",
+  "note": "Gate completed on stable combined P d2be77b/J source5fa3391. A later main IR reference-list speedup landed during this gate; do not attribute this result to the later portable graph."
+}
