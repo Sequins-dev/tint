@@ -1,0 +1,29 @@
+{
+  "kind": "c1-phase2-frozen-toolchain",
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v11",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v11/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v11/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v11/source-snapshot.json",
+    "sha256": "f7166f14b4c6378f9afd2602298f8ff8caa21417d53b45901fc7dd8bf855e372"
+  },
+  "runIdentity": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76",
+  "head": "3f7ea4c0e4b0e7324c06bf60c4686020812c6c69",
+  "base": "3f7ea4c0e4b0e7324c06bf60c4686020812c6c69",
+  "workspaceGate": "docs/results/c1-current-main-workspace-gate-v11.json",
+  "compilerGraph": "docs/results/c1-post-inline-compiler-graph-v1.json",
+  "selfBuild": "docs/results/native-codegen-inline-post-C2-v1.json",
+  "classPatchSelfBuild": "docs/results/c1-frozen-selfbuild-v2.json",
+  "currentCompilerStageIdentityVerified": true,
+  "upstreamSelfBuilds": [
+    "docs/results/native-codegen-register-copies-selfbuild-v4.json",
+    "docs/results/operator-hash-selfbuild-native-v1.json"
+  ],
+  "selfBuildScope": "Current reachable compiler graph exactly matches the accepted P post-C2 self-build. The C1 class patch retains its separate completed native fixture and original frozen self-build.",
+  "heartbeatMs": 30000,
+  "stallMs": 150000
+}

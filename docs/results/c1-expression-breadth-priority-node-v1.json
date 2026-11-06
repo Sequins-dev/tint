@@ -1,0 +1,86 @@
+{
+  "kind": "c1-expression-breadth-priority",
+  "conformance": false,
+  "populations": [
+    {
+      "index": 30,
+      "selection": "language/expressions/class/*.js",
+      "files": 261,
+      "variants": 495
+    },
+    {
+      "index": 27,
+      "selection": "language/expressions/class/async-gen-method",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "index": 28,
+      "selection": "language/expressions/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "index": 16,
+      "selection": "language/expressions/class/subclass-builtins",
+      "files": 36,
+      "variants": 72
+    },
+    {
+      "index": 23,
+      "selection": "language/expressions/class/async-method",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "index": 24,
+      "selection": "language/expressions/class/async-method-static",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "index": 19,
+      "selection": "language/expressions/class/gen-method",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "index": 20,
+      "selection": "language/expressions/class/gen-method-static",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "index": 12,
+      "selection": "language/expressions/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "index": 13,
+      "selection": "language/expressions/class/accessor-name-static",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "index": 8,
+      "selection": "language/expressions/class/method",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "index": 9,
+      "selection": "language/expressions/class/method-static",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "index": 32,
+      "selection": "language/expressions/class/decorator",
+      "files": 8,
+      "variants": 13
+    }
+  ],
+  "totalVariants": 1344,
+  "scope": "All C1 expression/class counterparts excluding C2-owned elements and dstr; current statement-root complete. Coordinator directive prioritizes these complete populations before remaining statement families. One runner, current-main frozen toolchain and direct launch for each new selection."
+}

@@ -125,10 +125,11 @@ Module direct eval now passes the [three unchanged module variants](results/modu
 
 The C2 [complete early-errors directory](results/test262-c2-elements-all-early-errors-native-v2.json) records **417/444 native passes**, with **27 pre-entry LLDB crashes**. Its overlapping [syntax-negative file reports](results/c2-elements-syntax-negative-file-index-v3.json) cover **365 complete files / 722 variants: 685 passes and 37 pre-entry crashes**, with no semantic failures. The broader [complete-file index](results/c2-elements-complete-file-index-v4.json) contains **461 files / 914 variants: 867 passes and 47 pre-entry crashes** on the same frozen toolchain, overlapping those syntax results. A fresh [direct-launch recheck](results/test262-c2-syntax-negative-direct-recheck-v1.json) passes **37/37** previously crashed syntax-negative variants; this focused subset leaves the original reports intact. [Earlier focused results](results/c2-native-evidence-index-v2.json) retain their own snapshots. Complete class elements and destructuring directory reports remain pending across the [13,779-variant scope](results/c2-scope-census-v1.json).
 
-Current C1 class reruns use complete disjoint selections; the 2,081-variant foundation queue remains in progress. These rows do not establish a whole-class pass rate. A separate [checkpoint of 241 complete statement-root file selections](results/c1-direct-statements-completed-files-v11.json) adds **476/476** verified native passes; its enclosing 504-variant direct-file selection remains in progress.
+Current C1 class reruns use complete disjoint selections; the 2,081-variant foundation queue remains in progress. These rows do not establish a whole-class pass rate. The complete statement-root selection passes **504/504**; its earlier per-file checkpoints overlap this report.
 
 | Class selection | Pass / total | Fail / unsupported / infrastructure |
 | --- | ---: | ---: |
+| [`language/statements/class/*.js`](results/test262-c1-breadth-language-statements-class-direct-files-v3.json) | 504 / 504 | 0 / 0 / 0 |
 | [`language/statements/class/syntax`](results/test262-c1-foundation-language-statements-class-syntax-v2.json) | 26 / 26 | 0 / 0 / 0 |
 | [`language/statements/class/definition`](results/test262-c1-foundation-language-statements-class-definition-v2.json) | 130 / 130 | 0 / 0 / 0 |
 | [`language/statements/class/name-binding`](results/test262-c1-foundation-language-statements-class-name-binding-v2.json) | 12 / 12 | 0 / 0 / 0 |
