@@ -1,0 +1,27 @@
+{
+  "kind": "native-annexb-closure-checkpoint",
+  "conformance": false,
+  "wholeSuite": false,
+  "sourceSnapshot": {
+    "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+    "files": 568
+  },
+  "scope": "Bespoke fixtures (not conformance) plus complete unchanged selected Test262 selections through a frozen host containing this checkout's source. Earlier reports are retained and not merged.",
+  "plan": {
+    "tag": "v1",
+    "fixtures": [
+      {
+        "name": "closure-diagnostic",
+        "purpose": "Discriminate which direct-eval closure shape reaches the native unsupported operation before any fix",
+        "tool": "tools/verify-test262-native-direct-eval-closure.ts",
+        "binary": ".tint-bootstrap/closure-diag-v1/test",
+        "count": 13,
+        "prefix": "annexb-closure-diagnostic"
+      }
+    ]
+  },
+  "results": {
+    "fixtures": {},
+    "selections": []
+  }
+}

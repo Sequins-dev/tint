@@ -1,0 +1,243 @@
+{
+  "kind": "native-fixture-validation",
+  "conformance": false,
+  "purpose": "Regression: direct-eval Annex B copy cases on the changed runtime",
+  "accepted": true,
+  "passed": 15,
+  "total": 15,
+  "executed": 15,
+  "sourceSnapshot": {
+    "sha256": "da3801b4ef587f71b83e44cf92c994be989f7ec82bca425e816d2c6ccc582c60",
+    "files": 568
+  },
+  "imageSha256": "c06d93f994d9a6ed06ae2ab57efc7b65223b756928206b6039e286b6bc646f2c",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-tn27Nk/test",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-tn27Nk/fixture.json",
+  "fixtureSha256": "50e0cf1144f891fa1d4dea62aa54f8fa57ac17e059b57918a272fadb56ea8873",
+  "tool": "tools/verify-test262-native-direct-eval-annex.ts (TINT_BUILD_ONLY=1)",
+  "supersedesObservationOf": "docs/results/annexb-eval-copy-direct-eval-annex-validation-v2.json (source 8676847d…; retained unchanged)",
+  "expected": {
+    "kind": "completed"
+  },
+  "initialStopPolicy": "executeNativeFile accepts an outcome only after LLDB records the stopped-at-entry state and a final exited state; launch failures and post-entry faults are reported distinctly. Each case runs alone; no retries.",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-0-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 1,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-1-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 2,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-2-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 3,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-3-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 4,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-4-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 5,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-5-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 6,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-6-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 7,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-7-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 8,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-8-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 9,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-9-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 10,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-10-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 11,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-11-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 12,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-12-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 13,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-13-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 14,
+      "report": "docs/results/annexb-closure-direct-eval-annex-case-14-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    }
+  ],
+  "serialization": {
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "centralOwners": [
+      {
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause"
+      },
+      {
+        "parent": 19496,
+        "entry": "node-toolchain-module-await-assignment-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause"
+      },
+      {
+        "parent": 18511,
+        "entry": "node-toolchain-script-dynamic-import-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-root-conformance.pause"
+      },
+      {
+        "parent": 67383,
+        "entry": "node-toolchain-direct-eval-host-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-conformance.pause"
+      }
+    ],
+    "grant": {
+      "label": "annexb-closure-fixtures",
+      "cooperatingRunners": [
+        {
+          "pid": 6622,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 8061,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 18574,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 34499,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 38529,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 46832,
+          "ppid": 694,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 1,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause",
+        "parent": 19496,
+        "entry": "node-toolchain-module-await-assignment-v1/tools/test262-native-run.ts"
+      },
+      "paused": true,
+      "ack": {
+        "pid": 87092,
+        "state": "between-variants"
+      },
+      "acknowledgedAt": "2026-11-06T11:08:25.775Z",
+      "releasedAt": "2026-11-06T11:37:03.794Z"
+    }
+  }
+}

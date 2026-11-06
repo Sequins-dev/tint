@@ -266,6 +266,17 @@ general fallback. Compilation is lazy and cached per constructed function; for
 generators it occurs during the call, before the visible generator is returned.
 An uncalled body does not compile.
 
+Runtime-compiled entries share one per-entry code budget (`maxScriptCodeBytes`),
+which rejects oversized entries as unsupported. Direct and indirect eval, dynamic
+function bodies and runtime-evaluated Scripts (`ScriptLoweringOptions.runtimeCompiled`)
+therefore complete each runtime result through the out-of-line `throwIfRuntimeError`
+helper and read identifiers through `getIdentifierValue` (ResolveBinding followed
+immediately by GetValue). Inline checks cost several kilobytes per result because
+the managed code generator clears dead reference slots at every call edge. AOT
+Script and module lowering keeps its inline checks unchanged. The
+[unsupported classification](results/annexb-closure-unsupported-classification-v1.json)
+records the 56 Annex B direct-eval variants that exceeded the budget beforehand.
+
 Ordinary functions dispatch through a hidden source-function carrier. Async
 functions return the carrier's promise directly to avoid extra adoption jobs.
 Generator and async-generator calls transfer only an unstarted continuation;

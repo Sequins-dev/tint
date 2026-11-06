@@ -1,0 +1,33 @@
+{
+  "kind": "native-compiler-graph-agreement",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "da3801b4ef587f71b83e44cf92c994be989f7ec82bca425e816d2c6ccc582c60",
+    "files": 568
+  },
+  "acceptedCompilerSourceSnapshot": {
+    "sha256": "c42dccaa28422fb2eaa631c94678559d82481d07518f5b8a13b20bc3fb169ebd",
+    "files": 568
+  },
+  "priorHost": "/Users/stephenbelanger/Code/nodejs/tint/docs/results/frozen-node-toolchain-managed-templates-v1.json",
+  "priorHostSourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "modules": 220,
+  "sameModuleList": true,
+  "changedModules": [],
+  "astEqual": true,
+  "changedPortableSourcesSincePriorHost": [
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-engine/src/lowering/runtime-imports.ts",
+    "packages/js-engine/src/script-evaluation.ts",
+    "packages/js-runtime/src/environments/global/index.ts",
+    "packages/js-runtime/src/environments/global/scope.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/index.ts"
+  ],
+  "changedSourcesInGraph": [],
+  "acceptedCompiler": "/Users/stephenbelanger/Code/nodejs/tint/docs/results/json-await-native-compiler-acceptance-v1.json",
+  "scope": "Compiler graph identity only; the changed lowering and runtime helpers still require native execution gates through a frozen host capturing this source."
+}

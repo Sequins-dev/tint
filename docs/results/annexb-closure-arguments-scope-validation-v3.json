@@ -1,0 +1,303 @@
+{
+  "kind": "native-fixture-validation",
+  "conformance": false,
+  "purpose": "Regression: arguments/parameter/eval-scope cases on the changed runtime",
+  "accepted": true,
+  "passed": 20,
+  "total": 20,
+  "executed": 20,
+  "sourceSnapshot": {
+    "sha256": "da3801b4ef587f71b83e44cf92c994be989f7ec82bca425e816d2c6ccc582c60",
+    "files": 568
+  },
+  "imageSha256": "49248d7436efacc871272c733124ed4dc4474bc160a4ec553c67cb159bd3f70b",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-arguments-scope-aPS1sM/arguments-scope",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-arguments-scope-aPS1sM/cases.json",
+  "fixtureSha256": "c3749b63d066da6cec274660c2bcfba6657338799dda7be7b79973313a343044",
+  "tool": "tools/verify-test262-native-arguments-scope.ts (TINT_BUILD_ONLY=1)",
+  "supersedesObservationOf": "docs/results/annexb-eval-copy-arguments-scope-validation-v2.json (source 8676847d…; retained unchanged)",
+  "expected": {
+    "kind": "completed"
+  },
+  "initialStopPolicy": "executeNativeFile accepts an outcome only after LLDB records the stopped-at-entry state and a final exited state; launch failures and post-entry faults are reported distinctly. Each case runs alone; no retries.",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "strict direct eval rejects assignment to arguments (10.5-1-s)",
+      "report": "docs/results/annexb-closure-arguments-scope-case-0-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 1,
+      "name": "strict eval code rejects arguments assignment in nested functions (10.5-7-b-1-s)",
+      "report": "docs/results/annexb-closure-arguments-scope-case-1-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 2,
+      "name": "sloppy eval cannot define non-definable global functions of any kind",
+      "report": "docs/results/annexb-closure-arguments-scope-case-2-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 3,
+      "name": "duplicate simple parameters map only the last occurrence",
+      "report": "docs/results/annexb-closure-arguments-scope-case-3-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 4,
+      "name": "mapping ends after delete, accessor or non-writable redefinition",
+      "report": "docs/results/annexb-closure-arguments-scope-case-4-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 5,
+      "name": "non-simple and strict parameter lists produce unmapped arguments",
+      "report": "docs/results/annexb-closure-arguments-scope-case-5-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 6,
+      "name": "strict callee and caller share the ThrowTypeError intrinsic",
+      "report": "docs/results/annexb-closure-arguments-scope-case-6-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 7,
+      "name": "parameter defaults observe left-to-right TDZ",
+      "report": "docs/results/annexb-closure-arguments-scope-case-7-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 8,
+      "name": "body vars start from same-named parameters in a separate environment",
+      "report": "docs/results/annexb-closure-arguments-scope-case-8-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 9,
+      "name": "body functions and lexicals named arguments shadow or suppress the object",
+      "report": "docs/results/annexb-closure-arguments-scope-case-9-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 10,
+      "name": "direct eval in parameters cannot redeclare a later parameter",
+      "report": "docs/results/annexb-closure-arguments-scope-case-10-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 11,
+      "name": "direct eval in parameters cannot redeclare the arguments binding",
+      "report": "docs/results/annexb-closure-arguments-scope-case-11-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 12,
+      "name": "direct eval in parameters declares vars outside parameter scope",
+      "report": "docs/results/annexb-closure-arguments-scope-case-12-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 13,
+      "name": "direct eval in methods with parameter expressions checks arguments conflicts",
+      "report": "docs/results/annexb-closure-arguments-scope-case-13-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 14,
+      "name": "catch parameters permit eval var redeclaration but body lexicals do not",
+      "report": "docs/results/annexb-closure-arguments-scope-case-14-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 15,
+      "name": "destructured catch parameters are also exempt from eval var conflicts",
+      "report": "docs/results/annexb-closure-arguments-scope-case-15-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 16,
+      "name": "eval Annex B block functions bypass catch parameters into the var scope",
+      "report": "docs/results/annexb-closure-arguments-scope-case-16-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 17,
+      "name": "with scopes are skipped by eval conflict checks and receive initializers",
+      "report": "docs/results/annexb-closure-arguments-scope-case-17-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 18,
+      "name": "parameter pattern abrupt completion closes the argument iterator once",
+      "report": "docs/results/annexb-closure-arguments-scope-case-18-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 19,
+      "name": "Annex B block functions named arguments replace the implicit arguments binding",
+      "report": "docs/results/annexb-closure-arguments-scope-case-19-v3.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    }
+  ],
+  "serialization": {
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "centralOwners": [
+      {
+        "parent": 21898,
+        "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause"
+      },
+      {
+        "parent": 19496,
+        "entry": "node-toolchain-module-await-assignment-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause"
+      },
+      {
+        "parent": 18511,
+        "entry": "node-toolchain-script-dynamic-import-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/script-root-conformance.pause"
+      },
+      {
+        "parent": 67383,
+        "entry": "node-toolchain-direct-eval-host-v1/tools/test262-native-run.ts",
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-conformance.pause"
+      }
+    ],
+    "grant": {
+      "label": "annexb-closure-fixtures",
+      "cooperatingRunners": [
+        {
+          "pid": 6622,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 8061,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 18574,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 34499,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 38529,
+          "ppid": 1,
+          "children": [],
+          "listed": true,
+          "paused": false,
+          "ok": true
+        },
+        {
+          "pid": 46832,
+          "ppid": 694,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        },
+        {
+          "pid": 67042,
+          "ppid": 1,
+          "children": [],
+          "listed": false,
+          "paused": true,
+          "ok": true
+        }
+      ],
+      "central": {
+        "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause",
+        "parent": 19496,
+        "entry": "node-toolchain-module-await-assignment-v1/tools/test262-native-run.ts"
+      },
+      "paused": true,
+      "ack": {
+        "pid": 87092,
+        "state": "between-variants"
+      },
+      "acknowledgedAt": "2026-11-06T11:08:25.775Z",
+      "releasedAt": "2026-11-06T11:37:03.794Z"
+    }
+  }
+}
