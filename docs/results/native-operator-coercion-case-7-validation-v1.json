@@ -1,0 +1,61 @@
+{
+  "kind": "native-operator-coercion-case-validation",
+  "conformance": false,
+  "accepted": true,
+  "completedAt": "2026-11-06T05:30:13.560Z",
+  "image": {
+    "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-NtCam3/operator-coercion",
+    "sha256": "b5c19d6664b6a99668472082d047b28deaf7465196a3f7b91f9067136a4ad267",
+    "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-NtCam3/operator-coercion.manifest.json",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-operator-coercion-NtCam3/cases.json",
+    "fixtureSha256": "8c64381d2ec1f348836693bd85ab1bc3ce846199e73d81ba1e66ea64c3c14520",
+    "buildTool": "tools/verify-test262-native-operator-coercion.ts",
+    "buildToolSha256": "3f17c29144676412286b0b3a14a54a84422663428adac825187aa318e232b59c",
+    "buildLog": ".tint-bootstrap/operator-coercion-build-v2.log"
+  },
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerTracing": true,
+  "containmentTimeoutMs": 300000,
+  "relation": "Cases 0-6 of this fixture are byte-identical to the v3 fixture (docs/results/native-operator-coercion-validation-v3.json); only case 7 is executed here. Case 1 timeout in v3 is retained unchanged.",
+  "selectedCase": 7,
+  "name": "non-additive operators finish ToNumeric(lhs) first (static operator functions)",
+  "outcome": {
+    "kind": "completed"
+  },
+  "phase": "exited-42-after-initial-stop",
+  "report": "docs/results/native-operator-coercion-case-7-v1.json",
+  "serialization": {
+    "grant": {
+      "lease": {
+        "pid": 72437,
+        "owner": "operator",
+        "thread": "delegated-task operator-coercion (worktree t3-f3c644cf)",
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf",
+        "purpose": "operator-coercion native fixture case 7",
+        "acquiredAt": "2026-11-06T05:29:40.405Z",
+        "turn": {
+          "owner": "operator",
+          "pids": [
+            69783,
+            55862
+          ],
+          "remaining": 1,
+          "setBy": "reference-keys release",
+          "at": "2026-11-06T05:29:38.635Z"
+        }
+      },
+      "paused": true,
+      "ack": {
+        "pid": 21082,
+        "state": "between-variants"
+      },
+      "acknowledgedAt": "2026-11-06T05:30:08.500Z",
+      "releasedAt": "2026-11-06T05:30:13.558Z"
+    },
+    "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause"
+  }
+}
