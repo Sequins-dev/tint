@@ -1,0 +1,133 @@
+{
+  "kind": "cluster-j-generated-recheck-list",
+  "timestamp": "2026-11-06T20:58:03.310970+00:00",
+  "conformance": false,
+  "journal": ".tint-bootstrap/cluster-j-regexp-v5.jsonl",
+  "sourceSnapshot": {
+    "sha256": "eb810121f9ab6bf004b75f1f6903afa64e7c6c96bcd751f5d94a361acf737990",
+    "files": 569
+  },
+  "observations": 24,
+  "retainedTimeouts": 6,
+  "entries": [
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "pid": 47994,
+      "maximumSampledCpuSeconds": null,
+      "lastSample": null,
+      "classification": "load-induced or inconclusive",
+      "nextStep": "Focused single-variant recheck when load is below ~25 or at family end.",
+      "sourceSha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7"
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "variant": "strict",
+      "status": "timeout",
+      "pid": 74968,
+      "maximumSampledCpuSeconds": 258.2,
+      "lastSample": {
+        "at": "2026-11-06T20:02:07.332Z",
+        "uptime": "4:02  up 3 days,  7:27, 1 user, load averages: 31.60 33.54 68.61",
+        "pid": 74968,
+        "ppid": 74967,
+        "elapsed": "04:53",
+        "cpuTime": "4:18.20",
+        "cpu": "84.9",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-sTZJas/test"
+      },
+      "classification": "real slowness",
+      "nextStep": "P handoff with captured profile; recheck after shared hot path improves.",
+      "sourceSha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7"
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "pid": 24239,
+      "maximumSampledCpuSeconds": 226.28,
+      "lastSample": {
+        "at": "2026-11-06T20:40:58.027Z",
+        "uptime": "4:40  up 3 days,  8:06, 1 user, load averages: 21.95 35.13 36.79",
+        "pid": 24239,
+        "ppid": 24238,
+        "elapsed": "04:50",
+        "cpuTime": "3:46.28",
+        "cpu": "98.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      },
+      "classification": "load-induced or inconclusive",
+      "nextStep": "Focused single-variant recheck when load is below ~25 or at family end.",
+      "sourceSha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4"
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "variant": "strict",
+      "status": "timeout",
+      "pid": 45502,
+      "maximumSampledCpuSeconds": 253.59,
+      "lastSample": {
+        "at": "2026-11-06T20:45:28.072Z",
+        "uptime": "4:45  up 3 days,  8:10, 1 user, load averages: 19.63 25.59 31.97",
+        "pid": 45502,
+        "ppid": 45501,
+        "elapsed": "04:28",
+        "cpuTime": "4:13.59",
+        "cpu": "86.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      },
+      "classification": "real slowness",
+      "nextStep": "P handoff with captured profile; recheck after shared hot path improves.",
+      "sourceSha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4"
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "pid": 67814,
+      "maximumSampledCpuSeconds": 168.44,
+      "lastSample": {
+        "at": "2026-11-06T20:50:58.031Z",
+        "uptime": "4:50  up 3 days,  8:16, 1 user, load averages: 28.76 29.34 31.92",
+        "pid": 67814,
+        "ppid": 67810,
+        "elapsed": "04:52",
+        "cpuTime": "2:48.44",
+        "cpu": "94.5",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      },
+      "classification": "load-induced or inconclusive",
+      "nextStep": "Focused single-variant recheck when load is below ~25 or at family end.",
+      "sourceSha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281"
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "variant": "strict",
+      "status": "timeout",
+      "pid": 83937,
+      "maximumSampledCpuSeconds": 168.1,
+      "lastSample": {
+        "at": "2026-11-06T20:55:58.598Z",
+        "uptime": "4:55  up 3 days,  8:21, 1 user, load averages: 33.37 30.89 31.77",
+        "pid": 83937,
+        "ppid": 83936,
+        "elapsed": "04:52",
+        "cpuTime": "2:48.10",
+        "cpu": "44.0",
+        "state": "RX",
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UX8AOF/test"
+      },
+      "classification": "load-induced or inconclusive",
+      "nextStep": "Focused single-variant recheck when load is below ~25 or at family end.",
+      "sourceSha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281"
+    }
+  ],
+  "fullRegExpJournal": "Held at a safe between-variant boundary for breadth-priority prototype and String runs.",
+  "profileEvidence": "cluster-j-generated-cpu-evidence-v5.json",
+  "loadWindows": "~/.t3/tint-briefs/load-events.md"
+}
