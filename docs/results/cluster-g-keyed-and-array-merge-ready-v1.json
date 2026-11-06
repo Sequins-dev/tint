@@ -1,0 +1,181 @@
+{
+  "kind": "cluster-g-merge-ready-slice",
+  "conformance": false,
+  "mergeReady": true,
+  "branch": "test/builtins-native-coverage",
+  "rangeBase": "1258d52fead683240336f42cc0e19518b110881a",
+  "validatedHead": "97bd4aadf3528f9451e280f62d26cdf704559025",
+  "rangeEnd": "commit containing this report",
+  "workspaceGate": {
+    "command": "PATH=node24:$PATH ~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4541,
+    "passed": 4541,
+    "failed": 0,
+    "testConcurrency": 4,
+    "centralCheckCap": 1,
+    "log": "docs/results/promise-keyed-workspace-check-slotted-v14.log",
+    "logSha256": "2a2d8da91e231174802a0b1b5497b6b6d31493e781c21a84d350e0acfb356775"
+  },
+  "nativeCompilerAcceptance": "docs/results/promise-keyed-native-compiler-acceptance-v1.json",
+  "bespokeNativeKeyedCases": {
+    "passed": 12,
+    "total": 12,
+    "report": "docs/results/native-promise-keyed-validation-v3.json",
+    "conformance": false
+  },
+  "completeSelections": [
+    {
+      "selection": "built-ins/Promise/allKeyed",
+      "totals": {
+        "total": 90,
+        "passed": 90,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-allkeyed-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Promise/allSettledKeyed",
+      "totals": {
+        "total": 88,
+        "passed": 88,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-allsettledkeyed-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Promise/all",
+      "totals": {
+        "total": 196,
+        "passed": 196,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-all-native-v3.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Promise/allSettled",
+      "totals": {
+        "total": 208,
+        "passed": 208,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-allsettled-native-v3.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Promise/any",
+      "totals": {
+        "total": 188,
+        "passed": 188,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-any-native-v3.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Promise/prototype",
+      "totals": {
+        "total": 244,
+        "passed": 244,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-promise-prototype-native-v3.json",
+      "sourceSnapshot": {
+        "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+        "files": 568
+      }
+    },
+    {
+      "selection": "built-ins/Array",
+      "totals": {
+        "total": 6119,
+        "passed": 5972,
+        "failed": 0,
+        "unsupported": 142,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 5,
+        "passFraction": 0.9759764667429318
+      },
+      "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+      "sourceSnapshot": {
+        "sha256": "438d7748be1da9064d98fbb2f8d8640c1fa73bd9adf4ac43c73469d06d12e0f4",
+        "files": 506
+      }
+    }
+  ],
+  "overlappingSelectionsNotSummed": true,
+  "historicalArray": "Complete older frozen Array selection; 142 unsupported and 5 debugger attach failures retained. Pinned sources, harnesses, original compiler snapshot and current strict ordering verified. Not a current-main rerun.",
+  "sharedToolFix": "Ledger linked-journal Git-date fallback prevents historical extractions displacing newer focused observations; 9 focused tests pass. Node-only tooling change.",
+  "liveExperiment": {
+    "selection": "built-ins/Promise",
+    "observedPasses": 1216,
+    "expectedVariants": 1458,
+    "complete": false,
+    "runnerPid": 5789,
+    "wrapperPid": 2284,
+    "observerPid": 2294,
+    "journal": "docs/results/test262-promise-keyed-native-v3.jsonl",
+    "stdout": ".tint-bootstrap/test262-promise-keyed-native-v5.stdout.json",
+    "stderr": ".tint-bootstrap/test262-promise-keyed-native-v5.stderr.log",
+    "exitStatusFile": ".tint-bootstrap/promise-resume-v5.exit",
+    "journalLocallyExcludedUntilVerifiedCompletion": true
+  },
+  "nextPriority": "Finish Promise; then largest unmeasured Object. Array fresh rerun and Number remain in breadth queue.",
+  "retainedFailures": [
+    "docs/results/bootstrap-promise-keyed-v1.json",
+    "docs/results/bootstrap-promise-keyed-baseline-v1.json",
+    "docs/results/bootstrap-promise-keyed-v2.json",
+    "docs/results/promise-keyed-selfbuild-smoke-startup-interruption-v1.json"
+  ],
+  "interruptedPrefix": "docs/results/test262-promise-keyed-tool-interruption-v1.json",
+  "noRemotePush": true
+}
