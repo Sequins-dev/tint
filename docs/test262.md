@@ -115,12 +115,12 @@ measure. Implementation of known gaps has resumed; the full baseline run is defe
 
 The complete [tagged-template directory passes **48/48 unchanged variants**](results/test262-language-tagged-template-current-v1.json), with no failures, unsupported cases or infrastructure errors. Runtime-compiled sites also pass [ten native semantic checks](results/managed-template-feature-acceptance-v1.json). The [12/12 cache subset](results/managed-template-cache-conformance-acceptance-v1.json) overlaps that full report and is not added to its totals. The 256 KiB entry cap is unchanged; the retained oversized async fixture remains an explicit budget limit.
 
-The [complete group inventory](test262-inventory.md) lists all **139 families**, including every measured, partially measured and unmeasured group. Its [v90 evidence snapshot](results/test262-native-group-inventory-v90.json) inherits the [v89](results/test262-native-group-inventory-v89.json) audit of 710 completed native reports and conservatively replaces only the re-verified complete arguments-object and Annex B function-code reports listed above; it is not a new full rescan.
+The [complete group inventory](test262-inventory.md) lists all **139 families**, including every measured, partially measured and unmeasured group. Its [v91 evidence snapshot](results/test262-native-group-inventory-v91.json) inherits the [v89](results/test262-native-group-inventory-v89.json) audit of 710 completed native reports and conservatively replaces only the re-verified complete arguments-object and Annex B function-code reports ([v90](results/test262-native-group-inventory-v90.json)) and the complete built-ins/Proxy report ([v91 diff](results/test262-native-group-inventory-v91-refresh-v1.json)) listed above; it is not a new full rescan.
 
 | Evidence status | Families |
 | --- | ---: |
-| Complete family report, all passing | 32 |
-| Complete family report, non-passes remain | 29 |
+| Complete family report, all passing | 33 |
+| Complete family report, non-passes remain | 28 |
 | Selection evidence, no dedicated complete family report | 29 |
 | No recorded outcomes in completed reports | 49 |
 
@@ -152,6 +152,7 @@ Each row retains its own frozen source; these totals are not a combined current 
 | `built-ins/Map`                           |        405/405 | [Report](results/test262-map-weak-followup-native-v1.json)            |
 | `built-ins/parseFloat`                    |        108/108 | [Report](results/test262-parse-float-native-v2.json)                  |
 | `built-ins/parseInt`                      |        110/110 | [Report](results/test262-parse-int-native-v2.json)                    |
+| `built-ins/Proxy`                         |        607/607 | [Report](results/test262-proxy-reflect-built-ins-proxy-v2.json)       |
 | `built-ins/RegExpStringIteratorPrototype` |          34/34 | [Report](results/test262-regexp-string-iterator-native-v1.json)       |
 | `built-ins/Set`                           |        764/764 | [Report](results/test262-set-weak-followup-native-v1.json)            |
 | `built-ins/SharedArrayBuffer`             |        208/208 | [Report](results/test262-sharedarraybuffer-native-v4.json)            |
@@ -192,7 +193,6 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`built-ins/GeneratorFunction`](results/test262-generator-function-fallback-native-v1.json)                         |       44 / 46 (95.65%) | 2 timeouts in intrinsic enumeration (same harness as AsyncFunction)                                       |
 | [`built-ins/Iterator`](results/test262-iterator-native-v1.json)                                                     | 1,350 / 1,368 (98.68%) | 12 failures, 6 unsupported                                                                                |
 | [`built-ins/Math`](results/test262-math-family-native-v1.json)                                                      |     652 / 654 (99.69%) | 2 pre-entry debugger failures                                                                             |
-| [`built-ins/Proxy`](results/test262-proxy-reflect-built-ins-proxy-v2.json)                                          |       607 / 607 (100%) | No failures or infrastructure errors                                                                      |
 | [`built-ins/SuppressedError`](results/test262-suppressed-error-native-v1.json)                                      |       40 / 44 (90.91%) | 4 unsupported                                                                                             |
 | [`built-ins/ArrayBuffer`](results/test262-arraybuffer-shared-native-v2.json)                                        |       442 / 442 (100%) | No failures or infrastructure errors                                                                      |
 | [`built-ins/Atomics`](results/test262-atomics-family-native-v1.json)                                                |     366 / 778 (47.04%) | Wait/notify/agents incomplete; six pre-entry failures                                                     |

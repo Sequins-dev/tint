@@ -2,9 +2,9 @@
 
 **The syntax gate is complete: 103,264/103,264 variants. Runtime coverage is not complete, and the current whole-suite native pass rate is unknown.**
 
-The complete saved-report inventory covers **139 families**: **32 all passing**, **29 with a complete run but remaining non-passes**, **29 with selection evidence but no coherent complete family report**, and **49 with no saved runtime outcomes**. Saved reports contain outcomes for **33,707 distinct variants**; **69,557 have no recorded outcome**. These are historical observation footprints across frozen versions, not a combined current pass rate.
+The complete saved-report inventory covers **139 families**: **33 all passing**, **28 with a complete run but remaining non-passes**, **29 with selection evidence but no coherent complete family report**, and **49 with no saved runtime outcomes**. Saved reports contain outcomes for **33,707 distinct variants**; **69,557 have no recorded outcome**. These are historical observation footprints across frozen versions, not a combined current pass rate.
 
-[Audited inventory and every linked report](test262-inventory.md) · [Machine-readable snapshot](results/test262-native-group-inventory-v90.json)
+[Audited inventory and every linked report](test262-inventory.md) · [Machine-readable snapshot](results/test262-native-group-inventory-v91.json)
 
 Of the pinned population, **8,699 variants are parse/early negatives**. Their required phase is covered by the native syntax gate. In particular, language/export (3) and language/keywords (50) are entirely syntax-only; their lack of a runtime-report row does not make them untested.
 
@@ -127,7 +127,7 @@ Next: finish those already-started runs, then 22 function/control-flow selection
 | `built-ins/parseFloat` | 108 | 0 | 108 | 108 | 0/0/0/0/0 | A |
 | `built-ins/parseInt` | 110 | 0 | 110 | 110 | 0/0/0/0/0 | A |
 | `built-ins/Promise` | 1,458 | 0 | 434 | — | — | P |
-| `built-ins/Proxy` | 607 | 0 | 607 | 582 | 8/14/0/0/3 | G |
+| `built-ins/Proxy` | 607 | 0 | 607 | 607 | 0/0/0/0/0 | A |
 | `built-ins/Reflect` | 306 | 0 | 306 | 305 | 0/0/0/0/1 | G |
 | `built-ins/RegExp` | 3,756 | 384 | 510 | — | — | P |
 | `built-ins/RegExpStringIteratorPrototype` | 34 | 0 | 34 | 34 | 0/0/0/0/0 | A |

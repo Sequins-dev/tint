@@ -1,6 +1,6 @@
 # Test262 coverage: complete group inventory
 
-Updated 2026-11-06 from completed saved native runtime reports, with pinned source hashes verified. [Machine-readable evidence](results/test262-native-group-inventory-v90.json) is a conservative refresh of v89 that replaces only two complete family reports after re-verifying them ([diff and limits](results/test262-native-group-inventory-v90-refresh-v1.json)); every other row is inherited from the v89 capture.
+Updated 2026-11-06 from completed saved native runtime reports, with pinned source hashes verified. [Machine-readable evidence](results/test262-native-group-inventory-v91.json) is a conservative refresh of [v90](results/test262-native-group-inventory-v90.json) that replaces only the complete `built-ins/Proxy` family report after re-verifying it ([diff and limits](results/test262-native-group-inventory-v91-refresh-v1.json)); v90 itself refreshed two rows of the v89 capture ([diff](results/test262-native-group-inventory-v90-refresh-v1.json)), and every other row is inherited from v89.
 
 **The current whole-suite native behavior pass rate is unknown.** The native syntax gate passed all **103,264 variants**; that is separate from runtime conformance. Completed native reports contain outcomes for **33,707 distinct variants**, including failures, unsupported cases and infrastructure outcomes. **69,557 variants have no outcome in those completed reports.** In-progress journals are excluded. Different frozen sources, resource budgets and historical reports are not combined into a current pass rate.
 
@@ -8,8 +8,8 @@ All **139 directory families** are listed below. A family can have substantial i
 
 | Evidence category | Families | Suite variants in these families | Recorded distinct outcomes |
 | --- | ---: | ---: | ---: |
-| All passing | 32 | 4,649 | 4,649 |
-| Complete report; gaps | 29 | 9,952 | 9,952 |
+| All passing | 33 | 5,256 | 5,256 |
+| Complete report; gaps | 28 | 9,345 | 9,345 |
 | Selection evidence; no family report | 29 | 84,766 | 19,106 |
 | No recorded outcomes | 49 | 3,897 | 0 |
 
@@ -107,7 +107,7 @@ Complete-family ratios describe the linked saved snapshot, not necessarily curre
 | `built-ins/parseFloat` | 108 | 108 | All passing | 108/108 | 0 | 0 | 0 | [Report](results/test262-parse-float-native-v2.json) |
 | `built-ins/parseInt` | 110 | 110 | All passing | 110/110 | 0 | 0 | 0 | [Report](results/test262-parse-int-native-v2.json) |
 | `built-ins/Promise` | 1,458 | 434 | Selection evidence; no family report | — | — | — | — | — |
-| `built-ins/Proxy` | 607 | 607 | Complete report; gaps | 582/607 | 8 | 14 | 3 | [Report](results/test262-proxy-native-v2.json) |
+| `built-ins/Proxy` | 607 | 607 | All passing | 607/607 | 0 | 0 | 0 | [Report](results/test262-proxy-reflect-built-ins-proxy-v2.json) |
 | `built-ins/Reflect` | 306 | 306 | Complete report; gaps | 305/306 | 0 | 0 | 1 | [Report](results/test262-reflect-framework-native-v1.json) |
 | `built-ins/RegExp` | 3,756 | 510 | Selection evidence; no family report | — | — | — | — | — |
 | `built-ins/RegExpStringIteratorPrototype` | 34 | 34 | All passing | 34/34 | 0 | 0 | 0 | [Report](results/test262-regexp-string-iterator-native-v1.json) |
@@ -355,7 +355,7 @@ These include narrower selections and overlap. Never sum this table. Older failu
 | `built-ins/Promise/race/invoke-then-get-error-close.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-race-close-native-v1.json) |
 | `built-ins/Promise/resolve-non-obj-deferred.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-promise-deferred-native-v1.json) |
 | `built-ins/Promise/withResolvers` | 10/12 | 2 | 0 | 0 | [Report](results/test262-promise-with-resolvers-native-v1.json) |
-| `built-ins/Proxy` | 582/607 | 8 | 14 | 3 | [Report](results/test262-proxy-native-v2.json) |
+| `built-ins/Proxy` | 607/607 | 0 | 0 | 0 | [Report](results/test262-proxy-reflect-built-ins-proxy-v2.json) |
 | `built-ins/Proxy/create-target-is-not-a-constructor.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-proxy-eval-target-native-v1.json) |
 | `built-ins/Proxy/get` | 32/38 | 2 | 0 | 4 | [Report](results/test262-proxy-get-native-v1.json) |
 | `built-ins/Proxy/get/trap-is-not-callable-realm.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-proxy-get-cross-realm-native-v1.json) |
@@ -708,7 +708,9 @@ These include narrower selections and overlap. Never sum this table. Older failu
 
 ## Work in progress and reporting policy
 
-**Changes since v89:** `language/arguments-object` now uses the complete current rerun (458/460; the two optional legacy `arguments.caller` sloppy failures remain, and the two former unsupported strict-eval variants pass), and `annexB/language/function-code` uses the complete current rerun on the same frozen source (158/159; the pinned implicit-arguments expectation remains a failure). Category and footprint totals are unchanged because both replacements cover the identical family populations. v90 is not a full rescan: refreshed rows were selected explicitly, never by modification time, and re-verified against the pinned checkout and their completed journals. Not counted: the pending native arguments/environment fixture (19/20; the case 16 direct-eval Annex B copy failure stands until commit `2649e66` is accepted natively), the [journal footprint audit](results/test262-native-journal-footprint-audit-v1.json) outcomes, the older full Array journal candidate, and unfinished operator, Proxy, Promise, reference-key and other running selections.
+**Changes since v90:** `built-ins/Proxy` now uses the complete current rerun on the managed-templates frozen source (607/607, from the historical 582/607 with 8 failures, 14 unsupported and 3 crashes, which remains saved unchanged) and moves from complete-with-gaps to all passing (33 all passing, 28 with gaps). Footprint totals are unchanged because the replacement covers the identical 607-variant population. v91 is not a full rescan: the row was selected explicitly and re-verified against the pinned checkout and its completed journal. Not counted: the [Proxy realm fixture and focused reruns](results/proxy-reflect-native-status-v1.json) (bespoke or overlapping evidence), the deferred `built-ins/Reflect` rerun (the historical 305/306 report remains the family row), the partial `built-ins/Promise` rerun, the [journal footprint audit](results/test262-native-journal-footprint-audit-v1.json) outcomes, the older full Array journal candidate, and other running selections.
+
+**Changes since v89:** `language/arguments-object` now uses the complete current rerun (458/460; the two optional legacy `arguments.caller` sloppy failures remain, and the two former unsupported strict-eval variants pass), and `annexB/language/function-code` uses the complete current rerun on the same frozen source (158/159; the pinned implicit-arguments expectation remains a failure). Category and footprint totals are unchanged because both replacements cover the identical family populations. v90 is not a full rescan: refreshed rows were selected explicitly, never by modification time, and re-verified against the pinned checkout and their completed journals. Not counted: the pending native arguments/environment fixture (19/20; the case 16 direct-eval Annex B copy failure stands until commit `2649e66` is accepted natively), the [journal footprint audit](results/test262-native-journal-footprint-audit-v1.json) outcomes, the older full Array journal candidate, and unfinished operator, Promise, reference-key and other running selections.
 
 The completed dynamic-import directory and assignment reports are included. Completed focused module-eval and await-using checks are included; pending complete directory reruns are excluded. Full-suite measurement and compiler-performance work remain deferred by user direction. Work continues on known behavior gaps. Future status updates should include this full-domain summary, changes since the previous inventory, active runs, and implementation blockers—not just the latest feature slice.
 

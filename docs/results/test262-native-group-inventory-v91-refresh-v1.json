@@ -1,0 +1,106 @@
+{
+  "kind": "native-test-group-inventory-refresh",
+  "createdAt": "2026-11-06T10:04:00.445Z",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "base": {
+    "inventory": "test262-native-group-inventory-v90.json",
+    "sha256": "4207e3e0d11775a86ed880c79968a43b509b766ffb784fdf75fd7268ad27b369"
+  },
+  "result": {
+    "inventory": "test262-native-group-inventory-v91.json",
+    "sha256": "611a7232a521a0126df406cffc21e792d29279e309a61086a12ed5ab4a213514"
+  },
+  "tool": "node tools/refresh-test262-inventory.ts test262-native-group-inventory-v90.json test262-native-group-inventory-v91.json <pinned test262 checkout> built-ins/Proxy=test262-proxy-reflect-built-ins-proxy-v2.json:test262-proxy-reflect-built-ins-proxy-v2.jsonl",
+  "checkout": {
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "clean": true
+  },
+  "criteria": "Replace only explicitly named directory selections with a complete report for the identical family population, zero restored variants, a clean pinned revision, source and harness hashes matching the pinned checkout, and a completed journal matching the report. Modification times never select evidence; reportModified for refreshed rows is the recording commit's author time.",
+  "diff": [
+    {
+      "selection": "built-ins/Proxy",
+      "family": "built-ins/Proxy",
+      "from": {
+        "report": "test262-proxy-native-v2.json",
+        "passed": 582,
+        "failed": 8,
+        "unsupported": 14,
+        "crashes": 3,
+        "sourceSnapshot": "recorded in the base report (unchanged)"
+      },
+      "to": {
+        "report": "test262-proxy-reflect-built-ins-proxy-v2.json",
+        "passed": 607,
+        "failed": 0,
+        "unsupported": 0,
+        "crashes": 0,
+        "sourceSnapshot": "c1102df6… (568 files)",
+        "frozenToolchainSha256": "5480cd0e…",
+        "statusRecord": "proxy-reflect-native-status-v1.json"
+      },
+      "category": "Complete report; gaps -> All passing"
+    }
+  ],
+  "unchanged": {
+    "families": 139,
+    "categories": {
+      "allPassing": 33,
+      "completeWithGaps": 28,
+      "selectionEvidenceOnly": 29,
+      "noRecordedOutcomes": 49
+    },
+    "recordedDistinctVariants": 33707,
+    "noRecordedOutcome": 69557,
+    "wholeSuiteNativePassFraction": null
+  },
+  "verifications": [
+    {
+      "selection": "built-ins/Proxy",
+      "previousReport": "test262-proxy-native-v2.json",
+      "report": "test262-proxy-reflect-built-ins-proxy-v2.json",
+      "reportSha256": "7d30e606ca3508f27823375a8196ab4d5b1faadd4cd3a1636212c027172934be",
+      "journal": "test262-proxy-reflect-built-ins-proxy-v2.jsonl",
+      "journalSha256": "5f234091bc210c9c99a946a0255ff83bbfe9ff546e95d2d063d96b1833a23e10",
+      "population": 607,
+      "sourceHashesVerified": 607,
+      "harnessHashesVerified": 1280,
+      "previousTotals": {
+        "total": 607,
+        "passed": 582,
+        "failed": 8,
+        "unsupported": 14,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 3,
+        "passFraction": 0.9588138385502472
+      },
+      "totals": {
+        "total": 607,
+        "passed": 607,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+        "files": 568
+      },
+      "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+      "adapter": "native-script-v19-managed-templates",
+      "executionResourcesSha256": "47c27c2bdc8cc081fd4f646f4aa4eccd255f49e0dc018888af1ed4a07dfa2aa9"
+    }
+  ],
+  "limits": [
+    "Not a full rescan: every row other than built-ins/Proxy is inherited from v90 (itself a conservative refresh of v89); reportAudit counts describe the v89 capture.",
+    "The refreshed row was named explicitly; modification times were not used to select evidence. The replacement covers exactly the 607-variant population of the accepted base report, so footprint totals are unchanged; only the Proxy category moves from complete-with-gaps to all passing.",
+    "The historical test262-proxy-native-v2.json (582/607) is retained unchanged as superseded evidence.",
+    "The 8-case Proxy realm native fixture is bespoke regression evidence and the 27 focused unchanged reruns overlap the complete report; neither adds conformance outcomes.",
+    "built-ins/Reflect is not refreshed: its new rerun was deferred before completion and the historical 305/306 report remains the family row.",
+    "The partial built-ins/Promise rerun and other unfinished selections are not counted.",
+    "Complete family reports from different frozen sources and resources remain separate; no current whole-suite pass rate is derived."
+  ]
+}
