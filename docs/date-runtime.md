@@ -125,6 +125,9 @@ internal slots; calendar conversion reads those slots rather than public getters
   them when cloning. YearMonth comparison and both equality methods include the
   complete reference ISO date. PlainDate conversion reads only the required day
   or year, constrains overflow and allocates with the intrinsic PlainDate prototype.
+  YearMonth addition/subtraction accepts only years and months, derives the first
+  day before shared date arithmetic and canonicalizes the result reference day.
+  Its derived PlainDate and resulting date must satisfy day-level bounds.
 - **PlainTime:** constructor, clock fields, ISO time strings with ambiguity checks,
   property-bag/Temporal conversion, overflow options and comparison. Shared clock
   records contain no artificial calendar date. Time-only arithmetic, equality,
@@ -169,6 +172,13 @@ month-code consistency, constrain/reject overflow, intrinsic allocation and the
 lower date-time boundary: [PlainDate](results/native-temporal-date-with-own-signature-v2.json),
 [PlainDateTime](results/native-temporal-date-time-with-own-signature-v2.json).
 These are bespoke cases; unchanged full selections are measured separately.
+
+The [YearMonth arithmetic fixture](results/native-temporal-year-month-arithmetic-green-h-v1.json)
+passes five native cases covering lower-unit rejection, coercion/option order,
+reference-day normalization, intrinsic allocation and derived-date boundaries.
+Its [validation checkpoint](results/temporal-year-month-arithmetic-checkpoint-h-v1.json)
+tracks the pending cumulative self-build, workspace gates and complete selection
+measurement; the fixture contributes no Test262 passes.
 
 The [zoned conversion native regression](results/native-temporal-zoned-bags-green-v1.json)
 passes nine focused cases, including getter order, early offset-syntax errors,

@@ -1,4 +1,4 @@
-import { installPlainDateDifferenceMethods } from "./temporal-date-difference.ts";
+import { installDateDifferenceMethods } from "./temporal-date-difference.ts";
 import { plainDateArithmetic } from "./temporal-date-arithmetic.ts";
 import { durationFrom } from "./temporal-duration-conversion.ts";
 import { installPlainDateCopyMethods } from "./temporal-plain-date-methods.ts";
@@ -172,11 +172,12 @@ export function installTemporalPlainDate(
     hooks,
     (receiver): GregorianDate => requireDate(receiver, realm),
   );
-  installPlainDateDifferenceMethods(
+  installDateDifferenceMethods(
     prototype,
     realm,
     hooks,
     (receiver): GregorianDate => requireDate(receiver, realm),
+    "date",
   );
   installPlainDateCopyMethods(
     prototype,

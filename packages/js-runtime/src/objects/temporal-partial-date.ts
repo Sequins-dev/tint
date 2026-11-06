@@ -1,4 +1,8 @@
-import { partialDateFrom } from "./temporal-partial-date-conversion.ts";
+import {
+  partialDateFrom,
+  partialDateWith,
+} from "./temporal-partial-date-conversion.ts";
+import { installDateDifferenceMethods } from "./temporal-date-difference.ts";
 import { plainYearMonthArithmetic } from "./temporal-date-arithmetic.ts";
 import { durationFrom } from "./temporal-duration-conversion.ts";
 import {
@@ -129,6 +133,14 @@ export function installTemporalPartialDates(
     );
     builtinFunctionMetadata(constructor, name, 2, hooks);
     if (yearMonth)
+      installDateDifferenceMethods(
+        prototype,
+        realm,
+        hooks,
+        extract,
+        "year-month",
+      );
+    if (yearMonth)
       for (const method of ["add", "subtract"]) {
         if (method === undefined)
           throw "YEAR_MONTH_ARITHMETIC_METHOD_INVARIANT";
@@ -218,6 +230,35 @@ export function installTemporalPartialDates(
       hooks,
       extract,
       yearMonth ? "year-month" : "month-day",
+    );
+    builtinProperty(
+      prototype,
+      "with",
+      builtinFunction(
+        realm.functionPrototype,
+        "with",
+        1,
+        (receiver, args): unknown => {
+          const date = extract(receiver);
+          const result = partialDateWith(
+            date,
+            args[0],
+            args[1],
+            yearMonth,
+            realm,
+            hooks,
+          );
+          const object = createObject<ScriptPropertyKey, unknown>(prototype);
+          if (yearMonth) object.internalTemporalPlainYearMonth = result;
+          else object.internalTemporalPlainMonthDay = result;
+          object.internalTemporalCalendar = "iso8601";
+          return object;
+        },
+        hooks,
+      ),
+      true,
+      true,
+      hooks,
     );
     builtinProperty(
       prototype,

@@ -1,0 +1,37 @@
+{
+  "kind": "temporal-partial-operations-validation-checkpoint",
+  "conformance": false,
+  "mergeReady": false,
+  "implementation": [
+    "PlainYearMonth and PlainMonthDay partial-field replacement",
+    "PlainYearMonth until/since with shared date difference and exact rounding primitives"
+  ],
+  "nativeRed": "docs/results/native-temporal-partial-updates-red-h-v1.json",
+  "nativeGreen": "pending",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v5.json",
+  "validation": {
+    "focusedTemporalTests": {
+      "exitStatus": 0,
+      "pass": 86,
+      "total": 86
+    },
+    "buildExitStatus": 0,
+    "testTypecheckExitStatus": 0,
+    "boundariesExitStatus": 0,
+    "focusedFormatExitStatus": 0
+  },
+  "retainedInvalidObservation": {
+    "log": ".tint-bootstrap/temporal-focused-all-v1.log",
+    "exitStatus": 1,
+    "pass": 83,
+    "total": 85,
+    "reason": "Focused test launch overlapped stash/rebase; two tests loaded the temporarily stashed helper. Stable post-rebase run is recorded separately."
+  },
+  "pending": [
+    "Fixed native fixture compilation and execution",
+    "Cumulative frozen native self-build and stage2 smoke",
+    "Workspace gates at complete-slice checkpoint",
+    "Complete affected Test262 family measurements"
+  ],
+  "note": "Focused tests and bespoke fixtures are not Test262 coverage."
+}

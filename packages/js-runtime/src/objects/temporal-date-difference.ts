@@ -20,6 +20,7 @@ import {
   createDuration,
   type Duration,
 } from "@tint/foundation/chrono/temporal-duration";
+import { partialDateFrom } from "./temporal-partial-date-conversion.ts";
 import { plainDateFrom } from "./temporal-plain-date-conversion.ts";
 import {
   readTemporalDifferenceSettings,
@@ -292,11 +293,45 @@ export function plainDateDifference(
     realm,
   );
 }
-export function installPlainDateDifferenceMethods(
+/** YearMonth differences compare complete reference dates before deriving first
+ * days. The unrounded month result needs no out-of-range rounding candidates. */
+export function plainYearMonthDifference(
+  one: GregorianDate,
+  two: GregorianDate,
+  settings: TemporalDifferenceSettings,
+  since: boolean,
+  realm: ErrorRealm,
+): Duration {
+  if (one.year === two.year && one.month === two.month && one.day === two.day)
+    return dateDuration([], realm);
+  const first = { year: one.year, month: one.month, day: 1 },
+    last = { year: two.year, month: two.month, day: 1 };
+  for (const date of [first, last]) {
+    if (date === undefined) throw "YEAR_MONTH_DIFFERENCE_DATE_INVARIANT";
+    const day = epochDayFromGregorian(date.year, date.month, date.day);
+    if (day === undefined) throw createRuntimeError(realm, "range");
+    checkDateDay(day, realm);
+  }
+  if (settings.smallestUnit === "month" && settings.increment === 1) {
+    const largest = settings.largestUnit;
+    if (largest !== "year" && largest !== "month")
+      throw createRuntimeError(realm, "range");
+    const difference = differenceGregorianDates(first, last, largest);
+    if (difference === undefined) throw createRuntimeError(realm, "range");
+    const sign = since ? -1 : 1;
+    return dateDuration(
+      [sign * difference.years, sign * difference.months],
+      realm,
+    );
+  }
+  return plainDateDifference(first, last, settings, since, realm);
+}
+export function installDateDifferenceMethods(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   extract: (receiver: unknown) => GregorianDate,
+  kind: "date" | "year-month",
 ): void {
   for (const name of ["until", "since"]) {
     if (name === undefined) throw "PLAIN_DATE_DIFFERENCE_METHOD_INVARIANT";
@@ -309,21 +344,33 @@ export function installPlainDateDifferenceMethods(
         1,
         (receiver, args): unknown => {
           const own = extract(receiver),
-            other = plainDateFrom(args[0], undefined, realm, hooks);
+            other =
+              kind === "year-month"
+                ? partialDateFrom(args[0], undefined, true, realm, hooks)
+                : plainDateFrom(args[0], undefined, realm, hooks);
           const settings = readTemporalDifferenceSettings(
             args[1],
-            "day",
-            "date",
+            kind === "year-month" ? "year" : "day",
+            kind,
             realm,
             hooks,
           );
-          const duration = plainDateDifference(
-            own,
-            other,
-            settings,
-            name === "since",
-            realm,
-          );
+          const duration =
+            kind === "year-month"
+              ? plainYearMonthDifference(
+                  own,
+                  other,
+                  settings,
+                  name === "since",
+                  realm,
+                )
+              : plainDateDifference(
+                  own,
+                  other,
+                  settings,
+                  name === "since",
+                  realm,
+                );
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,
           );

@@ -95,7 +95,7 @@ function unitRank(unit: string): number {
 export function readTemporalDifferenceSettings(
   options: unknown,
   defaultLargest: string,
-  category: "time" | "date-time" | "date",
+  category: "time" | "date-time" | "date" | "year-month",
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): TemporalDifferenceSettings {
@@ -108,7 +108,11 @@ export function readTemporalDifferenceSettings(
     temporalDifferenceUnit(
       options,
       "smallestUnit",
-      category === "date" ? "day" : "nanosecond",
+      category === "date"
+        ? "day"
+        : category === "year-month"
+          ? "month"
+          : "nanosecond",
       realm,
       hooks,
     ),
@@ -129,7 +133,7 @@ export function normalizeTemporalDifferenceSettings(
   largest: string,
   smallest: string,
   defaultLargest: string,
-  category: "time" | "date-time" | "date",
+  category: "time" | "date-time" | "date" | "year-month",
   increment: number,
   mode: RoundingMode,
   realm: ErrorRealm,
@@ -152,7 +156,8 @@ export function normalizeTemporalDifferenceSettings(
     largestRank < 0 ||
     largestRank > smallestRank ||
     (category === "time" && (largestRank < 4 || smallestRank < 4)) ||
-    (category === "date" && (largestRank >= 4 || smallestRank >= 4))
+    (category === "date" && (largestRank >= 4 || smallestRank >= 4)) ||
+    (category === "year-month" && (largestRank >= 2 || smallestRank >= 2))
   )
     throw createRuntimeError(realm, "range");
   if (smallestRank >= 4) {
