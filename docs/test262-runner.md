@@ -52,6 +52,34 @@ single-case diagnostic run to isolate them. Reports record batch membership,
 compilation time and outcomes. Per-variant elapsed time includes queue/compilation
 waiting and is not a runtime benchmark.
 
+The native runner emits an immediate status line on each phase transition and a
+periodic heartbeat to **stderr** (stdout remains the JSON report).
+`TINT_TEST262_HEARTBEAT_MS` defaults to `30000`; `0` disables all heartbeat
+output. Values must be decimal integers in 0–2147483647 milliseconds.
+`TINT_TEST262_STALL_MS` accepts decimal integers in 1–2147483647 milliseconds.
+It defaults to five heartbeat intervals (150000 ms at the default interval,
+capped at 2147483647; with heartbeat disabled its unused default is 150000).
+This advisory threshold gives several progress observations before warning about
+slow compilation or debugger execution; it does not change any timeout or outcome.
+
+Lines include an ISO timestamp, selection, phase and its elapsed milliseconds,
+done/total variants, and pass/fail/unsupported/infra counts. Infra combines crashes,
+timeouts and harness errors. Counts include restored journal observations.
+After the stall threshold, every heartbeat says `STALL` and includes the runner
+and any live descendant child/inferior PIDs (or an explicit lookup-unavailable
+message). Pause heartbeats always name the marker path and elapsed pause time.
+A worker keeps heartbeats visible during synchronous compilation, debugger waits
+and pause-file waits. Its timer and worker are unreferenced and disposed on success
+or error. No heartbeat settings or events enter journals or reports; frozen-runner
+identity checks still apply when resuming. With the default interval, silence for
+more than about 60 seconds should be investigated as a runner/observer hang,
+even if no `STALL` line has appeared. For example:
+
+```sh
+TINT_TEST262_HEARTBEAT_MS=30000 TINT_TEST262_STALL_MS=150000 \
+node tools/test262-native-run.ts /path/to/test262 language/comments 8 > native.json 2> native.stderr
+```
+
 For long runs, set `TINT_TEST262_JOURNAL` to a new JSONL path. The runner refuses
 to overwrite an existing journal and appends compilation and per-variant evidence
 as it arrives. Only a final `complete` record establishes a finished run; an

@@ -9,6 +9,7 @@ export interface NativeDiagnosticPause {
 export function pauseNativeRun(
   request: string | undefined,
   record: (event: NativeDiagnosticPause) => void,
+  paused?: (path: string) => void,
 ): void {
   if (request === undefined || !existsSync(request)) return;
   const started = performance.now();
@@ -24,6 +25,7 @@ export function pauseNativeRun(
   renameSync(staging, ack);
   const wait = new Int32Array(new SharedArrayBuffer(4));
   try {
+    paused?.(request);
     while (existsSync(request)) Atomics.wait(wait, 0, 0, 100);
   } finally {
     rmSync(ack);

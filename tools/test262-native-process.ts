@@ -116,9 +116,12 @@ export class NativeImageRunner {
       throw error;
     }
   }
-  run(selectedCase?: number): ExecutionOutcome {
+  run(
+    selectedCase?: number,
+    waiting?: (phase: string) => void,
+  ): ExecutionOutcome {
     if (this.#closed) throw new Error("native image runner is closed");
-    return executeNativeFile(this.path, this.#timeoutMs, selectedCase);
+    return executeNativeFile(this.path, this.#timeoutMs, selectedCase, waiting);
   }
   close(): void {
     if (this.#closed) return;
@@ -146,6 +149,7 @@ export function executeNativeFile(
   binary: string,
   timeoutMs: number,
   selectedCase?: number,
+  waiting?: (phase: string) => void,
 ): ExecutionOutcome {
   if (
     selectedCase !== undefined &&
@@ -188,6 +192,7 @@ export function executeNativeFile(
       killSignal: "SIGKILL" as const,
       maxBuffer: 1024 * 1024,
     };
+    waiting?.("launching debugger / awaiting LLDB");
     const result = spawnSync(
       nativeDebuggerExecutable,
       [
