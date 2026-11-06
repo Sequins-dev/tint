@@ -1,0 +1,29 @@
+{
+  "kind": "cluster-f-docs-only-slice-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-06T23:36:34.790827+00:00",
+  "base": "8ef3eb1a8e6954d320f7b7f5ac97d3a14be78c62",
+  "gatePolicy": "Coordinator-authorized exact-code current-main gate reuse for docs-only slice.",
+  "gate": "docs/results/cluster-f-main-dense-gate-reuse-v1.json",
+  "validatedCodeHead": "f98b56b4648777d69023ce1b0fb1396cef2b2a69",
+  "gateTests": 4579,
+  "gateExitStatus": 0,
+  "codeDiffExitStatus": 0,
+  "gateLogSha256Verified": true,
+  "checkpoint": "docs/results/cluster-f-for-await-completed-files-v4.json",
+  "completeFiles": 230,
+  "fileTotals": {
+    "total": 434,
+    "passed": 404,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 30
+  },
+  "parentComplete": false,
+  "nativeRunStillActive": 14181,
+  "debuggerLaunch": "debugserver-connected",
+  "recheckPolicy": "Retain original outcomes; after connected family completes recheck pre-entry variants with debugserver-direct on freshly frozen current main.",
+  "newFiles": 33
+}
