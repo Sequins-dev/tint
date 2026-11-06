@@ -1,0 +1,84 @@
+{
+  "kind": "historical-native-nonpass-triage",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "findings": [
+    {
+      "report": "docs/results/test262-rest-parameters-native-v2.json",
+      "totals": {
+        "total": 22,
+        "passed": 21,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.9545454545454546
+      },
+      "sourceSnapshot": null,
+      "nonpasses": [
+        {
+          "path": "language/rest-parameters/rest-index.js",
+          "variant": "sloppy",
+          "retainedStatus": "crash",
+          "outcome": {
+            "kind": "crash",
+            "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-gpC5NN/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-gpC5NN/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+          },
+          "classification": "LLDB startup failure; native outcome not established",
+          "nextStep": "Rerun complete selection using current frozen direct-debugserver adapter and independent initial-stop validation. Keep historical observation."
+        }
+      ]
+    },
+    {
+      "report": "docs/results/test262-destructuring-native-v2.json",
+      "totals": {
+        "total": 37,
+        "passed": 34,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.918918918918919
+      },
+      "sourceSnapshot": null,
+      "nonpasses": [
+        {
+          "path": "language/destructuring/binding/initialization-requires-object-coercible-null.js",
+          "variant": "sloppy",
+          "retainedStatus": "crash",
+          "outcome": {
+            "kind": "crash",
+            "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5Xe7Tb/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-5Xe7Tb/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n"
+          },
+          "classification": "LLDB startup failure; native outcome not established",
+          "nextStep": "Rerun complete selection using current frozen direct-debugserver adapter and independent initial-stop validation. Keep historical observation."
+        },
+        {
+          "path": "language/destructuring/binding/typedarray-backed-by-resizable-buffer.js",
+          "variant": "sloppy",
+          "retainedStatus": "unsupported",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "native runtime reached an unsupported operation"
+          },
+          "classification": "Historical resizable-buffer variant unsupported; exact runtime operation not diagnosed",
+          "nextStep": "Complete current destructuring rerun already in inherited queue; diagnose remaining unsupported operation before any fix. Binary-buffer runtime belongs to K."
+        },
+        {
+          "path": "language/destructuring/binding/typedarray-backed-by-resizable-buffer.js",
+          "variant": "strict",
+          "retainedStatus": "unsupported",
+          "outcome": {
+            "kind": "unsupported",
+            "reason": "native runtime reached an unsupported operation"
+          },
+          "classification": "Historical resizable-buffer variant unsupported; exact runtime operation not diagnosed",
+          "nextStep": "Complete current destructuring rerun already in inherited queue; diagnose remaining unsupported operation before any fix. Binary-buffer runtime belongs to K."
+        }
+      ]
+    }
+  ],
+  "policy": "Classification only. Historical totals and statuses remain unchanged. Missing historical source identity is not filled from the mutable current workspace. No current native passes inferred."
+}
