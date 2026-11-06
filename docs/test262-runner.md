@@ -468,3 +468,19 @@ and wall measurements for optimization claims. The exported `analyzeCPUProfile`
 helper attributes V8 sampling intervals to the innermost compiler stage and keeps
 GC and synchronous child-process waits separate. Sampled intervals are elapsed
 time, not process CPU accounting.
+
+For generated-code work, profile native execution separately from the Node build
+host. The [native workload attribution](results/native-hot-functions-v2.md)
+retains symbolized stage-2 compiler, addition, division and eval/catch samples.
+`attributeNativeSample` in `tools/native-sample-attribution.ts` derives exclusive
+main-thread counts from the complete Apple `sample` call tree, including groups
+omitted by its five-sample leaf-summary threshold. Aggregate specializations of
+one source function, but keep workload denominators separate. Selected sampling
+windows are not duration-weighted whole-run profiles.
+
+Retain the image and build-manifest identities, initial debugger stop, final
+inferior outcome, CPU observations and load averages with each measurement.
+Under saturation, use repeated inferior CPU measurements and emitted instruction,
+call and allocation counts; a timeout or wall-time ratio alone cannot establish
+a generated-code regression or improvement. Bespoke fixtures and longer profile
+diagnostics remain separate from unchanged Test262 selection totals.
