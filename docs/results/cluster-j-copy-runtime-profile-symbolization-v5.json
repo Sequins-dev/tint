@@ -1,0 +1,179 @@
+{
+  "kind": "cluster-j-copy-runtime-profile-symbolization",
+  "conformance": false,
+  "timestamp": "2026-11-06T21:05:16.313Z",
+  "sourceSnapshot": "eb810121f9ab6bf004b75f1f6903afa64e7c6c96bcd751f5d94a361acf737990",
+  "method": "Recompiled only the frozen copying runtime with debug symbols and identical runtime host bindings; matched unique instruction-byte windows from exact copied native images. This does not assign unsymbolized program caller frames.",
+  "codeSha256": "744e77e7adff7b7ad30b3f73f468100b0483677edbec67f38275043c8cecb208",
+  "codeBytes": 1250936,
+  "matches": [
+    {
+      "image": "13-74968",
+      "hotOffset": "0x12f364",
+      "runtimeOffset": 1139284,
+      "matchedBytes": 128,
+      "matchedSha256": "d6b245141df93c93dfb1b7de66006a3781728d24b82400916acf2ee03010570d",
+      "function": {
+        "name": "packages/native-runtime/src/copying.ts:closure@4842 [closure_130]",
+        "offset": 1135880,
+        "byteLength": 10348
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0xf380c",
+      "runtimeOffset": 894716,
+      "matchedBytes": 128,
+      "matchedSha256": "01bcedcde0df15dddf05ee0c3857f69868d58cccb3935a093569c9d82feddf88",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]",
+        "offset": 890316,
+        "byteLength": 4540
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0xd852c",
+      "runtimeOffset": 783388,
+      "matchedBytes": 128,
+      "matchedSha256": "519a4aecf5f850427dfe12a39e599be4014a67f45fde79a719001aad81117bf4",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]",
+        "offset": 724892,
+        "byteLength": 162780
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0x2a910",
+      "runtimeOffset": 71680,
+      "matchedBytes": 128,
+      "matchedSha256": "e500c5f8973694bd810f9d2c86e74664feaf71c64ec5d6da3772cc6f954c1090",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]",
+        "offset": 70896,
+        "byteLength": 932
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0x291c4",
+      "runtimeOffset": 65716,
+      "matchedBytes": 128,
+      "matchedSha256": "192c3c04cdeefbc2eca888de2ec8df85ad271bb8cd3310809e86c5581a325b15",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]",
+        "offset": 51080,
+        "byteLength": 15104
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0x24b08",
+      "runtimeOffset": 47608,
+      "matchedBytes": 128,
+      "matchedSha256": "3e44bc98572076380a32775fb96cc40ed04ed2fb0404d5425102fbb79a63a07d",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]",
+        "offset": 43732,
+        "byteLength": 7348
+      }
+    },
+    {
+      "image": "13-74968",
+      "hotOffset": "0x23240",
+      "runtimeOffset": 41264,
+      "matchedBytes": 128,
+      "matchedSha256": "2966cbb89325411419fadb9d7a819e92b25333a016b6a369b88fb2d59cfaa623",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]",
+        "offset": 39696,
+        "byteLength": 1824
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0x12f364",
+      "runtimeOffset": 1139284,
+      "matchedBytes": 128,
+      "matchedSha256": "d6b245141df93c93dfb1b7de66006a3781728d24b82400916acf2ee03010570d",
+      "function": {
+        "name": "packages/native-runtime/src/copying.ts:closure@4842 [closure_130]",
+        "offset": 1135880,
+        "byteLength": 10348
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0xf380c",
+      "runtimeOffset": 894716,
+      "matchedBytes": 128,
+      "matchedSha256": "01bcedcde0df15dddf05ee0c3857f69868d58cccb3935a093569c9d82feddf88",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]",
+        "offset": 890316,
+        "byteLength": 4540
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0xd852c",
+      "runtimeOffset": 783388,
+      "matchedBytes": 128,
+      "matchedSha256": "519a4aecf5f850427dfe12a39e599be4014a67f45fde79a719001aad81117bf4",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]",
+        "offset": 724892,
+        "byteLength": 162780
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0x2a910",
+      "runtimeOffset": 71680,
+      "matchedBytes": 128,
+      "matchedSha256": "e500c5f8973694bd810f9d2c86e74664feaf71c64ec5d6da3772cc6f954c1090",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]",
+        "offset": 70896,
+        "byteLength": 932
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0x291c4",
+      "runtimeOffset": 65716,
+      "matchedBytes": 128,
+      "matchedSha256": "192c3c04cdeefbc2eca888de2ec8df85ad271bb8cd3310809e86c5581a325b15",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]",
+        "offset": 51080,
+        "byteLength": 15104
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0x24b08",
+      "runtimeOffset": 47608,
+      "matchedBytes": 128,
+      "matchedSha256": "3e44bc98572076380a32775fb96cc40ed04ed2fb0404d5425102fbb79a63a07d",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]",
+        "offset": 43732,
+        "byteLength": 7348
+      }
+    },
+    {
+      "image": "19-45502",
+      "hotOffset": "0x23240",
+      "runtimeOffset": 41264,
+      "matchedBytes": 128,
+      "matchedSha256": "2966cbb89325411419fadb9d7a819e92b25333a016b6a369b88fb2d59cfaa623",
+      "function": {
+        "name": "packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]",
+        "offset": 39696,
+        "byteLength": 1824
+      }
+    }
+  ]
+}
