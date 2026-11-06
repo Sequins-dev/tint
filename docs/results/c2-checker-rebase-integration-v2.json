@@ -1,0 +1,59 @@
+{
+  "kind": "c2-checker-rebase-integration",
+  "conformance": false,
+  "base": "20810b1d3734d762727fd4069a9df6977d85c3a8",
+  "headBeforeReport": "fec18e67c96ee7814bf7a64874ad669c1cbb5ec4",
+  "implementationCommit": "d6d5093",
+  "nativeRegressionEvidenceCommit": "fcc5918",
+  "nativeSelfbuildEvidenceCommit": "f717080",
+  "checkerSha256": "827003d4b27cb04aea1ba5804a41f46247640bb3bae56c3733f60392b81bcbc7",
+  "checkerSourceUnchanged": true,
+  "sourceSnapshot": {
+    "sha256": "c5ce00a4a602a1f8274b051a70de33a6c3208123a3a6718a35008674c5879dc8",
+    "files": 568
+  },
+  "changedSinceNativeSnapshot": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/codegen/src/aarch64/scalar/leaf-registers.ts",
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-engine/src/lowering/runtime-imports.ts",
+    "packages/js-engine/src/script-evaluation.ts",
+    "packages/js-runtime/src/environments/global/index.ts",
+    "packages/js-runtime/src/environments/global/scope.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/index.ts"
+  ],
+  "workspaceGate": {
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "node": "v24.12.0",
+    "exitStatus": 0,
+    "fullTestBase": "ccd6278d67b0fb7d3744280424ed0f5bdf16ec35",
+    "tests": 4517,
+    "passed": 4517,
+    "failed": 0,
+    "log": {
+      "path": "docs/results/c2-checker-node24-gates-v2.log",
+      "sha256": "8a414c3ccaf7b453fdcdc0e7c06304e02bbf6df509786d20e3e243b9a564bf4a"
+    }
+  },
+  "laterMainIntegration": {
+    "delta": "Documentation and new coverage-ledger tools/tests only; portable compiler graph unchanged.",
+    "focusedTests": {
+      "command": "node --test --test-concurrency=2 tools/test262-coverage-ledger.test.ts",
+      "passed": 7,
+      "total": 7,
+      "exitStatus": 0
+    },
+    "constituents": {
+      "commands": ["pnpm typecheck", "pnpm boundaries", "pnpm format:check"],
+      "exitStatus": 0,
+      "log": {
+        "path": "docs/results/c2-checker-ledger-rebase-gates-v1.log",
+        "sha256": "830185eb70f4f1b21e6bb61fb6968f37cc0667da35ffd4774ca2d16f793be5c5"
+      }
+    }
+  },
+  "retainedGateFailure": "docs/results/c2-workspace-node26-host-mismatch-v1.json",
+  "nativeAcceptance": "docs/results/c2-checker-flow-acceptance-v1.json",
+  "nativeProvenance": "Earlier checker regression and byte-identical self-build retain their own frozen source a449de7f. Nine upstream files differ in this rebased portable graph, but the checker fix is unchanged. No native execution on graph c5ce00a4 is claimed here; the ongoing class-elements run remains on its original frozen-v9 graph."
+}
