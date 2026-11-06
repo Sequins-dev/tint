@@ -1,0 +1,21 @@
+{
+  "kind": "native-selection-interruption",
+  "conformance": false,
+  "createdAt": "2026-11-06T20:08:37.158477+00:00",
+  "selection": "language/expressions/generators",
+  "totalVariants": 546,
+  "observedVariants": 419,
+  "observedPasses": 419,
+  "unobservedVariants": 127,
+  "complete": false,
+  "reason": "After the explicitly interrupted assistant turn, the runner and batch-image debugger children were absent. The original exec session was unavailable; no exit status or signal was recoverable. No deliberate agent stop was issued. Cause remains unknown.",
+  "lastObservedVariant": "language/expressions/generators/named-no-strict-reassign-fn-name-in-body-in-arrow.js",
+  "inFlightUnobservedVariant": "language/expressions/generators/named-no-strict-reassign-fn-name-in-body-in-eval.js [sloppy]",
+  "runnerPid": 11565,
+  "exitStatus": null,
+  "prefixJournal": "docs/results/cluster-f-generator-expressions-turn-interruption-v1.jsonl",
+  "stderr": "docs/results/cluster-f-generator-expressions-turn-interruption-v1.log",
+  "frozenManifest": "docs/results/frozen-node-toolchain-cluster-f-generator-expressions-v1.json",
+  "resume": "TINT_TEST262_RESUME=1 on original frozen toolchain and original journal, one F runner under shared slot limiter. Memory hold lifted at 2026-11-06T19:55Z per load-events.md.",
+  "policy": "Interrupted prefix is not a complete selection and is excluded from complete coverage totals."
+}
