@@ -1,0 +1,22 @@
+{
+  "kind": "c2-native-survey-interruption",
+  "conformance": false,
+  "selection": "language/statements/class/elements",
+  "plannedVariants": 3156,
+  "observedVariants": 917,
+  "counts": {
+    "pass": 917
+  },
+  "complete": false,
+  "unobservedVariants": 2239,
+  "reason": "After user turn interruption, runner38740, slot38733, observer38664 and all matching debugger/inferior processes were absent. No exit status available. No manual native termination was performed by this agent.",
+  "lastUnobservedVariant": {
+    "path": "language/statements/class/elements/derived-cls-direct-eval-contains-superproperty-2.js",
+    "variant": "sloppy",
+    "outcome": "not recorded; cannot infer pass or failure"
+  },
+  "retainedPrefix": "docs/results/c2-statements-elements-interrupted-prefix-v1.jsonl",
+  "prefixSha256": "ea418d606bce2a0f8a3e84c231765fdaa725f6a26678718815a106babe3d70bd",
+  "frozenToolchain": "docs/results/c2-frozen-toolchain-v9.json",
+  "resume": "Resume same schema2 journal with original frozen toolchain/settings; identity checks retain all917 observations. This is continuation of existing survey, not a new-toolchain rerun."
+}
