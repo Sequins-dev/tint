@@ -1,0 +1,160 @@
+{
+  "kind": "native-class-construction-realm-validation",
+  "conformance": false,
+  "accepted": true,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Miadr4/class-construction-realm",
+  "imageSha256": "e8df211913beb4f646b2b45e56e7bedee96d78fcfaffa0241f83f932a373b15e",
+  "manifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Miadr4/class-construction-realm.manifest.json",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Miadr4/cases.json",
+  "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+  "fixtureTool": "tools/verify-test262-native-class-construction-realm.ts",
+  "sourceSnapshot": {
+    "sha256": "08b02d1c42927382cf9995053a115388b3542164ec4396934e664c2d3877eaf7",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/class-realm/source-snapshot-v1.json",
+  "scope": "Baseline ECMA-262 only; Stage 3 nonextensible-applies-to-private is excluded.",
+  "provenance": "Build-only image produced with TINT_BUILD_ONLY=1 and TINT_TEST262_SOURCES set to the captured snapshot; image hash and manifest snapshot verified before execution.",
+  "expected": "Every case stops at entry and exits with raw status 42 (completed).",
+  "nodeReference": "Every case executed under Node 24 vm realms before building.",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "foreign base class revoked newTarget reports in the caller realm",
+      "sourceSha256": "05375297434928cc99b3282bb126811e438c7bc13b81ca5e22925647cac4acad",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-0-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 1,
+      "name": "foreign base class with field still reports revocation in the caller realm",
+      "sourceSha256": "bcc5f491eda1b46b890efa3186a1e578b0e193b40ba4fdd81862ffc754101c18",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-1-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 2,
+      "name": "non-object newTarget prototype falls back to the newTarget realm",
+      "sourceSha256": "ddadc56beda6f52b90fa5f41fe5d515cdc5d9d27bf19a08437227b5977967f7c",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-2-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 3,
+      "name": "foreign base field initializer errors use the class realm",
+      "sourceSha256": "6290d01a35875f721892745f4b9d5f5bf5aa4295138adba24a2301ed0cbe1e14",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-3-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 4,
+      "name": "prototype lookup precedes fields and body",
+      "sourceSha256": "fa39b982e95cd06d84ce82b1a56ce6dc4e95eb789642e425199d9b81dbedb33f",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-4-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 5,
+      "name": "baseline private fields and methods attach to non-extensible objects",
+      "sourceSha256": "9a03cb4786af7c19c872bf221fa81f030d5d63711fd12dd23f87f3d00822f821",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-5-v3.json",
+      "phase": "completed-after-entry"
+    },
+    {
+      "selectedCase": 6,
+      "name": "baseline private field stays writable after freeze",
+      "sourceSha256": "ea69cff3429f50c86d4ebf01b40a8e0f0232f8c011cbdb01640af71fc19230a1",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-class-construction-realm-case-6-v3.json",
+      "phase": "completed-after-entry"
+    }
+  ],
+  "serialization": {
+    "lease": {
+      "pid": 63402,
+      "thread": "class-private-realm-baseline-validation",
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6",
+      "purpose": "fixture",
+      "acquiredAt": "2026-11-06T04:08:17.364Z"
+    },
+    "purpose": "fixture",
+    "cooperatingRunners": [
+      {
+        "pid": 699,
+        "ppid": 694,
+        "children": [],
+        "listed": true,
+        "paused": false,
+        "ok": true
+      },
+      {
+        "pid": 2821,
+        "ppid": 2557,
+        "children": [],
+        "listed": true,
+        "paused": true,
+        "ok": true
+      },
+      {
+        "pid": 55862,
+        "ppid": 69783,
+        "children": [],
+        "listed": true,
+        "paused": true,
+        "ok": true
+      },
+      {
+        "pid": 67042,
+        "ppid": 67040,
+        "children": [],
+        "listed": true,
+        "paused": false,
+        "ok": true
+      },
+      {
+        "pid": 93701,
+        "ppid": 93679,
+        "children": [],
+        "listed": true,
+        "paused": true,
+        "ok": true
+      },
+      {
+        "pid": 98371,
+        "ppid": 1,
+        "children": [],
+        "listed": true,
+        "paused": true,
+        "ok": true
+      }
+    ],
+    "central": {
+      "pause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+      "parent": 21898,
+      "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts"
+    },
+    "borrowedRunner": 21082,
+    "grantedAt": "2026-11-06T04:08:48.480Z",
+    "releasedAt": "2026-11-06T04:11:09.640Z"
+  }
+}
