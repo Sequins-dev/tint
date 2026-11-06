@@ -1,0 +1,64 @@
+✔ recursive Test262 directory selections retain nested populations and omit fixtures (86.706292ms)
+✔ terminal *.js selections cover only direct files with stable order and unchanged bytes (99.886917ms)
+✔ root direct-file selections preserve the pinned checkout boundary and missing-directory errors (137.85625ms)
+[coverage-ledger 2026-11-06T19:57:16.705Z] reading checkout revision, tracked state and file inventory
+[coverage-ledger 2026-11-06T19:57:16.731Z] inventory 0/6 files, 1 variants
+✔ denominator shares strictness, raw, module, negative and fixture policy (77.24625ms)
+✔ latest complete overlap replaces passes with failures; ties use lexical filename (0.6595ms)
+✔ rejects source, harness, path, status, duplicates and incomplete selection evidence (0.324792ms)
+✔ streamed journal must end in a consistent complete record (7.447541ms)
+✔ explicit completed subset reports deduplicate with directory runs (0.215333ms)
+✔ canonical full table is independent of input order and has a verifiable hash (0.29575ms)
+✔ compact evidence keeps accepted names and selected provenance without per-variant rows (0.237917ms)
+✖ direct JavaScript selections retain complete roots without importing nested or sibling populations (1.123625ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 421.18175
+
+✖ failing tests:
+
+test at tools/test262-coverage-ledger.test.ts:230:1
+✖ direct JavaScript selections retain complete roots without importing nested or sibling populations (1.123625ms)
+  AssertionError [ERR_ASSERTION]: language/statements/class/*.js
+  + actual - expected
+  
+  + [
+  +   {
+  +     file: 'direct.json',
+  +     path: 'language/statements/class/a.js',
+  +     reason: 'observation outside selection',
+  +     variant: 'sloppy'
+  +   },
+  +   {
+  +     file: 'direct.json',
+  +     path: 'language/statements/class/b.js',
+  +     reason: 'observation outside selection',
+  +     variant: 'sloppy'
+  +   },
+  +   {
+  +     file: 'direct.json',
+  +     reason: 'incomplete selection: 2/0 variants'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/tools/test262-coverage-ledger.test.ts:252:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { file: 'direct.json', reason: 'observation outside selection', path: 'language/statements/class/a.js', variant: 'sloppy' }, { file: 'direct.json', reason: 'observation outside selection', path: 'language/statements/class/b.js', variant: 'sloppy' }, { file: 'direct.json', reason: 'incomplete selection: 2/0 variants' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

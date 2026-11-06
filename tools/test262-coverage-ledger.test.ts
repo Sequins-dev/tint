@@ -268,3 +268,54 @@ test("compact evidence keeps accepted names and selected provenance without per-
   assert.ok(!("ledger" in compact));
   assert.ok(!JSON.stringify(compact).includes(input.path));
 });
+
+test("direct JavaScript selections retain complete roots without importing nested or sibling populations", () => {
+  const rows = [
+    "root.js",
+    "language/statements/class/a.js",
+    "language/statements/class/b.js",
+    "language/statements/class/elements/field.js",
+    "language/statements/class/dstr/parameter.js",
+    "language/statements/class-extra/sibling.js",
+  ].map((path) => ({ ...observation, path }));
+  const inventory = new Map(
+    rows.map((row) => [row.path + "\0" + row.variant, row]),
+  );
+  for (const [selection, selected] of [
+    ["*.js", [rows[0]!]],
+    ["./*.js", [rows[0]!]],
+    ["language/statements/class/*.js", rows.slice(1, 3)],
+    ["./language/statements/class/*.js", rows.slice(1, 3)],
+    ["language/statements/class", rows.slice(1, 5)],
+  ] as const) {
+    const evidence = {
+      ...report("direct.json", "2026-01-01", [...selected]),
+      selection,
+    };
+    const result = aggregateEvidence(inventory, [evidence]);
+    assert.deepEqual(result.rejected, [], selection);
+    assert.equal(result.accepted.length, 1, selection);
+    assert.deepEqual(
+      result.ledger
+        .filter((row) => row.status === "pass")
+        .map((row) => row.path),
+      selected.map((row) => row.path),
+      selection,
+    );
+  }
+  for (const invalid of [
+    rows.slice(1, 2),
+    rows.slice(1, 4),
+    [rows[1]!, rows[5]!],
+  ]) {
+    const result = aggregateEvidence(inventory, [
+      {
+        ...report("bad-direct.json", "2026-01-01", invalid),
+        selection: "language/statements/class/*.js",
+      },
+    ]);
+    assert.equal(result.accepted.length, 0);
+    assert.ok(result.rejected.length > 0);
+    assert.ok(result.ledger.every((row) => row.status === "unmeasured"));
+  }
+});

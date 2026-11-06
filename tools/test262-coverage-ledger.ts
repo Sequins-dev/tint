@@ -11,7 +11,12 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { isDeepStrictEqual } from "node:util";
-import { test262Checkout, test262Source, within } from "./test262-checkout.ts";
+import {
+  test262Checkout,
+  test262Source,
+  test262SelectionIncludes as selected,
+  within,
+} from "./test262-checkout.ts";
 import { testMetadata, syntaxVariants } from "./test262.ts";
 import {
   executionPlan,
@@ -178,11 +183,6 @@ export async function readJournal(file: string) {
   )
     throw Error("inconsistent journal completion totals");
   return { header, observations, complete, totals };
-}
-function selected(path: string, selection: string) {
-  return (
-    selection === "." || path === selection || path.startsWith(selection + "/")
-  );
 }
 function validate(
   row: NativeObservation,

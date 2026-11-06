@@ -1,0 +1,190 @@
+{
+  "kind": "c1-ledger-selection-membership-validation",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selections": [
+    {
+      "selection": "language/statements/class/syntax",
+      "expectedVariants": 26,
+      "matchedVariants": 26
+    },
+    {
+      "selection": "language/statements/class/definition",
+      "expectedVariants": 130,
+      "matchedVariants": 130
+    },
+    {
+      "selection": "language/statements/class/name-binding",
+      "expectedVariants": 12,
+      "matchedVariants": 12
+    },
+    {
+      "selection": "language/statements/class/arguments",
+      "expectedVariants": 4,
+      "matchedVariants": 4
+    },
+    {
+      "selection": "language/statements/class/strict-mode",
+      "expectedVariants": 4,
+      "matchedVariants": 4
+    },
+    {
+      "selection": "language/statements/class/super",
+      "expectedVariants": 16,
+      "matchedVariants": 16
+    },
+    {
+      "selection": "language/statements/class/method",
+      "expectedVariants": 35,
+      "matchedVariants": 35
+    },
+    {
+      "selection": "language/statements/class/method-static",
+      "expectedVariants": 35,
+      "matchedVariants": 35
+    },
+    {
+      "selection": "language/expressions/class/method",
+      "expectedVariants": 35,
+      "matchedVariants": 35
+    },
+    {
+      "selection": "language/expressions/class/method-static",
+      "expectedVariants": 35,
+      "matchedVariants": 35
+    },
+    {
+      "selection": "language/statements/class/accessor-name-inst",
+      "expectedVariants": 42,
+      "matchedVariants": 42
+    },
+    {
+      "selection": "language/statements/class/accessor-name-static",
+      "expectedVariants": 42,
+      "matchedVariants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "expectedVariants": 42,
+      "matchedVariants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-static",
+      "expectedVariants": 42,
+      "matchedVariants": 42
+    },
+    {
+      "selection": "language/statements/class/subclass",
+      "expectedVariants": 217,
+      "matchedVariants": 217
+    },
+    {
+      "selection": "language/statements/class/subclass-builtins",
+      "expectedVariants": 72,
+      "matchedVariants": 72
+    },
+    {
+      "selection": "language/expressions/class/subclass-builtins",
+      "expectedVariants": 72,
+      "matchedVariants": 72
+    },
+    {
+      "selection": "language/statements/class/gen-method",
+      "expectedVariants": 55,
+      "matchedVariants": 55
+    },
+    {
+      "selection": "language/statements/class/gen-method-static",
+      "expectedVariants": 55,
+      "matchedVariants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method",
+      "expectedVariants": 55,
+      "matchedVariants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method-static",
+      "expectedVariants": 55,
+      "matchedVariants": 55
+    },
+    {
+      "selection": "language/statements/class/async-method",
+      "expectedVariants": 59,
+      "matchedVariants": 59
+    },
+    {
+      "selection": "language/statements/class/async-method-static",
+      "expectedVariants": 59,
+      "matchedVariants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method",
+      "expectedVariants": 59,
+      "matchedVariants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method-static",
+      "expectedVariants": 59,
+      "matchedVariants": 59
+    },
+    {
+      "selection": "language/statements/class/async-gen-method",
+      "expectedVariants": 191,
+      "matchedVariants": 191
+    },
+    {
+      "selection": "language/statements/class/async-gen-method-static",
+      "expectedVariants": 191,
+      "matchedVariants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method",
+      "expectedVariants": 191,
+      "matchedVariants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method-static",
+      "expectedVariants": 191,
+      "matchedVariants": 191
+    },
+    {
+      "selection": "language/statements/class/*.js",
+      "expectedVariants": 504,
+      "matchedVariants": 504
+    },
+    {
+      "selection": "language/expressions/class/*.js",
+      "expectedVariants": 495,
+      "matchedVariants": 495
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "expectedVariants": 21,
+      "matchedVariants": 21
+    },
+    {
+      "selection": "language/expressions/class/decorator",
+      "expectedVariants": 13,
+      "matchedVariants": 13
+    }
+  ],
+  "totalMatchedVariants": 3114,
+  "nativeConformanceReports": 0,
+  "red": {
+    "exitStatus": 1,
+    "log": "docs/results/c1-ledger-direct-red-v1.txt"
+  },
+  "firstPatch": {
+    "exitStatus": 1,
+    "log": "docs/results/c1-ledger-direct-green-v1.txt",
+    "cause": "POSIX normalization preserves a trailing directory slash; dirname matching corrected and both root/directory cases retained."
+  },
+  "focused": {
+    "exitStatus": 0,
+    "tests": 11,
+    "log": "docs/results/c1-ledger-direct-green-v2.txt"
+  },
+  "scope": "Validates ledger selection membership against the immutable pinned census. No observations are manufactured. Native reports keep their own results; a complete direct-file report can now be counted without importing class elements or destructuring."
+}

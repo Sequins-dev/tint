@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { resolve, relative, basename, dirname, sep } from "node:path";
+import { resolve, relative, basename, dirname, sep, posix } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 export function within(root: string, path: string): string {
@@ -32,6 +32,20 @@ function selectedFiles(path: string): string[] {
   if (path.includes("*"))
     throw new Error("only a trailing *.js selection pattern is supported");
   return files(path);
+}
+export function test262SelectionIncludes(
+  path: string,
+  selection: string,
+): boolean {
+  if (selection === "*.js" || selection.endsWith("/*.js")) {
+    return (
+      path.endsWith(".js") &&
+      posix.dirname(path) === posix.dirname(posix.normalize(selection))
+    );
+  }
+  return (
+    selection === "." || path === selection || path.startsWith(selection + "/")
+  );
 }
 export function test262Checkout(checkout: string, selection: string) {
   const root = resolve(checkout),

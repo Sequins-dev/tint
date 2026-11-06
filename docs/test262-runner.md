@@ -163,6 +163,8 @@ a final, consistent `complete` record. Interrupted prefixes and rejected evidenc
 are listed separately and contribute nothing. Every source and ordered harness
 hash is checked against the clean pinned checkout. A mismatched observation
 rejects its entire artifact; no failure or unsupported outcome is filtered away.
+Quoted `directory/*.js` and root `*.js` selections use the checkout's direct-file
+membership policy, so nested directories remain separate populations.
 
 For each variant, the latest accepted complete artifact wins, including later
 non-passes. Dates use `generatedAt`, `timestamp`, `completedAt`, then `startedAt`;
