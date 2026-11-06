@@ -1,0 +1,23 @@
+{
+  "kind": "cluster-j-batch-compile-stall-investigation",
+  "at": "2026-11-06T22:58:15.395593+00:00",
+  "selection": "built-ins/String",
+  "sourceSnapshot": {
+    "sha256": "5fa339125a8f1676d8fe75599291b4a3f1a615ac4d773382575031bc54ceb512",
+    "files": 569
+  },
+  "journal": ".tint-bootstrap/cluster-j-string-v9.jsonl",
+  "debuggerLaunch": "debugserver-direct",
+  "batch": 0,
+  "variants": 64,
+  "phase": "compiling batch0",
+  "nativeInferiorLaunched": false,
+  "runnerPid": 67498,
+  "observedWall": "03:24",
+  "observedCpu": "01:54.47",
+  "state": "running,58percent CPU at sample time",
+  "sample": "docs/results/cluster-j-string-v9-batch0-stall-sample.txt",
+  "sampleSha256": "8fa30eadd11036cb84bbf4aac9ecaf1afa23bb6300794e6cf586eb20c22e76ec",
+  "sampleExit": 0,
+  "finding": "Active Node compiler JavaScript execution with array mapping in the sampled stack; not waiting on a debugger or child. Continue measurement under the documented shared compilation cost. This is not a per-variant timeout or native conformance outcome."
+}
