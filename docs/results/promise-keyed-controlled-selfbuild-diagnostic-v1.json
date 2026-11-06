@@ -1,0 +1,28 @@
+{
+  "kind": "promise-keyed-controlled-self-build-diagnostic",
+  "conformance": false,
+  "baselineReport": "docs/results/bootstrap-promise-keyed-baseline-v1.json",
+  "keyedReport": "docs/results/bootstrap-promise-keyed-v1.json",
+  "controlledSourceDifferences": [
+    {
+      "path": "packages/js-runtime/src/objects/promise-combinators.ts",
+      "keyedSha256": "53ec7b9a5811bc825378006a32c4b556d3406e1f9cc13e370dfd71af8eac034e",
+      "baselineSha256": "02de0dc886a3032ebec49a850c45a0b1b70abd6f424cec54b7efc0e3ce0cba92"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/promise-intrinsics.ts",
+      "keyedSha256": "2e9efd0fb211661d55a7e8cb4c16d9c2b242bfc74608ada40768740781e7dff2",
+      "baselineSha256": "692683f99dd79aecf4b7d98832a00223c433c66e2d6c0422817bfe08d0edfe0a"
+    }
+  ],
+  "interpretation": "Both 900000ms profiles timed out after initial native entry and before publishing stage2. Sampled compiler phases changed and CPU accumulated; neither timeout is evidence of a native fault or deadlock. Different host load and elapsed CPU prevent a performance comparison.",
+  "longerValidation": "docs/results/bootstrap-promise-keyed-v2.json",
+  "longerValidationStatus": "running with 3600000ms containment",
+  "progressLog": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-progress-v1.jsonl",
+  "progressPolicy": "Passive observer samples and emits process/phase/elapsed/CPU information every 30 seconds. No holds, leases, signals, scheduling or retries.",
+  "workspaceCheckAfterLatestMain": {
+    "exitStatus": 0,
+    "log": "docs/results/promise-keyed-workspace-check-rebased-v4.log",
+    "main": "5c21ca4029dbda7bb15018a095582afdd1173ad4"
+  }
+}
