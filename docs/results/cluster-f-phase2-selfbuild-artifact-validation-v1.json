@@ -1,0 +1,28 @@
+{
+  "kind": "native-self-build-artifact-validation",
+  "conformance": false,
+  "build": "docs/results/bootstrap-cluster-f-phase2-v1.json",
+  "binary": ".tint-bootstrap/stage2-cluster-f-phase2-v1",
+  "stage1Build": {
+    "exitStatus": 0,
+    "log": "docs/results/cluster-f-phase2-stage1-v1.log"
+  },
+  "selfBuild": {
+    "debuggerExitStatus": 0,
+    "inferiorInitialStopped": true,
+    "inferiorExitStatus": 0,
+    "byteIdentical": true,
+    "log": "docs/results/cluster-f-phase2-selfbuild-v1.log"
+  },
+  "signature": {
+    "exitStatus": 0,
+    "log": "docs/results/cluster-f-phase2-stage2-signature-v1.log"
+  },
+  "dwarf": {
+    "exitStatus": 0,
+    "log": "docs/results/cluster-f-phase2-stage2-dwarf-v1.log"
+  },
+  "frozenInputFilesReverified": 568,
+  "inputManifest": "docs/results/cluster-f-phase2-selfbuild-input-manifest-v1.json",
+  "scope": "Frozen self-build, stage-image comparison, signing and debug-information verification. Smoke compilation/execution recorded separately."
+}

@@ -1,0 +1,2283 @@
+{
+  "kind": "frozen-native-selfbuild-input-manifest",
+  "compilerSourceDirectory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/source-cluster-f-phase2-v1",
+  "workspaceSourceSnapshot": {
+    "sha256": "5dd97f5fd5f46759faf13f9637efdb89cbb47a0df52d2e932f4dddcbb76ac26c",
+    "files": 568
+  },
+  "compilerFiles": [
+    {
+      "id": "packages/abi/src/function.ts",
+      "sha256": "9b6377933503b21c289b98b358ad52ab2f2610417ff15bd8936ff5a8764d880a"
+    },
+    {
+      "id": "packages/abi/src/host.ts",
+      "sha256": "b4c79c9b5d1f1250a41831cc33300fbf35feca11c07f41064acb2b52116df533"
+    },
+    {
+      "id": "packages/abi/src/relocation.ts",
+      "sha256": "ac6d3294060ebfa988dedf1992d7516b437288cd346d9bdcf100ed49ad9ae4d4"
+    },
+    {
+      "id": "packages/abi/src/shared-block.ts",
+      "sha256": "008ade7078bbdee963c6f9404efef44d89dd6f72ffd0f5015cac9cdaad3296f7"
+    },
+    {
+      "id": "packages/abi/src/weak-slot.ts",
+      "sha256": "99a66b04fd21ec3660903e3a3ed69ae0e77923688062e8c6347e5799e54258ed"
+    },
+    {
+      "id": "packages/bench/src/index.ts",
+      "sha256": "398b9054749431415fef53472ed9c36c74f4c94a7964482baeec315cdc73a97e"
+    },
+    {
+      "id": "packages/bench/src/native.ts",
+      "sha256": "8422d7c5abcfd296767973fda3cb33e9b120bbc5012010ae30f0728196c86c82"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/cell.ts",
+      "sha256": "300e206f8b2e2a416264d5c44a9b669095ef974628bea9cddb320ca1ebb71089"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/image-relocations.ts",
+      "sha256": "b5b6247b240debb47db25989769047513d2c0ac8aacce07c4a1be6f4e4fea013"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/isa.ts",
+      "sha256": "2f92eb1653e7eac9aa385014cff2acccea082b3fe1030063985ebc3e8346431a"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/abi.ts",
+      "sha256": "deff9ad9fe34604db0efacdb0557b91770eb55a3d339a340408373e9a9c63a21"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/arrays.ts",
+      "sha256": "e3deaa759e3e746ec31f70c7a6ef1260f366ddc9fe2c04ceb63d6dcd9ce996ea"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/barrier.ts",
+      "sha256": "0f601c7650a7ce99ebda18188d491c8d98c3a63b397d301d4ce49826cd221723"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/callee-registers.ts",
+      "sha256": "9729022e65f068419249c3f62e27fa0dd0932cbf695d935eafb020db1da6a9ab"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/external-memory.ts",
+      "sha256": "349a1278cb263c466983ad636740ec78b24faf9ff3de44efe4ef9a9fe0e4fc42"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/index.ts",
+      "sha256": "873d9cb36af1db45520befaa90098bf3385dea49d44baeb68ebb8b9aff901534"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/leaf-registers.ts",
+      "sha256": "e0849494759120ab5dbb7a0b463924b4f4d88aab46d19c14da5b83388c62daf0"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/leaf.ts",
+      "sha256": "eb6c77209e9c9af719b31a813301e9f723c088a98dcac1fe1d3cecb55c2d3efd"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/memory.ts",
+      "sha256": "59285e18f772d1693277af3f8caf090d0ea902fa029331794528cc5bd4d4d454"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/numeric.ts",
+      "sha256": "02fb5730fb728c469e1f68a8698cc83af79457e3bc59e998582f140307e64371"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/shared-memory.ts",
+      "sha256": "85b79e0d0113efce2ea60b74b96b961ba0f09fd78cb05b2f981b0126541b666d"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/signature-groups.ts",
+      "sha256": "6afdfa54a2c8a5472ab6f552fa0b37f1487a0bfa937bcda624fe657be0faf94a"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/stack-registers.ts",
+      "sha256": "77d5a4873498ab6333a0fed7dfa2e71556be9148e434bcf1e85b26e1d2b685c2"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/strings.ts",
+      "sha256": "1891beb350a92961f96cc6f3812487eaf49574d9b6c8b91886551f57f7b6e230"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/scalar/temporary-registers.ts",
+      "sha256": "d97a61bfd8f22cb3e2c6f5551efbc5c69693d9be8a5023847f32448f355707be"
+    },
+    {
+      "id": "packages/codegen/src/aarch64/startup.ts",
+      "sha256": "3a092a8c97e0f7486945d357000f1a06e39d0cb21389fffa4e76ffa93642c373"
+    },
+    {
+      "id": "packages/compiler/src/build.ts",
+      "sha256": "7ca0bca4eca90b213f3d7538308235fc062534ddd77bf2cc2f22ba5a3faad5ed"
+    },
+    {
+      "id": "packages/compiler/src/catalog.ts",
+      "sha256": "5ebd3f7cd88db0f68e64a24829db0d4ccc20e69fa547d500ee945832658878ff"
+    },
+    {
+      "id": "packages/compiler/src/cli.ts",
+      "sha256": "1d303fa04a4d1a3908b3696e8f33a872eb9eede2616e6717ad117dee361998b3"
+    },
+    {
+      "id": "packages/compiler/src/native/closed-functions.ts",
+      "sha256": "d64ae4269540fbfac6872cbd74b5cf680c5d91079c1769cbc257090d02ca7e5a"
+    },
+    {
+      "id": "packages/compiler/src/native/index.ts",
+      "sha256": "532696b9b2e844e590ce4e278e9bd8eb181aca5f67b155cdc09690f0c3970761"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-anchors.ts",
+      "sha256": "3627b02b5d2430522002333c3c3e82b8a3d788a2ed64b58035feb7d49b2555f3"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-aot.ts",
+      "sha256": "48168b3feaf89cf8cf4e17fe52fdb4a60ec80e1b09b0c0149b87d71ecc7361aa"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-applications.ts",
+      "sha256": "e3efc97d23080fe42eef76af0c9f05b93c4a925fd59486af751201aceb361ec7"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-closure-uses.ts",
+      "sha256": "275e53e903bbd66b43e307456d5bd9fbcc632d8a12bea21f69bb264f03e35b46"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-contracts.ts",
+      "sha256": "41884eab642a51d3912fe73a1a70dd9907c60ab33575d2535929e53c401e56fe"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-directory-data.ts",
+      "sha256": "5ea5829160a6efa6c3fae55a80192a558fbf2e3a24c34d7c212d5b3b2b313542"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-directory-reader.ts",
+      "sha256": "f9c1fb0781390d2c482d77b75016e0cecdbfb430b913a93ffd44faa30ae7d0e2"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-directory.ts",
+      "sha256": "57f733d9975f066bd0919cd0cdde733d00c04a8eb7afc75f64a3866c23f80c66"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-entry.ts",
+      "sha256": "b4d4d6c80efc5c1462ad211b927d22fd16c3a66300a2f0d36ffa7df975a2ee1f"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-export-body.ts",
+      "sha256": "58d4da233f9865df81de90c4b80ff6c17edbf41ceafeaa3f59e11b6e8fb7d60b"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-imports.ts",
+      "sha256": "9ae8de657b731bddea951e7a18658734dc930c2fc1e5c8c0b7b4a8c849c8d812"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-jit-entry.ts",
+      "sha256": "e3edbdaa3456951c186cb0897d8695c62e2eccc5105b21ce9fd2319a54fd2114"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-jit-function-flows.ts",
+      "sha256": "48beb65ac37df2abfe7322b394aea5ad35055988005c77468359d3b9739ed143"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-jit-program.ts",
+      "sha256": "9d822d98a9f932df092dff3c92578d8f82c656eb7b59f6c09b398f1b0a077c71"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-jit-records.ts",
+      "sha256": "3607a870695eac0282a3be83662d4e486f3dc8291e865b999ed1901f7d545339"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-jit-signatures.ts",
+      "sha256": "9da379e9bdb57786a76f26cc20f4ee454bb436ec298d3f665d8b80f8f86e9c68"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-runtime-entries.ts",
+      "sha256": "f96a7ddf880eea3148ca8bb18bd7b48cf41c4831053757cc5041409174407c56"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-runtime-selection.ts",
+      "sha256": "8a0500f85665a33d1bdbcf5a5f307e3f1ae0fdcd5a0216f03841b79cec6a07f3"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-runtimes.ts",
+      "sha256": "e07e03388926d9a5c8130690ba06e63539f5a8c9dc44ef1eaea31e05d9db19e6"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-selections.ts",
+      "sha256": "80b76aac08e9c3f2ed3112dec3f070103a39263e1be25b539df5c84404419cef"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-surface-text.ts",
+      "sha256": "000513917c6d6bacd198987678d38dc8c117523afa28efc5750823fa989f99d0"
+    },
+    {
+      "id": "packages/compiler/src/native/managed-surfaces.ts",
+      "sha256": "9e97dbd78d95cb11a71934ce0a0f4fd842f1a59f0f455e8a85187ced6ad448e2"
+    },
+    {
+      "id": "packages/compiler/src/native/runtime-contracts.ts",
+      "sha256": "c1adab3547a8ee75b406c47b3f56112239927634f0d59d4fe7dba2d38a8a8555"
+    },
+    {
+      "id": "packages/compiler/src/project.ts",
+      "sha256": "84da4bebfe9c49261ea18a2697c592cbc7b66168b39d3984a6aa609b7d3ba46b"
+    },
+    {
+      "id": "packages/foundation/src/binary/bytes.ts",
+      "sha256": "b250761d95ea8ec6a6ef57cb2237f935880ec5a157a11eeb0dc4ae544f66069c"
+    },
+    {
+      "id": "packages/foundation/src/binary/sha256-compression.ts",
+      "sha256": "1ec8ce015a5119c230bbf0f00ff00c023156ace698636631a3d3f517d7d645b7"
+    },
+    {
+      "id": "packages/foundation/src/binary/sha256.ts",
+      "sha256": "14bdf6ee6ede3d1402d34aa906f129d19d7965cf4f5b51c3d2ae913e9089297b"
+    },
+    {
+      "id": "packages/foundation/src/binary/word-buffer.ts",
+      "sha256": "6201509e675df38a91391e045f6d6e7f02c2064a7ee7fe038b7d112d58063ee1"
+    },
+    {
+      "id": "packages/foundation/src/binary/word64.ts",
+      "sha256": "91229b18897925569b7ff7914efef5151b54896d39f2b7bde0ebfb82dd3b5946"
+    },
+    {
+      "id": "packages/foundation/src/chrono/gregorian-calendar/index.ts",
+      "sha256": "8b4d55f491dddb226b4618dd7df7364e5a1c25e2986ff08a99ffb0efa9fda0e3"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/compare.ts",
+      "sha256": "2a4275ebcdf9530b2ae849e1a007cddae180b3d06c7195389bac08d0fad079d0"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/date-time.ts",
+      "sha256": "303a59baac20d6608b62c77a0ab0aadea05cc3b11cdfcb4257e01e550011d030"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/index.ts",
+      "sha256": "34cfd0aaec23a444cbf15d7f09f5b3135d3f86bda6a997529baadffe2ef3afc5"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/partial-date.ts",
+      "sha256": "1fe7d788745c23a874688cc2a3d8bc4028c1f3e5c44f51e341646a7cb70fde28"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/time-zone.ts",
+      "sha256": "cf18aba46142b450b21b28c919c209b45fa520fd831b5323ef8fe47b16ff29e0"
+    },
+    {
+      "id": "packages/foundation/src/chrono/iso-date-time/time.ts",
+      "sha256": "10d23b41382f9bcaf67703cfc2a242f3a05031aaf7d7f55db72c0380539146b7"
+    },
+    {
+      "id": "packages/foundation/src/chrono/temporal-duration/balance.ts",
+      "sha256": "c28cab340344ca13034d4fcc5d41947db149f0ad6b83daf4c3770f5d889ca1de"
+    },
+    {
+      "id": "packages/foundation/src/chrono/temporal-duration/duration.ts",
+      "sha256": "a98f3915309cc1c7d283891b099387fc50b18d5ba9211f9e04baa092ccbf0687"
+    },
+    {
+      "id": "packages/foundation/src/chrono/temporal-duration/index.ts",
+      "sha256": "dcd98cc2ded1da439f20756c9f57b981781c87a98417cc36c37687d1e23a0a13"
+    },
+    {
+      "id": "packages/foundation/src/chrono/temporal-duration/parse.ts",
+      "sha256": "365bf9fbc9a4a2def7bc6ba75b7bb4d1e16d60e9d9b278dc969f79c2c161753f"
+    },
+    {
+      "id": "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+      "sha256": "49537353a49823450d27dda637bacb6d981fbf1e33a7f02f32dea0eda0c7e983"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/index.ts",
+      "sha256": "6302fc6b8503b9188a3666c043960622c85a54d2da406edd1abd05b87d67d79e"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/local.ts",
+      "sha256": "9f7374f15c035aad668815e8e797d36f293c6d1bc649d3413fb3adee4e13f731"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/posix-offset.ts",
+      "sha256": "ee4963e151e0dde6565b526f8c2ea852fbdefd1f71ebed7ffe33b0cbd5872405"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/posix.ts",
+      "sha256": "ee42f72193b33cf3bc16bb9310470e16e7e7e445a56881a8b3f79de6f6c7fd24"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/reader.ts",
+      "sha256": "5f4d82febcf68c05e62804600e6fb6a80ad5c1e7ccbc56bc98e94a94a76fa308"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/transitions.ts",
+      "sha256": "c80d7633facd604114a414edce7780740dee21230a2935d5ff959bc8b0705605"
+    },
+    {
+      "id": "packages/foundation/src/chrono/tzif/zone.ts",
+      "sha256": "81c12af91833b048582a048a1e4b1f1a6bca23d8257149905587f2cca900a963"
+    },
+    {
+      "id": "packages/foundation/src/collections/bit-vector.ts",
+      "sha256": "c1c556a088b07e9bdfe22682eea1a1c0d9a800d6cee8d3c778f1913e19c7a161"
+    },
+    {
+      "id": "packages/foundation/src/collections/indexed-sort.ts",
+      "sha256": "6fe6556cc043154411300e0095e6d2c1bdc8087298b3179ae3abe99ba8442832"
+    },
+    {
+      "id": "packages/foundation/src/collections/key-index.ts",
+      "sha256": "91ce08541438c5419db94b6c69b65347fe756e974e12b8c98125af093ba9f1e8"
+    },
+    {
+      "id": "packages/foundation/src/collections/linked-map.ts",
+      "sha256": "9bddd0fd910878e9582d87bfb13cadfc449e38b76a9f7765d267c559a0aaf043"
+    },
+    {
+      "id": "packages/foundation/src/collections/linked-set.ts",
+      "sha256": "8a352fb387e54aeda2235515ed545b7b2571934f01b7f17516bfc450ed027b1f"
+    },
+    {
+      "id": "packages/foundation/src/collections/list-sort/numeric.ts",
+      "sha256": "7c7b4f9cb48d7ae17151b462cc165fef3eb124deb5e9d0bfc11ed1dcab404ad2"
+    },
+    {
+      "id": "packages/foundation/src/collections/list-sort/sparse.ts",
+      "sha256": "8ea5647356546b8af3a5ad9b27b22238b510f72c6fab229fe471e75989172363"
+    },
+    {
+      "id": "packages/foundation/src/collections/list-sort.ts",
+      "sha256": "8b5efaec88e132366bfd337573521021ee63756f391cb7402cad29378f6316b3"
+    },
+    {
+      "id": "packages/foundation/src/collections/number-list.ts",
+      "sha256": "335ba4609b7f6ad180614bfc2d7a24b17748ae510928b57eced63422b198eb5b"
+    },
+    {
+      "id": "packages/foundation/src/collections/sparse-list.ts",
+      "sha256": "3a29507f264177c84f17ce27a3e6d042595ed8c16c0743cce84ad950c350da03"
+    },
+    {
+      "id": "packages/foundation/src/graph/dataflow.ts",
+      "sha256": "a7501af589b87439aec49bea5cafba244e31fcf9c6e3a4a90909cbe688fc0872"
+    },
+    {
+      "id": "packages/foundation/src/layout/index.ts",
+      "sha256": "e5499526372420a407cc33255673b13ab205fb962d8ceff914f6f3b8875cfe87"
+    },
+    {
+      "id": "packages/foundation/src/modules.ts",
+      "sha256": "b8fcb2f6d490d7f389e8eb655a4074e80c3765aa04ecb5fc02ea514f7ba4d90e"
+    },
+    {
+      "id": "packages/foundation/src/numeric/big-integer.ts",
+      "sha256": "9fd9331da8e975b85c279ef3dd250d22bbc11ef98498faec06e82e17a7c32d79"
+    },
+    {
+      "id": "packages/foundation/src/numeric/binary64-trigonometry/constant.ts",
+      "sha256": "940ec726de8a33ed0fb0c0304712ed7d2be15cb0aa5114f3be1c430ef7b7719a"
+    },
+    {
+      "id": "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+      "sha256": "a6e81c3b43093ce399c843b319049d71c172bc1bdf0b10d99d4e5023b1e109ce"
+    },
+    {
+      "id": "packages/foundation/src/numeric/exact-sum.ts",
+      "sha256": "43207e6a11afdf1e47e5ec5656d0dcfd30e7085516d81a0b900007f262a82160"
+    },
+    {
+      "id": "packages/foundation/src/numeric/integer-rounding.ts",
+      "sha256": "f09bdb29605648270aefb02b7cd62f99dce6c8130f5ebdaed6f9f09264d9a2ec"
+    },
+    {
+      "id": "packages/foundation/src/numeric/number-text/decimal-format.ts",
+      "sha256": "1cea71ec8e174cd10d17187337bf223a4c52c887866f8674f183833148b547da"
+    },
+    {
+      "id": "packages/foundation/src/numeric/number-text/decimal.ts",
+      "sha256": "35b7885120dddca402b139274e660603eacf339fa0d0a9a75a217ce06d0a7ddd"
+    },
+    {
+      "id": "packages/foundation/src/numeric/number-text/index.ts",
+      "sha256": "1eee159b0314da191fc433103bc7e8e5be7258c79a4fa71d3b14a69f7ef6f893"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/case-data.ts",
+      "sha256": "cc425fb143befa05eda041a8fa883247028a55ad73b6dd34d199cbf86eae2518"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/case-fold.ts",
+      "sha256": "e225aae549420d62f9a6a518f974a177f7f9a2251b0a8cbe10faf06f8eafaebe"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/characters.ts",
+      "sha256": "8414d0a2d87737ad2dc07b12b733c1e6476047ec7850f2574c2a990e7bdaf653"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/compiler.ts",
+      "sha256": "c2925b380e67462ab34a612fc7c0bf0e56485f9dfc2ee42a9e91a4544158013a"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/execution.ts",
+      "sha256": "4b79836caa39249809ed64533569a593f1b18a443179135878f0a24b5bd581a1"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/index.ts",
+      "sha256": "0a197edb8205c8995b1fafed52d0ac19bfafd77ef9046b8f43e70dc276a9dd1e"
+    },
+    {
+      "id": "packages/foundation/src/regexp/engine/model.ts",
+      "sha256": "d6b2853b2acea87bc3ecccefd73d507cc17d827b93b3fdd40279fe4640deb1c2"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/flags.ts",
+      "sha256": "fecd774320a334b856a180a72288d207eaff02898f33460907e04c7b3716d42d"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/index.ts",
+      "sha256": "42b7b2a08686c33714c443c3989a6aff00ff84ef7eb48e0ad671310593ca25e2"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/model.ts",
+      "sha256": "e874dfe2763b2009ad48ae13c1b9d1b1b72c18e3120915cf05c904e2caf246e4"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/parser.ts",
+      "sha256": "fbcba0691d932f0804e660b78bf8ab0c4beff3e09eb92dfeb30420f1bda82208"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/unicode-properties.ts",
+      "sha256": "230bbfb70ec91a1d7a69e4c1ca7cc071fe60f57df127fea78ad13b631f090247"
+    },
+    {
+      "id": "packages/foundation/src/regexp/syntax/unicode-property-data.ts",
+      "sha256": "956ab70b99eb353daf2a85800666a8ed00c67b2bc4726b64b4b3539a1ac778ab"
+    },
+    {
+      "id": "packages/foundation/src/text/base-encoding/base64.ts",
+      "sha256": "5f9509763e5a6d9a30adb65f91c6cad40ae24d1795928425e8329716c653af4f"
+    },
+    {
+      "id": "packages/foundation/src/text/base-encoding/hex.ts",
+      "sha256": "43ef432a0b4e90b940e999d14c256d9a0e0fbde3cd28035bdb234e7570bae089"
+    },
+    {
+      "id": "packages/foundation/src/text/base-encoding/index.ts",
+      "sha256": "63b9c3729731f7e52c3a109eafa97327e5bbb0636fc2a1915e723f0ca6f76ed8"
+    },
+    {
+      "id": "packages/foundation/src/text/base-encoding/model.ts",
+      "sha256": "ed1986cd2998ff8882e60ebb0fd0040b9c1a55499aa8048ab98f4bb810025f4e"
+    },
+    {
+      "id": "packages/foundation/src/text/base-encoding/window.ts",
+      "sha256": "9ba4722440dfa4b1e60cec6448f07c289346ad2fbc40ccf06196a8fd26afd13e"
+    },
+    {
+      "id": "packages/foundation/src/text/json-syntax.ts",
+      "sha256": "a43c8034c1690493b09e1d9fabd9bb293ebc929c368d4c96ecead976f9b66558"
+    },
+    {
+      "id": "packages/foundation/src/text/string-builder.ts",
+      "sha256": "29345013689a0f0116562f51c37fdf80f3b511f1ef77351b10132112f1a23214"
+    },
+    {
+      "id": "packages/foundation/src/text/text-encoding/index.ts",
+      "sha256": "b343dcdc96bad5d2348783eeea9911bf49141d4af0ee1840690f7a97ac00f7d3"
+    },
+    {
+      "id": "packages/foundation/src/text/text-encoding/legacy-uri.ts",
+      "sha256": "a87da52e28fcd6b7123692d719c0abba7442565d279f696e73cbc4b39e211c19"
+    },
+    {
+      "id": "packages/foundation/src/text/text-encoding/uri.ts",
+      "sha256": "269aa217a9fa429fdbc398be7a1ad11d2956728da0a2ab9ed91c50c9c5323ce1"
+    },
+    {
+      "id": "packages/foundation/src/text/text-encoding/well-formed.ts",
+      "sha256": "0e736ff99e67016e41d4c9c440c005d0d8972fad6a8d8396f1279ae774625e8f"
+    },
+    {
+      "id": "packages/foundation/src/text/text-scanner.ts",
+      "sha256": "4abbedc2367ac2b34f9f1a8dd872fd6e5c62278b35724f7389a4a99c62a46f59"
+    },
+    {
+      "id": "packages/foundation/src/unicode/casing/data.ts",
+      "sha256": "95e64db69cc9313abe00824baa3e2c5aaab3e80b3494febdf96b3e42e889d04e"
+    },
+    {
+      "id": "packages/foundation/src/unicode/casing/index.ts",
+      "sha256": "7e615aa7cc9bff81757e72bd846f4e74e323caa6a39eb0618b94a64f86e030ac"
+    },
+    {
+      "id": "packages/foundation/src/unicode/identifiers/index.ts",
+      "sha256": "1198c9d1306e6289dad51e901e7c683e9eeba0c4f0e6ad598d9b200d501145ef"
+    },
+    {
+      "id": "packages/foundation/src/unicode/identifiers/ranges.ts",
+      "sha256": "193d8ca368dd5ad4320a1672c7b96c992f57ff84c7dd16c14bbbc35092f7737a"
+    },
+    {
+      "id": "packages/foundation/src/unicode/normalization/data.ts",
+      "sha256": "7f9b0006fdfe60f4ab968e23f6aaf22da830535d876f5bac2e2260407e4f2a95"
+    },
+    {
+      "id": "packages/foundation/src/unicode/normalization/index.ts",
+      "sha256": "606c237fde0723e407f4b5fd7e8d2f627cf7f88a48ad00712095121d43dcecc2"
+    },
+    {
+      "id": "packages/foundation/src/unicode/properties/data.ts",
+      "sha256": "5fab753408e73a5d7fa9544d454cc62c66b8e723c0cd6e8ccac17a9d9bc0d015"
+    },
+    {
+      "id": "packages/foundation/src/unicode/properties/index.ts",
+      "sha256": "a5f26285572fb851e2cf1e53ef1f3dd6d9e884406db5eaf821b38e074a443adb"
+    },
+    {
+      "id": "packages/image/src/darwin/dyld-fixups.ts",
+      "sha256": "203430fc1b4c334ed39d674ac6da572a7d047e228f808d65af53f4ea5b7169e4"
+    },
+    {
+      "id": "packages/image/src/darwin/macho/index.ts",
+      "sha256": "842c0b5391a79e7e34d148346730f6d07858efc6bf37824b0ad90aab15781255"
+    },
+    {
+      "id": "packages/image/src/darwin/macho/runtime-entitlements.ts",
+      "sha256": "1dfff63b7ede4b6c9cd8b8d8b9289458b592df218c77d3ee8662353d2e1c3e59"
+    },
+    {
+      "id": "packages/image/src/darwin/signature.ts",
+      "sha256": "4679e87de4c2ef3e443d6a303af7fbf72d60bb918e4d8c22a6b2a8d82b2e907b"
+    },
+    {
+      "id": "packages/image/src/dwarf.ts",
+      "sha256": "eac0ebf52371525121db42755008d056ec3745c857c8fa05b683483408b0c039"
+    },
+    {
+      "id": "packages/image/src/layout.ts",
+      "sha256": "393c63b8b8b08d3528ef6de7a8100baf51ee8fca28e470bdaa2d70d12e68393f"
+    },
+    {
+      "id": "packages/ir/src/optimization/constants.ts",
+      "sha256": "b9757fcfa316ece3c79482ec3705ee822aa6a07ef73eacd41bc6ba724bb4b964"
+    },
+    {
+      "id": "packages/ir/src/optimization/control-flow.ts",
+      "sha256": "561ff409a19a96b69f4bde3ef44459afff206e4872b74a3c490354564bf33042"
+    },
+    {
+      "id": "packages/ir/src/optimization/forward-loads.ts",
+      "sha256": "42197f0988fff922dd1df0903fb392e83daca9221afb3d7766113c6d849835bc"
+    },
+    {
+      "id": "packages/ir/src/optimization/function-builder.ts",
+      "sha256": "1a91723a38a01b5634132d09f610fe65bc3ebf2a19524664a431b7ee8f1976be"
+    },
+    {
+      "id": "packages/ir/src/optimization/index.ts",
+      "sha256": "a7e33d528e86bd1103ebcdbcc222dba1ed3c72ebb25aa19c6d3969a9616335f7"
+    },
+    {
+      "id": "packages/ir/src/optimization/inline.ts",
+      "sha256": "db57626c66ddd70331b5a4c76f9bdd6c77289c52e94f644191504e4e6d1217b8"
+    },
+    {
+      "id": "packages/ir/src/optimization/reachability.ts",
+      "sha256": "4fbaf352cae406cd3ff98b3c9a3e42e7f197fc347e6cda932bca873a3fa81926"
+    },
+    {
+      "id": "packages/ir/src/optimization/reachable.ts",
+      "sha256": "7d21e5ce4fbf803064ffcebdf9ceb5645387d5e151bfe6c8bfbd463386ff1de8"
+    },
+    {
+      "id": "packages/ir/src/optimization/record-access.ts",
+      "sha256": "b7adb0f630bee8d1dea843a7a68d0bf6ed538887d0da1c1186ed493f3224d560"
+    },
+    {
+      "id": "packages/ir/src/optimization/records.ts",
+      "sha256": "35fb58653014a1a895216575ef979812ed305601d614f46d90a938210a11a0c5"
+    },
+    {
+      "id": "packages/ir/src/optimization/reference-list-access.ts",
+      "sha256": "0263e1dfda2da9fd885e73c104c9c99df97fb2867fd74ab689ab7e11c2838dd6"
+    },
+    {
+      "id": "packages/ir/src/optimization/reference-list-contract.ts",
+      "sha256": "b16f17634d3c2b8aeade47b753b01e437e0b1d1a7971bb10ea345a85cc78c171"
+    },
+    {
+      "id": "packages/ir/src/optimization/reference-list-resize.ts",
+      "sha256": "b57fe6a3fb5754b33b7f7984c14250da72a4587d8a25b05ca146d4e6ed97ea9e"
+    },
+    {
+      "id": "packages/ir/src/optimization/reference-list-write.ts",
+      "sha256": "372e2cb37cafee8792551e203b5c089c4f77ea7d024040deeddd82fac432384b"
+    },
+    {
+      "id": "packages/ir/src/optimization/reference-lists.ts",
+      "sha256": "908604c660e94a5197c3f8bba219609e6859d6e714a77d5b9fe8a0dca42fc6ab"
+    },
+    {
+      "id": "packages/ir/src/optimization/slots.ts",
+      "sha256": "2d4d3fde24f8cfa48a27b34b9cd095ce5e70d6baf0ad54a4a362f4f93e597292"
+    },
+    {
+      "id": "packages/ir/src/optimization/ssa.ts",
+      "sha256": "e9820d839a1f904d085e8df66689177dd2d8ac1a0dbf343f659d83ee3d27898a"
+    },
+    {
+      "id": "packages/ir/src/scalar/call-boundaries.ts",
+      "sha256": "1fa315f90b4b78dc2a87e8deec179f50161c68b9c05f9feb73b34b3b02d8149a"
+    },
+    {
+      "id": "packages/ir/src/scalar/effects.ts",
+      "sha256": "70d02c9c6c8f75aba3d6d5ce231cc8c5c16977041cc834f754e2b00d76bc794a"
+    },
+    {
+      "id": "packages/ir/src/scalar/function-builder.ts",
+      "sha256": "6cf26ffd816252877122b8ead1da8cbf02b4225b2b092a31f47a32b174679ea0"
+    },
+    {
+      "id": "packages/ir/src/scalar/function-references.ts",
+      "sha256": "2c2329ef24179451837793291476161c952f3a887cdc833d0ea00bf4fabd8ce2"
+    },
+    {
+      "id": "packages/ir/src/scalar/host.ts",
+      "sha256": "1431efee5b6eed6070d74056c7c8dcb1822f3a698673e48ed0380d1a2dda5914"
+    },
+    {
+      "id": "packages/ir/src/scalar/index.ts",
+      "sha256": "d228795114d957bb574b0520e369caa3589bc326af566ad12991902b678965bc"
+    },
+    {
+      "id": "packages/ir/src/scalar/induction-words.ts",
+      "sha256": "8a728a9b7c46f61a464af11332ed20186bac900dcc87b8b3bfc894f84060a357"
+    },
+    {
+      "id": "packages/ir/src/scalar/initialization-slots.ts",
+      "sha256": "cc8e22bd905eafb824758ceb1bddbcacc4af27f88cb4e6be22ef0304adc1bb2d"
+    },
+    {
+      "id": "packages/ir/src/scalar/liveness.ts",
+      "sha256": "b511dae3c8700083f77e604032e56f0f228b7c276d89c92e162256687c45cad9"
+    },
+    {
+      "id": "packages/ir/src/scalar/model.ts",
+      "sha256": "28c4d0e80b6c34c960dae9d53939410e5335746148f71542b9025b947c44d9a3"
+    },
+    {
+      "id": "packages/ir/src/scalar/operands.ts",
+      "sha256": "3ea5ff1ee1a5fca4da5b39f31b11fcac2983441b5e2817c4420b156e66f84992"
+    },
+    {
+      "id": "packages/ir/src/scalar/record-facts.ts",
+      "sha256": "c1dd42fdd1d01df80e3c0f28a26d373e596108b9bd528de3fb8d5f7b6ff5a9a6"
+    },
+    {
+      "id": "packages/ir/src/scalar/record-flow.ts",
+      "sha256": "12b7ab626d9d1d09e1d3cfeb3e4c8f6b546a0be1d79721fcab926153854c6b9b"
+    },
+    {
+      "id": "packages/ir/src/scalar/safepoints.ts",
+      "sha256": "ebbd43c8de011b221762fb95f3fe287904dbd112418c3e32511abfe05b2fdea0"
+    },
+    {
+      "id": "packages/ir/src/scalar/ssa.ts",
+      "sha256": "793ba8966270500b8d7c1f344adf144e9b43aff044d47aab068feab10d411379"
+    },
+    {
+      "id": "packages/ir/src/scalar/substitution.ts",
+      "sha256": "8f6b5ffe50a862acd495c3637ccb67fc442d1570ecd762a4f57d800d96bd3e57"
+    },
+    {
+      "id": "packages/ir/src/scalar/temporary-slots.ts",
+      "sha256": "4b0894c4391d808873788a21c3b9f85f67fa6d40cc7364ac810d39a5af326aea"
+    },
+    {
+      "id": "packages/ir/src/scalar/value-lifetimes.ts",
+      "sha256": "553c6ccce100bf19c9835c1239d3dc7a15cd5a7338ae7270a06103d9f7a45deb"
+    },
+    {
+      "id": "packages/ir/src/scalar/weak.ts",
+      "sha256": "a745eba5605997d04a26c28b7ff9fb0313ee5207267d522434d2693d76a4b56d"
+    },
+    {
+      "id": "packages/ir/src/scalar/word-arguments.ts",
+      "sha256": "6d1765f33d5afbaa9664d6e13e4ef753a5b05e06a4e006ac1c76d8ac74f48480"
+    },
+    {
+      "id": "packages/ir/src/scalar/word-facts.ts",
+      "sha256": "c065cb4009ada857f6387734ca55e5e14b43a5691d030a2dbd4c026acd323910"
+    },
+    {
+      "id": "packages/ir/src/scalar/word-uses.ts",
+      "sha256": "7c5c0eca1083c75a877306f462c6ed4a111266d93081fdb9887c1e87d0bd0db9"
+    },
+    {
+      "id": "packages/ir/src/semantic/index.ts",
+      "sha256": "6231094a6bc3963d18d68cc06ad0db4f73617991476c8aa60f25e61448705a2b"
+    },
+    {
+      "id": "packages/js-engine/src/dynamic-function.ts",
+      "sha256": "19990d22fbb6074be2fdea98c8dfb4704488c50599330a52901378965f9a4cf2"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/direct-eval-flags.ts",
+      "sha256": "61419de9fa0dbb8322239a292ccfc21653c7f457e0ade734ecc50a3f2c321156"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/generators.ts",
+      "sha256": "165530eca759332ca05714cff02d8e756d3a294d7e0162b54499c00e5180feed"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/index.ts",
+      "sha256": "b1fc669a410056f5da257e5a45bd736f01e40478fed4762e49f3836987dff816"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/module-shape.ts",
+      "sha256": "cac71e15bbe42d495bf4a39f2bc637a7513e35af98e623856b33e0f6d583352f"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/runtime-imports.ts",
+      "sha256": "ddb474de7ba6119616f7d4f11d73b8e9c4ef3aa8d4a007f4d0282692ef96137c"
+    },
+    {
+      "id": "packages/js-engine/src/lowering/tail-position.ts",
+      "sha256": "f135d27b08161617bd2cf44c1f15f059a204b63eb5844d0e67465ec9feb52eb7"
+    },
+    {
+      "id": "packages/js-engine/src/native/code-storage.ts",
+      "sha256": "f7b04226356b2ff2f0cc167abc59040368338b72164d3c3000709fa9a6ee29bc"
+    },
+    {
+      "id": "packages/js-engine/src/native/script-compile.ts",
+      "sha256": "7f7a9113bca953a98c4f128ad76cf689a8575e9d2066e6b03563664827ee7236"
+    },
+    {
+      "id": "packages/js-engine/src/native/script-entry.ts",
+      "sha256": "88640fe169322283499b58c609744aca156915dd514f4b3cdfb4e76daf06b32a"
+    },
+    {
+      "id": "packages/js-engine/src/script-evaluation.ts",
+      "sha256": "5453addf9eee5dd55c41a96893b93200d9a65cb2530cab44554e167bb81971bb"
+    },
+    {
+      "id": "packages/js-runtime/src/bytes/index.ts",
+      "sha256": "8e4c4abb16653bbf2ca58628802cadbba78c3ec8ad228b7ef87b7c9ee17f097e"
+    },
+    {
+      "id": "packages/js-runtime/src/bytes/shared.ts",
+      "sha256": "ff9260c985dcd72915bbc1be981bd2b93a35535345ea0e75deb4bc7d6ea97f5f"
+    },
+    {
+      "id": "packages/js-runtime/src/descriptors/index.ts",
+      "sha256": "ca7cce0c245e19517d3f27f5fb43c9f0c3ae6d3d174dcde0c0f697359d8792ce"
+    },
+    {
+      "id": "packages/js-runtime/src/disposal/index.ts",
+      "sha256": "037269e43ffadc089293b303ca5b2d21c0dd69f88688cf828ae248e4edd5c1a5"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/arguments.ts",
+      "sha256": "4aa5795722337e4625b92287a8c373e4926e6c11a615696ca3310e348f23dfbb"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/declarations.ts",
+      "sha256": "b1cd28c082f63df1ac54f8409e64e5c4ab52e396788450d78171ccc13b774c02"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/direct-eval.ts",
+      "sha256": "853cf19a8fdd6ef0517481799310a2858d1faab939d59c2a3ccdc505dbe096af"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/eval-declarations.ts",
+      "sha256": "c7544e262c135ae94b8601191e8fa5f1b4bf77103fc08d84da93206c0f5def26"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/function.ts",
+      "sha256": "812e74f3ef75a2658967b831143223cf624803149878ce1abb6c37c4d5dbcb8a"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/index.ts",
+      "sha256": "35bdc1775dc849e840de13426da827e8066429e7fd6d1c0b8c5b707b541a3b8e"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/object.ts",
+      "sha256": "3a4338f855b9210db001d8f087a5dd960c72992d2aa14f1c45a1686b542a3be3"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/record.ts",
+      "sha256": "102623a0721916a9dbb7266fc5f10bed83f87443b244b163f432119cf9ec0061"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/scope.ts",
+      "sha256": "a0b9ccdc55babb77390b4185d758716b8ed5c615a3c1b9f1053ac2a232a2b62a"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/global/with.ts",
+      "sha256": "0e410513adee1a24d3df9e99276536e510e7e85ab3bbd52fe838e1e0b15a867e"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/records/index.ts",
+      "sha256": "45ccda3efdf7d75629a68f2c582fce2b8ae5d6aba1d1e06b4e5047757ce8cc59"
+    },
+    {
+      "id": "packages/js-runtime/src/environments/records/this-binding.ts",
+      "sha256": "ade60698f4188f0e316eba0da2984d16ddfabad6e0e91a070ee56ae56b8a3cb2"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/async-delegation.ts",
+      "sha256": "b493003e30db3321adb7ca140c7acb76eeeba452ce56031334e1c19bf411213c"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/async-from-sync.ts",
+      "sha256": "2d94f38a2885a861d67179d546e47ede31ecfc931643cee6fc6947a67fa3b89f"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/async-generator.ts",
+      "sha256": "401094e4ba60fd4b91890d87e1ced0cb05a984237fd3feda187e1769f2a5db11"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/generator.ts",
+      "sha256": "3f37614082de852ae5d5f7c384936b5b85170ec30bb350fb17cf7b8c8980d12b"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/index.ts",
+      "sha256": "39988dc45d2045917b85bb35225fc509af47ccf37c4bc09d667280afa6321563"
+    },
+    {
+      "id": "packages/js-runtime/src/iterators/iterator.ts",
+      "sha256": "c65ab885ed9e940848aa6f1bcfaa9b0817144be05fc715e744bab6583dbbaea2"
+    },
+    {
+      "id": "packages/js-runtime/src/jobs/index.ts",
+      "sha256": "02aff2fd809fceced26402aca676e46a6d9b9f9a922e8eb7565d504a6c0df472"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/dynamic-import.ts",
+      "sha256": "9fd19875f90b7f949a23ddcb24c6f8857e225196634bc39fb7499746048f8dba"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/evaluation.ts",
+      "sha256": "cc2892abc089530780c5430683d6286d14c26252dc6697cee59becc375ae3262"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/import-meta.ts",
+      "sha256": "2bec5642beb07b222dc370a288f9a71dde9d7845a8751fca01a0405bf85d167b"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/index.ts",
+      "sha256": "271974810b6ae001514a9c4c2393a1f8af9efb673593cd60ffbdeb74eb2b5844"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/json.ts",
+      "sha256": "bccacf6f716325e67e6a0240c8c0bb1223825c237f2305d6f458d711427429b0"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/linking.ts",
+      "sha256": "8447fb7d53d261dffa64dae216beb9f4ac67f909146803cdb049372c34a6cd2b"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/loading.ts",
+      "sha256": "498d7a17f213cadb6849ea8d1fd482700bbc9a0af3b3af40d25f5767c9abedf1"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/namespace.ts",
+      "sha256": "628cb65f1f301d23a2caccf3a596afa0ae6c85ef8bf5efcbe3af916ea5019ac1"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/records.ts",
+      "sha256": "a7255a09c85c5790ce926aa2a22cf55d378d54aee8c29a689855c54bb763d0cb"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/referrer.ts",
+      "sha256": "cf596685882af91567a36c7750c15750166793d0133e5c799ab9055cf702a175"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/resolve.ts",
+      "sha256": "b236971e7267774c64d6d22a44bf597d4447086ab8a81b1398c8d15c2e48b7e7"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/source.ts",
+      "sha256": "e82b7ced687a4437ede5c95233c460dd822381e21011c5b8f5899895658adb0f"
+    },
+    {
+      "id": "packages/js-runtime/src/modules/synthetic.ts",
+      "sha256": "788d3dff41d40063e3998b90ebd1e700ffbaf6cb604aef8cf79db40870f56bb3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/arguments.ts",
+      "sha256": "63e271e29905b9e5bc84622af6005c1e23942242b510f80cb08a430327ce714a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/arithmetic.ts",
+      "sha256": "23ab397b7be9868581b9b468c01c8a103b6d967b3aea73eb4b38db626e9c3523"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-buffer.ts",
+      "sha256": "a0f9daba6a9bb76afe4a0166b3767a5e2266d69b882b98e810f32ab608d5383f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-composition.ts",
+      "sha256": "bcd331b8ca9ff7d390940192c3d2ae3e0d5d9133c27078deabc171e84bc617ce"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-copying.ts",
+      "sha256": "96a987824cceaa88ee8f94a835868db9e93a58d6d3fe8b2c4086020183c7b7dc"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-factories.ts",
+      "sha256": "a85d89b6fca531085e7421aa8b73c5826c94c3f0610a730694d62298ff309139"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-factory-operations.ts",
+      "sha256": "1a94ef5ac01e4afa9f8c2a28de9e7f7d956520d5bc2507dfa895be75d84d6218"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-from-async.ts",
+      "sha256": "f65f0727808606cb3cf47350d695dc58707db3cc57b9530eec1d391bf1f6dd33"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-intrinsics.ts",
+      "sha256": "a002264e7d3db0c78f6597f80ce77fa51e2ef6445777df27e44ae259d25f02a5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-like.ts",
+      "sha256": "7eca16154d689557e45d3acf2b213f7d030ee844b9bd7dce1cfb9ee485af5ede"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-prototype.ts",
+      "sha256": "4ea0257dd0116fe05e18426300a0874b35576ab82519f66e1cab2dc563224cf8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-sorting.ts",
+      "sha256": "3a83dd7f0d558aaab7bbf27480751ecc5ec2047443e10caac6af89fe6b078f2e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/array-species.ts",
+      "sha256": "d3bdd79683e54e8ce410dc4b16f7c2e9b2894fe364e1b5a8be4c843b5dea9f2d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/arrays.ts",
+      "sha256": "478e4d58cd64fd0020c226b49226c32f1f721b8f1d487b07fda3bb79044fcaa0"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/async-disposable-stack.ts",
+      "sha256": "e88c5292a076727e7f42815c3c180febb56a7251e85eb062c1df9ddce5119772"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/async-functions.ts",
+      "sha256": "94b51807f09c1ccdd27e5ac69960124d39535fd2b19a4adcbe92951b47570ec8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/async-generators.ts",
+      "sha256": "2f0712e5057f79a42855b1635fd6a94d47e67d9faada1f0cd0fc13f9871df265"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/async-iteration.ts",
+      "sha256": "433a73c605c5aa0da00ace9d0147e5140c44c02e63a10a69683c19ae20811978"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/atomics-access.ts",
+      "sha256": "f070fb048b4b34b4b5dd771ff2562e955c833ea674e23ab8bc844fb148170547"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/atomics.ts",
+      "sha256": "80003a862532667c4429ca1f36472cd670b7ec4f219738aa83383767bd173797"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/await.ts",
+      "sha256": "1b0d26a331339b2009a1c56e2e4d372d9750eeb157edca77d822ae18d1124c1c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/bigint-bytes.ts",
+      "sha256": "20968d6d36ce94de731f5873eac3903f4e849c4804bf30b5bd46da0ab5af9396"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/bigint-coercion.ts",
+      "sha256": "8db4f665cd9a84bb9013614df0206dea4aab3bd6d3bd5886a6869e4fa3a77e54"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/bigint-intrinsics.ts",
+      "sha256": "c856cef2d80c068dc575a410f32faa77137125602a4b5e9efa6e8c8cefe663bb"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/bigints.ts",
+      "sha256": "b70c7e766b0db7d91fffb394863e01c4f1a52fa3a72024457e307a01b8b28789"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/bound-functions.ts",
+      "sha256": "3c6919618335a62e0f916ac462474b26f28eb60044e2807e03d4fc20750c673b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/boxed-primitives.ts",
+      "sha256": "d8344aa3c69d864132b5dcef61860508fc79355625a9ad1f58d88373a1ac4e68"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/boxing.ts",
+      "sha256": "2838d6099ba106599ec14a0ed9c2f53ddd3edb887efe96ce600a43d5f3cb1e80"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/buffer-storage.ts",
+      "sha256": "f0d8cc98296f5e598aacca4ad1bb019a7601240cce989060b7eea08251723ab2"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/call.ts",
+      "sha256": "1f9dd45caff3838a40ba51e57accad2287ed35ae846ba59dc8f50edf6b41c20d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/classes.ts",
+      "sha256": "ac61004cfb026294b447fc94623adaa0480315256d92561d67920381eb3b0aec"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/coercion.ts",
+      "sha256": "8fb85c83a09368361583032711741d83d95516f55140ba20c3ec518576a3c27b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/collection-keys.ts",
+      "sha256": "14af7c8f7cce73fe99f5302bc5366d8015a9dbbf139ee22fc5ec41a3d71f608d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/copy.ts",
+      "sha256": "3318d3966a0002ad05de6a16b34b876b26ceed2781e5529b0b77cf5c71dc0b00"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/currency-number.ts",
+      "sha256": "0e1782b0adcde54296ff8c1ea2116d82485922f3a589bfaa1ff77c10963d4a31"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/currency-symbol-data.ts",
+      "sha256": "2ca3ef63efb3fbfbe3d6ccc0afcfa96c3837d54d81711bcd6161caaecd84a8af"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/currency-symbols.ts",
+      "sha256": "7b738a24fde3da36f0b5b811630fdee285b50311d6c03b1f6e3e79d25a6b7295"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/data-view.ts",
+      "sha256": "3781e3c85555ae5bd503b621bd2eccdf4cca60b905468ee76adccc2cb84ffb1e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-format.ts",
+      "sha256": "c0c9753f3ee1818fd977a37e6b0b4c701d09b9e64053571c69918fc2a0f4a7f3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-intrinsics.ts",
+      "sha256": "5b3b6439f112781f7f6ef50123946dd10767ca0f2a05f4db5375dab7712e9089"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-parse.ts",
+      "sha256": "2edea8268b1c9d872e955d4b8c7ccc9ce6960f1e7027a7c52849efff735fa9b9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-setters.ts",
+      "sha256": "0161f334208afc2685e158c9c87cee7179f20e20b0dc832d7447c6bf1b796b79"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-time-zone.ts",
+      "sha256": "c92ade0e02160e01dc8b39361d61c43d8d6f17df5d3ce1d97c77ebc604661917"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/date-values.ts",
+      "sha256": "170886fb844646d29a8f0377772ad1a92bc5a3aa00c5803211903e25dd77ad23"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/decimal-number-format.ts",
+      "sha256": "655f5fe83cb691bb5823ef7218f4dbf6012ffb095f091eeb03efe7744126215c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/decimal-number-parts.ts",
+      "sha256": "6444fb0301db823e9ef80afa191a482aae45c82856b8914e1d7da09d23f3a608"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/derived-classes.ts",
+      "sha256": "70671f1114da358019cce78c6f9f0bd9c893fe85251ac08ba6cf3d975cb1c212"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/derived-construction.ts",
+      "sha256": "1a492b22801f32e4f9e9fa483415561add7af1b8441e06fd2be7ee9948d392e7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/descriptors.ts",
+      "sha256": "7f2ce387155a414e00cb4ff77624a69c306547f01257147ecc6d460f666010bd"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/disposable-stack.ts",
+      "sha256": "0eae1be534db8e324d98ea3194a376681a0f96daad4f354c071278a89c570d5f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/disposal-resources.ts",
+      "sha256": "73dbf79627a88085c9a650192f7d6243a950d885467e04cef69c4d1e3ff497e7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/entry-iteration.ts",
+      "sha256": "17373471e96fd0b37965f22a0094eb49a79cdc97fa8e40c13f12335698bb4c37"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/enumeration.ts",
+      "sha256": "093e6f7eb4952df1bdd9ec3aa8143963896af95516d0df96286fbf755d1dfd44"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/equality.ts",
+      "sha256": "cc43d3051d88bc2b956e5c1096d442b430594851cd96bea67432c16b243a2966"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/errors.ts",
+      "sha256": "dcdcbe63acbb4b026b38632529faecedd4d78197b5754d887d06652c3ed25ae2"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/finalization-registry.ts",
+      "sha256": "e588c11ed0c3f344fc9fb7ba66f47a7a93150074dfd5a73e7861795505dd2825"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/function-intrinsics.ts",
+      "sha256": "8bab804e9534f9cea192236343bfa74e34627f616798e0ed50c424f0e992744b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/function-realms.ts",
+      "sha256": "ad6eb788d79e3f63ad131d100899545ba339b7523014828222077c0d64c73873"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/functions.ts",
+      "sha256": "b9944d88dd50902541dfe446a1a5b92d36ba6b43ca864e7e1fb0e4dc12b9e27f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/generators.ts",
+      "sha256": "737ebacc5863b270a075a39b3c2e23a8d02ab1044032e7e657f9c8a55a45ec4a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/global-properties.ts",
+      "sha256": "1b60858bc5b342c63f529ed03386b450c899df9d804293cb6b39a8cd4144072f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/grouping.ts",
+      "sha256": "c5102aa0ac916c3906e25322e458be24d0e35e7e4384811036faf2fb355fa757"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/index.ts",
+      "sha256": "bb3d4bbfc304e495c6486b612e020a499da0dcb17eac02a365907687a1e43e44"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/integer-index.ts",
+      "sha256": "c4b7511b35218edcd7d3b2da8142f1c34e988ee44e18921bbb212cde8bd3501b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/integer-indexed.ts",
+      "sha256": "d05a81f5b673f44022c8954335c7a237ae26db4353dcd2fb21707fec0ab1634b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/integrity.ts",
+      "sha256": "1e16e3e0fce665a50659665e0263ec082b075f33f88a4fcd1767941b1d3c8684"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-legacy.ts",
+      "sha256": "87bf0c3a0bae26f018484f39f718566d77532b82b55770889b10a5425566a0d2"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-list-format.ts",
+      "sha256": "bfb08791d9c52473cfc95c204c6690c421874f9a3b264f9dcf62cd62f5c8ad64"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-locale.ts",
+      "sha256": "77d46813bc390f5a1ea225ecef3741fed054242377c9a4e16d37a719f8f2ffae"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-mathematical-value.ts",
+      "sha256": "70702158c07e19725dc5563dcf564ba05d3ffa7aa30a63803bb09ebbd2c9fd93"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-number-format.ts",
+      "sha256": "97202acb6276c27e493aad2368a00006a109c8afabf9b40b11903ff613dbb96a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-number-options.ts",
+      "sha256": "f1b6175b054b49c8ce3fb27b256407b960d297ddc4f4120f6695dd42fb3e5b35"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-plural-rules.ts",
+      "sha256": "d896af43e68d02b2f52286d25250978ace6f98c5f267134c1d86ba5487948944"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl-relative-time-format.ts",
+      "sha256": "f0a4a348064662ac3f96a741491d122fb75242259c6863695c7be57035979392"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intl.ts",
+      "sha256": "19c4015bb5ede068d47f3051fec0ce3be1da7bfc8251bc8827e7d23d7425f46c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/intrinsics.ts",
+      "sha256": "3b2b81d8eb789a8fcde2e402371475185cffac068766ee54d181ceb6e0377166"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iteration.ts",
+      "sha256": "fd4ab8031cd4a88b92d0f78efe5e1b5eea40b4719c279272aa3d8fadc110622d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-constructor.ts",
+      "sha256": "a6d7959d36104284643e7a521cbc35608846fce18126808a193dc3a310b38be1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-consumers.ts",
+      "sha256": "e002e8c4bb7f754c4fd23621944b29f521f27fc5831c16e905fd69823559ceed"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-from.ts",
+      "sha256": "3175f17e77e16f57df29b2aa45dfe7194a59d59224b6c04ab8c3efce8673a885"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-helpers.ts",
+      "sha256": "1749ac812c7d036c2531ef786b029723d96885022f47e0dcbd5075a39a2b2564"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-intrinsics.ts",
+      "sha256": "796454430aad47193b18128ce06153acf73c94f516b50d364249c1fc7b93fbe3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-search.ts",
+      "sha256": "e024d8becdcbc7476a05efe76a54e94c85e51b1307940ddc23d3582e0c933b78"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/iterator-zip.ts",
+      "sha256": "04028a5ad19254e160b2569485ff62a06ec888797f6cc91b032211598a4e190d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/jobs.ts",
+      "sha256": "026fcc937dde085dba798893d942202c42914737472e9fee946691b2ea44d7bf"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/join-indexed-properties.ts",
+      "sha256": "92f2c794b793d506191f1e7e0a92203619e8c9d76fe4d2c572d3c6165f5ee2a2"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/json-intrinsics.ts",
+      "sha256": "f63d305fc182d668623d1d9d4da6d912a3a0ea86767ef4b4c87910dce352af62"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/json-parse.ts",
+      "sha256": "68c155e85920a036b7abc83af38fe3bb592bf69335e809c1419d6421cc9b0909"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/json-string.ts",
+      "sha256": "8ceaf77ae6cd852a36c51fa51795b4b6d21c2676539f26605f8bb27654be19f1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/json-stringify.ts",
+      "sha256": "fd338f3c42dd0d6b3af732caceca5ce8615dd24c8d84b6c10cfa9bf3fbfa701b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/legacy-accessors.ts",
+      "sha256": "3eca5995c5c84a5407c072bebc32f3d46e9a59a23a69931f17bc65ba7f6f78a4"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/lexical-disposal.ts",
+      "sha256": "bafe11042795ebaf755e481df17f7f26525d863c082d634d6344b54237048f3a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/list-format-data.ts",
+      "sha256": "8af6f14c38a4281e0f3a6e774a4345ea863ccb8050f68ff1fb730efa22f68538"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/list-format.ts",
+      "sha256": "325ff3f84649afbb2f4435e2aa2b91b3d8ec80f06a3570af203ffd3f93cf89ad"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-canonicalization.ts",
+      "sha256": "6f8cc3e85f256931bd39d2956b3a6e35730502840db034fc2bc67bc5904a5759"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-data.ts",
+      "sha256": "10ed52fa618d4a5fc8dae6c46fbafb524a711d613ded0a8793566fdc979379d7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-id.ts",
+      "sha256": "9c4eda97c2683f07d1e3ce6bfa3908ea6c08586bf9a09a3c774838f7a41b0a3d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-info.ts",
+      "sha256": "5f34183bbe97e6139a48b50b316012097b245e792f02d9d7f0ec139b7bcd23e3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-likely.ts",
+      "sha256": "656c4a2c9e671067ece7345c08d6025e834082b882d0584f576939b8922bd612"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/locale-objects.ts",
+      "sha256": "fd85c8663e96553ccf14624977f357acbe903a37ebd57b8d4dca3a8d9d5461dc"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/map-intrinsics.ts",
+      "sha256": "0665e3d97eb2ba853f3e15c3bb22aeedec9dfbc9b98ae6d56e5ad1efd54eff0f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/math-intrinsics.ts",
+      "sha256": "4d393c4fea8c48b73b732131a2ddda52db1d0b3b4023ccab1ffdcd964f3f9e3e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/membership.ts",
+      "sha256": "e3d37a6e0638c18c230e3ed0fbc021c19b7f4ef27fd82122dc5275cb04017661"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/methods.ts",
+      "sha256": "38313c5823282ff1c7966d1cf5bcc14e197fb37d755b216ae6e2e8d005765114"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/named-time-zones.ts",
+      "sha256": "9a0e910caf081e412a12f4c7d8704e43054c2bd30234432cc62bcc36a3e001eb"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-affix-data.ts",
+      "sha256": "50bf59008871d6ef86a56dfb4d90a33d29cb33e4288d0cb5d349334c5f6a0494"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-affix-rendering.ts",
+      "sha256": "fafe2776e6b741be3914bb53ff5822964a523f8b93ffe154620d70b4cd377bc8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-affixes.ts",
+      "sha256": "82da27ef037dd1eada291deb7d85c6d23fa83a54935dcc95c64349e4e52478cd"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-angle.ts",
+      "sha256": "cdccaef638943b4e45d1b0e8e75b7858f5cf4508d2868be6f905b27eecdc611e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-cbrt.ts",
+      "sha256": "0c14c9dae1e8cc6edf76a102a5fc1bf72def86f15f098a980e409f9fe61a2953"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-exp.ts",
+      "sha256": "ee0ab4c2503bed28db9f86947715b56635de332f5d9a9d077f51088b1de4e75c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-format-data.ts",
+      "sha256": "aa5f30e47edf0190b07446b7b6cdfde0bff14864d979697e21ee5f5be1ad6d39"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-format-profile.ts",
+      "sha256": "ae5eec8738c3cf7b3a878b67940a59235747ad96fcc9fd9fd610a8de7be62dde"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-format.ts",
+      "sha256": "14d5ecab265f4e9ed7dbc1e48cd2919b816373d0ad51877f8479d5255886d43a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-hyperbolic.ts",
+      "sha256": "af800b943778006c5d2513db99b42fd585ea35e51a859882ef165090ab530ed3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-hypot.ts",
+      "sha256": "091dc651bbceb5972854a7059ed64578bd2a918d535eb494f82684797e042fed"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-log.ts",
+      "sha256": "549a5bdc40be302954b186b63efd5059aa2c2abcca1b423f7448c0d3da33d95f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-power.ts",
+      "sha256": "6a448e65d6b9a67483d1076d9a2f5544a1c9f54f303d6e55085dfe219c0a9fe1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-radix.ts",
+      "sha256": "c2a5288a8936839eada25a2f93175f183ca662c8ad3b7e7a3ca65bbaf80995c9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-range-data.ts",
+      "sha256": "c52c0ac53d4555a07c5ae62654979373334d14f53e16049e894396989e085d21"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/number-ranges.ts",
+      "sha256": "6268bb591bf5df0ce354335ac820e6e06415b90160f2a411dcb54cb61f0a0a36"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/numeric-element.ts",
+      "sha256": "445a61f91488522bacec20729f2bf04e5fce4e8f158e6ace1e3fbd1681a2526f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/object-intrinsics.ts",
+      "sha256": "1348adb4686c3070b865ceeab81832315125928f802ad287bb8dd9659fb90e76"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/object-prototype.ts",
+      "sha256": "47a8f15e2777c2e0b10fcfc5f3704a24bbfe72bffcacca81af951f045ad7b8d5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/operations.ts",
+      "sha256": "44beb9fc137418ae780651fbeeacb9c6c5bd746632aa38d43223d0006df81ee8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/operators.ts",
+      "sha256": "c87f8c3bb8393aa784a84a1c295be723328804a09fe561567f7d1ffcfb51ad62"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/options.ts",
+      "sha256": "d5475e3129ea4eee2bdffd00e8993103a703cb982eb550b219a4e01e7ad87980"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/plural-compact-data.ts",
+      "sha256": "2eb032577eee9e84c8d49b6a41b3f85e97a13d6de0afe77c3b5f230a15b0f52c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/plural-compact.ts",
+      "sha256": "10b136c1248928385a05f89422d67a8f8ad5580b5ed6aee510cb53469fa6d8b0"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/plural-format.ts",
+      "sha256": "e93adb68cd09e3a6802c3b076ae38ca15f4cda52187e36ad5b95c9cc97a769da"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/plural-rule-data.ts",
+      "sha256": "18c3e83d0875076cb41924b25c728a93e37375b256a66f612be5802c152932d2"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/plural-rules.ts",
+      "sha256": "3d5460d0c0dc55bccbc0518a9f6b78715be975065e2da18c709af1f52e54df57"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/primitive-intrinsics.ts",
+      "sha256": "d9ae6d988fb8ac085b18e3ee7170ee395e91c6fcdfbc62eeacc5ba608c7a334c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/private-elements.ts",
+      "sha256": "f549e6c6b7df632df484e071db6e4c96ff7478a02459df5b0d2082b9f7355145"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/private-values.ts",
+      "sha256": "137d2a4667420e09647c285b9913588e65ef3cbb26768abbb9a225e186d70f5a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/promise-capability.ts",
+      "sha256": "3126f694b7f2cfbfec9dd6dd8081b4cea19290cb4ba677bdeee3a4098bf8b66f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/promise-combinators.ts",
+      "sha256": "02de0dc886a3032ebec49a850c45a0b1b70abd6f424cec54b7efc0e3ce0cba92"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/promise-intrinsics.ts",
+      "sha256": "692683f99dd79aecf4b7d98832a00223c433c66e2d6c0422817bfe08d0edfe0a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/promises.ts",
+      "sha256": "4e3768c195b473cba1b54f26dd0ae82e3e43bf44b10e945fc32b5520114e8877"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/proxy-descriptors.ts",
+      "sha256": "87e6013b406ded0cbf245e11c5431354ba119c509903bbddf43923483e9027f6"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/proxy-keys.ts",
+      "sha256": "df53cadd408ed7518bcf8f1df9287edfa0262c37520786d0eb524afadd4b9720"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/proxy-state.ts",
+      "sha256": "ebb09b4caec99c867db8f9b2a84cd4bd7351ea681079691f3343575389d1b8b5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/proxy.ts",
+      "sha256": "2a2f3bf884d3c0617dc0565e4e8b137b6f8a6f182564f648dca2d7cded9f61cc"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/reflect-intrinsics.ts",
+      "sha256": "eacbf4afa6b27f3c4111dc74ff131eaabac6a6880df000470e9d6451f930de37"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-data.ts",
+      "sha256": "18cf629f7ef8bb196545c2205467972c3f2475983e158b22587bb59eabed8eb8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-escape.ts",
+      "sha256": "ba1c11bc51b1df4afe3f66670ced526747e6242c73f15d35191533e6775b181e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-intrinsics.ts",
+      "sha256": "456458c2af03b52cfaeb3632243114ebb1c0d823484a8b72523dd2a4bb6535fb"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-iterator.ts",
+      "sha256": "3104608b35d333e63ae93a36ffbb6af654ff10a68917aa1f5da4ee6da7f97086"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-legacy-intrinsics.ts",
+      "sha256": "ac201e3e76236363a6d0e2ef2e64cbbef2a9886368f25016a3e55c55fc200ecc"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-legacy-state.ts",
+      "sha256": "483d6c51daeeda5c6829a48324c1b9129704e00ab47350a1076d859d564402d9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-protocols.ts",
+      "sha256": "f7374774a2843369e44363be708972e9f1b5a38e70692c448030b469ddc300ab"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-replace.ts",
+      "sha256": "9472e41a2f173c80a0416b7e90c70d3966fb59cda767b16011a8c427c8f1a2ae"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-runtime.ts",
+      "sha256": "689f1560381af0564ea6f66cc2d569d4d77002d9f0ae248e65f24c3fedb28d34"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/regexp-split.ts",
+      "sha256": "da2c5bee0e5a0e65f50891c251279bbc429a6720ae0321a274b473e393dde1e5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/relative-time-data.ts",
+      "sha256": "94c63b2b0770685c21441980d7f5d443d028e359234c27f0a3c4789442292bfa"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/relative-time.ts",
+      "sha256": "6f70035899054eb527c7a2410795fa6fb19329985de571faff69a19d266cbf06"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/set-algebra.ts",
+      "sha256": "a41413b4a32994226dac5027cd0ca37b523b28d52869b140265bc213c7307c47"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/set-data.ts",
+      "sha256": "a385280bd3d66d04d8f095c187660e8a909a9bbd104d9169c4e68f9031b65f36"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/set-intrinsics.ts",
+      "sha256": "74a392c22039c5834751724b362a680d8bdecee7a2aa52d0d33e2163dbbd8491"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/set-record.ts",
+      "sha256": "1a9325bbf6f75360e98b7f6e9b11c27c91143fc05724f4e8ef1cbc3152f77780"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/shared-array-buffer.ts",
+      "sha256": "fb8a3ff310a669ad2bc9f4b02d70bea9016e1b46b7b13dcec07aa307c35e0170"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/species.ts",
+      "sha256": "348e21360182ac7cb613f8803e6b139e237bd3234bb719073efae382826b95ea"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/spread.ts",
+      "sha256": "fd79a2dc6dc8e1e63daa63eb11c6b303f0995be8cfb10633896948e254042f9a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/string-casing.ts",
+      "sha256": "57bb37c13af7de13ba518c4fdcfd622fa788c9f92be82d39a464fbd660e20ef3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/string-html.ts",
+      "sha256": "9ced61febd1f655444b506ada8751dcdaa9d8c056aca6ba69b5c760c1da4b645"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/string-regexp.ts",
+      "sha256": "59ed189bed5727a7c024ac426926364b4623fadabc578f703234129c234fd514"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/substitution.ts",
+      "sha256": "b38ac31fae4dcbf647fefd3818542f5e53d6836863d68f2907b77a51dfc7f851"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/symbol-intrinsics.ts",
+      "sha256": "d640428af104b0d1391758bf017a6b62563762d8d9b15c901c1dfe5b86ed49fa"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/symbols.ts",
+      "sha256": "12c5a26067cdc34f2a232007b371ac10e221ba1f5b8e3f1b530f1e46e0b34989"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/templates.ts",
+      "sha256": "fda96ba7d163f04abca762ab666ca18e3b0dadd81e1cc0a8534ad96fb6e7db72"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-calendar-fields.ts",
+      "sha256": "304cef6a9cc26e78bb778126d677ef9328d2bc7e1c20b95d72c3696a35b49b12"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-clock-fields.ts",
+      "sha256": "5fe775671dd2f77130ee2569344e534091520242b35cb71e5c0f3aa70ac09ab4"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-coercion.ts",
+      "sha256": "ff2ce4050d007023b808285047b68cc0b7bbdbc55a9b7ab8ec94f568ae651e77"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-arithmetic.ts",
+      "sha256": "8dd2cf90d8057155712ecd7be1dad3cb077142a5a6f7dc9f5c0dd2dfe6976259"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-difference.ts",
+      "sha256": "d87b9febc9d650ee882a5dcc3e03a216c291e909a4c9c17d5db0abaa25d7997e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-fields.ts",
+      "sha256": "12511baee472fdc502e14b7e7f4ce17758f74a5872da8ccddec1e8f6ced29afb"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-time-conversion.ts",
+      "sha256": "e4e06b9157003f4a5325aefd6e86d296d85e202bff198d35f1040985f0acbfa9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-time-difference.ts",
+      "sha256": "3f873ac8976948332e01a75ca1b74e2552a8a27288e48a4238739bb801ee685c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-time-format.ts",
+      "sha256": "5d1e137068cf078a4ea56a917da75d06bfa92965b1544623940426c09c644d3a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-time-methods.ts",
+      "sha256": "0d169258c596e0e0b0e34f6fb3dc685945bd3fdca7ba2b9db2cbf739a4cf3447"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-date-time-rounding.ts",
+      "sha256": "cc3df41509d9efc60a31693e77a8130e7066b5de9e568a58b8fba5304b693246"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration-arithmetic.ts",
+      "sha256": "ca61d44c4cd06638746876a9a203932b58c39a718cc78d0ee29d4746bbb97cc7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration-conversion.ts",
+      "sha256": "ab36389b8a1f4b051b8ea8c4753d238ac380e84a094c9f3f2ef6add80a30afa8"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration-format.ts",
+      "sha256": "97e56fcee9f3a7a65e74fd5f95c3af325a5dd86962459446570ee6102a3ad18c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration-rounding.ts",
+      "sha256": "c572ef9d0527369a7fbd15778df336503341b0dd50121077b7af9a4f70775670"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration-total.ts",
+      "sha256": "543650f5eded1c1389372c14d2611e4aef76bb4dcab02f6980e04e01041ed17b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-duration.ts",
+      "sha256": "3a2e2a390d7547828adee7f362e3fe19251b090d42926c56030903fb198d1f63"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-epoch.ts",
+      "sha256": "beab9a1bcccc103cb945c12bf6f3cd1a8d2533951c78237b3976ac4268053f7b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-instant-construction.ts",
+      "sha256": "5b9134d350f65a736ca4c0a2ec195517d2222618853ce5b17f0fe275d997952e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-instant-conversion.ts",
+      "sha256": "59bdf93dda72e72ab5ef7bcd18f036de9ac3f47df8bacdb9ae9227f66ce6727f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-instant-format.ts",
+      "sha256": "99cebcb02e775d84ccb0bc80370142052bfa14b76842c9c8cf5daedf758f73ab"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-instant.ts",
+      "sha256": "4dc5d688acca649bbc826794cc5b7b11b2eb90f357834d1e7c767ffc1ab96557"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-intrinsics.ts",
+      "sha256": "5a44a30530622039cfe11a4e2c0ae2d01fb62b16d32a47fb93631c785c26f544"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-month-code.ts",
+      "sha256": "a4afc980f6dfd37ba56cd57ff2cb8f87ca9fc44c5a5251848c8cdca3567041f5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-now.ts",
+      "sha256": "e81c69ab3865f0c8ab798629940f12b0139a890e2136f184e2a26a0e09893834"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-options.ts",
+      "sha256": "3638235f9a3165acf7ad96ffb62b3e09a9fc16f644312d4bafd7abf682539661"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-partial-date-conversion.ts",
+      "sha256": "7874dd80c9e80723f00cb721e1af991bc98e98b9889d038a8e620473b265479c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-partial-date.ts",
+      "sha256": "1106186c79c35d502b4b1b7caf6f966cd6b0a585443cc3ef5a5fdde6fce9486e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-partial-object.ts",
+      "sha256": "b54ecfe776a71c2e3e668ec3418d267756d647242067582642d5d956e4f72a04"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-plain-date-conversion.ts",
+      "sha256": "1f24f3cd316d5e2b6f21dfbb53a9d8d04bda39742e067b5dd902f171239a7164"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-plain-date-methods.ts",
+      "sha256": "4e7bde069600c5b5336ea1c27571a944c506357e9af62ea028cfa63990c4e2b9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-plain-date-time.ts",
+      "sha256": "1673ed400e96dc3815a4b7d4f772a5cb218664e84c31d9ac63fc93fb13f49cbd"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-plain-date.ts",
+      "sha256": "375d2ac6b29220e2c02cce5dc52bb38423872449851350925507d54b36b3ff37"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-plain-time.ts",
+      "sha256": "c90ab858f2a6b1da34b60d9899239e948df3d416109bbf796df029e0bda7106e"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-precision.ts",
+      "sha256": "49b681d59fd2266713ec9965a796a8b9de8b2ef924c0f6f8bb0cce51f72a298a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-relative-to.ts",
+      "sha256": "fb2a1943773141ce404c2892a32ab4cbe4040863f5cd58666463dd75eab41d63"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-rounding.ts",
+      "sha256": "9923662b8892b18a4dbf4cc0b577f0d853e26f24fc6e881a7fc1fe5bd86435c5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-time-arithmetic.ts",
+      "sha256": "cd2794473fab539c2a4b679d743329922d00259e346b8f075b387c9a8e45df89"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-time-conversion.ts",
+      "sha256": "c5aa16a0d397274eea8e6d627e451b2c9ef755ec84b5ee529ae8069ff686336b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-time-difference.ts",
+      "sha256": "54d80f5fec8a61f016f0334e8c191f0b971b8d0b4214229decec8765871e09e7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-time-zone.ts",
+      "sha256": "3e499cd8346038fc0c016c0676330c08e95f76ea8d7105cf14ad976195a5809d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zone-local.ts",
+      "sha256": "87f6dc71d9f1dd026d1c5ae5384973a22461e07f87724f104100023e2008d5b3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-arithmetic.ts",
+      "sha256": "b78f620539632b8eee87dbdfc324a9fb86b3686e4137d9c19801cf2a444dbebc"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-calendar-bubble.ts",
+      "sha256": "0e66e280a3117874c0247a4fe23a0604f6848f25e997c341dd5fee99e793cf03"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-calendar-difference.ts",
+      "sha256": "34f209046e8f7fa021f4f4ea35e81bfd15217309f7bc59df4a2cd05697575af7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-clock-rounding.ts",
+      "sha256": "2c0a92eb4cbc8f3473dceff1a37d9c77279620783c49382f3d0444f93ce2517a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-construction.ts",
+      "sha256": "fdf2f21b58993000cb81839b3920a06d76328665788e4e0f82d4341136091fd7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-conversion.ts",
+      "sha256": "e509f4a30da3c9ab2710d85104a538f5ac256efc4cdff3a7f22a2968ebbdcd04"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-copy.ts",
+      "sha256": "7fc62761a1b739a8232e9ac9cb43a3545aa82063874b04485f603fec30b6464a"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-date-time.ts",
+      "sha256": "815ce08eb391d377bbc573ac00c3a21239d10a118aeaa813193d78919f3e6bf3"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-difference.ts",
+      "sha256": "f1d7f038a1cd448f8672b4c1c501532c57477e7886270181abaf112c84b53a82"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/temporal-zoned-format.ts",
+      "sha256": "444886e5f6f0c761e6f99123dc64084a99d0ba72c093c4565088bab4cecd7236"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/time-zone-identifiers.ts",
+      "sha256": "15c36409da035788449168a0e2d933c1e6ee1a891ac73c7ecd18a77a481037e5"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/time-zone-primary-data.ts",
+      "sha256": "7f56e626df11b4b3aa85fd81e84542e2e196b9b66561af577e429c327e352835"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-callbacks.ts",
+      "sha256": "9a79eaba4cb2a9651136794fdc570812a8a1710b8217cdfe769f9d00de952c0f"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-composition.ts",
+      "sha256": "752b2875f114c1e692ccacbdf686e2d3c876106e69c26dbfaf819d60f446db0b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-construction.ts",
+      "sha256": "31927ee8112788fd2ed090e815ee9064d27e5368104bd90b8f2eac4155073671"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-copying.ts",
+      "sha256": "5660b5391e9cbaca61b1ab70f64d86f4ab6de08f567806eec4bf759b90cbc01c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-copywithin.ts",
+      "sha256": "304f76597ce1bef6fc8ca5c649a737336431fd0f0ba388b50dcca6c8b06867df"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-data.ts",
+      "sha256": "2f35dcbbd829fcf23398cce2c12226fcb11d611fd59801166492829319ef58f1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-fill.ts",
+      "sha256": "41c523b67eb94b7762e9e1d99a670b2eea4a09299a2e82087f802f8cde077c40"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-intrinsics.ts",
+      "sha256": "886f2d8631f0ad3dea0c8f29d527d7309e162edd613bacf7a5ca278d2243efc9"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-iterators.ts",
+      "sha256": "6fd6f37746cfd698c05d423670ba39a3dd1f2a6fd1036e40d82533ea531d1b6c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-ranges.ts",
+      "sha256": "4847e0a0e1e662324439069c45b1f583068b4457884eb3b02493546d7a00bb46"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-result.ts",
+      "sha256": "3209f06b6e714ba54d52f183234bc7d49dd5f7fc0fb88cb7e20c39e25375e231"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-reverse.ts",
+      "sha256": "52bb581cfc72f7ff2119a707b6cfe3742860dee292de20565337e458e8ad9b32"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-search.ts",
+      "sha256": "fe53148fb78746279dbee27f763b130a02a7f82b9f6662a8b5f7891efe6b599b"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-set.ts",
+      "sha256": "a802fb4ab010f13c1c4b3cda982abc43e906fd9264adb75b7416290f0cdf689c"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-sorting.ts",
+      "sha256": "7d3fc94053e5ed65f489a3fdd01748f4f2b2b3e48a98895037a85ebf167820db"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-species.ts",
+      "sha256": "1c311f34d53e0f91526ce034135e314703988f11d4cce742f06e1fd25e54af16"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-static.ts",
+      "sha256": "1045f671737aa8444e7074449f0a1c14e48874293b455fba462a0bfb4f4351f1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-storage.ts",
+      "sha256": "9be009603f0599b43602b4ddc9ca6d30a28ec03fffd03a932825b05a0f3fa743"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/typed-array-text.ts",
+      "sha256": "cc4b77d0b8544f7e62d8d5a435801f75729ae56340b5f97244ba9ac451c001b7"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/uint8array-codecs.ts",
+      "sha256": "be09ccf1a26cf21f7643dabdc8a10e7c2ca57a6dc7573d5bebd5c2707cccdcd1"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/uri-intrinsics.ts",
+      "sha256": "6a6cc071a7b0deb9c90663763fe78354a2b80d84714b7ad9875fddff27380948"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/values.ts",
+      "sha256": "55d03f25eed8da9f9043b69c19fab1c558c97ab96dcb1b43fb9e390ba9c14825"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/weak-collections.ts",
+      "sha256": "745e6e2ee1d314106fc029d520a69f64c034608a303f12be268e5436bec2869d"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/weak-ref.ts",
+      "sha256": "41e874c0106f70be87cf98e42089d9112f282bac77d2bab667157c55f91b6c26"
+    },
+    {
+      "id": "packages/js-runtime/src/objects/weak-storage.ts",
+      "sha256": "3df65aa9cd3f3784964f55f894fb238cfa7cd456177e581a435501994389ac71"
+    },
+    {
+      "id": "packages/js-runtime/src/promises/index.ts",
+      "sha256": "0263d64262bbf97de31ff54177da3200f9c003e290dff4d666445cd430dcc800"
+    },
+    {
+      "id": "packages/native-runtime/src/allocators/linear/index.ts",
+      "sha256": "2218bb2f97f8ff2e9f322d55c6cac3dceb9af15ef58356e3d3d85079c6d1c777"
+    },
+    {
+      "id": "packages/native-runtime/src/allocators/region/index.ts",
+      "sha256": "b4761588d090adf8081753c2b6b315330a24be690c51013a10eabca1364bb18e"
+    },
+    {
+      "id": "packages/native-runtime/src/copying.ts",
+      "sha256": "23c38e82ed1324ab456516c172338c70e45d5db910107c46bf2e8a8a53e3d61b"
+    },
+    {
+      "id": "packages/native-runtime/src/external-memory.ts",
+      "sha256": "3bce12aeb670c596a4ada921660240eb2b170acd524b2bba07d6d490e230f173"
+    },
+    {
+      "id": "packages/native-runtime/src/generational.ts",
+      "sha256": "c60638bc0d0e1f02661d98f6e504a5e35628d77ad1d32d1cdec2ed70c03aacc5"
+    },
+    {
+      "id": "packages/native-runtime/src/graph/index.ts",
+      "sha256": "0a9347e36d57ea2228432921fc4a7b7bcee0832417689db0d0db95fc61858c3b"
+    },
+    {
+      "id": "packages/native-runtime/src/heap/compaction.ts",
+      "sha256": "d1ccf174e22fdee4233be6b2b050bc12af6905a6f9f566d2c33293a68b02c395"
+    },
+    {
+      "id": "packages/native-runtime/src/heap/index.ts",
+      "sha256": "7a2edd06c9c39b139ed2b3721f93d43a7045720ab9847cc1fc772e2f8e255a0d"
+    },
+    {
+      "id": "packages/native-runtime/src/index.ts",
+      "sha256": "542c55731ffd66d34de3f339459abde3a2a663b858b3a4853fa0322504e1aa83"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/clock.ts",
+      "sha256": "46609815f67967a9410c657407aad66f2fab362f4fdfdda05c215494e2391a47"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/fs.ts",
+      "sha256": "adceb9134b58ab784e0e90e94c03ea3aa1067fb4af6e76e8888f21841da963e8"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/memory.ts",
+      "sha256": "db612422bd67da2f64f257978a63240d62729050392221eeb671ea5805b0fd7e"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/process.ts",
+      "sha256": "ca5a6e98cf483d13bcc062de499eb6f2ab65a653380d1e2441719ef534244c15"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/random.ts",
+      "sha256": "e42a2ab03b89f5ee3a90a1196714223af7c9fe93a7acb6182b8bb8a4f45019a7"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+      "sha256": "eedc2f42c98e9e239228163e4ca25f4a52e49cfd3d443294372e7b1f85945196"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/spin-hint.ts",
+      "sha256": "c509b1f76bf5aa7b3eae16a96d97a528bec56acb3da75e985b129a7e81fb8bf9"
+    },
+    {
+      "id": "packages/native-runtime/src/intrinsics/weak.ts",
+      "sha256": "6c195421c42992637112910d3095ccc04f6b626e8d15754c916c6175552d0935"
+    },
+    {
+      "id": "packages/native-runtime/src/relocation/commit.ts",
+      "sha256": "13107933707b8510915be0b859c1630a341a14350cea6d8015d08a74eebbe956"
+    },
+    {
+      "id": "packages/native-runtime/src/relocation/index.ts",
+      "sha256": "4fc383b6d7477c3c7d8a3d56698ea83b32eb6493b47cf41712adcef552edd627"
+    },
+    {
+      "id": "packages/native-runtime/src/shared-blocks.ts",
+      "sha256": "a417087e5cf555d8eb45c958236736948c3e2205b550620719519dd9dcc6b5d9"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/collector.ts",
+      "sha256": "1e003afba35217269a4f0a380eb1f18c4b3d429bde04ed923a0ff83a91ce0d1a"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/extent.ts",
+      "sha256": "445a9b2ec06bf1c41bcfb86e885f0993a5dbcb3dadc814027eac32acbdaf67a4"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/external-memory.ts",
+      "sha256": "5c2f7f910d9c9c250f0fbd5579f56be85872647b0db1b2674695a1ff94c0ff4f"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/fixups.ts",
+      "sha256": "2b8806fec3c22c0b25a2c0012712361c4c976a679802fa9ac701147f774708dc"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/index.ts",
+      "sha256": "e34f516058d25407eee0b7387eb30bb38e0cc1f72667f6f814cb2e8cf7fb03ed"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/nursery.ts",
+      "sha256": "97dcf05a5376f7b8009a245c0b5e609c4b2a09d3e1ad9185cb602400067ab66c"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/relocation.ts",
+      "sha256": "eaddef89f4138b679ada9d82aec8e34ade91b7f043c5528eb17f21b9ce82585e"
+    },
+    {
+      "id": "packages/native-runtime/src/tracing/scan.ts",
+      "sha256": "bbc0f492b7d34b3dabb4b7b123098a276c58962ef2fe9c11336c4145d7f18a0d"
+    },
+    {
+      "id": "packages/native-runtime/src/values/index.ts",
+      "sha256": "31964c1ab1748679d60edc363388cb219d39a411acd5db825d79dbccb076eb4a"
+    },
+    {
+      "id": "packages/platform/src/darwin/fs-errors.ts",
+      "sha256": "a62008329fce40d46e1074b615617c349c2bc8a4328e103457c3f0b8fee66961"
+    },
+    {
+      "id": "packages/platform/src/darwin/fs.ts",
+      "sha256": "6d2df7305bca52efe9afae130cf13aba089e2723c6f6efcc7c2b17125c482d43"
+    },
+    {
+      "id": "packages/platform/src/darwin/host-abi.ts",
+      "sha256": "4ae1c2b1467327bfb4886086a0d7f65737e589bdb01286e731cb314ffd45c471"
+    },
+    {
+      "id": "packages/platform/src/files/service.ts",
+      "sha256": "0b4437b6a426cbc826967598933c29645c6c1de32ab522b87e3e05bc8aa1ee6a"
+    },
+    {
+      "id": "packages/platform/src/files/system.ts",
+      "sha256": "d3e334ac5d71ecaf69bd6db65102d3a496c1287da6e744fb5d5b7c3f0129082e"
+    },
+    {
+      "id": "packages/platform/src/io/sync.ts",
+      "sha256": "ea90e93ec1daf1ff0f4a72a4dbacfeeb96d1b56a37052d28518b33db86891115"
+    },
+    {
+      "id": "packages/source/src/catalog.ts",
+      "sha256": "071c9d8609a101a2f41f7860d51c4882a9d85fe92fd669237427f0816f6e3105"
+    },
+    {
+      "id": "packages/source/src/resolver.ts",
+      "sha256": "dd92abce396180b09fffd046685ff41f676e926e8e02317c711923115a1c1580"
+    },
+    {
+      "id": "packages/source/src/text.ts",
+      "sha256": "87bd1d9e00f67d6e895ec7dabaa9780b180ca291984e2c2622d6221b93c0a30d"
+    },
+    {
+      "id": "packages/ts-native/src/closure/layout.ts",
+      "sha256": "7dce128129757c23099e5a6417a1cb7c63942b7c76e75c9f52fbd7ce0511c994"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/class-construction.ts",
+      "sha256": "34b8f51b747b6cb715e4bc62be212cb786c02bf4e82fe54acf8713d8dc3dd526"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/class-definition.ts",
+      "sha256": "a672deb48bbd921400c466132bf4cc5b5c8765aeb77019ac1af5acc3b1b2225b"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/class-records.ts",
+      "sha256": "09fc5468e8779a5609a5b90e5e462d1c2017e77df35b8ca5d1b57027d9bfdaf0"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/function-bindings.ts",
+      "sha256": "6e65f1d626259b7ac97626cb90084fac856fd3bc05cfd7720121806a1440a59e"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/index.ts",
+      "sha256": "83ef97fc21cab46be6dc861202afc1eea004d5ad6ecd80a835584f086c2cfd48"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/planning.ts",
+      "sha256": "7cca70212738368d529ed7c65cdd8039c961889ad9aee2bc3f2f2b43176f1e74"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/record-bindings.ts",
+      "sha256": "6a3560150229676a7d973d7e19a121f6aae0f01b9febda394b844f66203e1009"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/record-layout.ts",
+      "sha256": "84683786f2358ee1236eda41b906f0a5d223da32541092f1d03b3dd5bf643ca2"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/records.ts",
+      "sha256": "d4e6f8888a6fd4ee0e1e9ce98d8448a070325e76e41a5cdee2ee94513533a4e8"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/representation-views.ts",
+      "sha256": "62c398051d16e552d2a8b6ed8177100d591ef083eb2eb83008a9181aabdd20b7"
+    },
+    {
+      "id": "packages/ts-native/src/closure/lowering/runtime-requirements.ts",
+      "sha256": "28460bab947abd40a7f3442a43c4e1878019785feeea89736671f37be87fdc12"
+    },
+    {
+      "id": "packages/ts-native/src/modules/checked-specialization.ts",
+      "sha256": "2dbbc23e3d8f22e1d405daaffac1f09e5a296231ae5bda7b0f8e4b5eea9f1ac3"
+    },
+    {
+      "id": "packages/ts-native/src/modules/constants.ts",
+      "sha256": "2d10136eec3069bbb4fb580d9acc6601cb084e0481c1bc259f5024c8bd3fe5e8"
+    },
+    {
+      "id": "packages/ts-native/src/modules/index.ts",
+      "sha256": "73cfa97edb58690e5a65a60a86496be916368e082e7037be030974c294bafae1"
+    },
+    {
+      "id": "packages/ts-native/src/modules/initialization.ts",
+      "sha256": "2d7ec867543572e506d851d0e57307ffea9c3e95a5eb1d308ec892f3889d8ec4"
+    },
+    {
+      "id": "packages/ts-native/src/modules/instance.ts",
+      "sha256": "11d845050397fc119cb46a5dcbad881649becdb5b12d2159ba97659ce5632ff0"
+    },
+    {
+      "id": "packages/ts-native/src/modules/invocation.ts",
+      "sha256": "3ce516b7f51f67ec2d79aa6061d55cd269463912d7337f64ab504c9153143f24"
+    },
+    {
+      "id": "packages/ts-native/src/modules/native-globals.ts",
+      "sha256": "14720265ac0557841c1f2d07446feaed9d06bd2c7b949574fabf9acf4b0e915b"
+    },
+    {
+      "id": "packages/ts-native/src/modules/specialization.ts",
+      "sha256": "26a028df67a35bd6bacce4bee364b8f01e663a2adaceed3fce57ed4b29ecb257"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/bindings.ts",
+      "sha256": "49d5c17f899c51c05f0d37f45f8a3583c9c2ce96d18a76f4ac8849450f6e36c2"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/context.ts",
+      "sha256": "3df47915e416df326a49dd6efc08865b52bba83341c028314cf38e312ba70a9b"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/elements.ts",
+      "sha256": "8ce43c1fc6ef756e6d38a90543a9d7313d4e6546a0f6c4bab597fe4f5f828f28"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/function-ids.ts",
+      "sha256": "46c2c79b570366385cca0bd025baf19b9f4060d266bdec012301d93fb812dc74"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/index.ts",
+      "sha256": "3d320e3d2b32a5238e55b42c7c9c9549e167091f4305f46a300e9610a08d7c4b"
+    },
+    {
+      "id": "packages/ts-native/src/runtime/operations.ts",
+      "sha256": "d65398d15f21053f60f0aca33a172850d6a4a7fed8f74df09288bd1b83524647"
+    },
+    {
+      "id": "packages/ts-native/src/scalar.ts",
+      "sha256": "4813ef3bdd9f3754622dad778e97a2399884a5467c877f7efafa7ef238a402a2"
+    },
+    {
+      "id": "packages/typescript/src/binding/index.ts",
+      "sha256": "d13633915104220b0c52964d8652e45b298f4ccc5a1b3e534f1181b7391f974d"
+    },
+    {
+      "id": "packages/typescript/src/binding/script.ts",
+      "sha256": "fde8079e229c0ad0b9cea695e19ed5434c852d24fc8946633e16d6f24b2602c7"
+    },
+    {
+      "id": "packages/typescript/src/checker/class-initialization.ts",
+      "sha256": "ffc6729c15f7ef7f9ab6ab95a7ea219960931b70fdebdaeb7237f7b9de134c20"
+    },
+    {
+      "id": "packages/typescript/src/checker/closures.ts",
+      "sha256": "33ee57ce37d5274386a0b66c8ef7c56b50d1c74ad68bc4228c67532db263884b"
+    },
+    {
+      "id": "packages/typescript/src/checker/completion.ts",
+      "sha256": "ac994e83c6cf3217fb298e82780a6d8b95e872a1d3d78cfaf9c843812e52d710"
+    },
+    {
+      "id": "packages/typescript/src/checker/index.ts",
+      "sha256": "e87bd87022bcd782c9f66f1785db18927954578a39189a05ddda640c2fd01901"
+    },
+    {
+      "id": "packages/typescript/src/checker/interfaces.ts",
+      "sha256": "8b8e74b588567d265f23ae280fe5b3b490f36275be2fb1d925580d33ed674592"
+    },
+    {
+      "id": "packages/typescript/src/checker/numeric-constants.ts",
+      "sha256": "ad546dc639340f23eeaef46573a521edef9b24d86986e19a2911c0a9beabc2ed"
+    },
+    {
+      "id": "packages/typescript/src/checker/union-index.ts",
+      "sha256": "1f5ff9d216b7d95ccbb687d88413182064075c3ca6d9f9b528143ef7cdff854d"
+    },
+    {
+      "id": "packages/typescript/src/modules/exports.ts",
+      "sha256": "41335c7332d47f2e6f6c12d99c3ec613ae5880160c7ec640da793952ea67faab"
+    },
+    {
+      "id": "packages/typescript/src/modules/index.ts",
+      "sha256": "941f9a0421ecea20630a215782ab2a6f406841768030a3c9353b7b12352c05f2"
+    },
+    {
+      "id": "packages/typescript/src/modules/model.ts",
+      "sha256": "6cae267b38465a48dd2100d101f1a94b166829f6e0376de9dbcbcb660ef66035"
+    },
+    {
+      "id": "packages/typescript/src/reify/index.ts",
+      "sha256": "b734d9e33129ae397fd269e5730e0ab56cdb46b48921653a6e56b0d71d7530ec"
+    },
+    {
+      "id": "packages/typescript/src/reify/print.ts",
+      "sha256": "583631a28508c140d13bc733b38518c4a3f1ad9ba9771d840a7d1449b8ced8e7"
+    },
+    {
+      "id": "packages/typescript/src/syntax/bindings.ts",
+      "sha256": "dc9214a8ef150f119ac86d60bc34822a16edf5bf41128a773b358365c446c879"
+    },
+    {
+      "id": "packages/typescript/src/syntax/chains.ts",
+      "sha256": "51b581c48d5455bfa820d2f3300ddef83e955c247e92d39cd2192b75c81624ec"
+    },
+    {
+      "id": "packages/typescript/src/syntax/dynamic-functions.ts",
+      "sha256": "85268f3822ff5d5efb68de7fae3a7181a89fdfd725e3802013eb706258a337b7"
+    },
+    {
+      "id": "packages/typescript/src/syntax/index.ts",
+      "sha256": "ffc8456eb2d640c3e36d9b46e35b9d5459ff35e616b00e54f199d599c3351c2e"
+    },
+    {
+      "id": "packages/typescript/src/syntax/lexer.ts",
+      "sha256": "77f531f533a8de27df1f9c7dcc74c876142bd81a03f5bad7eed4bb42a10c890b"
+    },
+    {
+      "id": "packages/typescript/src/syntax/literals.ts",
+      "sha256": "dad10ac599b27d1cb2bb1bed19c129fb2d975974689d7addb9d59fa4c235cedf"
+    },
+    {
+      "id": "packages/typescript/src/syntax/model.ts",
+      "sha256": "37df6b73a2b99f3b8534d8c00be037d5135af5987c27d6e3278c25170dcd4561"
+    },
+    {
+      "id": "packages/typescript/src/syntax/parser.ts",
+      "sha256": "7dc00bf6d1df1752e6cb922f18fdbaaa28b6a5cb39449b7999005ad68ff4b494"
+    },
+    {
+      "id": "packages/typescript/src/syntax/rewrite.ts",
+      "sha256": "3f1e2dabc5905b5cc2458f68dd574067de1225bc221471f40f926bce7e8eb3c9"
+    },
+    {
+      "id": "packages/typescript/src/types/discriminants.ts",
+      "sha256": "6f8d59e3b470f617e230982c61c0d9f82aa5ec871d15edf21b12f3d85a6c6417"
+    },
+    {
+      "id": "packages/typescript/src/types/identities.ts",
+      "sha256": "4baa2f088a82df7d411da21c21a48ef73e90e93d8bc5626d55cf8c14e53f52e1"
+    },
+    {
+      "id": "packages/typescript/src/types/index.ts",
+      "sha256": "878edc865d0cfd7911e79a54cfe40d56da624ebb843824be8e8af6f0d2c56e77"
+    },
+    {
+      "id": "packages/typescript/src/types/relation-storage.ts",
+      "sha256": "6f6898ff441537b470ab7d4b7e7e9c30b63c9e62c67a879532bc53c2aa5fa448"
+    }
+  ],
+  "scope": "Compiler build inputs are the catalog-selected subset of the frozen workspace. Runtime iterator implementation is outside this compiler graph; native conformance and fixtures exercise runtime sources separately."
+}
