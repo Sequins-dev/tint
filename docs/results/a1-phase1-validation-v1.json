@@ -1,0 +1,27 @@
+{
+  "kind": "phase1-workspace-validation",
+  "node": "v24.12.0",
+  "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH pnpm check",
+  "exitStatus": 0,
+  "tests": 4446,
+  "passed": 4446,
+  "failed": 0,
+  "gates": [
+    "typecheck (including pnpm build)",
+    "test",
+    "boundaries",
+    "format:check"
+  ],
+  "log": "docs/results/a1-phase1-check-node24.log",
+  "earlierFailure": {
+    "command": "pnpm check (shell Node v26.0.0)",
+    "exitStatus": 1,
+    "tests": 4446,
+    "passed": 4445,
+    "failed": 1,
+    "reason": "Unicode independent oracle requires 16.0; Node 26 reports 17.0",
+    "log": "docs/results/a1-inherited-a1-check-inherited.log"
+  },
+  "sourceChanges": false,
+  "nativeSelfbuild": "Not required: evidence and documentation only; no compiler/runtime changes."
+}

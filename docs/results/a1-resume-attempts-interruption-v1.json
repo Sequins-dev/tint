@@ -1,0 +1,31 @@
+{
+  "kind": "interrupted-continuation-attempts",
+  "at": "2026-11-06T15:19:47.745817+00:00",
+  "reason": "Phase 1 closes the inherited lease-stalled runs as interrupted prefixes. Direct continuation requires recompiling interrupted batches; these two attempts were stopped before native execution, during compilation, to retain the inherited prefixes without starting replacement measurements.",
+  "originalInterruption": "docs/results/a1-inherited-interruption-v1.json",
+  "pids": [
+    93937,
+    94698,
+    94699
+  ],
+  "childProcessesAtStop": [],
+  "node26Attempts": {
+    "pids": [
+      90581,
+      90584
+    ],
+    "exit": 1,
+    "reason": "frozen identity rejected Node 26; no journal mutation or execution"
+  },
+  "node24Attempts": {
+    "pids": [
+      94698,
+      94699
+    ],
+    "journals": [
+      ".tint-bootstrap/test262-language-core-identifiers-v2.jsonl",
+      ".tint-bootstrap/test262-language-core-asi-v2.jsonl"
+    ],
+    "newObservations": 0
+  }
+}
