@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-performance-measurement",
+  "changeCommit": "4f7893d",
+  "measurementCode": "native-codegen-register-copies-cpu-v3-time-cpu-micro.ts",
+  "benchmark": {
+    "sameSource": true,
+    "pairs": 4,
+    "completed": 8,
+    "median": {
+      "inferiorWallMs": {
+        "before": 1358.5007085,
+        "after": 710.705562
+      },
+      "cpuLowerBoundMs": {
+        "before": 1243.814875,
+        "after": 625.5156458333333
+      },
+      "unobservedCPUWallBoundMs": {
+        "before": 1.3040835,
+        "after": 1.30125
+      }
+    },
+    "cpuSpeedup": 1.988463251535375,
+    "cpuReductionFraction": 0.49709907928755614,
+    "timingMethod": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "data": "native-codegen-register-copies-cpu-v3-register-copies-cpu-execution-v3.json",
+    "limitations": "Shared-host scheduling varies. Each sampled CPU value is a lower bound with a separately recorded final unobserved wall interval. No whole-suite speedup is inferred from this operation benchmark."
+  },
+  "Test262": {
+    "selection": "language/expressions/addition/S11.6.1_A1.js",
+    "before": {
+      "passed": 0,
+      "total": 2,
+      "timeouts": 2,
+      "report": ".tint-bootstrap/perf/baseline-tiny.json"
+    },
+    "after": {
+      "passed": 0,
+      "total": 2,
+      "timeouts": 2,
+      "report": "native-codegen-register-copies-cpu-v3-codegen-copy-addition-a1-v1.json"
+    },
+    "equivalence": "Both original 300000 ms variant budgets time out after initial stop before and after. These equal classifications do not establish matching completed JIT results. The copy-only change alone does not make this eval-heavy selection practical.",
+    "invariantResources": true,
+    "compileOnlyWholeSuiteProjection": "No generated-code benchmark rate is applied to the Node-hosted compilation phase; historical fixed-overhead analysis remains separate."
+  },
+  "selfbuild": {
+    "status": "in progress in dedicated slot selfbuild-perf 1; no stage-image equivalence claim yet",
+    "frozenToolchain": "17c019fae4b12984cacc3ff573d1163a9a11bda82c98ffbadb8d9d495a547f1b",
+    "stage1Sha256": "2f637f67c2da2a1eceaa7bae7176f35294987176fb3ad141e515fefe9d3d1f08"
+  },
+  "mergeReady": false
+}
