@@ -1,0 +1,30 @@
+{"family":"addition","adopted":83276,"grant":{"id":1,"variants":31,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T03:33:49.697Z"}
+{"family":"addition","journalComplete":true,"totals":{"total":95,"passed":94,"failed":0,"unsupported":0,"timeouts":1,"harnessErrors":0,"crashes":0,"passFraction":0.9894736842105263},"checks":{"total":true,"observations":true,"source":true,"identity":true,"fresh":true,"clean":true,"adapter":"native-script-v19-managed-templates"}}
+{"fixtureGrant":"2026-11-06T04:00:46.449Z","ack":{"pid":21082,"state":"between-variants"}}
+{"selectedCase":0,"name":"addition converts both operands before ToNumeric (ECMA-262 13.15.3)","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"selectedCase":1,"name":"non-additive operators finish ToNumeric(lhs) first","kind":"timeout","phase":"post-entry-fault-or-unexpected-exit"}
+{"selectedCase":2,"name":"relational operators convert left then right with number hint","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"selectedCase":3,"name":"BigInt relational and equality comparisons are exact","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"selectedCase":4,"name":"ToPrimitive validates @@toPrimitive before ordinary conversion","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"selectedCase":5,"name":"unary and update operators distinguish ToNumber from ToNumeric","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"selectedCase":6,"name":"string numeric literal and number formatting boundaries","kind":"completed","phase":"exited-42-after-initial-stop"}
+{"family":"equals","grant":{"id":0,"variants":64,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T04:27:12.638Z"}
+{"family":"equals","grant":{"id":1,"variants":29,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T06:17:36.589Z"}
+{"family":"equals","result":{"code":0,"signal":null},"totals":{"total":93,"passed":93,"failed":0,"unsupported":0,"timeouts":0,"harnessErrors":0,"crashes":0,"passFraction":1},"checks":{"total":true,"observations":true,"source":true,"identity":true,"fresh":true,"clean":true,"complete":true,"adapter":"native-script-v19-managed-templates"}}
+{"family":"less-than","grant":{"id":0,"variants":64,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T07:25:12.903Z"}
+{"family":"less-than","grant":{"id":1,"variants":25,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T08:24:25.119Z"}
+{"family":"less-than","result":{"code":0,"signal":null},"totals":{"total":89,"passed":89,"failed":0,"unsupported":0,"timeouts":0,"harnessErrors":0,"crashes":0,"passFraction":1},"checks":{"total":true,"observations":true,"source":true,"identity":true,"fresh":true,"clean":true,"complete":true,"adapter":"native-script-v19-managed-templates"}}
+{"family":"exponentiation","grant":{"id":0,"variants":64,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T09:14:29.491Z"}
+{"family":"exponentiation","grant":{"id":1,"variants":4,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T09:27:08.123Z"}
+{"family":"exponentiation","grant":{"id":2,"variants":14,"kind":"syntax","outcome":"compiled"},"at":"2026-11-06T09:45:53.567Z"}
+{"family":"exponentiation","grant":{"id":3,"variants":6,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T10:00:11.596Z"}
+{"family":"exponentiation","result":{"code":0,"signal":null},"totals":{"total":88,"passed":88,"failed":0,"unsupported":0,"timeouts":0,"harnessErrors":0,"crashes":0,"passFraction":1},"checks":{"total":true,"observations":true,"source":true,"identity":true,"fresh":true,"clean":true,"complete":true,"adapter":"native-script-v19-managed-templates"}}
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/run-operator-native-v3.mjs:44
+  if(rows.length!==1){await release();throw Error('central lane owner changed; request guidance');}
+                                            ^
+
+Error: central lane owner changed; request guidance
+    at acquire (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/run-operator-native-v3.mjs:44:45)
+    at async file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/run-operator-native-v3.mjs:148:21
+
+Node.js v24.12.0
