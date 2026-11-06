@@ -1,0 +1,35 @@
+{
+  "kind": "c2-coordinator-directed-native-restart",
+  "conformance": false,
+  "createdAt": "2026-11-06T21:17:56.307510+00:00",
+  "selection": "language/statements/class/elements",
+  "population": 3156,
+  "observedVariants": 1023,
+  "counts": {
+    "pass": 1023
+  },
+  "unobservedVariants": 2133,
+  "complete": false,
+  "reason": "Latest coordinator directive after checker merge and G integration requested a fresh class-elements restart on main. Earlier planning estimate favoring continuation remains retained; no unmeasured speedup is claimed.",
+  "earlierEstimate": "docs/results/c2-elements-restart-decision-v1.json",
+  "boundary": {
+    "ack": {
+      "pid": 82722,
+      "state": "between-variants"
+    },
+    "childrenVerifiedBeforeSignal": [],
+    "signal": "SIGTERM",
+    "slotAndObserverExitStatus": 143,
+    "executingNativeVariantTerminated": false
+  },
+  "prefix": {
+    "path": "docs/results/c2-statements-elements-restart-prefix-v2.jsonl",
+    "sha256": "7ad1144314c4922aaa7b4fe08d4bde342822c4e96cbf201a2e15f38ef57eaadc",
+    "bytes": 798721
+  },
+  "originalJournal": ".tint-bootstrap/c2/test262-c2-statements-elements-native-v1.jsonl",
+  "oldToolchain": "docs/results/c2-frozen-toolchain-v9.json",
+  "newToolchain": "docs/results/c2-frozen-toolchain-v11.json",
+  "nextRun": "test262-c2-statements-elements-native-v2",
+  "resumePolicy": "Old schema2 journal remains resumable only with original frozen-v9, direct debugger launch, module gate1, containment300000, batch64, TINT_TEST262_RESUME=1. Do not resume concurrently with new survey."
+}
