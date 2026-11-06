@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "kind": "frozen-native-selfbuild-validation",
+  "mergeReady": false,
+  "compilerChanges": [
+    "general equality payloads use planned leaf storage",
+    "inline heterogeneous primitive union record fields",
+    "boolean carriers and adjacent block fallthrough"
+  ],
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v5/source-snapshot.json",
+    "sha256": "f95ec9eb55ec35358e1d6a86873bfdceadc22aa9a9607b0f98f683eb543c979c"
+  },
+  "sourceSnapshot": {
+    "sha256": "e4cf68d53f79d191dbf0b69962fd5865a1067bfe8f23f7c4e700b664301c1370",
+    "files": 568
+  },
+  "sourceProvenance": "This immutable graph predates main hash fix 53f405e. Rebasing the branch does not retroactively change these native images. A further current-main build is required for later compiler slices.",
+  "stageImageComparison": {
+    "snapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/source",
+    "stage1": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/stage1",
+    "stage2": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/stage2",
+    "bytes": 69932802,
+    "sha256": "bc0a21776d5df48710159a3e56e207daaeaeeac0fdddcb5d429e1d6bc593f99a",
+    "initial": {
+      "state": "stopped",
+      "pid": 83209
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "identical": true,
+    "dwarfExit": 0,
+    "cpu": {
+      "pid": 83209,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 43126930073,
+        "systemTicks": 548454485
+      },
+      "cpuMsLowerBound": 1819807.6899166668,
+      "finalUnobservedWallBoundMs": 103.207417,
+      "probes": 23317,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    }
+  },
+  "signatureExit": 0,
+  "debugInfo": {
+    "nonemptyCompileUnit": true,
+    "lineSection": true,
+    "dwarfdumpVerifyExit": 0,
+    "sectionsDumpSha256": "1fff4a34cac82a04c242b65465c9b5f72d47ee7a885130899d648200af438317"
+  },
+  "performance": {
+    "nativeCPUmsLowerBound": 1819807.6899166668,
+    "finalUnobservedWallBoundMs": 103.207417,
+    "wallDiagnostic": "Native launched 2026-11-06T20:09:05.822Z; entire wrapped validation ended 20:50:18.480Z, including comparison and DWARF verification. No precise isolated inferior-wall timer was recorded.",
+    "beforeAfter": "No matched same-source old-generated compiler run yet. Do not compare the earlier 2089.649 CPU s self-build on a different source graph as a measured speedup.",
+    "operationBenchmark": "native-codegen-inline-primitive-unions-v2.json: 130.598 to 44.463 ms median CPU, 2.937x, identical fixture and native source snapshot."
+  },
+  "specializationLimit": {
+    "cap": 16384,
+    "raised": false,
+    "originalFailure": "Native stale-stack numeric payload equality prevented type/specialization deduplication and reached the real instance cap. Node produced 8607 instances on the same frozen graph.",
+    "diagnostic": "native-codegen-general-equality-v1.json",
+    "resolution": "Native self-build completes and produces byte-identical images."
+  },
+  "retainedFailures": {
+    "interruptedV2": "User-message session interruption ended the earlier native process after last observed 388.745567625 CPU s. No final image/state; retained log. V3 reuses only immutable v2 Node stage1/source.",
+    "firstFullGate": "4549/4551 passed, exit 1. Emission golden expected 824 bytes but correct entry-fallthrough image has 816; fixed in 8fb7eb3. The next alias test was discovered while still intentionally red. That draft was isolated and the stable tree requeued for all gates.",
+    "test262": "Addition A1 remains two post-entry timeouts, unchanged classifications; not proof of completed outcome equivalence."
+  },
+  "wholeSuiteProjection": "No whole-suite time is extrapolated from this self-build or operation benchmark."
+}

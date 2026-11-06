@@ -1,0 +1,199 @@
+/Users/stephenbelanger/.t3/tint-slots/slot:21: no matches found: /Users/stephenbelanger/.t3/tint-slots/selfbuild-perf/slot-*/cmd
+[slot] waiting for selfbuild-perf slot (max 1) for 0s; holders: 
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild-perf/slot-1 after 2s
+2026-11-06T20:09:01.686Z [Test262] selection="native inline union and control flow selfbuild" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T20:09:01.702Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+debugger session=/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) command script import /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/p_capture_report_v1.py
+(lldb) script bp=lldb.debugger.GetSelectedTarget().BreakpointCreateByRegex("program:packages/compiler/src/cli.ts:report "); assert bp.GetNumLocations()>0; bp.SetScriptCallbackFunction("p_capture_report_v1.capture")
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/stage1\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v2/source\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/stage2\",\"--debug-symbols\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-AgwIEn/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+34
+(lldb) continue
+{"utc": "2026-11-06T20:09:06Z", "cpuSecondsLowerBound": 0.00059375}
+native report: {"utc": "2026-11-06T20:09:06Z", "address": 4350731776, "message": "sources"}
+native report: {"utc": "2026-11-06T20:09:06Z", "address": 4350647104, "message": "parse"}
+2026-11-06T20:09:31.875Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=30173ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T20:09:42Z", "cpuSecondsLowerBound": 3.4570332083333333}
+native report: {"utc": "2026-11-06T20:09:56Z", "address": 4350642608, "message": "allocator"}
+native report: {"utc": "2026-11-06T20:09:57Z", "address": 4350589456, "message": "runtime"}
+2026-11-06T20:10:01.877Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=60175ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+native report: {"utc": "2026-11-06T20:10:12Z", "address": 4350643888, "message": "program"}
+{"utc": "2026-11-06T20:10:14Z", "cpuSecondsLowerBound": 17.26952625}
+2026-11-06T20:10:31.878Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=90176ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T20:10:47Z", "cpuSecondsLowerBound": 28.13372604166667}
+2026-11-06T20:11:01.882Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=120180ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T20:11:19Z", "cpuSecondsLowerBound": 43.620628625}
+2026-11-06T20:11:31.884Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=150182ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:11:51Z", "cpuSecondsLowerBound": 63.54698208333333}
+2026-11-06T20:12:01.885Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=180183ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:12:22Z", "cpuSecondsLowerBound": 85.818557875}
+2026-11-06T20:12:31.889Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=210187ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:12:53Z", "cpuSecondsLowerBound": 113.68624370833332}
+2026-11-06T20:13:01.892Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=240190ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:13:25Z", "cpuSecondsLowerBound": 132.98987958333333}
+2026-11-06T20:13:31.897Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=270195ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:13:56Z", "cpuSecondsLowerBound": 152.73423029166665}
+2026-11-06T20:14:01.899Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=300197ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:14:28Z", "cpuSecondsLowerBound": 179.39464425}
+2026-11-06T20:14:31.900Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=330198ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:14:59Z", "cpuSecondsLowerBound": 210.22023025}
+2026-11-06T20:15:01.901Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=360199ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:15:30Z", "cpuSecondsLowerBound": 240.92355754166667}
+2026-11-06T20:15:31.902Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=390200ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:16:01Z", "cpuSecondsLowerBound": 266.50533120833336}
+2026-11-06T20:16:01.903Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=420201ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+2026-11-06T20:16:31.906Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=450204ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:16:33Z", "cpuSecondsLowerBound": 292.477054375}
+2026-11-06T20:17:01.907Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=480205ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:17:04Z", "cpuSecondsLowerBound": 317.60303758333333}
+2026-11-06T20:17:31.909Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=510207ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:17:35Z", "cpuSecondsLowerBound": 339.733011375}
+2026-11-06T20:18:01.913Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=540211ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:18:07Z", "cpuSecondsLowerBound": 364.4455869583333}
+2026-11-06T20:18:31.916Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=570214ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:18:38Z", "cpuSecondsLowerBound": 391.68004}
+2026-11-06T20:19:01.920Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=600218ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:19:09Z", "cpuSecondsLowerBound": 420.854993625}
+2026-11-06T20:19:31.922Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=630220ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:19:40Z", "cpuSecondsLowerBound": 449.880898}
+2026-11-06T20:20:01.922Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=660220ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:20:11Z", "cpuSecondsLowerBound": 479.11721225}
+2026-11-06T20:20:31.922Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=690220ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:20:43Z", "cpuSecondsLowerBound": 505.132591}
+2026-11-06T20:21:01.924Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=720222ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:21:14Z", "cpuSecondsLowerBound": 530.5179245}
+2026-11-06T20:21:31.933Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=750231ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:21:46Z", "cpuSecondsLowerBound": 554.3767435416667}
+2026-11-06T20:22:01.937Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=780235ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:22:18Z", "cpuSecondsLowerBound": 574.2233294166666}
+2026-11-06T20:22:31.938Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=810236ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:22:50Z", "cpuSecondsLowerBound": 590.5986840416666}
+2026-11-06T20:23:01.950Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=840248ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:23:23Z", "cpuSecondsLowerBound": 610.7816699166666}
+2026-11-06T20:23:31.953Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=870251ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:23:55Z", "cpuSecondsLowerBound": 640.1869089166667}
+2026-11-06T20:24:01.956Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=900254ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:24:27Z", "cpuSecondsLowerBound": 670.2435866666666}
+2026-11-06T20:24:31.958Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=930256ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:24:59Z", "cpuSecondsLowerBound": 699.935773625}
+2026-11-06T20:25:01.959Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=960257ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:25:31Z", "cpuSecondsLowerBound": 724.403259}
+2026-11-06T20:25:31.963Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=990261ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+2026-11-06T20:26:01.963Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1020261ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:26:03Z", "cpuSecondsLowerBound": 746.591638}
+2026-11-06T20:26:31.965Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1050263ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:26:35Z", "cpuSecondsLowerBound": 769.9151004166666}
+2026-11-06T20:27:01.970Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1080268ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:27:06Z", "cpuSecondsLowerBound": 792.5331295416667}
+2026-11-06T20:27:31.978Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1110276ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:27:37Z", "cpuSecondsLowerBound": 811.0315187916666}
+2026-11-06T20:28:01.980Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1140278ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:28:09Z", "cpuSecondsLowerBound": 834.8430509166666}
+2026-11-06T20:28:31.981Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1170279ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:28:40Z", "cpuSecondsLowerBound": 863.1296649583334}
+2026-11-06T20:29:01.982Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1200280ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:29:11Z", "cpuSecondsLowerBound": 891.6209330833334}
+2026-11-06T20:29:31.985Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1230283ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:29:42Z", "cpuSecondsLowerBound": 920.9043559583333}
+2026-11-06T20:30:01.987Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1260285ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:30:14Z", "cpuSecondsLowerBound": 950.2150875833333}
+2026-11-06T20:30:31.988Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1290286ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:30:45Z", "cpuSecondsLowerBound": 979.38056}
+2026-11-06T20:31:01.990Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1320288ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:31:16Z", "cpuSecondsLowerBound": 1000.9709077083334}
+2026-11-06T20:31:31.996Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1350294ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:31:48Z", "cpuSecondsLowerBound": 1024.1766702916666}
+2026-11-06T20:32:01.997Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1380295ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:32:20Z", "cpuSecondsLowerBound": 1039.4990935833334}
+2026-11-06T20:32:32.000Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1410298ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:32:53Z", "cpuSecondsLowerBound": 1059.493750625}
+2026-11-06T20:33:02.002Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1440300ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:33:25Z", "cpuSecondsLowerBound": 1079.420877125}
+2026-11-06T20:33:32.004Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1470302ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:33:57Z", "cpuSecondsLowerBound": 1097.5705924166666}
+2026-11-06T20:34:02.007Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1500305ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:34:30Z", "cpuSecondsLowerBound": 1116.3621833333332}
+2026-11-06T20:34:32.012Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1530310ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+2026-11-06T20:35:02.015Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1560313ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:35:02Z", "cpuSecondsLowerBound": 1136.9946265}
+2026-11-06T20:35:32.017Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1590315ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:35:34Z", "cpuSecondsLowerBound": 1161.975663375}
+2026-11-06T20:36:02.020Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1620318ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:36:06Z", "cpuSecondsLowerBound": 1186.0513234583332}
+2026-11-06T20:36:32.022Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1650320ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:36:38Z", "cpuSecondsLowerBound": 1211.0203749583332}
+2026-11-06T20:37:02.024Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1680322ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:37:09Z", "cpuSecondsLowerBound": 1235.5877349166667}
+2026-11-06T20:37:32.027Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1710325ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:37:41Z", "cpuSecondsLowerBound": 1255.524183375}
+2026-11-06T20:38:02.028Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1740326ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:38:12Z", "cpuSecondsLowerBound": 1276.2680722083333}
+2026-11-06T20:38:32.029Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1770327ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:38:44Z", "cpuSecondsLowerBound": 1296.93904725}
+2026-11-06T20:39:02.031Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1800329ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:39:15Z", "cpuSecondsLowerBound": 1318.266137125}
+2026-11-06T20:39:32.033Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1830331ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:39:46Z", "cpuSecondsLowerBound": 1344.821906875}
+2026-11-06T20:40:02.034Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1860332ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:40:17Z", "cpuSecondsLowerBound": 1374.8567265416668}
+2026-11-06T20:40:32.036Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1890334ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:40:48Z", "cpuSecondsLowerBound": 1405.3482005833332}
+2026-11-06T20:41:02.037Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1920335ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:41:20Z", "cpuSecondsLowerBound": 1435.0078569166667}
+2026-11-06T20:41:32.041Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1950339ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:41:51Z", "cpuSecondsLowerBound": 1465.0189949583332}
+2026-11-06T20:42:02.042Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=1980340ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:42:23Z", "cpuSecondsLowerBound": 1495.5986975416668}
+2026-11-06T20:42:32.043Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2010341ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:42:55Z", "cpuSecondsLowerBound": 1526.714304375}
+2026-11-06T20:43:02.046Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2040344ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:43:27Z", "cpuSecondsLowerBound": 1556.506929625}
+2026-11-06T20:43:32.048Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2070346ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:43:59Z", "cpuSecondsLowerBound": 1586.9512135416667}
+2026-11-06T20:44:02.051Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2100349ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:44:31Z", "cpuSecondsLowerBound": 1618.3313442916667}
+2026-11-06T20:44:32.053Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2130351ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+2026-11-06T20:45:02.056Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2160354ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:45:04Z", "cpuSecondsLowerBound": 1648.2479719166668}
+2026-11-06T20:45:32.058Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2190356ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:45:35Z", "cpuSecondsLowerBound": 1676.3807299583332}
+2026-11-06T20:46:02.060Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2220358ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:46:10Z", "cpuSecondsLowerBound": 1685.1925950416667}
+2026-11-06T20:46:32.061Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2250359ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:46:42Z", "cpuSecondsLowerBound": 1707.4920592083333}
+2026-11-06T20:47:02.062Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2280360ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:47:14Z", "cpuSecondsLowerBound": 1723.3926429583332}
+2026-11-06T20:47:32.064Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2310362ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:47:46Z", "cpuSecondsLowerBound": 1737.9393968333331}
+2026-11-06T20:48:02.081Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2340379ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:48:18Z", "cpuSecondsLowerBound": 1751.820371375}
+2026-11-06T20:48:32.082Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2370380ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:48:50Z", "cpuSecondsLowerBound": 1767.65721625}
+2026-11-06T20:49:02.085Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2400383ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+{"utc": "2026-11-06T20:49:22Z", "cpuSecondsLowerBound": 1785.5753645833333}
+2026-11-06T20:49:32.091Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2430389ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+native report: {"utc": "2026-11-06T20:49:36Z", "address": 4350644016, "message": "startup"}
+native report: {"utc": "2026-11-06T20:49:36Z", "address": 4350644064, "message": "image"}
+{"utc": "2026-11-06T20:49:54Z", "cpuSecondsLowerBound": 1806.4221168333333}
+2026-11-06T20:50:02.095Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=2460393ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=83075 child/inferior=83094,83095,83208,83209
+native report: {"utc": "2026-11-06T20:50:17Z", "address": 20507186528, "message": "wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/stage2 (69932802 bytes)"}
+Process 83209 resuming
+Process 83209 exited with status = 0 (0x00000000)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/final.json",'w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); p.Kill() if p.GetState()!=lldb.eStateExited else None
+36
+{"pid": 83209, "timebase": {"numer": 125, "denom": 3}, "lastCPU": {"userTicks": 43126930073, "systemTicks": 548454485}, "cpuMsLowerBound": 1819807.6899166668, "finalUnobservedWallBoundMs": 103.207417, "probes": 23317, "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."}
+2026-11-06T20:50:17.335Z [Test262] selection="native inline union and control flow selfbuild" phase="comparing stage images and verifying DWARF" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v3/stage2:	file format Mach-O arm64
+Verifying .debug_abbrev...
+Verifying .debug_info Unit Header Chain...
+Verifying .debug_types Unit Header Chain...
+Verifying non-dwo Units...
+Verifying unit: 1 / 1, "packages/native-runtime/src/allocators/region/index.ts"
+Verifying dwo Units...
+Verifying .debug_line...
+Verifying .debug_str_offsets...
+No errors.
