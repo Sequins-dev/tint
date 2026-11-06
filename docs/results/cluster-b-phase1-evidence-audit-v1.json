@@ -121,6 +121,78 @@
       },
       "report": "docs/results/test262-operator-multiplication-current-v4.json",
       "nonPasses": []
+    },
+    {
+      "selection": "language/expressions/division",
+      "totals": {
+        "total": 89,
+        "passed": 87,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9775280898876404
+      },
+      "report": "docs/results/test262-operator-division-resumed-v1.json",
+      "nonPasses": [
+        {
+          "path": "language/expressions/division/S11.5.2_A1.js",
+          "sha256": "609f9978297934e0973361203ade223e851dda163dbdf52ee8ee800007561ac4",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: ')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-tTUJTr/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8pmB1c/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 35981 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010baf49c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10baf49c0 <+0>:  mov    x0, sp\n    0x10baf49c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10baf49c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10baf49cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=35981)>         Process::ShouldBroadcastEvent (0x90adf8960) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=35981)>         Process::HandlePrivateEvent (pid = 35981) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=35981)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=35981)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=35981)>         Process::ShouldBroadcastEvent (0x90adf8960) Restarting process from state: stopped\n<lldb.process.internal-state(pid=35981)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=35981)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=35981)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=35981)>         Process::ShouldBroadcastEvent (0x90adf8960) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=35981)>         Process::HandlePrivateEvent (pid = 35981) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=35981)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=35981)>         Process::ShouldBroadcastEvent (0x90adf8be0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=35981)>         Process::HandlePrivateEvent (pid = 35981) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=35981)>         timeout = <infinite>, event_sp)...\n\nRemote packets: itForResponse () got packet: T05thread:f03fa1;threads:f03fa1;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:7007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:5195b545e3050000;17:480435f401000000;18:0000000000000000;19:c02b156f01000000;1a:2034156f01000000;1b:1800000000000000;1c:98e4dce302000000;1d:702b156f01000000;1e:ac74818701000000;1f:302a156f01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16f152b70=402c156f01000000807c818701000000;memory:0x16f152c40=4036156f010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 35981) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=35981)>         <  22> send packet: $pd6;thread:f03fa1;#f3\n<lldb.process.internal-state(pid=35981)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=35981)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=35981)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=35981)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=35981)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 35981) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 35981) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+          },
+          "status": "timeout",
+          "elapsedMs": 510755.023333,
+          "batch": 1
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A1.js",
+          "sha256": "609f9978297934e0973361203ade223e851dda163dbdf52ee8ee800007561ac4",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: ')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-tTUJTr/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-KqjTYd/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 45111 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010be549c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10be549c0 <+0>:  mov    x0, sp\n    0x10be549c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10be549c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10be549cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=45111)>         Process::ShouldBroadcastEvent (0x9086ebac0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=45111)>         Process::HandlePrivateEvent (pid = 45111) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=45111)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=45111)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=45111)>         Process::ShouldBroadcastEvent (0x9086ebac0) Restarting process from state: stopped\n<lldb.process.internal-state(pid=45111)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=45111)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=45111)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=45111)>         Process::ShouldBroadcastEvent (0x9086ebac0) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=45111)>         Process::HandlePrivateEvent (pid = 45111) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=45111)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=45111)>         Process::ShouldBroadcastEvent (0x9086ebe80) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=45111)>         Process::HandlePrivateEvent (pid = 45111) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=45111)>         timeout = <infinite>, event_sp)...\n\nRemote packets: itForResponse () got packet: T05thread:f0bb28;threads:f0bb28;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:7007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:77d664f0e4050000;17:480435f401000000;18:0000000000000000;19:c0ebf36e01000000;1a:20f4f36e01000000;1b:1800000000000000;1c:98e4dce302000000;1d:70ebf36e01000000;1e:ac74818701000000;1f:30eaf36e01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16ef3eb70=40ecf36e01000000807c818701000000;memory:0x16ef3ec40=40f6f36e010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 45111) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=45111)>         <  22> send packet: $pd6;thread:f0bb28;#f6\n<lldb.process.internal-state(pid=45111)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=45111)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=45111)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=45111)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=45111)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 45111) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 45111) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+          },
+          "status": "timeout",
+          "elapsedMs": 810771.858291,
+          "batch": 1
+        }
+      ]
     }
   ],
   "interruptionReport": "docs/results/operator-v5-direct-handoff-v1.json",
@@ -143,8 +215,13 @@
     },
     {
       "selection": "language/expressions/division",
-      "classification": "interrupted before first variant",
-      "blocker": "Obsolete controller waited on rotation for about 50 minutes; safely stopped. Resume its schema-2 journal with the same frozen runner and identity in Phase 2."
+      "path": "S11.5.2_A1.js",
+      "variants": [
+        "sloppy",
+        "strict"
+      ],
+      "classification": "two timeouts after confirmed initial stop",
+      "blocker": "Ten whitespace-variation eval calls in each variant did not finish within the unchanged 300-second budget. Root cause not established; requires a separate frozen-image LLDB diagnostic in Phase 2. All other 87 variants pass."
     }
   ],
   "inheritedUncommittedFiles": "Primary and secondary git status initially clean; no inherited tracked edits or untracked files to discard. Ignored bootstrap artifacts retained; interrupted journal and controller log copied into immutable tracked evidence.",
@@ -189,6 +266,11 @@
         "passed": 4456,
         "failed": 0
       }
+    },
+    {
+      "command": "TINT_TEST262_RESUME=1 <same frozen Node24 runner> <pinned checkout> language/expressions/division 64 (original sources/modules/direct debugger/trace/300000ms policy; no pause flag)",
+      "exitStatus": 0,
+      "note": "Runner completed its report; 87 passes and 2 timeouts remain in the denominator."
     }
   ],
   "validationArtifacts": [
@@ -204,5 +286,28 @@
       "path": "docs/results/cluster-b-phase1-check-node24-v2.log",
       "sha256": "7d8583c8ecd28d7777306422c4033e0397b78292de8314925365ac19d488f32e"
     }
-  ]
+  ],
+  "resumedInheritedDivision": {
+    "reason": "Coordinator follow-up requested direct revival of parked inherited work.",
+    "runExitStatus": 0,
+    "journalComplete": true,
+    "journal": "docs/results/test262-operator-division-resumed-v1.jsonl",
+    "originalInterruptionPrefix": "docs/results/operator-v5-interrupted-journal.jsonl",
+    "resumeEvents": {
+      "restoredVariants": 0,
+      "events": [
+        {
+          "kind": "resume",
+          "startedAt": "2026-11-06T15:26:53.835Z",
+          "previousJournalSha256": "f62bbb0e7d1c3161463ec5fdc3922cb82b9abb53cd40d52f583695fa6c0ceba8",
+          "observedVariants": 0
+        }
+      ]
+    },
+    "nativeResourcePolicyChanged": false,
+    "frozenIdentityVerified": true,
+    "obsoleteLocalPauseAndAckRemoved": true
+  },
+  "processesStillRunning": [],
+  "completedAt": "2026-11-06T15:51:16.647268+00:00"
 }
