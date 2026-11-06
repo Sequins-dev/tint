@@ -1,0 +1,18 @@
+✔ module discovery terminates cycles and retains sorted unique siblings (21.026375ms)
+✔ self-import preserves the root file's byte hash (1.009708ms)
+✔ discovery includes comment paths but does not invent missing fixtures (2.053125ms)
+✔ discovery ignores non-sibling paths and special host specifiers (0.828167ms)
+✔ JSON fixtures are edgeless even when their strings name other siblings (1.104875ms)
+✔ unparsed fixtures retain their source and contribute literal edges without a syntax verdict (1.303208ms)
+✔ static requests use decoded specifiers and fixture changes update their own hashes (1.977709ms)
+✔ pinned module fixtures include resolution errors, computed imports and sibling tests (6.069667ms)
+✔ discovery records only absent single-segment sibling literals (0.814958ms)
+✔ Script self-import is retained as a module fixture with original bytes (0.611041ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 105.353959

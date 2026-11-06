@@ -32,3 +32,5 @@ Both worktrees had clean git status at inheritance. There were no inherited unco
 ## Validation
 
 Validation results are recorded in [the evidence audit](cluster-b-phase1-evidence-audit-v1.json). Native results were harvested and audited, not rerun. There are no compiler/runtime implementation changes; this branch adds semantic tests, a native probe tool and run evidence, so no new compiler self-build is required.
+
+Pinned Node 24.12.0 `pnpm check` v2 exited **0**: typecheck, all **4,456/4,456** tests, boundaries and formatting passed. The first pinned check exited **1** for the missing local corpus path; its [log](cluster-b-phase1-check-node24-v1.log) is retained. After adding the ignored worktree symlink, [all 10 module-graph tests](cluster-b-phase1-module-graph-check-v1.log) passed (exit **0**) and the [full rerun](cluster-b-phase1-check-node24-v2.log) passed. The redundant unsupported Node 26 run was terminated (exit **143**), not accepted. `git diff --check` exited **0**.

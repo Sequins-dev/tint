@@ -147,5 +147,62 @@
       "blocker": "Obsolete controller waited on rotation for about 50 minutes; safely stopped. Resume its schema-2 journal with the same frozen runner and identity in Phase 2."
     }
   ],
-  "inheritedUncommittedFiles": "Primary and secondary git status initially clean; no inherited tracked edits or untracked files to discard. Ignored bootstrap artifacts retained; interrupted journal and controller log copied into immutable tracked evidence."
+  "inheritedUncommittedFiles": "Primary and secondary git status initially clean; no inherited tracked edits or untracked files to discard. Ignored bootstrap artifacts retained; interrupted journal and controller log copied into immutable tracked evidence.",
+  "validation": [
+    {
+      "command": "pnpm check (host Node 26)",
+      "exitStatus": 143,
+      "disposition": "Redundant run on unsupported host Node terminated; no inferiors/debuggers in its checked process tree. Not acceptance."
+    },
+    {
+      "command": "PATH=<Node 24.12.0>/bin:$PATH pnpm check (v1)",
+      "exitStatus": 1,
+      "tests": {
+        "total": 4456,
+        "passed": 4455,
+        "failed": 1
+      },
+      "failure": "ENOENT .tint-bootstrap/test262/test/language/module-code/instn-resolve-order-src.js",
+      "cause": "Assigned worktree lacked its local pinned-corpus path.",
+      "correction": "Local ignored .tint-bootstrap/test262 symlink to unchanged coordinator pinned checkout; no source changes."
+    },
+    {
+      "command": "<Node 24.12.0>/bin/node --test tools/test262-module-graph.test.ts",
+      "exitStatus": 0,
+      "tests": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0
+      }
+    },
+    {
+      "command": "PATH=<Node 24.12.0>/bin:$PATH pnpm check (v2)",
+      "exitStatus": 0,
+      "constituents": {
+        "typecheck": 0,
+        "test": 0,
+        "boundaries": 0,
+        "formatCheck": 0
+      },
+      "tests": {
+        "total": 4456,
+        "passed": 4456,
+        "failed": 0
+      }
+    }
+  ],
+  "validationArtifacts": [
+    {
+      "path": "docs/results/cluster-b-phase1-check-node24-v1.log",
+      "sha256": "a6cda3f5ccd50c6f451626f60b28a5f570d73b56573424261fa472fbaae15d8d"
+    },
+    {
+      "path": "docs/results/cluster-b-phase1-module-graph-check-v1.log",
+      "sha256": "6963730aabdf61b1cadfe647d6c039cd8b727550450f4565d1ac2c46b0999b26"
+    },
+    {
+      "path": "docs/results/cluster-b-phase1-check-node24-v2.log",
+      "sha256": "7d8583c8ecd28d7777306422c4033e0397b78292de8314925365ac19d488f32e"
+    }
+  ]
 }
