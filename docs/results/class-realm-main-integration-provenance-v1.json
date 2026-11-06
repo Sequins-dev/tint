@@ -1,0 +1,42 @@
+{
+  "kind": "native-evidence-integration-provenance",
+  "conformance": false,
+  "change": "Base-class [[Construct]] performs OrdinaryCreateFromConstructor in the caller context (packages/js-runtime/src/objects/classes.ts)",
+  "evidenceSourceSnapshot": {
+    "sha256": "08b02d1c42927382cf9995053a115388b3542164ec4396934e664c2d3877eaf7",
+    "files": 568
+  },
+  "evidence": [
+    "docs/results/class-realm-bootstrap-graph-node-v1.json",
+    "docs/results/native-class-construction-realm-validation-v3.json",
+    "docs/results/frozen-node-toolchain-class-realm-v1.json",
+    "docs/results/class-realm-native-v7.json",
+    "docs/results/class-realm-native-grant-reconciliation-v1.json"
+  ],
+  "integratedSourceSnapshot": {
+    "sha256": "2e899ef5cedd34b7cb2efd8f0f45c38f28f2a8b220b0f0b999e8571833fa0c4f",
+    "files": 568
+  },
+  "sourceDifferences": [
+    {
+      "file": "packages/js-engine/src/lowering/index.ts",
+      "origin": "main: read-modify-write key conversion and direct-eval Annex B copy",
+      "evidence": [
+        "docs/results/annexb-eval-copy-arguments-scope-validation-v2.json",
+        "docs/results/annexb-eval-copy-direct-eval-annex-validation-v2.json"
+      ]
+    },
+    {
+      "file": "packages/js-runtime/src/objects/promises.ts",
+      "origin": "main: Promise job realm",
+      "evidence": ["docs/results/promise-jobs-native-validation-v3.json"]
+    },
+    {
+      "file": "packages/js-runtime/src/objects/promise-intrinsics.ts",
+      "origin": "main: Promise.try",
+      "evidence": ["docs/results/promise-try-native-validation-v1.json"]
+    }
+  ],
+  "workspaceGate": "pnpm check passed 4441/4441 tests, boundaries and formatting on the integrated source before merging into main",
+  "scope": "The class-realm native fixture and its 331 Test262 variants executed images built from snapshot 08b02d1c, not from the integrated snapshot. Each listed difference was validated natively on its own snapshot. The combined image has workspace tests but no native rerun; its results are not relabelled as the integrated snapshot."
+}
