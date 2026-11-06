@@ -1,6 +1,6 @@
 /** Await Dictionary proposal, https://tc39.es/proposal-await-dictionary/.
  * Bespoke semantic regressions shared with native fixtures, not Test262 results. */
-const check = `function check(a,b){if(a!==b)throw new Error(String(a)+" !== "+String(b));}`;
+const check = `function check(a,b){if(a!==b)throw new Error(String(a)+" !== "+String(b));}function unexpectedRejection(reason){$DONE(new Error("unexpected rejection: "+String(reason)));}`;
 export const promiseKeyedCases: readonly { name: string; source: string }[] = [
   {
     name: "static method descriptors",
@@ -12,7 +12,7 @@ $DONE();`,
     name: "null prototype, symbols and safe proto key",
     source: `
 var s=Symbol();var input={a:Promise.resolve(3),[s]:4};Object.defineProperty(input,'__proto__',{value:5,enumerable:true});
-Promise.allKeyed(input).then(function(o){check(Object.getPrototypeOf(o),null);check(o.a,3);check(o[s],4);check(o.__proto__,5);check(Reflect.ownKeys(o).length,3);var d=Object.getOwnPropertyDescriptor(o,'a');check(d.writable&&d.enumerable&&d.configurable,true);$DONE();},$DONE);`,
+Promise.allKeyed(input).then(function(o){check(Object.getPrototypeOf(o),null);check(o.a,3);check(o[s],4);check(o.__proto__,5);check(Reflect.ownKeys(o).length,3);var d=Object.getOwnPropertyDescriptor(o,'a');check(d.writable&&d.enumerable&&d.configurable,true);$DONE();},unexpectedRejection);`,
   },
   {
     name: "settled records and opposite callbacks share guard",
@@ -24,7 +24,7 @@ Promise.allSettledKeyed.call(C,{x:7,y:8});check(Object.getPrototypeOf(result),nu
     name: "snapshot keys but recheck descriptors before values",
     source: `
 var log=[];var target={a:1,b:2,c:3};var input=new Proxy(target,{ownKeys:function(t){log.push('keys');return ['a','b','c'];},getOwnPropertyDescriptor:function(t,k){log.push('desc:'+k);return Reflect.getOwnPropertyDescriptor(t,k);},get:function(t,k){log.push('get:'+k);delete t.b;Object.defineProperty(t,'c',{enumerable:false});t.d=4;return t[k];}});
-Promise.allKeyed(input).then(function(o){check(log.join(),'keys,desc:a,get:a,desc:b,desc:c');check(Object.keys(o).join(),'a');check(o.a,1);$DONE();},$DONE);`,
+Promise.allKeyed(input).then(function(o){check(log.join(),'keys,desc:a,get:a,desc:b,desc:c');check(Object.keys(o).join(),'a');check(o.a,1);$DONE();},unexpectedRejection);`,
   },
   {
     name: "get resolve once before own keys and validate input",
@@ -35,7 +35,7 @@ $DONE();`,
   {
     name: "empty inputs skip inherited and non-enumerable getters",
     source: `
-var a=Object.create({get bad(){throw 1}});Object.defineProperty(a,'x',{get:function(){throw 9}});Promise.allKeyed(a).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);return Promise.allSettledKeyed({})}).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);$DONE();},$DONE);`,
+var a=Object.create({get bad(){throw 1}});Object.defineProperty(a,'x',{get:function(){throw 9}});Promise.allKeyed(a).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);return Promise.allSettledKeyed({})}).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);$DONE();},unexpectedRejection);`,
   },
   {
     name: "synchronous callbacks cannot complete before enumeration ends",
@@ -63,7 +63,7 @@ $DONE();`,
   {
     name: "ordinary promises settle in input order",
     source: `
-var resolve;var slow=new Promise(function(r){resolve=r});Promise.allSettledKeyed({a:slow,b:Promise.reject(8),c:3}).then(function(o){check(Object.keys(o).join(),'a,b,c');check(o.a.value,7);check(o.b.reason,8);check(o.c.status,'fulfilled');$DONE();},$DONE);resolve(7);`,
+var resolve;var slow=new Promise(function(r){resolve=r});Promise.allSettledKeyed({a:slow,b:Promise.reject(8),c:3}).then(function(o){check(Object.keys(o).join(),'a,b,c');check(o.a.value,7);check(o.b.reason,8);check(o.c.status,'fulfilled');$DONE();},unexpectedRejection);resolve(7);`,
   },
   {
     name: "invalid constructors throw before reading resolve",

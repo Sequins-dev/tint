@@ -1,0 +1,17 @@
+{
+  "kind": "promise-keyed-strengthened-validation",
+  "conformance": false,
+  "native": "docs/results/native-promise-keyed-validation-v3.json",
+  "nativePassed": 12,
+  "nativeTotal": 12,
+  "workspaceCheck": {
+    "exitStatus": 0,
+    "log": "docs/results/promise-keyed-workspace-check-slotted-v6.log"
+  },
+  "fixtureRefinement": "Unexpected rejection including undefined always fails instead of satisfying $DONE(undefined).",
+  "fixtureBuildStall": "Worker heartbeat flags long synchronous compilation; sampled active Node compiler, with no inferior or pause wait. Build finished successfully.",
+  "selfBuild": "docs/results/bootstrap-promise-keyed-v2.json",
+  "selfBuildAccepted": false,
+  "selfBuildOutcome": "3600000ms containment expired after confirmed native entry and continued ARM64 emission. No stage2 image or final native outcome.",
+  "nextStep": "Fresh frozen self-build recheck singly through selfbuild slot limiter with a longer containment budget; preserve both saturated-host timeouts."
+}

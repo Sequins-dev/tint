@@ -1,0 +1,192 @@
+{
+  "kind": "native-promise-keyed-bespoke-fixture",
+  "conformance": false,
+  "accepted": true,
+  "fixture": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+      "files": 568
+    },
+    "imageSha256": "a2e6dd8f2db610d5ce1178f57b9cb0f10f3b1359c7003cc722be380c555669e9",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){var d=Object.getOwnPropertyDescriptor(Promise,n);check(d.writable,true);check(d.enumerable,false);check(d.configurable,true);check(d.value.length,1);check(d.value.name,n);check(Object.getPrototypeOf(d.value),Function.prototype);check(d.value.hasOwnProperty('prototype'),false);}\n$DONE();",
+        "sha256": "e94a39fcbb0e52d4584a248659421897436aed38c5a6141fca948b77771fcd44"
+      },
+      {
+        "index": 1,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar s=Symbol();var input={a:Promise.resolve(3),[s]:4};Object.defineProperty(input,'__proto__',{value:5,enumerable:true});\nPromise.allKeyed(input).then(function(o){check(Object.getPrototypeOf(o),null);check(o.a,3);check(o[s],4);check(o.__proto__,5);check(Reflect.ownKeys(o).length,3);var d=Object.getOwnPropertyDescriptor(o,'a');check(d.writable&&d.enumerable&&d.configurable,true);$DONE();},unexpectedRejection);",
+        "sha256": "bf09dc59fe9294ca16d829cbd9bc1ce1450f31b17f1da85c2acebd8ee0b3a8e0"
+      },
+      {
+        "index": 2,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar result;function C(e){e(function(v){result=v},function(e){throw e})}C.resolve=function(v){return {then:function(f,r){r(v);f(99);r(100)}}};\nPromise.allSettledKeyed.call(C,{x:7,y:8});check(Object.getPrototypeOf(result),null);check(result.x.status,'rejected');check(result.x.reason,7);check(result.y.reason,8);check(Object.getPrototypeOf(result.x),Object.prototype);check(Object.keys(result.x).join(),'status,reason');$DONE();",
+        "sha256": "4efdf619c88acf8f8d7720a05cf6fa93f059df44073e3348d87a422c895f4ee7"
+      },
+      {
+        "index": 3,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar log=[];var target={a:1,b:2,c:3};var input=new Proxy(target,{ownKeys:function(t){log.push('keys');return ['a','b','c'];},getOwnPropertyDescriptor:function(t,k){log.push('desc:'+k);return Reflect.getOwnPropertyDescriptor(t,k);},get:function(t,k){log.push('get:'+k);delete t.b;Object.defineProperty(t,'c',{enumerable:false});t.d=4;return t[k];}});\nPromise.allKeyed(input).then(function(o){check(log.join(),'keys,desc:a,get:a,desc:b,desc:c');check(Object.keys(o).join(),'a');check(o.a,1);$DONE();},unexpectedRejection);",
+        "sha256": "c2fcb5b8d4f30b37497554565495ee0e0eace768a535b4577370b1f290aec082"
+      },
+      {
+        "index": 4,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){var log=[];function C(e){log.push('construct');e(function(){log.push('done')},function(){log.push('reject')})}Object.defineProperty(C,'resolve',{get:function(){log.push('resolve');return function(v){log.push('call');return {then:function(f){f(v)}}}}});var o=new Proxy({x:1},{ownKeys:function(t){log.push('keys');return ['x']}});Promise[n].call(C,o);check(log.join(),'construct,resolve,keys,call,done');log=[];Promise[n].call(C,1);check(log.join(),'construct,resolve,reject');}\n$DONE();",
+        "sha256": "183af819f5eb75627f9e827dff1534400b9e19a8580e5352151976f32c5ce3da"
+      },
+      {
+        "index": 5,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar a=Object.create({get bad(){throw 1}});Object.defineProperty(a,'x',{get:function(){throw 9}});Promise.allKeyed(a).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);return Promise.allSettledKeyed({})}).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);$DONE();},unexpectedRejection);",
+        "sha256": "d7a5b2824f656c391d2b62bcabc3377854e3483baa7575026e93fb1b4f99c763"
+      },
+      {
+        "index": 6,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar log=[],result,first;function C(e){e(function(o){log.push('done');result=o},function(e){throw e})}C.resolve=function(v){return v};Promise.allKeyed.call(C,{a:{then:function(f){first=f}},b:{then:function(f){first(1);first(99);f(2);log.push('b')}},c:{then:function(f){f(3);log.push('c')}}});check(log.join(),'b,c,done');check(Object.keys(result).join(),'a,b,c');check(result.a,1);check(result.b,2);check(result.c,3);$DONE();",
+        "sha256": "b306e65f57f6919e6b4508b587254a15fe3e610c52c695ec1f90148d44ddce93"
+      },
+      {
+        "index": 7,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){var callback;function C(e){e(function(){return 42},function(e){throw e})}C.resolve=function(v){return {then:function(f){callback=f}}};Promise[n].call(C,{a:1});check(callback(7),42);check(callback(8),undefined);check(callback.length,1);check(callback.name,'');}\n$DONE();",
+        "sha256": "09976c28d63d9aeec86c4a4b84577c8d146abb966ab69eb2299f583ce1301352"
+      },
+      {
+        "index": 8,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reason;function C(e){e(function(){throw 17},function(e){reason=e})}C.resolve=function(v){return {then:function(f){f(v)}}};Promise[n].call(C,{a:1});check(reason,17);}\n$DONE();",
+        "sha256": "ef1948e45cffd1d9a0c7ebd12e888531b1e9466aa2a13b2cdd84e349d2a1861e"
+      },
+      {
+        "index": 9,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reasons=[];function C(e){e(function(){throw 'unexpected'},function(e){reasons.push(e)})}C.resolve=function(v){return v};var inputs=[new Proxy({},{ownKeys:function(){throw 1}}),new Proxy({x:1},{getOwnPropertyDescriptor:function(){throw 2}}),{get x(){throw 3}},{x:{get then(){throw 4}}},{x:{then:function(){throw 5}}},{x:{then:1}}];for(var input of inputs)Promise[n].call(C,input);check(reasons.slice(0,5).join(),'1,2,3,4,5');check(reasons[5] instanceof TypeError,true);}\n$DONE();",
+        "sha256": "a75f4cd9c7c227c5f6bd2bff4fcd687dcf9ab8205562c0c393d716273af47851"
+      },
+      {
+        "index": 10,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nvar resolve;var slow=new Promise(function(r){resolve=r});Promise.allSettledKeyed({a:slow,b:Promise.reject(8),c:3}).then(function(o){check(Object.keys(o).join(),'a,b,c');check(o.a.value,7);check(o.b.reason,8);check(o.c.status,'fulfilled');$DONE();},unexpectedRejection);resolve(7);",
+        "sha256": "dc8f5f1f75b0f47c41b8042c11ef56c2e0c3c27a13da61d428b3ef993cd47ef6"
+      },
+      {
+        "index": 11,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}function unexpectedRejection(reason){$DONE(new Error(\"unexpected rejection: \"+String(reason)));}\nfor(var n of ['allKeyed','allSettledKeyed']){check(typeof Promise[n],'function');for(var c of [undefined,null,1,{},()=>{}]){var thrown=false;try{Promise[n].call(c,{})}catch(e){check(e instanceof TypeError,true);thrown=true}check(thrown,true)}}$DONE();",
+        "sha256": "520e7dc02b8c5110826117fcec24c801f74ee5234e1d0d5fab3d2b261a6f0016"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "passed": 12,
+  "total": 12,
+  "buildExitStatus": 0,
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "resourcePolicy": "runner 10, one runner in cluster G",
+  "refinement": "Unexpected rejection, including undefined, explicitly reports failure; no false success through $DONE(undefined).",
+  "policy": "Each case executes under LLDB in a fresh process; helper verifies initial stopped state and final expected exit 42; no retries."
+}
