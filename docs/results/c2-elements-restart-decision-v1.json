@@ -1,0 +1,61 @@
+{
+  "observed": 999,
+  "population": 3156,
+  "fraction": 0.31653992395437264,
+  "observedCompletedBatches": 33,
+  "observedBatchCounts": {
+    "execution": 23,
+    "syntax": 10
+  },
+  "compileMedianSeconds": {
+    "syntax": 5.561645646000514,
+    "execution": 344.01261462500014
+  },
+  "compileRangesSeconds": {
+    "syntax": [3.845243499999866, 10.806463041999377],
+    "execution": [195.8769375, 955.8446376670003]
+  },
+  "executionSamples": {
+    "syntax": 96,
+    "execution": 903
+  },
+  "meanObservedExecutionSeconds": {
+    "syntax": 3.540468747417132,
+    "execution": 4.0083654481311175
+  },
+  "remainingFrozenBatchPlan": {
+    "execution": 43,
+    "syntax": 30
+  },
+  "fullMainBatchPlan": {
+    "syntax": 12,
+    "execution": 39
+  },
+  "remainingFrozenVariantKinds": {
+    "execution": 1529,
+    "syntax": 626,
+    "blocked": 2
+  },
+  "fullMainVariantKinds": {
+    "syntax": 722,
+    "execution": 2432,
+    "blocked": 2
+  },
+  "remainingFrozenSeconds": 23304.516004330624,
+  "fullMainSeconds": 25787.794923617057,
+  "method": "Model unchanged preparation blockers, batch cap64, old path order versus nativeSelectionOrder. Compilation uses observed median by kind; execution uses completed variant phase-transition intervals in stderr. No performance credit for connected launch fix, new module hash caching, or main beyond grouping; checker fix already exists in both. Includes re-execution of all3156 on main. Host load and remaining variant mix can change actual timings.",
+  "decision": "Continue existing frozen survey: full-main restart is not estimated to finish sooner, so coordinator conditional restart criterion is not met.",
+  "connectedLaunch": "Existing run uses debugserver-direct; 4514550 repairs connected LLDB launch. No measured acceleration over current direct launch credited.",
+  "checker": "Validated flow-fact fix is included in frozen-v9 and current branch. No additional speedup credited to restart.",
+  "threshold": "31.65 percent is below60percent, but restart remains conditioned on finishing sooner. Estimated restart exceeds remaining run by2483seconds.",
+  "observedExecution64CompileMedianSeconds": 432.55709625049985,
+  "observedExecution64CompileCount": 12,
+  "sensitivity": "Using median full64 compile time makes restart slower still. Broad observed compile ranges and variant-mix differences make both estimates uncertain; these are planning estimates, not guarantees.",
+  "inputPrefix": {
+    "path": "docs/results/c2-elements-restart-estimate-prefix-v1.jsonl",
+    "sha256": "9eba6800592626e989f6fe31f1f0ae2a670bb1cca7596d9daf924b1d7dc63bb1",
+    "bytes": 780798,
+    "observedVariants": 999,
+    "compilations": 33
+  }
+}

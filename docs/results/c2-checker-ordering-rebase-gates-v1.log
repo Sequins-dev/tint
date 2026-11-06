@@ -1,0 +1,19 @@
+
+> tint-workspace@ typecheck /Users/stephenbelanger/.t3/worktrees/tint/t3-83481162
+> pnpm build && tsc -p tsconfig.tests.json && tsc -p tsconfig.host.json
+
+
+> tint-workspace@ build /Users/stephenbelanger/.t3/worktrees/tint/t3-83481162
+> tsc -b
+
+
+> tint-workspace@ boundaries /Users/stephenbelanger/.t3/worktrees/tint/t3-83481162
+> node tools/check-boundaries.ts
+
+Verified public imports, dependency contracts and acyclic graph for 14 portable packages.
+
+> tint-workspace@ format:check /Users/stephenbelanger/.t3/worktrees/tint/t3-83481162
+> prettier --check packages tools types *.json pnpm-workspace.yaml
+
+Checking formatting...
+All matched files use Prettier code style!
