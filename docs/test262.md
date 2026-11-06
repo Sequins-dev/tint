@@ -159,6 +159,7 @@ with LLDB entry/exit containment and unchanged harnesses:
 | `language/directive-prologue` | 62/62 | [Report](results/test262-language-core-directive-prologue-v2.json) |
 | `language/comments` | 81/81 | [Report](results/test262-language-core-comments-v2.json) |
 | `language/computed-property-names` | 96/96 | [Report](results/test262-language-computed-property-names-direct-v3.json) |
+| `language/future-reserved-words` | 85/85 | [Report](results/test262-language-future-reserved-words-direct-v3.json) |
 
 The inherited [integrated-main controls](results/language-main-controls-interruption-v3.json) stopped at the coordinator-directed case boundary after four passing class-realm cases; 81 controls remain unexecuted. These bespoke cases are separate from native conformance and do not gate the already-validated frozen host used for the queued language selections.
 
