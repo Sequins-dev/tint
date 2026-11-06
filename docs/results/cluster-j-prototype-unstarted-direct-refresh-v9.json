@@ -1,0 +1,16 @@
+{
+  "kind": "cluster-j-unstarted-prototype-queue-refresh",
+  "at": "2026-11-06T22:50:33.728945+00:00",
+  "oldLaunch": ".tint-bootstrap/j-detached-prototype-v8.json",
+  "oldFrozenToolchain": ".tint-bootstrap/cluster-j-toolchain-v8",
+  "selection": "built-ins/RegExp/prototype",
+  "observations": 0,
+  "journalExisted": false,
+  "reason": "Coordinator requires direct debugger launch and current-main P codegen for the next selection. Old wrapper was still waiting, had no Node runner child or journal; only waiting wrapper and standalone observers stopped. No executing inferior interrupted.",
+  "oldProcesses": [
+    48659,
+    48661,
+    48663
+  ],
+  "next": "Rebase after current gate; freeze from main and queue direct-mode measurement. Existing native selfbuild remains alive and progressing."
+}

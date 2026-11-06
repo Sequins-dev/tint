@@ -1,0 +1,33 @@
+{
+  "pid": 57181,
+  "at": "2026-11-06T22:28:27.820721+00:00",
+  "base": "f74cb1e1a3fd2001b20057d7c06d954819d8042e",
+  "head": "86b0988f3f5afc2d7d72962ea7223f00e59ae681",
+  "sourceSnapshot": "4e9cf9167b2a8355ce4425c455b9d3a18d746ac86e3ce791f7b65f11e88c6547",
+  "purpose": "Post-rebase full gate including LLDB async connection-readiness fix. Explicit success exit file after fail-fast wrapper.",
+  "rebasesWhileQueued": [
+    {
+      "at": "2026-11-06T22:36:32.979505+00:00",
+      "fromBase": "089022a2aec0d8714aa72b3e5fc8fc521496054f",
+      "fromHead": "16906f2967dc2b073d9ce720069b30366c1907d1",
+      "reason": "Main advanced by docs-only cluster F evidence while wrapper is still waiting; command will gate current rebased worktree."
+    }
+  ],
+  "kind": "cluster-j-workspace-acceptance",
+  "timestamp": "2026-11-06T22:52:25.284574+00:00",
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "exitEvidence": ".tint-bootstrap/j-post-readiness-check-v10.exit",
+  "tests": 4564,
+  "passed": 4564,
+  "failed": 0,
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "log": "docs/results/cluster-j-workspace-check-v10.log",
+  "logSha256": "a17c71761c62c61e0b9d5806461b9dc4e69ffc7628e31134f1b0bbdc95c294bd",
+  "note": "Gate ran on a stable worktree. Main subsequently landed P codegen and numeric equality fixes; next gate will validate the merged sources."
+}
