@@ -11,7 +11,7 @@ import {
 } from "./temporal-time-zone.ts";
 import type { ISOTime } from "@tint/foundation/chrono/iso-date-time";
 import { temporalInteger } from "./temporal-coercion.ts";
-import { primitiveValue } from "./coercion.ts";
+import { primitiveValue, stringValue } from "./coercion.ts";
 import {
   getProperty,
   type ObjectHooks,
@@ -25,6 +25,8 @@ import {
 import type { ScriptPropertyKey } from "./symbols.ts";
 export interface TemporalDateFields {
   readonly present: boolean;
+  readonly era: string | undefined;
+  readonly eraYear: number | undefined;
   readonly offsetNanoseconds: number | undefined;
   readonly timeZone: TemporalTimeZone | undefined;
   readonly year: number | undefined;
@@ -42,6 +44,8 @@ export function mergeISODateFields(
 ): TemporalDateFields {
   return {
     present: fields.present,
+    era: fields.era,
+    eraYear: fields.eraYear,
     offsetNanoseconds: fields.offsetNanoseconds,
     timeZone: fields.timeZone,
     year: fields.year ?? date.year,
@@ -69,9 +73,17 @@ export function readTemporalDateFields(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   initialTime?: ISOTime,
+  calendar: string = "iso8601",
 ): TemporalDateFields {
+  // Gregorian and Japanese field preparation includes eras. Their calendar
+  // conversion remains a separate capability checked by each caller.
+  const eraFields = calendar === "gregory" || calendar === "japanese";
+  if (calendar !== "iso8601" && !eraFields)
+    return rejectUnsupportedExecution(realm);
   const names = [
     "day",
+    "era",
+    "eraYear",
     "hour",
     "microsecond",
     "millisecond",
@@ -84,7 +96,7 @@ export function readTemporalDateFields(
     "timeZone",
     "year",
   ];
-  const indices = [2, 3, 7, 6, 4, 1, -1, 8, -1, 5, -1, 0];
+  const indices = [2, -1, -1, 3, 7, 6, 4, 1, -1, 8, -1, 5, -1, 0];
   const zoned =
     kind === "zoned-date-time" ||
     kind === "zoned-partial" ||
@@ -109,11 +121,14 @@ export function readTemporalDateFields(
     monthPresent = false,
     dayPresent = false;
   let monthCode: MonthCode | undefined = undefined;
+  let era: string | undefined = undefined;
+  let eraYear: number | undefined = undefined;
   for (let i = 0; i < names.length; i++) {
     const name = names[i],
       index = indices[i];
     if (name === undefined || index === undefined)
       throw "TEMPORAL_DATE_FIELD_INVARIANT";
+    if ((name === "era" || name === "eraYear") && !eraFields) continue;
     if (
       name === "timeZone" &&
       kind !== "zoned-date-time" &&
@@ -124,6 +139,8 @@ export function readTemporalDateFields(
     if (
       !clock &&
       name !== "day" &&
+      name !== "era" &&
+      name !== "eraYear" &&
       name !== "month" &&
       name !== "monthCode" &&
       name !== "year"
@@ -142,7 +159,15 @@ export function readTemporalDateFields(
       continue;
     }
     present = true;
-    if (name === "timeZone") timeZone = temporalTimeZoneLike(value, realm);
+    if (name === "era") {
+      const converted = stringValue(value, hooks, realm);
+      if (converted.error === "unsupported")
+        return rejectUnsupportedExecution(realm);
+      if (converted.error !== "none") throw createRuntimeError(realm, "type");
+      era = converted.value;
+    } else if (name === "eraYear")
+      eraYear = temporalInteger(value, realm, hooks);
+    else if (name === "timeZone") timeZone = temporalTimeZoneLike(value, realm);
     else if (name === "offset") {
       const converted = primitiveValue(value, "string", hooks, realm);
       if (converted.error === "unsupported")
@@ -184,6 +209,8 @@ export function readTemporalDateFields(
   }
   return {
     present,
+    era,
+    eraYear,
     offsetNanoseconds,
     timeZone,
     year: yearPresent ? fields[0] : undefined,

@@ -20,7 +20,7 @@ import { regulateTemporalTime } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import {
   requireISOCalendar,
-  requireObjectTemporalCalendar,
+  objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
@@ -113,17 +113,25 @@ export function zonedDateTimeFrom(
   if (object !== undefined) {
     const branded = object.internalTemporalZonedDateTime;
     if (branded === undefined) {
-      requireObjectTemporalCalendar(object, item, realm, hooks);
+      const calendar = objectTemporalCalendarIdentifier(
+        object,
+        item,
+        realm,
+        hooks,
+      );
       const fields = readTemporalDateFields(
         object,
         item,
         "zoned-date-time",
         realm,
         hooks,
+        undefined,
+        calendar,
       );
       const zone = fields.timeZone;
       if (zone === undefined) throw "ZONED_TIME_ZONE_INVARIANT";
       const policy = readZonedOptions(options, realm, hooks);
+      requireISOCalendar(calendar, realm);
       const data = combineTemporalDateTime(
         regulateISODateFields(fields, policy.overflow, realm),
         regulateTemporalTime(fields.time, policy.overflow, realm),

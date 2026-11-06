@@ -80,44 +80,51 @@ export function requireISOCalendar(
 }
 
 /** Property-bag calendars also accept ISO date/time, year-month and month-day strings. */
-export function requireTemporalCalendar(
+export function temporalCalendarIdentifier(
   value: unknown,
   realm: ErrorRealm,
-): void {
+): string {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object !== undefined) {
     const identifier = object.internalTemporalCalendar;
     if (identifier !== undefined) {
-      requireISOCalendar(identifier, realm);
-      return;
+      return canonicalTemporalCalendar(identifier, realm);
     }
   }
 
   if (value === undefined || typeof value !== "string") {
-    requireISOCalendar(value, realm);
-    return;
+    return canonicalTemporalCalendar(value, realm);
   }
   const data =
     parseISODateTime(value).value ??
     parseISOTimeString(value).value ??
     parseISOYearMonthString(value).value ??
     parseISOMonthDayString(value).value;
-  requireISOCalendar(data === undefined ? value : data.calendar, realm);
+  return canonicalTemporalCalendar(
+    data === undefined ? value : data.calendar,
+    realm,
+  );
+}
+
+export function requireTemporalCalendar(
+  value: unknown,
+  realm: ErrorRealm,
+): void {
+  requireISOCalendar(temporalCalendarIdentifier(value, realm), realm);
 }
 
 /** Calendar-bearing Temporal objects bypass public calendar getters. */
-export function requireObjectTemporalCalendar(
+export function objectTemporalCalendarIdentifier(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   item: unknown,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
-): void {
+): string {
   const calendar = object.internalTemporalCalendar;
   if (calendar !== undefined) {
-    requireISOCalendar(calendar, realm);
-    return;
+    return canonicalTemporalCalendar(calendar, realm);
   }
-  requireTemporalCalendar(
+  return temporalCalendarIdentifier(
     getProperty<ScriptPropertyKey, unknown>(object, "calendar", item, hooks),
     realm,
   );

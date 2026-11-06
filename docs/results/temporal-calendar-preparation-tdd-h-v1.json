@@ -1,0 +1,61 @@
+{
+  "kind": "semantic-regression-cycle",
+  "conformance": false,
+  "sourceBaseline": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+  "red": {
+    "unitExitStatus": 1,
+    "passed": 1,
+    "failed": 3,
+    "reason": "Gregorian/Japanese calendar support was rejected before eraYear coercion or later observable field reads.",
+    "native": "docs/results/native-temporal-calendar-preparation-red-h-v1.json",
+    "nativeUnsupported": 4
+  },
+  "discardedHarnessAttempts": "v1/v2 registered the native record-view loader after static runtime imports. Both are retained as harness failures; they are not semantic red observations.",
+  "green": {
+    "focusedExitStatus": 0,
+    "passed": 92,
+    "failed": 0,
+    "testTypesExitStatus": 0,
+    "buildExitStatus": 0,
+    "formatExitStatus": 0,
+    "boundariesExitStatus": 0
+  },
+  "firstBuild": {
+    "exitStatus": 2,
+    "output": "\n> tint-workspace@ build /Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e\n> tsc -b\n\npackages/js-runtime/src/objects/temporal-partial-date.ts(310,13): error TS2345: Argument of type '{ present: true; year: number; month: number; monthCode: undefined; day: number; time: never[]; offsetNanoseconds: undefined; timeZone: undefined; }' is not assignable to parameter of type 'TemporalDateFields'.\n  Type '{ present: true; year: number; month: number; monthCode: undefined; day: number; time: never[]; offsetNanoseconds: undefined; timeZone: undefined; }' is missing the following properties from type 'TemporalDateFields': era, eraYear\n ELIFECYCLE  Command failed with exit code 2.\n",
+    "correction": "Propagate era/eraYear into the partial-date toPlainDate field record."
+  },
+  "preparationCalendars": [
+    "iso8601",
+    "gregory",
+    "japanese"
+  ],
+  "calendarArithmetic": "ISO only; existing unsupported calendar-conversion guard remains after preparation and independent options.",
+  "nativeGreenPending": true,
+  "transcripts": [
+    {
+      "tag": "harness-red-v1",
+      "path": "docs/results/temporal-calendar-preparation-harness-red-v1-h.log.gz",
+      "sha256": "b4834a13182d1fcfb2c43d524b0f66b2268aafb47591c833a557acadc78c4c86",
+      "uncompressedBytes": 761596
+    },
+    {
+      "tag": "harness-red-v2",
+      "path": "docs/results/temporal-calendar-preparation-harness-red-v2-h.log.gz",
+      "sha256": "2149b6acacc63240f5e7f79c940bc832d3a48cbdfb6baaecd4b0260dbd562155",
+      "uncompressedBytes": 761596
+    },
+    {
+      "tag": "semantic-red-v3",
+      "path": "docs/results/temporal-calendar-preparation-semantic-red-v3-h.log.gz",
+      "sha256": "d04826e5ec56d709d61cb708974022a891a74e98e9d4ff72d20a1556b0494d74",
+      "uncompressedBytes": 3374
+    },
+    {
+      "tag": "focused-green-v1",
+      "path": "docs/results/temporal-calendar-preparation-focused-green-v1-h.log.gz",
+      "sha256": "4853c1fa7f2bb16e2294e950dea9227ce492b9884f7e723442f761efa4253f2a",
+      "uncompressedBytes": 8565
+    }
+  ]
+}

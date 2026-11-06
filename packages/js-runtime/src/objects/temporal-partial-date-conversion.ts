@@ -15,7 +15,8 @@ import {
 } from "./temporal-date-fields.ts";
 import {
   canonicalTemporalCalendar,
-  requireObjectTemporalCalendar,
+  objectTemporalCalendarIdentifier,
+  requireISOCalendar,
 } from "./temporal-coercion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
 import { temporalStringOption } from "./temporal-options.ts";
@@ -61,15 +62,23 @@ export function partialDateFrom(
       overflow();
       return branded;
     }
-    requireObjectTemporalCalendar(object, item, realm, hooks);
+    const calendar = objectTemporalCalendarIdentifier(
+      object,
+      item,
+      realm,
+      hooks,
+    );
     const fields = readTemporalDateFields(
       object,
       item,
       yearMonth ? "year-month" : "month-day",
       realm,
       hooks,
+      undefined,
+      calendar,
     );
     const policy = overflow();
+    requireISOCalendar(calendar, realm);
     return regulatePartialDateFields(fields, yearMonth, policy, realm);
   }
   if (typeof item !== "string") throw createRuntimeError(realm, "type");

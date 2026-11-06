@@ -1,0 +1,101 @@
+{
+  "kind": "native-script-fixture-observation",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+      "files": 568
+    },
+    "imageSha256": "ea611f50c08cfeeb773beb1e02f6eacd045f64ff5bb9e68dfe8458bad670487f",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const inf of[Infinity,-Infinity]){const d=new Temporal.Duration(1,2,3,4,5,6,7,987,654,321);let ok=false;try{d.round({smallestUnit:\"seconds\",relativeTo:{calendar:\"gregory\",era:\"ad\",eraYear:inf,month:5,day:2,hour:15}});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;const log=[],year={get valueOf(){log.push(\"get\");return function(){log.push(\"call\");return inf;};}};ok=false;try{d.round({smallestUnit:\"seconds\",relativeTo:{calendar:\"gregory\",era:\"ad\",eraYear:year,month:5,day:2}});}catch(e){ok=e instanceof RangeError;}if(!ok||log.join()!==\"get,call\")throw 2;}",
+        "sha256": "f40e7435f8ec64e25dbdb50aa16f1a6d6fa17cf43f99134509a5805224522891"
+      },
+      {
+        "index": 1,
+        "source": "for(const inf of[Infinity,-Infinity]){const d=new Temporal.Duration(1,2,3,4,5,6,7,987,654,321);let ok=false;try{d.total({unit:\"seconds\",relativeTo:{calendar:\"gregory\",era:\"ad\",eraYear:inf,month:5,day:2}});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;const log=[],year={valueOf(){log.push(\"call\");return inf;}};ok=false;try{d.total({unit:\"seconds\",relativeTo:{calendar:\"gregory\",era:\"ad\",eraYear:year,month:5,day:2}});}catch(e){ok=e instanceof RangeError;}if(!ok||log.join()!==\"call\")throw 2;}",
+        "sha256": "bcc9c32190f5446782cb3cfed34f03e5328f02684077319b7887411a21e5ce80"
+      },
+      {
+        "index": 2,
+        "source": "const names=[\"calendar\",\"day\",\"era\",\"eraYear\",\"hour\",\"microsecond\",\"millisecond\",\"minute\",\"month\",\"monthCode\",\"nanosecond\",\"offset\",\"second\",\"timeZone\",\"year\"],calls=[],bag={},data={calendar:\"gregory\",day:2,era:\"ad\",eraYear:2020,month:5};for(const name of names)Object.defineProperty(bag,name,{get(){calls.push(name);if(name===\"year\")throw 42;return data[name];}});let ok=false;try{new Temporal.Duration(0,1).round({smallestUnit:\"day\",relativeTo:bag});}catch(e){ok=e===42;}if(!ok||calls.join()!==names.join())throw 1;",
+        "sha256": "44e342590bddd1c2d6f17baf403523c3464aa1b7870a3f4696c21624844b434b"
+      },
+      {
+        "index": 3,
+        "source": "for(const calendar of[\"gregory\",\"japanese\"])for(const name of[\"PlainDate\",\"PlainDateTime\",\"PlainYearMonth\",\"PlainMonthDay\",\"ZonedDateTime\"]){let ok=false;const bag={calendar,era:calendar===\"gregory\"?\"ad\":\"reiwa\",eraYear:Infinity,month:5,day:2,get timeZone(){throw 42;}};try{Temporal[name].from(bag);}catch(e){ok=e instanceof RangeError;}if(!ok)throw 1;}",
+        "sha256": "d747249dd396b8df9ec1328ba38243260e5a525803a39ccff01f7579405a4b32"
+      }
+    ]
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndFinalExitValidatedBy": "executeNativeFile",
+  "elapsedMs": 8590,
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      }
+    }
+  ]
+}

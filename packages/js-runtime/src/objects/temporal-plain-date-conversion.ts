@@ -10,7 +10,7 @@ import {
 } from "@tint/foundation/chrono/gregorian-calendar";
 import {
   requireISOCalendar,
-  requireObjectTemporalCalendar,
+  objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import { type ObjectHooks } from "./operations.ts";
@@ -81,9 +81,24 @@ export function plainDateFrom(
       return branded;
     }
     const target = object;
-    requireObjectTemporalCalendar(target, item, realm, hooks);
-    const fields = readTemporalDateFields(target, item, "date", realm, hooks);
-    return regulateISODateFields(fields, overflow(options), realm);
+    const calendar = objectTemporalCalendarIdentifier(
+      target,
+      item,
+      realm,
+      hooks,
+    );
+    const fields = readTemporalDateFields(
+      target,
+      item,
+      "date",
+      realm,
+      hooks,
+      undefined,
+      calendar,
+    );
+    const policy = overflow(options);
+    requireISOCalendar(calendar, realm);
+    return regulateISODateFields(fields, policy, realm);
   }
   if (typeof item !== "string") throw createRuntimeError(realm, "type");
   const parsed = parseISODateTime(item);

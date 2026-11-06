@@ -309,6 +309,8 @@ export function installTemporalPartialDates(
           const result = regulateISODateFields(
             {
               present: true,
+              era: undefined,
+              eraYear: undefined,
               year: yearMonth ? date.year : field,
               month: date.month,
               monthCode: undefined,

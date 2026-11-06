@@ -12,7 +12,7 @@ import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import {
   requireISOCalendar,
-  requireObjectTemporalCalendar,
+  objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import {
@@ -135,15 +135,23 @@ export function plainDateTimeFrom(
         realm,
       );
     }
-    requireObjectTemporalCalendar(object, item, realm, hooks);
+    const calendar = objectTemporalCalendarIdentifier(
+      object,
+      item,
+      realm,
+      hooks,
+    );
     const fields = readTemporalDateFields(
       object,
       item,
       "date-time",
       realm,
       hooks,
+      undefined,
+      calendar,
     );
     const policy = overflow();
+    requireISOCalendar(calendar, realm);
     const isoDate = regulateISODateFields(fields, policy, realm),
       time = regulateTemporalTime(fields.time, policy, realm);
     return combineTemporalDateTime(isoDate, time, realm);

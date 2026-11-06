@@ -17,6 +17,8 @@ const realm = createErrorRealm(
 function partial(overrides: Partial<TemporalDateFields>): TemporalDateFields {
   return {
     present: true,
+    era: undefined,
+    eraYear: undefined,
     offsetNanoseconds: undefined,
     timeZone: undefined,
     year: undefined,

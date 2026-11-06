@@ -2,7 +2,7 @@ import { parseISODateTime } from "@tint/foundation/chrono/iso-date-time";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
   requireISOCalendar,
-  requireObjectTemporalCalendar,
+  objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import {
   readTemporalDateFields,
@@ -40,14 +40,22 @@ export function readTemporalRelativeTo(
     if (date !== undefined) return { kind: "plain", date };
     const dateTime = object.internalTemporalPlainDateTime;
     if (dateTime !== undefined) return { kind: "plain", date: dateTime.date };
-    requireObjectTemporalCalendar(object, value, realm, hooks);
+    const calendar = objectTemporalCalendarIdentifier(
+      object,
+      value,
+      realm,
+      hooks,
+    );
     const fields = readTemporalDateFields(
       object,
       value,
       "relative",
       realm,
       hooks,
+      undefined,
+      calendar,
     );
+    requireISOCalendar(calendar, realm);
     const civil = regulateISODateFields(fields, "constrain", realm),
       time = regulateTemporalTime(fields.time, "constrain", realm),
       zone = fields.timeZone;
