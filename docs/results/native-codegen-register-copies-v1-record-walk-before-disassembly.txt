@@ -1,0 +1,112 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-q4lLF1/register-copies"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-register-copies-q4lLF1/register-copies' (arm64).
+(lldb) disassemble --name "program:fixture:find [@1:value:0$177]"
+register-copies`program:fixture:find [@1:value:0$177]:
+register-copies[0x10015ec3c] <+0>:   stp    x29, x30, [sp, #-0x10]!
+register-copies[0x10015ec40] <+4>:   mov    x29, sp
+register-copies[0x10015ec44] <+8>:   sub    sp, sp, #0x80
+register-copies[0x10015ec48] <+12>:  str    x0, [sp, #0x20]
+register-copies[0x10015ec4c] <+16>:  str    x3, [sp, #0x28]
+register-copies[0x10015ec50] <+20>:  fmov   d19, x4
+register-copies[0x10015ec54] <+24>:  fmov   d21, d0
+register-copies[0x10015ec58] <+28>:  b      0x10015ec5c               ; <+32> at fixture:3:2
+register-copies[0x10015ec5c] <+32>:  b      0x10015ec60               ; <+36> at fixture:3:8
+register-copies[0x10015ec60] <+36>:  fmov   x9, d19
+register-copies[0x10015ec64] <+40>:  fmov   d16, x9
+register-copies[0x10015ec68] <+44>:  fmov   d17, xzr
+register-copies[0x10015ec6c] <+48>:  fmov   d18, xzr
+register-copies[0x10015ec70] <+52>:  mov    x9, #0x0                  ; =0 
+register-copies[0x10015ec74] <+56>:  fmov   d20, x9
+register-copies[0x10015ec78] <+60>:  fmov   x9, d16
+register-copies[0x10015ec7c] <+64>:  fmov   x10, d20
+register-copies[0x10015ec80] <+68>:  cmp    x9, x10
+register-copies[0x10015ec84] <+72>:  cset   w9, ne
+register-copies[0x10015ec88] <+76>:  fmov   d24, x9
+register-copies[0x10015ec8c] <+80>:  fmov   x9, d24
+register-copies[0x10015ec90] <+84>:  cmp    x9, #0x0
+register-copies[0x10015ec94] <+88>:  cset   w9, ne
+register-copies[0x10015ec98] <+92>:  fmov   d25, x9
+register-copies[0x10015ec9c] <+96>:  fmov   x9, d25
+register-copies[0x10015eca0] <+100>: cbz    x9, 0x10015eca8           ; <+108> at fixture:3:8
+register-copies[0x10015eca4] <+104>: b      0x10015ecac               ; <+112> at fixture:3:29
+register-copies[0x10015eca8] <+108>: b      0x10015ecf4               ; <+184> at fixture:3:83
+register-copies[0x10015ecac] <+112>: fmov   x9, d19
+register-copies[0x10015ecb0] <+116>: fmov   d16, x9
+register-copies[0x10015ecb4] <+120>: fmov   x9, d16
+register-copies[0x10015ecb8] <+124>: cbnz   x9, 0x10015ecc0           ; <+132> at fixture:3:29
+register-copies[0x10015ecbc] <+128>: brk    #0x3
+register-copies[0x10015ecc0] <+132>: fmov   d17, x9
+register-copies[0x10015ecc4] <+136>: fmov   x9, d17
+register-copies[0x10015ecc8] <+140>: ldr    x10, [x9]
+register-copies[0x10015eccc] <+144>: adr    x11, 0x10015eccc          ; <+144> at fixture:3:29
+register-copies[0x10015ecd0] <+148>: mov    x17, #0x8fc               ; =2300 
+register-copies[0x10015ecd4] <+152>: movk   x17, #0x0, lsl #16
+register-copies[0x10015ecd8] <+156>: add    x11, x11, x17
+register-copies[0x10015ecdc] <+160>: cmp    x10, x11
+register-copies[0x10015ece0] <+164>: b.eq   0x10015ece8               ; <+172> at fixture:3:29
+register-copies[0x10015ece4] <+168>: b      0x10015ed5c               ; <+288> at fixture:3:29
+register-copies[0x10015ece8] <+172>: ldr    x10, [x9, #0x10]
+register-copies[0x10015ecec] <+176>: fmov   d22, x10
+register-copies[0x10015ecf0] <+180>: b      0x10015ed18               ; <+220> at fixture:3:42
+register-copies[0x10015ecf4] <+184>: fmov   d16, xzr
+register-copies[0x10015ecf8] <+188>: fmov   d17, xzr
+register-copies[0x10015ecfc] <+192>: mov    x9, #0x0                  ; =0 
+register-copies[0x10015ed00] <+196>: fmov   d18, x9
+register-copies[0x10015ed04] <+200>: fmov   x1, d18
+register-copies[0x10015ed08] <+204>: mov    x0, #0x1                  ; =1 
+register-copies[0x10015ed0c] <+208>: add    sp, sp, #0x80
+register-copies[0x10015ed10] <+212>: ldp    x29, x30, [sp], #0x10
+register-copies[0x10015ed14] <+216>: ret    
+register-copies[0x10015ed18] <+220>: fmov   x9, d21
+register-copies[0x10015ed1c] <+224>: fmov   d16, x9
+register-copies[0x10015ed20] <+228>: fmov   x9, d22
+register-copies[0x10015ed24] <+232>: fmov   d17, x9
+register-copies[0x10015ed28] <+236>: fmov   d0, d17
+register-copies[0x10015ed2c] <+240>: fmov   d1, d16
+register-copies[0x10015ed30] <+244>: fcmp   d0, d1
+register-copies[0x10015ed34] <+248>: cset   w9, eq
+register-copies[0x10015ed38] <+252>: fmov   d18, x9
+register-copies[0x10015ed3c] <+256>: fmov   x9, d18
+register-copies[0x10015ed40] <+260>: cmp    x9, #0x0
+register-copies[0x10015ed44] <+264>: cset   w9, ne
+register-copies[0x10015ed48] <+268>: fmov   d20, x9
+register-copies[0x10015ed4c] <+272>: fmov   x9, d20
+register-copies[0x10015ed50] <+276>: cbz    x9, 0x10015ed58           ; <+284> at fixture:3:26
+register-copies[0x10015ed54] <+280>: b      0x10015ed60               ; <+292> at fixture:3:55
+register-copies[0x10015ed58] <+284>: b      0x10015ed9c               ; <+352> at fixture:3:26
+register-copies[0x10015ed5c] <+288>: brk    #0
+register-copies[0x10015ed60] <+292>: fmov   x9, d19
+register-copies[0x10015ed64] <+296>: fmov   d16, x9
+register-copies[0x10015ed68] <+300>: fmov   x9, d16
+register-copies[0x10015ed6c] <+304>: cbnz   x9, 0x10015ed74           ; <+312> at fixture:3:55
+register-copies[0x10015ed70] <+308>: brk    #0x3
+register-copies[0x10015ed74] <+312>: fmov   d17, x9
+register-copies[0x10015ed78] <+316>: fmov   x9, d17
+register-copies[0x10015ed7c] <+320>: cbnz   x9, 0x10015ed84           ; <+328> at fixture:3:48
+register-copies[0x10015ed80] <+324>: brk    #0x3
+register-copies[0x10015ed84] <+328>: fmov   d18, x9
+register-copies[0x10015ed88] <+332>: fmov   x1, d18
+register-copies[0x10015ed8c] <+336>: mov    x0, #0x1                  ; =1 
+register-copies[0x10015ed90] <+340>: add    sp, sp, #0x80
+register-copies[0x10015ed94] <+344>: ldp    x29, x30, [sp], #0x10
+register-copies[0x10015ed98] <+348>: ret    
+register-copies[0x10015ed9c] <+352>: b      0x10015eda0               ; <+356> at fixture:3:65
+register-copies[0x10015eda0] <+356>: fmov   x9, d19
+register-copies[0x10015eda4] <+360>: fmov   d16, x9
+register-copies[0x10015eda8] <+364>: fmov   x9, d16
+register-copies[0x10015edac] <+368>: cbnz   x9, 0x10015edb4           ; <+376> at fixture:3:65
+register-copies[0x10015edb0] <+372>: brk    #0x3
+register-copies[0x10015edb4] <+376>: fmov   d17, x9
+register-copies[0x10015edb8] <+380>: fmov   x9, d17
+register-copies[0x10015edbc] <+384>: ldr    x10, [x9, #0x18]
+register-copies[0x10015edc0] <+388>: fmov   d18, x10
+register-copies[0x10015edc4] <+392>: fmov   x9, d18
+register-copies[0x10015edc8] <+396>: fmov   d23, x9
+register-copies[0x10015edcc] <+400>: mov    x9, #0x1                  ; =1 
+register-copies[0x10015edd0] <+404>: fmov   d20, x9
+register-copies[0x10015edd4] <+408>: b      0x10015edd8               ; <+412> at fixture:3:65
+register-copies[0x10015edd8] <+412>: fmov   x9, d23
+register-copies[0x10015eddc] <+416>: fmov   d16, x9
+register-copies[0x10015ede0] <+420>: fmov   x9, d16
+register-copies[0x10015ede4] <+424>: fmov   d19, x9
+register-copies[0x10015ede8] <+428>: b      0x10015ec60               ; <+36> at fixture:3:8

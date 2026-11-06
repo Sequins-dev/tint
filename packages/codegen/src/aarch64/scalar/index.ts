@@ -47,7 +47,11 @@ import {
 } from "@tint/abi/function";
 import { temporaryRegisters } from "./temporary-registers.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
-import { canUseLeafRegisters, canInlineCellRead } from "./leaf-registers.ts";
+import {
+  canUseLeafRegisters,
+  canInlineCellRead,
+  leafStorageRegisters,
+} from "./leaf-registers.ts";
 import { promoteStackWords } from "./stack-registers.ts";
 import {
   createWordBuffer,
@@ -590,6 +594,24 @@ export function emitModule(
       register = registers === undefined ? 0 : (registers[offset / 8] ?? 0);
     if (register !== 0) emit({ op: "fmov-d-x", rd: register, rn: rt });
     else emit({ op: "str", width: 64, rt, rn: "sp", offset });
+  }
+  /** Copy storage bits without crossing register banks. This is a bitwise move,
+   * including references, signed zero and NaN payloads; register eligibility and
+   * GC visibility remain entirely the existing allocation planner's decision. */
+  function copyRawWord(source: number, target: number): void {
+    if (source === target) return;
+    const registers = scalarRegisters,
+      from = registers === undefined ? 0 : (registers[source / 8] ?? 0),
+      to = registers === undefined ? 0 : (registers[target / 8] ?? 0);
+    if (from !== 0 && to !== 0) {
+      if (from !== to) emit({ op: "fmov-d-d", rd: to, rn: from });
+    } else if (from !== 0)
+      emit({ op: "str-d", rt: from, rn: "sp", offset: target });
+    else if (to !== 0) emit({ op: "ldr-d", rt: to, rn: "sp", offset: source });
+    else {
+      rawLoad(9, source);
+      rawStore(9, target);
+    }
   }
   const conditions: Condition[] = [
     "eq",
@@ -1567,6 +1589,16 @@ export function emitModule(
           scalarRegisters = storage;
         }
       }
+      const leafStorage = leafRegisters
+        ? leafStorageRegisters(
+            fn,
+            slotOffsets,
+            value,
+            localsOffset,
+            maximumCursor,
+          )
+        : undefined;
+      if (leafStorage !== undefined) scalarRegisters = leafStorage;
       const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
       const frameBytes =
         Math.ceil((calleeSaveOffset + preservedCount * 8) / 16) * 16;
@@ -1709,7 +1741,9 @@ export function emitModule(
           rawStore(11, offset + 8);
         } else if (location.kind === "float") {
           const register =
-            preserved === undefined ? 0 : (preserved.registers[slot] ?? 0);
+            scalarRegisters === undefined
+              ? 0
+              : (scalarRegisters[offset / 8] ?? 0);
           if (register !== 0)
             emit({ op: "fmov-d-d", rd: register, rn: location.index });
           else emit({ op: "str-d", rt: location.index, rn: "sp", offset });
@@ -5040,27 +5074,26 @@ export function emitModule(
               );
               break;
             case "load":
-              rawLoad(9, slotOffset(op.slot));
-              saveRaw(9, op.id);
+              copyRawWord(slotOffset(op.slot), value(op.id).offset);
               if (
                 value(op.id).type === "general" ||
                 value(op.id).type === "optional-number" ||
                 value(op.id).type === "optional-boolean"
               ) {
-                rawLoad(10, slotOffset(op.slot) + 8);
-                rawStore(10, value(op.id).offset + 8);
+                copyRawWord(slotOffset(op.slot) + 8, value(op.id).offset + 8);
               }
               break;
             case "store":
-              rawValue(9, op.value);
-              rawStore(9, slotOffset(op.slot));
+              copyRawWord(value(op.value).offset, slotOffset(op.slot));
               if (
                 value(op.value).type === "general" ||
                 value(op.value).type === "optional-number" ||
                 value(op.value).type === "optional-boolean"
               ) {
-                rawLoad(10, value(op.value).offset + 8);
-                rawStore(10, slotOffset(op.slot) + 8);
+                copyRawWord(
+                  value(op.value).offset + 8,
+                  slotOffset(op.slot) + 8,
+                );
               }
               break;
             case "unary": {
@@ -5761,7 +5794,7 @@ export function emitModule(
         epilogue();
       }
       endFrameRange();
-      if (leafRegisters)
+      if (leafRegisters && leafStorage === undefined)
         promoteStackWords(
           instructions,
           start / 4,

@@ -186,14 +186,14 @@ test("managed entry initializes completion, passes raw callback, roots result an
     false,
   );
 });
-test("borrowed general entry bytes remain unchanged", () => {
+test("borrowed general entry keeps a reproducible byte image", () => {
   const result = emitModule(fixture("executable-call-value"), {
     hostABI: darwinHostABI(),
   });
   assert.ok(result.ok);
   assert.equal(
     createHash("sha256").update(result.value.code).digest("hex"),
-    "8e7101b4afc71689d75d950c2df16eefc754b29834d2fd86b4a294b8c1551898",
+    "313fefaac24f5aa75e50070eb0d72506d36bbba7ea4f0bcb0b7454f42a4fb736",
   );
 });
 

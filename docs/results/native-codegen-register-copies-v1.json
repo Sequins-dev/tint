@@ -1,0 +1,344 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-performance-measurement",
+  "status": "Microbenchmark slice measured; native self-build and Test262 equivalence still pending. Not merge-ready.",
+  "baseMain": "ee87137",
+  "change": "Plan private no-safepoint leaf register storage before emission, then copy raw words directly between FP storage homes; preserve existing eligibility and GC proofs.",
+  "scope": "Generated native execution, not compiler algorithm optimization. No runtime provider body elision is part of this change.",
+  "benchmark": {
+    "fixture": "tools/verify-native-register-copies.ts",
+    "iterations": 20000000,
+    "queriesPerIteration": 1,
+    "sameFixtureSha256": "a37be770c1debb79b496ea05d87f68f30b225835bda279bac6a4c0d1d0795e8d",
+    "observations": 12,
+    "completed": 12,
+    "medianWallMs": {
+      "before": 1904.3719784999994,
+      "after": 1206.879937499999
+    },
+    "speedup": 1.5779299326533058,
+    "wallReductionFraction": 0.3662582987328915,
+    "cpuTime": "Not measured separately for the inferior; debugger-wall timings must not be described as CPU timings.",
+    "instructions": {
+      "hotFunction": "program:fixture:find",
+      "before": 108,
+      "after": 99,
+      "fpMovesBefore": 53,
+      "fpMovesAfter": 44
+    },
+    "artifact": "native-codegen-register-copies-v1-register-copies-alternating-v1.json",
+    "limitations": "Six alternating pairs on a shared host. Includes LLDB launch and teardown. Every execution uses a fresh inferior and confirms the initial stop and final exit 42. No whole-suite projection from this microbenchmark."
+  },
+  "nativeProfiles": [
+    {
+      "file": "native-codegen-register-copies-v1-selfbuild-v4-stage2-stall.sample.txt",
+      "samples": 650,
+      "scope": "Selected phase window; not a whole-run profile. Leaf counts below five are omitted by sample.",
+      "hotFunctions": [
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+          "leafSamples": 562,
+          "percent": 86.46153846153847
+        },
+        {
+          "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2639",
+          "leafSamples": 31,
+          "percent": 4.769230769230769
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+          "leafSamples": 28,
+          "percent": 4.3076923076923075
+        },
+        {
+          "function": "program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots",
+          "leafSamples": 13,
+          "percent": 2.0
+        },
+        {
+          "function": "program:helper:string-equal",
+          "leafSamples": 7,
+          "percent": 1.0769230769230769
+        },
+        {
+          "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2936",
+          "leafSamples": 6,
+          "percent": 0.9230769230769231
+        }
+      ]
+    },
+    {
+      "file": "native-codegen-register-copies-v1-native-stage2-window2.sample.txt",
+      "samples": 7146,
+      "scope": "Selected phase window; not a whole-run profile. Leaf counts below five are omitted by sample.",
+      "hotFunctions": [
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+          "leafSamples": 1523,
+          "percent": 21.312622446123704
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/generational.ts:read",
+          "leafSamples": 1184,
+          "percent": 16.56870976770221
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+          "leafSamples": 550,
+          "percent": 7.6966134900643715
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+          "leafSamples": 316,
+          "percent": 4.422054296109712
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+          "leafSamples": 309,
+          "percent": 4.324097397145256
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+          "leafSamples": 291,
+          "percent": 4.072208228379513
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+          "leafSamples": 276,
+          "percent": 3.8623005877413936
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+          "leafSamples": 251,
+          "percent": 3.512454520011195
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+          "leafSamples": 241,
+          "percent": 3.3725160929191156
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+          "leafSamples": 233,
+          "percent": 3.260565351245452
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+          "leafSamples": 175,
+          "percent": 2.448922474111391
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:collect",
+          "leafSamples": 144,
+          "percent": 2.0151133501259446
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+          "leafSamples": 131,
+          "percent": 1.8331933949062413
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/generational.ts:closure@7822",
+          "leafSamples": 108,
+          "percent": 1.5113350125944585
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+          "leafSamples": 94,
+          "percent": 1.315421214665547
+        }
+      ]
+    },
+    {
+      "file": "native-codegen-register-copies-v1-native-stage2-window3.sample.txt",
+      "samples": 7157,
+      "scope": "Selected phase window; not a whole-run profile. Leaf counts below five are omitted by sample.",
+      "hotFunctions": [
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+          "leafSamples": 5124,
+          "percent": 71.59424339807181
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+          "leafSamples": 472,
+          "percent": 6.594942014810675
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:relates",
+          "leafSamples": 340,
+          "percent": 4.750593824228028
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@42904",
+          "leafSamples": 236,
+          "percent": 3.2974710074053375
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+          "leafSamples": 212,
+          "percent": 2.962134972753947
+        },
+        {
+          "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+          "leafSamples": 109,
+          "percent": 1.5229844907083974
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:position",
+          "leafSamples": 51,
+          "percent": 0.7125890736342043
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:collect",
+          "leafSamples": 43,
+          "percent": 0.6008103954170742
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:expression",
+          "leafSamples": 42,
+          "percent": 0.5868380606399329
+        },
+        {
+          "function": "program:packages/typescript/src/checker/union-index.ts:closure@762",
+          "leafSamples": 35,
+          "percent": 0.4890317171999441
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:functionOf",
+          "leafSamples": 34,
+          "percent": 0.4750593824228028
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+          "leafSamples": 33,
+          "percent": 0.4610870476456616
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@43694",
+          "leafSamples": 24,
+          "percent": 0.3353360346513902
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:widerProperty",
+          "leafSamples": 20,
+          "percent": 0.2794466955428252
+        },
+        {
+          "function": "program:helper:string-equal",
+          "leafSamples": 19,
+          "percent": 0.2654743607656839
+        }
+      ]
+    },
+    {
+      "file": "native-codegen-register-copies-v1-native-stage2-window4.sample.txt",
+      "samples": 7757,
+      "scope": "Selected phase window; not a whole-run profile. Leaf counts below five are omitted by sample.",
+      "hotFunctions": [
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+          "leafSamples": 1528,
+          "percent": 19.698336985948178
+        },
+        {
+          "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emit",
+          "leafSamples": 692,
+          "percent": 8.92097460358386
+        },
+        {
+          "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+          "leafSamples": 577,
+          "percent": 7.438442696918912
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+          "leafSamples": 454,
+          "percent": 5.852778135877272
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/generational.ts:read",
+          "leafSamples": 416,
+          "percent": 5.362898027587985
+        },
+        {
+          "function": "program:packages/codegen/src/aarch64/isa.ts:encode",
+          "leafSamples": 410,
+          "percent": 5.285548536805466
+        },
+        {
+          "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+          "leafSamples": 233,
+          "percent": 3.003738558721155
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+          "leafSamples": 226,
+          "percent": 2.9134974861415497
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+          "leafSamples": 217,
+          "percent": 2.797473249967771
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+          "leafSamples": 162,
+          "percent": 2.0884362511280132
+        },
+        {
+          "function": "program:helper:string-equal",
+          "leafSamples": 161,
+          "percent": 2.075544669330927
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+          "leafSamples": 158,
+          "percent": 2.0368699239396673
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+          "leafSamples": 153,
+          "percent": 1.9724120149542348
+        },
+        {
+          "function": "program:packages/ir/src/scalar/liveness.ts:analyzeSlots",
+          "leafSamples": 130,
+          "percent": 1.6759056336212452
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+          "leafSamples": 130,
+          "percent": 1.6759056336212452
+        }
+      ]
+    }
+  ],
+  "expectedHeavyVsOverhead": [
+    {
+      "function": "sparse-list.findEntry",
+      "expected": "AVL search and dependent pointer reads",
+      "overhead": "Repeated FP/integer bank round trips in typed local copies; disassembly and the isolated record walk establish an avoidable per-operation cost."
+    },
+    {
+      "function": "native runtime GC",
+      "expected": "Tracing and allocating compiler AST/IR nodes",
+      "overhead": "PrimitiveValue.fromNumber boxes register-number union operands, adding allocations beyond the instruction records themselves; further diagnosis pending."
+    },
+    {
+      "function": "type checking, maps and hashing",
+      "expected": "Compiler algorithms naturally exercise these operations",
+      "overhead": "Hot function names alone are not a finding. Only inspect costly generated language operations."
+    }
+  ],
+  "setAsideExperiment": {
+    "description": "Import-only managed JIT provider body elision was explored before the coordinator refocused this task on generated native execution. Its compiler changes were discarded and are not in this slice.",
+    "nativeProfileSnapshot": "The captured self-build stage1 contains that set-aside experiment; its ordinary self-build path does not invoke managed JIT preparation. Profiles are attribution evidence, not a matched speed comparison against the new compiler."
+  },
+  "validation": {
+    "focusedTests": "17/17 passed in final focused run; previous register/byte-image expectations and unsupported prototype syntax failures retained in local logs.",
+    "workspaceGate": "check-codegen-v2 pending at report creation",
+    "nativeSelfbuild": "Frozen codegen toolchain 17c019fae4b12984cacc3ff573d1163a9a11bda82c98ffbadb8d9d495a547f1b queued via slot selfbuild 2.",
+    "test262": "Original addition eval probe retained 0/2 passes, two 300 s post-entry timeouts. No codegen rerun completed yet."
+  }
+}

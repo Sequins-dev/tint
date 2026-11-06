@@ -35,7 +35,7 @@ function request(runtimes: readonly RuntimeSource[]) {
     runtimes,
   };
 }
-test("runtime contract namespaces are independent from physical modules and retain helper output bytes", () => {
+test("runtime contract namespaces are independent from physical modules and retain reproducible helper output", () => {
   const provider = "foundation/collections/sparse-list";
   const modules = [
     source(
@@ -62,10 +62,10 @@ test("runtime contract namespaces are independent from physical modules and reta
   };
   const result = compileArm64Program(input);
   assert.ok(result.ok, JSON.stringify(result));
-  assert.equal(result.value.native.code.length, 24608);
+  assert.equal(result.value.native.code.length, 24032);
   assert.equal(
     createHash("sha256").update(result.value.native.code).digest("hex"),
-    "f4d205607c80928de4990f0414f4784d748e58ff6e8dfe9155ad84542dc44804",
+    "36d675048a8bae9665e6be543e956b21d3befeb169a8f40f49ba31f008b3f895",
   );
   const wrong = compileArm64Program({
     ...input,

@@ -87,6 +87,8 @@ test("emission saves and restores the scalar register bank around calls", async 
   assert.ok(move.ok);
   const view = new DataView(result.value.code.buffer),
     first = result.value.functions[0]!;
+  const saves = new Map<number, number>(),
+    restores = new Map<number, number>();
   let saved = 0,
     restored = 0,
     moved = 0,
@@ -99,11 +101,21 @@ test("emission saves and restores the scalar register bank around calls", async 
     const value = view.getUint32(offset, true);
     if (value === move.value) moved++;
     if (value === 0xd65f03c0) exits++;
-    if ((value & 0xffc003ff) >>> 0 === 0xfd0003e8) saved++;
-    if ((value & 0xffc003ff) >>> 0 === 0xfd4003e8) restored++;
+    if ((value & 0xffc003ff) >>> 0 === 0xfd0003e8) {
+      saved++;
+      const offset = (value >>> 10) & 4095;
+      saves.set(offset, (saves.get(offset) ?? 0) + 1);
+    }
+    if ((value & 0xffc003ff) >>> 0 === 0xfd4003e8) {
+      restored++;
+      const offset = (value >>> 10) & 4095;
+      restores.set(offset, (restores.get(offset) ?? 0) + 1);
+    }
   }
-  assert.equal(moved, 1);
-  assert.equal(saved, 1);
+  assert.ok(moved >= 1, "the parameter enters its preserved FP register");
+  assert.ok(saved >= 1);
+  assert.equal(restores.size, 1);
+  for (const offset of restores.keys()) assert.equal(saves.get(offset), 1);
   assert.ok(exits > 0);
   assert.equal(restored, exits);
 });
