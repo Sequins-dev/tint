@@ -1,0 +1,15 @@
+(lldb) settings set thread-format "thread ${thread.index} tid=${thread.id}\\n"
+(lldb) settings set frame-format "frame ${frame.index} pc=${frame.pc} ${module.file.basename}\\n"
+(lldb) process attach --pid 12529
+Process 12529 stopped
+* thread #1, name = 'MainThread', queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x00000001030fa2d8 node\nnode`std::__1::__lower_bound[abi:nn180100]<std::__1::_RangeAlgPolicy, std::__1::ranges::iota_view<int, int>::__iterator, std::__1::ranges::iota_view<int, int>::__iterator, unsigned int, v8::internal::DescriptorArray::BinarySearch(v8::internal::Tagged<v8::internal::Name>, int)::'lambda'(int), std::__1::less<void>>:
+->  0x1030fa2d8 <+100>: lsr    x25, x23, #1
+    0x1030fa2dc <+104>: add    w26, w19, w25
+    0x1030fa2e0 <+108>: ldr    x8, [x20]
+    0x1030fa2e4 <+112>: sxtw   x9, w26
+Target 0: (node) stopped.
+Executable binary set to "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node".
+Architecture set to: arm64-apple-macosx-.
+(lldb) command script import .tint-bootstrap/b-phase2/print-b-node-stack-v1.py
+error: module importing failed: Python discourages dashes in module names: print-b-node-stack-v1

@@ -1,0 +1,50 @@
+{
+  "kind": "live-node-compiler-stack-diagnostic",
+  "conformance": false,
+  "selection": "language/expressions/left-shift",
+  "phase": "compiling batch 0 (64 variants); no native variant entered",
+  "frozenToolchain": {
+    "sourceSnapshot": {
+      "sha256": "5b24685791f295badbb6a0b6d095cf561b78cc1fd23b9597c11f6f1ebfdb1583",
+      "files": 568
+    },
+    "toolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-native-v15",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-native-v15/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-native-v15/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-native-v15/source-snapshot.json",
+      "sha256": "9938a98e2a530aa8cbcecc1391ef3ec50b28a6ff34472a8a85dd7542991bf07f"
+    }
+  },
+  "pid": 12529,
+  "observedProcessElapsed": "41:20",
+  "observedCpuTime": "20:11.23",
+  "stack": "docs/results/operator-left-shift-node-checker-stack-v1.txt",
+  "top": "stableFacts, closures.js:663 (source closures.ts:939)",
+  "callPath": [
+    "stableFacts",
+    "statement/sequence",
+    "checkFunction",
+    "expression",
+    "checkClosureModule",
+    "compileArm64Program",
+    "buildMacOSProgram",
+    "flush"
+  ],
+  "initialStoppedConfirmed": true,
+  "detachSucceeded": true,
+  "subsequentProcessState": "R; CPU time continues increasing",
+  "diagnosticAttempts": [
+    {
+      "log": "docs/results/operator-left-shift-node-lldb-attempt-v1.log",
+      "exitStatus": 1,
+      "reason": "LLDB script import rejected a hyphen in the Python module filename; target detached and remained running."
+    },
+    {
+      "log": "docs/results/operator-left-shift-node-lldb-attempt-v2.log",
+      "exitStatus": 0,
+      "reason": "Executed the same file through Python exec; public V8 stack printer wrote the captured stack to stderr. SBValue.GetError reported unknown error after the void call; this observation is retained. Finally detached successfully."
+    }
+  ],
+  "measurementLimitation": "Brief debugger diagnostic pauses occurred during Node compilation. Native timeout budgets were unchanged. This stack sample is diagnostic, not CPU-percentage attribution or a complete selection result."
+}

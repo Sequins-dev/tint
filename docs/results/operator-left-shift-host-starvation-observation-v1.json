@@ -1,0 +1,27 @@
+{
+  "kind": "host-starvation-observation",
+  "conformance": false,
+  "selection": "language/expressions/left-shift",
+  "phase": "compiling batch 0 (64 variants); no native inferior",
+  "pid": 12529,
+  "observations": [
+    {
+      "processElapsed": "17:37",
+      "processCpuTime": "9:10.33"
+    },
+    {
+      "processElapsed": "20:54",
+      "processCpuTime": "9:16.95"
+    }
+  ],
+  "wallDeltaSeconds": 197,
+  "cpuDeltaSeconds": 6.62,
+  "loadAverages": [
+    141.55,
+    117.21,
+    84.39
+  ],
+  "thermalQuery": "pmset -g therm reported no recorded thermal or performance warning level.",
+  "recordSource": "Live ps/uptime/pmset tool outputs during this run; retained heartbeat log records child/inferior PID query failures in this interval.",
+  "subsequentRecovery": "Load fell to 58.53; CPU accumulation resumed. No timeout limit was changed and the progressing compiler was not killed."
+}

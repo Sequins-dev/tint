@@ -1,0 +1,18 @@
+(lldb) settings set thread-format "thread ${thread.index} tid=${thread.id}\\n"
+(lldb) settings set frame-format "frame ${frame.index} pc=${frame.pc} ${module.file.basename}\\n"
+(lldb) process attach --pid 12529
+Process 12529 stopped
+* thread #1, name = 'MainThread', queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame 0 pc=0x000000010331d560 node\nnode`v8::internal::LookupIterator::NextInternal<false>:
+->  0x10331d560 <+220>: ldr    x9, [x9]
+    0x10331d564 <+224>: cmp    x2, x9
+    0x10331d568 <+228>: b.eq   0x10331d5b0               ; <+300>
+    0x10331d56c <+232>: ldr    x0, [x8, #0x230]
+Target 0: (node) stopped.
+Executable binary set to "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node".
+Architecture set to: arm64-apple-macosx-.
+(lldb) script exec(open(".tint-bootstrap/b-phase2/print-b-node-stack-v1.py").read())
+Process 12529 detached
+V8 stack request {"pid": 12529, "thread": 1, "time": 1793993380.619487}
+V8 stack result error: unknown error
+detach success
