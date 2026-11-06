@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-a2-selection-validation",
+  "generatedAt": "2026-11-06T21:26:27.040627+00:00",
+  "selection": "language/expressions/object/dstr",
+  "nativeReport": "docs/results/test262-language-object-destructuring-a2-native-v1.json",
+  "portableSourceChanged": false,
+  "workspaceGate": {
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "validatedHead": "a6d86257dc350b218c9ff39cb530d0802b9c984b",
+    "validatedBase": "1258d52fead683240336f42cc0e19518b110881a",
+    "exitStatus": 0,
+    "counts": {
+      "tests": 4527,
+      "pass": 4527,
+      "fail": 0
+    },
+    "log": ".tint-bootstrap/a2/object-dstr-check-v1.log",
+    "logSha256": "a4f37a6fd7f8fa5d6dc8ce8258b10be0216bb137d083fd274296df43a1e4cb72",
+    "note": "Passed before rebasing onto subsequent Promise/checker changes; current-main validation will run at the next merge-ready point."
+  },
+  "ledgerValidation": {
+    "kind": "native-family-ledger-validation",
+    "generatedAt": "2026-11-06T21:05:26.415Z",
+    "nativeExecutions": 0,
+    "report": "docs/results/test262-language-object-destructuring-a2-native-v1.json",
+    "reportSha256": "15e58c9488d40ba977a8ae971e3d60cd1a7cea049bc43dbb3091efc307c315b0",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "expectedVariants": 1122,
+    "acceptedArtifacts": 1,
+    "rejected": [],
+    "passed": 1122
+  },
+  "resumeRegressionTests": {
+    "command": "node --test --test-concurrency=2 tools/native-run-journal.test.ts",
+    "exitStatus": 0,
+    "passed": 7
+  },
+  "selfBuildRequired": false
+}
