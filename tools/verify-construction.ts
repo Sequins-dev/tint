@@ -3733,8 +3733,8 @@ assert.ok(primitiveUnionNative.ok, JSON.stringify(primitiveUnionNative));
 setModules.set("source-primitive-union", {
   native: primitiveUnionNative.value,
   entry: primitiveUnion.entry,
-  bytes: 336,
-  capacity: 1,
+  bytes: 32,
+  capacity: 16,
   expected: 11,
 });
 setModules.set("source-native-finally-return", {

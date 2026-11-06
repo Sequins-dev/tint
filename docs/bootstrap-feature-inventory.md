@@ -1097,8 +1097,10 @@ normalization. Its baseline managed record occupies 48 bytes on the current
 root maps trace the box and its optional string payload through existing
 machinery. Raw pointer equality and truthiness on this representation are rejected.
 
-The native pipeline now boxes at mixed-primitive function boundaries and extracts
-payloads after narrowing. Native fixtures verify `typeof`, strict comparisons,
+The native pipeline uses inline tag/payload storage at mixed-primitive function
+boundaries and extracts payloads after narrowing. Homogeneous scalar and optional
+scalar/string encodings remain specialized; explicit primitive runtime bindings
+retain their managed box contract. Native fixtures verify `typeof`, strict comparisons,
 truthiness, nullish coalescing, arrays, Sets, and Maps using the same runtime
 functions. Set tests include distinct NaN boxes and negative-zero iteration.
 Runtime helper registration checks both scalar signatures and shared box-shape

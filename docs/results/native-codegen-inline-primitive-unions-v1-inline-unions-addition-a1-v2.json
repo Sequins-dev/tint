@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "108b867985db5907a30d50ca3f9f2428ccbd01538530ed70fa13b1f253fba996",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-inline-union-toolchain-v2/source-snapshot.json",
+  "frozenToolchainSha256": "5cd599dd20d80e67307aca2a8639ada94511e5f24a52d7cdf8f4f4960fb6a02c",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 252790.729875,
+        "outcome": "unsupported"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/addition/S11.6.1_A1.js",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/expressions/addition/S11.6.1_A1.js",
+      "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"lower\",\"message\":\"property access requires supported matching record layouts: value at 5519964:5519975\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 252812.415292,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/addition/S11.6.1_A1.js",
+      "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"lower\",\"message\":\"property access requires supported matching record layouts: value at 5519964:5519975\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 252799.13854199997,
+      "batch": 0
+    }
+  ]
+}

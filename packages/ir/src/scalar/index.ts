@@ -239,11 +239,12 @@ export function verify(module: ModuleIR): Verification {
             field.type !== "optional-number" &&
             field.type !== "optional-boolean" &&
             field.type !== "optional-reference" &&
-            field.type !== "optional-string"
+            field.type !== "optional-string" &&
+            field.type !== "general"
           )
             fail(
               "TYPE",
-              "presence fields require an optional value representation",
+              "presence fields require an optional or general value representation",
             );
           if (
             !natural(presenceOffset) ||

@@ -192,6 +192,58 @@ test("dynamic optional-field presence is a boolean contract separate from its pa
   assert.ok(construction(true).ok);
   assert.equal(construction(1).ok, false);
 });
+test("general fields keep own presence separate from an undefined payload", () => {
+  for (const present of [false, true]) {
+    const result = verify({
+      records: [
+        {
+          byteLength: 48,
+          fields: [
+            { offset: 24, presenceOffset: 16, type: "general", mutable: true },
+          ],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "hasGeneral",
+          exported: true,
+          parameters: [],
+          slots: [],
+          returnType: "boolean",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "general-none", id: 0, ...span },
+                { kind: "constant", id: 1, value: present, ...span },
+                {
+                  kind: "record-new",
+                  id: 2,
+                  record: 0,
+                  arguments: [0],
+                  presence: [1],
+                  ...span,
+                },
+                {
+                  kind: "record-has",
+                  id: 3,
+                  object: 2,
+                  record: 0,
+                  field: 0,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 3, ...span },
+            },
+          ],
+        },
+      ],
+    });
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
 test("record presence queries validate descriptors, fields and reference inputs", () => {
   const module = {
     records: [

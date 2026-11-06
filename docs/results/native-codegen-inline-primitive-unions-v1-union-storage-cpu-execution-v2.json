@@ -1,0 +1,280 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-boxed-V5W4oL/union-storage-boxed",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "1a3660c4020780dfedc749767ccfddd969c9787dca6f89aa3c7ef820d88e3b68",
+          "files": 568
+        },
+        "imageSha256": "23389fbaee0b41135b7abe29e05464fbaba4b1ab28144505c5b820667741ea6a",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-boxed-V5W4oL/union-storage-boxed.source.ts",
+        "fixtureSha256": "c6238a974f40d00533d0ff17d1808415878c724018dcba8439df7bccb3c181ca",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/union-storage.ts",
+          "boxed"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      }
+    },
+    {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-boxed-6sWfdh/union-storage-boxed",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "f396664ef2f614e9240d3a19e8d7d6be63db6fee9171768961c660c6452a23f6",
+          "files": 568
+        },
+        "imageSha256": "bc3cc72b48f779fe81093a84459a07970ce8a8e01279dcd5e5f59b85050338c3",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-union-storage-boxed-6sWfdh/union-storage-boxed.source.ts",
+        "fixtureSha256": "c6238a974f40d00533d0ff17d1808415878c724018dcba8439df7bccb3c181ca",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/union-storage.ts",
+          "boxed"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536
+        },
+        "debugSymbols": true
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 81083
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 199.559833,
+      "cpuLowerBoundMs": 131.891,
+      "unobservedCPUWallBoundMs": 1.285208,
+      "probes": 142,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3150
+      },
+      "lastCPU": {
+        "userTicks": 3092940,
+        "systemTicks": 75594
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "initial": {
+        "state": "stopped",
+        "pid": 81086
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 101.568708,
+      "cpuLowerBoundMs": 47.18845833333334,
+      "unobservedCPUWallBoundMs": 1.309916,
+      "probes": 78,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3084
+      },
+      "lastCPU": {
+        "userTicks": 1068122,
+        "systemTicks": 67485
+      }
+    },
+    {
+      "pair": 1,
+      "index": 1,
+      "initial": {
+        "state": "stopped",
+        "pid": 81089
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 114.971583,
+      "cpuLowerBoundMs": 46.919625,
+      "unobservedCPUWallBoundMs": 0.028625,
+      "probes": 70,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2322
+      },
+      "lastCPU": {
+        "userTicks": 1066322,
+        "systemTicks": 62071
+      }
+    },
+    {
+      "pair": 1,
+      "index": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 81092
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 184.572542,
+      "cpuLowerBoundMs": 128.93995833333332,
+      "unobservedCPUWallBoundMs": 0.022625,
+      "probes": 143,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2209
+      },
+      "lastCPU": {
+        "userTicks": 3036527,
+        "systemTicks": 60241
+      }
+    },
+    {
+      "pair": 2,
+      "index": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 81095
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 189.841167,
+      "cpuLowerBoundMs": 131.43320833333334,
+      "unobservedCPUWallBoundMs": 0.023584,
+      "probes": 141,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2420
+      },
+      "lastCPU": {
+        "userTicks": 3081182,
+        "systemTicks": 75635
+      }
+    },
+    {
+      "pair": 2,
+      "index": 1,
+      "initial": {
+        "state": "stopped",
+        "pid": 81098
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 104.941167,
+      "cpuLowerBoundMs": 46.61925,
+      "unobservedCPUWallBoundMs": 0.02325,
+      "probes": 76,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2008
+      },
+      "lastCPU": {
+        "userTicks": 1066331,
+        "systemTicks": 54539
+      }
+    },
+    {
+      "pair": 3,
+      "index": 1,
+      "initial": {
+        "state": "stopped",
+        "pid": 81102
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 103.635875,
+      "cpuLowerBoundMs": 46.347166666666666,
+      "unobservedCPUWallBoundMs": 1.285959,
+      "probes": 79,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1918
+      },
+      "lastCPU": {
+        "userTicks": 1062812,
+        "systemTicks": 51438
+      }
+    },
+    {
+      "pair": 3,
+      "index": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 81109
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 201.782875,
+      "cpuLowerBoundMs": 130.700375,
+      "unobservedCPUWallBoundMs": 0.032542,
+      "probes": 139,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1735
+      },
+      "lastCPU": {
+        "userTicks": 3068455,
+        "systemTicks": 70089
+      }
+    }
+  ]
+}

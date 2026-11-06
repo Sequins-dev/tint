@@ -1,0 +1,76 @@
+✔ function environment extraction requires a reference and returns an optional reference (2.801ms)
+✔ general unary operands permit truthiness but still reject numeric payload operations (0.490917ms)
+✔ initialization propagation schedules affected blocks instead of rescanning a reverse chain (2.382792ms)
+✔ record verification reuses numeric scratch instead of per-byte Set entries (0.577333ms)
+✔ dynamic optional-field presence is a boolean contract separate from its payload (0.446375ms)
+✖ general fields keep own presence separate from an undefined payload (0.543625ms)
+✔ record presence queries validate descriptors, fields and reference inputs (0.547958ms)
+✔ primitive representation references require explicit boundary operations (0.738042ms)
+✔ accepts typed scalar values, calls and initialized slots (0.123625ms)
+✔ rejects malformed graph, invalid operands and uninitialized loads (1.325791ms)
+✔ initialization must hold on every incoming path including the first loop iteration (0.528083ms)
+✔ values are local to their defining block in this first IR slice (0.192958ms)
+✔ callee signatures, branch booleans, slot stores and source spans are checked independently (0.92975ms)
+✔ typed-array operations require array handles and numeric operands (0.594625ms)
+✔ optional instructions enforce tag construction and extraction types (0.438458ms)
+✔ guarded environment cells initialize read destinations only on their success edge (0.6945ms)
+✔ explicit inherited-environment calls require matching caller and callee contracts (0.490459ms)
+✔ borrowed handle cells require an explicit lifetime qualifier (0.173083ms)
+✔ managed references remain distinct from scalar data and borrowed cells (0.360125ms)
+✔ record guards establish read initialization only on the successful edge (0.501125ms)
+✔ record writes require the declared field type and mutable storage (0.323459ms)
+✔ record construction initializes every declared field with a matching value (0.571167ms)
+✔ optional numeric record fields reserve both payload and tag words (0.194542ms)
+✔ strings have content operations and cannot masquerade as numbers or opaque references (0.31ms)
+✔ concatenation requires two defined strings and produces a string (0.639708ms)
+✔ slice bounds distinguish numeric begin from optional limit (0.409708ms)
+✔ prefix tests require string operands and a numeric position (0.521208ms)
+✔ owned array creation has a numeric length and preserves element kind (0.787667ms)
+✔ subarray IR preserves array kind and requires numeric normalized bounds (0.5495ms)
+✔ presence-bearing numeric fields validate separate tags and permit only explicit omitted arguments (0.652667ms)
+✔ optional references have explicit none, wrap and checked extraction operations (0.766958ms)
+✔ optional strings keep a distinct encoding and explicit presence/extraction operations (0.33175ms)
+✔ managed function values and indirect calls verify their ABI witness and operands (0.590667ms)
+✔ owned closure environments and managed record cells verify their storage contracts (2.407417ms)
+✔ managed cell guards cannot be bypassed or initialize failure-edge slots (0.564917ms)
+✔ string construction requires defined numeric code-unit operands (0.530875ms)
+✔ boolean-number conversion requires a boolean operand (0.325ms)
+✔ rejects holes in record and field declarations as graph diagnostics (0.134333ms)
+✔ rejects holes in function slots, parameters and environment cells (0.197833ms)
+✔ instruction result IDs follow the IR operation contract (0.07075ms)
+✔ large initialization graphs avoid materializing a Set entry for every block-slot pair (0.406667ms)
+✔ verification indexes sparse safe-integer value IDs without linear maps (1.303375ms)
+✔ definite-initialization matrices allocate independently of block count (0.70525ms)
+✔ queued initialization agrees with a set-based fixed point on cyclic graphs (21.48675ms)
+✔ unchanged exceptional facts do not repeatedly schedule a high-fan-in handler (1.441083ms)
+✔ a shared normal and exceptional target intersects both incoming states (0.320459ms)
+✔ bulk typed-array copy requires matching element encodings and a numeric offset (1.119459ms)
+✔ locally established initialization needs no fixed-point bit matrices (0.167833ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 47
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 202.479083
+
+✖ failing tests:
+
+test at packages/ir/test/scalar-verifier.test.ts:195:1
+✖ general fields keep own presence separate from an undefined payload (0.543625ms)
+  AssertionError [ERR_ASSERTION]: {"ok":false,"error":{"code":"TYPE","function":0,"message":"presence fields require an optional value representation"}}
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/packages/ir/test/scalar-verifier.test.ts:208:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

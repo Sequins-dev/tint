@@ -22,6 +22,7 @@ export function primitiveUnionFixture(
       return value.length;
     }
     function same(a:number|string,b:number|string):boolean{return a===b;}
+    function readField(box:{readonly value:number|string}):number|string{return box.value;}
     function inspectUnknown(value:unknown):number {
       if(typeof value === "number" || typeof value === "string")return inspect(value);
       return 0;
@@ -31,7 +32,8 @@ export function primitiveUnionFixture(
       const a=choose(true), b=choose(false);
       if(!same(a,7)||same(a,b))return -1;
       if(a===b||a!==7||b!=="a"||!a||!b)return -2;
-      return inspect(a)+inspect(b)+inspect(fallback(undefined));
+      const result:{value:number}={value:inspect(a)+inspect(b)+inspect(fallback(undefined))};
+      return result.value;
     }`,
   );
   const source = createSourceText(bytes, bytes.length);

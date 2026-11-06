@@ -111,13 +111,15 @@ function collectionElement(
       : undefined)
   );
 }
-/** General storage retains checked mixed primitive/reference variants; unknown
- * also absorbs other union members, including helper-generated undefined. */
+/** Inline tag/payload storage avoids boxing heterogeneous primitive unions.
+ * Keep homogeneous nullable scalar/string encodings specialized. Unknown also
+ * absorbs other union members, including helper-generated undefined. */
 function generalType(checked: CheckedClosures, id: number): boolean {
   const type = checked.types[id];
   if (type?.kind === "unknown") return true;
   if (type?.kind !== "union") return false;
-  const visited = new Set<number>();
+  const visited = new Set<number>(),
+    primitiveKinds = new Set<string>();
   let unknown = false,
     primitive = false,
     reference = false,
@@ -132,16 +134,20 @@ function generalType(checked: CheckedClosures, id: number): boolean {
         visit(nested);
       }
     } else if (current?.kind === "unknown") unknown = true;
-    else if (current?.kind === "never" || current?.kind === "undefined") return;
+    else if (current?.kind === "never") return;
+    else if (current?.kind === "undefined") primitiveKinds.add("undefined");
     else if (
       current?.kind === "number" ||
       current?.kind === "boolean" ||
       current?.kind === "string" ||
       current?.kind === "null" ||
       current?.kind === "literal"
-    )
+    ) {
       primitive = true;
-    else if (
+      primitiveKinds.add(
+        current.kind === "literal" ? typeof current.value : current.kind,
+      );
+    } else if (
       current?.kind === "object" &&
       current.call === undefined &&
       current.construct === undefined
@@ -162,7 +168,17 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     else supported = false;
   }
   visit(id);
-  return unknown || (supported && primitive && reference);
+  const heterogeneous =
+    primitiveKinds.size > 1 &&
+    !(
+      primitiveKinds.size === 2 &&
+      primitiveKinds.has("undefined") &&
+      !primitiveKinds.has("null")
+    );
+  return (
+    unknown ||
+    (supported && ((primitive && reference) || (!reference && heterogeneous)))
+  );
 }
 export function arrayElement(
   checked: CheckedClosures,
@@ -293,7 +309,7 @@ export function entryType(
           checked.types[p.type]?.kind ?? "",
         ) ||
         (checked.types[p.type]?.kind === "union" &&
-          ["primitive", "optional-reference"].includes(
+          ["primitive", "general", "optional-reference"].includes(
             entryType(checked, p.type, listElements, setElements, mapTypes) ??
               "",
           )) ||
@@ -579,24 +595,26 @@ export function createRecordContracts(
       let type = fieldEncoding(p.type);
       if (p.optional)
         type =
-          type === "primitive"
-            ? "optional-reference"
-            : type === "boolean" || type === "optional-boolean"
-              ? "optional-boolean"
-              : type === "number" || type === "optional-number"
-                ? "optional-number"
-                : type === "reference" ||
-                    type === "optional-reference" ||
-                    [
-                      "Uint8Array",
-                      "Uint16Array",
-                      "Uint32Array",
-                      "Float64Array",
-                    ].includes(type ?? "")
-                  ? "optional-reference"
-                  : type === "string" || type === "optional-string"
-                    ? "optional-string"
-                    : undefined;
+          type === "general"
+            ? "general"
+            : type === "primitive"
+              ? "optional-reference"
+              : type === "boolean" || type === "optional-boolean"
+                ? "optional-boolean"
+                : type === "number" || type === "optional-number"
+                  ? "optional-number"
+                  : type === "reference" ||
+                      type === "optional-reference" ||
+                      [
+                        "Uint8Array",
+                        "Uint16Array",
+                        "Uint32Array",
+                        "Float64Array",
+                      ].includes(type ?? "")
+                    ? "optional-reference"
+                    : type === "string" || type === "optional-string"
+                      ? "optional-string"
+                      : undefined;
       if (type === undefined) {
         unsupported[id] = 1;
         return undefined;
@@ -1086,23 +1104,25 @@ export function createRecordContracts(
               !primitive &&
               !(
                 !write &&
-                (((info.type === "primitive" || type === "primitive") &&
-                  [
-                    "primitive",
-                    "number",
-                    "boolean",
-                    "string",
-                    "optional-number",
-                    "optional-string",
-                  ].includes(info.type) &&
-                  [
-                    "primitive",
-                    "number",
-                    "boolean",
-                    "string",
-                    "optional-number",
-                    "optional-string",
-                  ].includes(type)) ||
+                (info.type === "general" ||
+                  type === "general" ||
+                  ((info.type === "primitive" || type === "primitive") &&
+                    [
+                      "primitive",
+                      "number",
+                      "boolean",
+                      "string",
+                      "optional-number",
+                      "optional-string",
+                    ].includes(info.type) &&
+                    [
+                      "primitive",
+                      "number",
+                      "boolean",
+                      "string",
+                      "optional-number",
+                      "optional-string",
+                    ].includes(type)) ||
                   (info.type === "number" && type === "optional-number") ||
                   (info.type === "reference" &&
                     type === "optional-reference") ||

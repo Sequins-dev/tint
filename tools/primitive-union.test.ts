@@ -3,12 +3,12 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
 import { primitiveUnionFixture } from "./primitive-union-fixture.ts";
-test("mixed primitive unions box at native function boundaries and narrow before use", () => {
+test("mixed primitive unions use inline native storage and narrow before use", () => {
   for (const reverse of [false, true]) {
     const { module } = primitiveUnionFixture(reverse);
     const native = emitModule(module);
     assert.ok(native.ok, JSON.stringify(native));
-    assert.ok(module.functions.some((f) => f.slots.includes("primitive")));
+    assert.ok(module.functions.some((f) => f.slots.includes("general")));
   }
 });
 test("primitive runtime bindings reject narrower scalar contracts and mismatched box shapes", () => {

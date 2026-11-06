@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-performance-implementation",
+  "change": "Use existing inline general tag/payload encoding for heterogeneous primitive unions. Retain scalar optional encodings and primitive runtime binding contracts. Preserve optional own-presence independently of the general payload and convert record reads through wider readonly views.",
+  "mergeReady": false,
+  "benchmark": {
+    "fixture": "tools/verify-native-primitive-union-storage.ts",
+    "sameSource": true,
+    "iterations": 3000000,
+    "pairs": 4,
+    "completed": 8,
+    "median": {
+      "inferiorWallMs": {
+        "before": 194.7005,
+        "after": 104.288521
+      },
+      "cpuLowerBoundMs": {
+        "before": 131.0667916666667,
+        "after": 46.7694375
+      },
+      "unobservedCPUWallBoundMs": {
+        "before": 0.028063,
+        "after": 0.657292
+      }
+    },
+    "cpuSpeedup": 2.8024025661344907,
+    "timingMethod": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "data": "native-codegen-inline-primitive-unions-v1-union-storage-cpu-execution-v2.json",
+    "disassembly": "fromNumber is retained in the boxed image and pruned from the inline image. The run body has 8 indirect calls before and 4 after; no per-number heap constructor remains in the store loop.",
+    "nodeReference": "Same unchanged fixture source, Node 24.12.0, five in-process runs: 9.333/3.386/2.935/2.434/2.368 CPU ms. These are directional language-operation comparisons; V8 warms up while native runs use fresh processes."
+  },
+  "semantics": {
+    "nativeCompleted": 3,
+    "report": "native-codegen-inline-primitive-unions-v1-primitive-union-values-gc-native-v3.json",
+    "cases": [
+      "NaN strict equality",
+      "negative zero reciprocal",
+      "embedded NUL and lone surrogate string",
+      "boolean, undefined and null transitions",
+      "Map SameValueZero keys and key-kind separation",
+      "lazy nullish fallback and abrupt completion",
+      "optional union record field absent, assigned text, assigned explicit undefined",
+      "readonly wider record view over numeric storage",
+      "dynamic string retained in a general field during 100000 temporary string constructions"
+    ],
+    "redEvidence": "The readonly view reproduction trapped after initial stop in fieldValue before the conversion fix. Both the optional-record encoding and general presence verifier checks failed before their fixes.",
+    "strictProfileLimits": "in and delete on strict record fixtures were rejected by the existing checker. Those experimental fixture builds are retained locally and are not claimed as newly supported language features.",
+    "legacyConstructionFixture": "Build-only source-primitive-union selection failed before execution because unrelated legacy fixture preparation reads removed packages/native-tracing/src/index.ts. Report retained; no native success or allocation-accounting claim is based on this tool."
+  },
+  "regressionsRetained": {
+    "firstManagedImage": "Both tiny variants compilation-unsupported: optional record admission omitted general.",
+    "secondManagedImage": "Both tiny variants compilation-unsupported: record read dispatch omitted general conversion.",
+    "thirdManagedImage": "in progress; not a conformance pass claim",
+    "preEntryFailure": "The earlier connected-debugserver launch failed before an initial inferior stop. Kept separately from the later direct-debugserver executions."
+  },
+  "selfbuild": "Pending dedicated selfbuild-perf slot after register-copy build. No second P self-build is running.",
+  "wholeSuiteProjection": "No whole-suite projection is inferred from this isolated store loop. Original Node-hosted invariant compile cost and native tree-backed array/JIT-preparation costs remain separate."
+}

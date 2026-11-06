@@ -1,0 +1,44 @@
+✔ heterogeneous primitive union number|"sp"|"zr" uses inline tag/payload storage (12.598ms)
+✔ heterogeneous primitive union number|boolean uses inline tag/payload storage (1.0375ms)
+✔ heterogeneous primitive union string|boolean|undefined uses inline tag/payload storage (0.803917ms)
+✔ heterogeneous primitive union null|number uses inline tag/payload storage (0.911792ms)
+✔ heterogeneous primitive union null|undefined uses inline tag/payload storage (0.732917ms)
+✔ homogeneous number retains its specialized number storage (1.013333ms)
+✔ homogeneous number|undefined retains its specialized optional-number storage (0.67ms)
+✔ homogeneous boolean|undefined retains its specialized optional-boolean storage (0.569667ms)
+✔ homogeneous "a"|"b" retains its specialized string storage (0.6705ms)
+✔ homogeneous string|undefined retains its specialized optional-string storage (1.271584ms)
+✖ optional mixed primitive fields retain supported record storage (2.702625ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.270125
+
+✖ failing tests:
+
+test at packages/ts-native/test/primitive-union-encoding.test.ts:54:1
+✖ optional mixed primitive fields retain supported record storage (2.702625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'reference'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/packages/ts-native/test/primitive-union-encoding.test.ts:56:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'reference',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

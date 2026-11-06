@@ -2347,6 +2347,65 @@ export function lowerFunction(
     return result;
   }
   function nonNullish(left: number, node: Span): number {
+    if (slots[left] === "general") {
+      const result = temporary("boolean"),
+        checkNull = block(),
+        absent = block(),
+        done = block();
+      const none = nextValue++,
+        isUndefined = nextValue++;
+      emit({
+        kind: "general-none",
+        id: none,
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "general-equal",
+        id: isUndefined,
+        left: load(left, node),
+        right: none,
+        start: node.start,
+        end: node.end,
+      });
+      choose(isUndefined, absent, checkNull, node);
+      current = absent;
+      const no = nextValue++;
+      emit({
+        kind: "constant",
+        id: no,
+        value: false,
+        start: node.start,
+        end: node.end,
+      });
+      store(result, no, node);
+      jump(done.id, node);
+      current = checkNull;
+      const nil = nextValue++,
+        isNull = nextValue++,
+        present = nextValue++;
+      emit({ kind: "general-null", id: nil, start: node.start, end: node.end });
+      emit({
+        kind: "general-equal",
+        id: isNull,
+        left: load(left, node),
+        right: nil,
+        start: node.start,
+        end: node.end,
+      });
+      emit({
+        kind: "unary",
+        id: present,
+        operator: "!",
+        operand: isNull,
+        start: node.start,
+        end: node.end,
+      });
+      store(result, present, node);
+      jump(done.id, node);
+      current = done;
+      return load(result, node);
+    }
     const reference = slots[left] === "optional-reference";
     const present = nextValue++;
     if (slots[left] === "primitive") {
@@ -2406,6 +2465,7 @@ export function lowerFunction(
     current = yes;
     if (
       slots[left] === "primitive" ||
+      slots[left] === "general" ||
       scalarType(node) === "optional-boolean" ||
       scalarType(node) === "optional-number" ||
       scalarType(node) === "optional-reference" ||
@@ -2415,7 +2475,7 @@ export function lowerFunction(
     else {
       const extracted = nextValue++;
       // Extract using the source carrier, then convert to the wider result.
-      // For example, (string | undefined) ?? number produces a boxed union.
+      // For example, (string | undefined) ?? number produces an inline union.
       const carrier = slots[left];
       if (carrier === undefined) throw "nullish carrier invariant";
       const resultType = scalarType(node);

@@ -209,6 +209,13 @@ closure environment; their call-site receiver does not replace that capture.
 
 ### General null and primitive conversions
 
+Mixed primitive unions use the existing 16-byte `general` tag/payload storage
+in native function arguments, results, locals and record fields. Numeric,
+boolean and string values no longer require a managed wrapper at those
+boundaries. Homogeneous scalar and optional scalar/string representations stay
+specialized. Nullish coalescing on `general` tests undefined and null separately,
+preserving false, zero, NaN and empty strings and evaluating its fallback lazily.
+
 `general-null` constructs a general value with category 4 and a zero payload;
 `general-none` constructs undefined with category 0. Neither allocates or carries
 a GC reference. `general-wrap` continues to accept concrete number, boolean,
