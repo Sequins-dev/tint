@@ -1,0 +1,26 @@
+{
+  "kind": "c1-tool-turn-interruption",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "nativeLaunch": {
+    "selection": "language/statements/class/*.js",
+    "launcherPid": 2281,
+    "journalCreated": false,
+    "stdout": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v2.unstarted-stdout.txt",
+    "stderr": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v2.json.stderr.txt",
+    "toolchain": "docs/results/c1-phase2-frozen-toolchain-v9.json"
+  },
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "completed": false,
+    "exitStatus": null,
+    "lastPhase": "tests",
+    "lastHeartbeatElapsedSeconds": 510,
+    "lastTestCpu": "0:54.45",
+    "statusFileCreated": false,
+    "log": "docs/results/c1-check-v8-interrupted-log.txt",
+    "progress": "docs/results/c1-check-v8-interrupted-progress.txt.txt"
+  },
+  "inspection": "After the intentional tool-turn interruption, launchers/controllers/runners and workspace test processes were absent from ps; no C1 native journal existed. No native outcome or workspace pass inferred. No process was killed during recovery.",
+  "nextStep": "Fresh rebase and toolchain, one cap-6 native run, and one cap-1 workspace check."
+}
