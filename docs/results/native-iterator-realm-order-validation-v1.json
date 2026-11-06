@@ -1,0 +1,78 @@
+{
+  "kind": "native-iterator-realm-order-validation",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "035a38c78e2f2a3cd3efb117ffd0b5e7b5623f5d89a9cd009e28868a0f1748ba",
+    "files": 568
+  },
+  "imageSha256": "9281ed560f8171ad65c7d9cfce7ef4caeafe5de285d14305b150f18a8f93f11f",
+  "fixtureSha256": "9f5da34022511ad66f752d15f6372e1403f91b43300f03134852999ff3926302",
+  "tool": "tools/verify-test262-native-iterator-realm-order.ts",
+  "buildProvenance": {
+    "origin": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-jdiysZ/test",
+    "builtBy": "TINT_BUILD_ONLY=1 node tools/verify-test262-native-iterator-realm-order.ts in checkout t3-412c28f4 at commit c4fd37c",
+    "sourceSnapshotVerified": "image fixture.json source snapshot equals this checkout (cherry-picked c4fd37c onto 6cca6a4); image SHA-256 and all six case sources re-verified before launch"
+  },
+  "launchProtocol": "executeNativeFile under LLDB; completed requires LLDB-recorded initial stopped state and final exit 42",
+  "containmentMs": 300000,
+  "cases": [
+    {
+      "selectedCase": 0,
+      "sha256": "b09c0f8d5ea321086b26f72f65d43e9af3e7d7cda26d1c15981eb7298bbeca0e",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-0-v1.json"
+    },
+    {
+      "selectedCase": 1,
+      "sha256": "5797ff3f7cf4395775084b424962a037f80407e8061914f82cb0fe328ab40c52",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-1-v1.json"
+    },
+    {
+      "selectedCase": 2,
+      "sha256": "2b706a3f9f13d25f94772abc1449290d77815e559c0ac7b729365d69a9512954",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-2-v1.json"
+    },
+    {
+      "selectedCase": 3,
+      "sha256": "e9ac7cc888e69ded7d24f5363370e496c751b07c426706a5d1532cd13f7e4562",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-3-v1.json"
+    },
+    {
+      "selectedCase": 4,
+      "sha256": "a1bb1adf8962c079410e4bcf9c6df294d687bd617ab04034007aec159f5d73ab",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-4-v1.json"
+    },
+    {
+      "selectedCase": 5,
+      "sha256": "eb2d82f87e1fd05f9811bd75cac22abb54ae64c6ef06ac6458d40c5169082669",
+      "outcome": {
+        "kind": "completed"
+      },
+      "report": "docs/results/native-iterator-realm-order-case-5-v1.json"
+    }
+  ],
+  "serialization": {
+    "parent": 21898,
+    "entry": "node-toolchain-import-resolution-v1/tools/test262-native-run.ts",
+    "request": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+    "central": true,
+    "pid": 21082,
+    "ackPid": 21082
+  },
+  "compilerGraph": "docs/results/iterator-generator-bootstrap-graph-node-v1.json"
+}

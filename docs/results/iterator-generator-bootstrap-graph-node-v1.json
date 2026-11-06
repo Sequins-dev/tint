@@ -1,0 +1,20 @@
+{
+  "kind": "native-compiler-graph-agreement",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "035a38c78e2f2a3cd3efb117ffd0b5e7b5623f5d89a9cd009e28868a0f1748ba",
+    "files": 568
+  },
+  "priorSourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "priorToolchain": "docs/results/frozen-node-toolchain-managed-templates-v1.json",
+  "modules": 220,
+  "changedModules": [],
+  "changedSources": ["packages/js-runtime/src/objects/iterator-constructor.ts"],
+  "astEqual": true,
+  "acceptedCompiler": "docs/results/json-await-native-compiler-acceptance-v1.json",
+  "acceptedCompilerImage": ".tint-bootstrap/stage2-json-await-chains-v1",
+  "scope": "Compiler graph identity only. The changed runtime source (outside the compiler graph) is exercised by native fixtures and Test262 images built from the captured snapshot; this is not conformance or native acceptance."
+}
