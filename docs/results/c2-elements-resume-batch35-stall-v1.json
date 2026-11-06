@@ -1,0 +1,74 @@
+{
+  "kind": "c2-active-compilation-stall-profile",
+  "conformance": false,
+  "selection": "language/statements/class/elements",
+  "observedPasses": 1019,
+  "batch": 35,
+  "batchVariants": 2,
+  "configuredBatchSize": 64,
+  "toolchain": "docs/results/c2-frozen-toolchain-v9.json",
+  "runnerPid": 82722,
+  "profile": {
+    "path": ".tint-bootstrap/c2/elements-resume-batch35-compilation.cpuprofile",
+    "sha256": "83c590c8fcc970e1367583347c71278827ce43fa153f6ac2c8d4c52738e3d32e",
+    "samples": 395,
+    "topFrames": [
+      {
+        "function": "store",
+        "file": "packages/foundation/dist/binary/bytes.js",
+        "line": 25,
+        "samples": 217
+      },
+      {
+        "function": "writeUnsigned",
+        "file": "packages/foundation/dist/binary/bytes.js",
+        "line": 58,
+        "samples": 66
+      },
+      {
+        "function": "compileArm64Program",
+        "file": "packages/compiler/dist/native/index.js",
+        "line": 21,
+        "samples": 62
+      },
+      {
+        "function": "emitModule",
+        "file": "packages/codegen/dist/aarch64/scalar/index.js",
+        "line": 72,
+        "samples": 39
+      },
+      {
+        "function": "(garbage collector)",
+        "file": "",
+        "line": 0,
+        "samples": 6
+      },
+      {
+        "function": "writeUnsigned",
+        "file": "packages/foundation/dist/binary/bytes.js",
+        "line": 58,
+        "samples": 2
+      },
+      {
+        "function": "(program)",
+        "file": "",
+        "line": 0,
+        "samples": 2
+      },
+      {
+        "function": "writeUnsigned",
+        "file": "packages/foundation/dist/binary/bytes.js",
+        "line": 58,
+        "samples": 1
+      }
+    ]
+  },
+  "processCumulativeAtSample": {
+    "wall": "51:27",
+    "cpu": "33:44.43",
+    "scope": "Entire resumed process, not batch35 duration"
+  },
+  "stderrAgeSeconds": 1.4,
+  "inspector": "Verified port9229 listener belonged to82722 before profiling; no native inferior was running during compiler profile.",
+  "interpretation": "Compiler is active in binary byte writes and AArch64 emission, beyond flow-fact checking. This short sample does not establish an algorithmic bug or benchmark. No general compiler-performance source changes made. Existing survey continues."
+}
