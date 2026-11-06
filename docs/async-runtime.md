@@ -11,13 +11,19 @@ The Script host exposes Promise construction, `then`, `catch`, `finally`, `resol
 `reject`, `try`, `race`, `all`, `allSettled`, `any`, `withResolvers`, `Symbol.species` and AggregateError.
 `Promise.try` follows the current specification: the callback runs before the
 constructor is consulted, and a normal result goes through PromiseResolve.
+Native validation covers the unchanged `built-ins/Promise/try` tests (30/30
+variants) and the job-realm cases ([try](results/promise-try-native-validation-v1.json),
+[jobs](results/promise-jobs-native-validation-v3.json)). The
+[built-ins/Promise rerun](results/test262-builtins-promise-native-v2-partial.json)
+is partial (576 of 1,458 variants observed, paused); it is not a family result.
 Combinators share iterator acquisition/closing and generic constructor capabilities.
 Native errors and result arrays use intrinsic identities rather than mutable globals.
 
 Shared agents retain callback realms and enqueue-time Script/module identities.
 Promise reaction and thenable jobs enter `GetFunctionRealm(handler)`, following
 bound and callable Proxy targets; a revoked Proxy falls back to the realm current
-at enqueue. Resolving functions and errors created by the job use that realm. Source functions and generators capture definition contexts; top-level Script
+at enqueue. Resolving functions and errors created by the job use that realm.
+Source functions and generators capture definition contexts; top-level Script
 entries restore their caller context. Checkpoints drain only after Script execution
 exits. Rejection notifications remain distinct from thrown jobs and `$DONE` failures.
 The Test262 host preserves the original harness and detects repeated completion.
