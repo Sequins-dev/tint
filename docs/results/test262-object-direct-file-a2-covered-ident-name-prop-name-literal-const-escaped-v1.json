@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/object/covered-ident-name-prop-name-literal-const-escaped.js",
+  "sourceSnapshot": {
+    "sha256": "5dd97f5fd5f46759faf13f9637efdb89cbb47a0df52d2e932f4dddcbb76ac26c",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95/.tint-bootstrap/a2/toolchain-v2/source-snapshot.json",
+  "frozenToolchainSha256": "0b60f2ebf948009d200396d36adde8c37220ffa1991faa90da80da0d799a9b2e",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/cluster-a2-object-batching-supersession-prefix-v1.jsonl",
+    "journalSha256": "8b148269d36b280affa676d85544bb9b84617142236a98659cce7c1da880bee8",
+    "journalBytes": 922991,
+    "observedVariants": 1473
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 7,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 418218.7760419999,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/object/covered-ident-name-prop-name-literal-const-escaped.js",
+      "sha256": "6667ae479958b6da1c42701af773f13c9bdff748cba8bf24a1c1b928e6f0968f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 424323.58429200016,
+      "batch": 7
+    },
+    {
+      "path": "language/expressions/object/covered-ident-name-prop-name-literal-const-escaped.js",
+      "sha256": "6667ae479958b6da1c42701af773f13c9bdff748cba8bf24a1c1b928e6f0968f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 424817.58237499977,
+      "batch": 7
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "kind": "cluster-a2-object-complete-file-ledger-validation",
+  "generatedAt": "2026-11-06T22:07:50.115Z",
+  "nativeExecutions": 0,
+  "parentSelection": "language/expressions/object/*.js",
+  "parentExpectedVariants": 573,
+  "completedFileSelections": 178,
+  "completedVariants": 351,
+  "acceptedArtifacts": 178,
+  "rejected": [],
+  "ledgerCounts": {
+    "pass": 351,
+    "unmeasured": 222
+  },
+  "reportEvidenceDate": "2026-11-07T05:25:16+08:00",
+  "datePolicy": "Each extracted report has no new measurement timestamp; the ledger uses the preserved parent journal first Git addition date.",
+  "extractorSha256": "a2aee0bd3f96d99fe82b22528efa16e621a3462b69ad678db99c907a9a6a8ba2",
+  "ledgerToolSha256": "13d144bec3ea8f50c1bbc213510befaa8134012fcc0da576db9d7b065e26db23",
+  "portableSourceChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "policy": "Docs-only slice reuses current main gate per shared READY FILE rule",
+    "main": "df1fdb7fa35ba50b065b7434000b7d7740e93fa1",
+    "validatedCodeHead": "ad58afca66029f0e7cd5b93cb8ce441a55418879",
+    "validationReport": "docs/results/cluster-a2-object-destructuring-validation-v2.json",
+    "codeChangesSinceValidatedHead": [],
+    "exitStatus": 0,
+    "testsPassed": 4555
+  },
+  "newReportFormatting": {
+    "command": "pnpm exec prettier --check 'docs/results/test262-object-direct-file-a2-*-v1.json' docs/results/cluster-a2-object-direct-complete-files-v1.json docs/results/cluster-a2-object-direct-ledger-validation-v1.json",
+    "exitStatus": 0
+  }
+}

@@ -294,6 +294,8 @@ The BigInt family report predates the `toString.length` correction. Its [focused
 
 ## Recent selections within larger families
 
+The [178 complete object standalone-file selections](results/cluster-a2-object-direct-complete-files-v1.json) pass **351/351**, with no non-passes. They cover part of the 573-variant standalone directory; 222 variants remain unobserved in that preserved prefix. The fresh full object selection is running separately.
+
 These selections overlap other reports and cannot be added into an overall coverage percentage. The group inventory retains the other complete selections.
 
 | Selection                    |      Passed / total | Remaining                           | Report                                                                       |
