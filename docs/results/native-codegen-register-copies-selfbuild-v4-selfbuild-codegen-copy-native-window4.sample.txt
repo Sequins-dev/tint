@@ -1,0 +1,361 @@
+Analysis of sampling stage1 (pid 56058) every 1 millisecond
+Process:         stage1 [56058]
+Path:            /Users/USER/*/stage1
+Load Address:    0x102414000
+Identifier:      stage1
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [56055]
+Target Type:     live task
+
+Date/Time:       2026-11-07 02:33:36.915 +0800
+Launch Time:     2026-11-07 01:47:15.683 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         5.2G
+Physical footprint (peak):  5.2G
+Idle exit:                  untracked
+----
+
+Call graph:
+    1670 Thread_17341916   DispatchQueue_1: com.apple.main-thread  (serial)
+      1670 tint:process-entry  (in stage1) + 2764  [0x102414ebc]
+        1670 program:__tint_invoke$14338  (in stage1) + 324  [0x102c8ee24]
+          1670 program:packages/compiler/src/cli.ts:main [@1:value:14$14321]  (in stage1) + 28572  [0x103f470f0]  cli.ts:68
+            1670 program:packages/compiler/src/build.ts:buildMacOSProgram [@13:value:12$14249]  (in stage1) + 96572  [0x103e52fe0]  build.ts:247
+              1670 program:packages/compiler/src/native/index.ts:compileArm64Program [@32:value:28$14154]  (in stage1) + 184208  [0x103d8dbd0]  index.ts:964
+                1670 program:packages/codegen/src/aarch64/scalar/index.ts:emitModule [@36:value:84$13358]  (in stage1) + 1846096  [0x10376f0ac]  index.ts:6205
+                  1670 program:packages/codegen/src/aarch64/isa.ts:patchRelativeAddress [@48:value:13$12457]  (in stage1) + 2888  [0x102f12db4]  isa.ts:839
+                    1670 program:packages/codegen/src/aarch64/isa.ts:relativeAddress [@48:value:12$12456]  (in stage1) + 3604  [0x102f119f0]  isa.ts:811
+                      1670 program:packages/native-runtime/src/values/index.ts:fromNumber [@6:value:3$66]  (in stage1) + 448  [0x10257283c]  index.ts:21
+                        1670 runtime:packages/native-runtime/src/generational.ts:closure@9764 [closure_146]  (in stage1) + 7432  [0x102551688]  generational.ts:323
+                          1670 runtime:packages/native-runtime/src/generational.ts:collect [@6:value:56$145]  (in stage1) + 5052  [0x10254f284]  generational.ts:287
+                            1670 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]  (in stage1) + 4400  [0x10250795c]  nursery.ts:450
+                              1516 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 58496  [0x1024ec67c]  nursery.ts:305
+                              + 1476 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1) + 784  [0x10243f194]  scan.ts:282
+                              + ! 1270 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14636  [0x10243d314]  scan.ts:196
+                              + ! : 1023 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 3876  [0x102438c58]  scan.ts:77
+                              + ! : | 870 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 1568  [0x102437390]  scan.ts:35
+                              + ! : | + 795 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 640  [0x1024db130]  nursery.ts:207
+                              + ! : | + ! 261 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 14228  [0x1024d814c]  nursery.ts:166
+                              + ! : | + ! : 41 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 3072,3092,...  [0x10244f41c,0x10244f430,...]  extent.ts:31
+                              + ! : | + ! : 41 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 13776  [0x102451dec]  extent.ts:79
+                              + ! : | + ! : | 16 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2940,2760  [0x102545e78,0x102545dc4]  generational.ts:125
+                              + ! : | + ! : | 14 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2972,224,...  [0x102545e98,0x1025453dc,...]  generational.ts:117
+                              + ! : | + ! : | 9 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 828,3164,...  [0x102545638,0x102545f58,...]  generational.ts:118
+                              + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2600,2680  [0x102545d24,0x102545d74]  generational.ts:124
+                              + ! : | + ! : 35 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 1812  [0x10244ef30]  extent.ts:30
+                              + ! : | + ! : | 30 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1136,2968,...  [0x10254576c,0x102545e94,...]  generational.ts:117
+                              + ! : | + ! : | 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2796,2860,...  [0x102545de8,0x102545e28,...]  generational.ts:125
+                              + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 60  [0x102545338]
+                              + ! : | + ! : 31 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 2364,2180,...  [0x10244f158,0x10244f0a0,...]  extent.ts:32
+                              + ! : | + ! : 15 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 1616  [0x10244ee6c]  extent.ts:29
+                              + ! : | + ! : | 11 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1548,392,...  [0x102545908,0x102545484,...]  generational.ts:117
+                              + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2796,2900  [0x102545de8,0x102545e50]  generational.ts:125
+                              + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 76  [0x102545348]
+                              + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2600  [0x102545d24]  generational.ts:124
+                              + ! : | + ! : 12 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 14548,14560,...  [0x1024520f0,0x1024520fc,...]  extent.ts:81
+                              + ! : | + ! : 11 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 2528,2332,...  [0x10244f1fc,0x10244f138,...]  extent.ts:34
+                              + ! : | + ! : 10 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 3360,15280,...  [0x10244f53c,0x1024523cc,...]  extent.ts:39
+                              + ! : | + ! : 9 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 8692  [0x102450a10]  extent.ts:58
+                              + ! : | + ! : | 9 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 3036  [0x102545ed8]  generational.ts:117
+                              + ! : | + ! : 7 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 2916,2908  [0x10244f380,0x10244f378]  extent.ts:35
+                              + ! : | + ! : 7 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 14876,14796,...  [0x102452238,0x1024521e8,...]  extent.ts:80
+                              + ! : | + ! : 6 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 8240,8312,...  [0x10245084c,0x102450894,...]  extent.ts:78
+                              + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 15792,15560,...  [0x1024525cc,0x1024524e4,...]  extent.ts:90
+                              + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 16312,16412,...  [0x1024527d4,0x102452838,...]  extent.ts:93
+                              + ! : | + ! : 4 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 464,672,...  [0x10244e9ec,0x10244eabc,...]  extent.ts:21
+                              + ! : | + ! : 4 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 15988,15992,...  [0x102452690,0x102452694,...]  extent.ts:91
+                              + ! : | + ! : 3 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 88,128  [0x10244e874,0x10244e89c]
+                              + ! : | + ! : 3 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 144,156  [0x10244e8ac,0x10244e8b8]  weak-slot.ts:3
+                              + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 1668,1724  [0x10244eea0,0x10244eed8]  extent.ts:30
+                              + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 3824,15204  [0x10244f70c,0x102452380]  extent.ts:43
+                              + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 5188,5192  [0x10244fc60,0x10244fc64]  extent.ts:56
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 1528  [0x10244ee14]  extent.ts:29
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 2008  [0x10244eff4]  extent.ts:33
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 13632  [0x102451d5c]  extent.ts:79
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 14328  [0x102452014]  extent.ts:83
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 14692  [0x102452180]  extent.ts:84
+                              + ! : | + ! : | 1 runtime:helper:remainder  (in stage1) + 192  [0x102554518]
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1) + 16876  [0x102452a08]  extent.ts:92
+                              + ! : | + ! 108 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 8380,8392,...  [0x1024d6a74,0x1024d6a80,...]  nursery.ts:156
+                              + ! : | + ! 63 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 17332,17788,...  [0x1024d8d6c,0x1024d8f34,...]  nursery.ts:179
+                              + ! : | + ! 56 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 6412,6196,...  [0x1024d62c4,0x1024d61ec,...]  nursery.ts:149
+                              + ! : | + ! 43 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 14932  [0x1024d840c]  nursery.ts:173
+                              + ! : | + ! : 29 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 1216,912,...  [0x102453020,0x102452ef0,...]  index.ts:14
+                              + ! : | + ! : 4 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 44,64,...  [0x102452b8c,0x102452ba0,...]
+                              + ! : | + ! : 3 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 508,504  [0x102452d5c,0x102452d58]  index.ts:15
+                              + ! : | + ! : 3 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 1920,1792  [0x1024532e0,0x102453260]  index.ts:28
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 248  [0x102452c58]  index.ts:11
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 1356  [0x1024530ac]  index.ts:23
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 2180  [0x1024533e4]  index.ts:30
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1) + 124  [0x102452bdc]  index.ts:9
+                              + ! : | + ! 33 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 5352  [0x1024d5ea0]  nursery.ts:147
+                              + ! : | + ! : 33 runtime:helper:remainder  (in stage1) + 12,192  [0x102554464,0x102554518]
+                              + ! : | + ! 22 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 10980,10992,...  [0x1024d749c,0x1024d74a8,...]  nursery.ts:162
+                              + ! : | + ! 21 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 15876,15624,...  [0x1024d87bc,0x1024d86c0,...]  nursery.ts:175
+                              + ! : | + ! 17 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 9372,9476,...  [0x1024d6e54,0x1024d6ebc,...]  nursery.ts:160
+                              + ! : | + ! 16 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 1312  [0x1024d4ed8]  nursery.ts:139
+                              + ! : | + ! 16 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 2016,2448,...  [0x1024d5198,0x1024d5348,...]  nursery.ts:141
+                              + ! : | + ! 15 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 10216,10248,...  [0x1024d71a0,0x1024d71c0,...]  nursery.ts:161
+                              + ! : | + ! 12 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 13304,13272,...  [0x1024d7db0,0x1024d7d90,...]  nursery.ts:169
+                              + ! : | + ! 11 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 136,196,...  [0x1024d4a40,0x1024d4a7c,...]
+                              + ! : | + ! 10 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 7980,7652,...  [0x1024d68e4,0x1024d679c,...]  nursery.ts:155
+                              + ! : | + ! 9 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 14216,12576,...  [0x1024d8140,0x1024d7ad8,...]  nursery.ts:166
+                              + ! : | + ! 6 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 17728,17912,...  [0x1024d8ef8,0x1024d8fb0,...]  nursery.ts:180
+                              + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 4220  [0x1024d5a34]  nursery.ts:144
+                              + ! : | + ! : 2 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in stage1) + 1368,2372  [0x1025491d4,0x1025495c0]  generational.ts:194
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in stage1) + 72  [0x102548cc4]
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in stage1) + 916  [0x102549010]  generational.ts:195
+                              + ! : | + ! : 1 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in stage1) + 224  [0x102548d5c]  generational.ts:28
+                              + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 4968,5136,...  [0x1024d5d20,0x1024d5dc8,...]  nursery.ts:147
+                              + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 16544,16380,...  [0x1024d8a58,0x1024d89b4,...]  nursery.ts:178
+                              + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 248,260,...  [0x1024d4ab0,0x1024d4abc,...]  weak-slot.ts:3
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 324,348  [0x1024d4afc,0x1024d4b14]  extent.ts:14
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 712,704,...  [0x1024d4c80,0x1024d4c78,...]  nursery.ts:109
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 3872,3916,...  [0x1024d58d8,0x1024d5904,...]  nursery.ts:144
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 4596,4492,...  [0x1024d5bac,0x1024d5b44,...]  nursery.ts:146
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 6532,6620,...  [0x1024d633c,0x1024d6394,...]  nursery.ts:151
+                              + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 15076,15284,...  [0x1024d849c,0x1024d856c,...]  nursery.ts:174
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 784,796,...  [0x1024d4cc8,0x1024d4cd4,...]  nursery.ts:133
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 8556,8748,...  [0x1024d6b24,0x1024d6be4,...]  nursery.ts:157
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 12696,12884,...  [0x1024d7b50,0x1024d7c0c,...]  nursery.ts:167
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 18736,19004,...  [0x1024d92e8,0x1024d93f4,...]  nursery.ts:181
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 19428,19724,...  [0x1024d959c,0x1024d96c4,...]  nursery.ts:182
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 6836,6968  [0x1024d646c,0x1024d64f0]  nursery.ts:152
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 11928  [0x1024d7850]  nursery.ts:159
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 14708,14832  [0x1024d832c,0x1024d83a8]  nursery.ts:173
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 20680,20768  [0x1024d9a80,0x1024d9ad8]  nursery.ts:184
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 740  [0x1024d4c9c]  nursery.ts:132
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 1404  [0x1024d4f34]  nursery.ts:139
+                              + ! : | + ! : 1 runtime:helper:remainder  (in stage1) + 28  [0x102554474]
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 3264  [0x1024d5678]  nursery.ts:142
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 6436  [0x1024d62dc]  nursery.ts:149
+                              + ! : | + ! : 1 runtime:helper:to-uint32  (in stage1) + 64  [0x10255443c]
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 9012  [0x1024d6cec]  nursery.ts:158
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 12144  [0x1024d7928]  nursery.ts:163
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 13868  [0x1024d7fe4]  nursery.ts:170
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 20184  [0x1024d9890]  nursery.ts:183
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1) + 628  [0x1024d4c2c]  nursery.ts:94
+                              + ! : | + 44 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 3784  [0x1024dbd78]  nursery.ts:222
+                              + ! : | + ! 14 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 2792  [0x1024da86c]  nursery.ts:198
+                              + ! : | + ! : 14 runtime:packages/native-runtime/src/generational.ts:closure@7187 [closure_141]  (in stage1) + 396,1032,...  [0x10254a9d0,0x10254ac4c,...]  generational.ts:221
+                              + ! : | + ! 7 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 3724,3652  [0x1024dac10,0x1024dabc8]  nursery.ts:202
+                              + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 1912,1188,...  [0x1024da4fc,0x1024da228,...]  nursery.ts:191
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 1848,1852,...  [0x1024da4bc,0x1024da4c0,...]  nursery.ts:197
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 3420,3200  [0x1024daae0,0x1024daa04]  nursery.ts:201
+                              + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 3908,3916,...  [0x1024dacc8,0x1024dacd0,...]  nursery.ts:203
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 100,104  [0x1024d9de8,0x1024d9dec]
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 2672,2752  [0x1024da7f4,0x1024da844]  nursery.ts:198
+                              + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 4308,4316  [0x1024dae58,0x1024dae60]  nursery.ts:204
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 756  [0x1024da078]  nursery.ts:193
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 1604  [0x1024da3c8]  nursery.ts:196
+                              + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1) + 168  [0x1024d9e2c]  nursery.ts:90
+                              + ! : | + 10 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 1836,1452,...  [0x1024db5dc,0x1024db45c,...]  nursery.ts:217
+                              + ! : | + 5 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 496,488,...  [0x1024db0a0,0x1024db098,...]  nursery.ts:207
+                              + ! : | + 3 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 52,60,...  [0x1024daee4,0x1024daeec,...]
+                              + ! : | + 3 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 908  [0x1024db23c]  nursery.ts:209
+                              + ! : | + 3 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 1292,1064  [0x1024db3bc,0x1024db2d8]  nursery.ts:211
+                              + ! : | + 3 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 3696,3700,...  [0x1024dbd20,0x1024dbd24,...]  nursery.ts:222
+                              + ! : | + 2 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 696  [0x1024db168]  nursery.ts:208
+                              + ! : | + 2 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1) + 132  [0x1024daf34]  nursery.ts:94
+                              + ! : | 72 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 476  [0x102436f4c]  scan.ts:31
+                              + ! : | + 57 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2972,700,...  [0x102545e98,0x1025455b8,...]  generational.ts:117
+                              + ! : | + 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2940,2796,...  [0x102545e78,0x102545de8,...]  generational.ts:125
+                              + ! : | + 5 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2012,2044,...  [0x102545ad8,0x102545af8,...]  generational.ts:116
+                              + ! : | + 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 52,104  [0x102545330,0x102545364]
+                              + ! : | + 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2692  [0x102545d80]  generational.ts:124
+                              + ! : | 23 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 800,804  [0x102437090,0x102437094]  scan.ts:33
+                              + ! : | 19 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 1152  [0x1024371f0]  scan.ts:34
+                              + ! : | + 18 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1) + 112,28,...  [0x1024369c4,0x102436970,...]  scan.ts:20
+                              + ! : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1) + 176  [0x102436a04]  scan.ts:20
+                              + ! : | +   1 runtime:helper:remainder  (in stage1) + 80  [0x1025544a8]
+                              + ! : | 13 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 1364,1736,...  [0x1024372c4,0x102437438,...]  scan.ts:35
+                              + ! : | 9 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 940,1008,...  [0x10243711c,0x102437160,...]  scan.ts:34
+                              + ! : | 7 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 532,588,...  [0x102436f84,0x102436fbc,...]  scan.ts:32
+                              + ! : | 5 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 48,52,...  [0x102436da0,0x102436da4,...]
+                              + ! : | 2 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 148  [0x102436e04]  scan.ts:19
+                              + ! : | 2 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 388  [0x102436ef4]  scan.ts:31
+                              + ! : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1) + 320  [0x102436eb0]  scan.ts:29
+                              + ! : 95 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 1888  [0x102438494]  scan.ts:67
+                              + ! : | 38 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 224,180,...  [0x1025453dc,0x1025453b0,...]  generational.ts:117
+                              + ! : | 22 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 3196,828,...  [0x102545f78,0x102545638,...]  generational.ts:118
+                              + ! : | 15 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1328,1264,...  [0x10254582c,0x1025457ec,...]  generational.ts:119
+                              + ! : | 11 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2600,2612,...  [0x102545d24,0x102545d30,...]  generational.ts:124
+                              + ! : | 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 40,60,...  [0x102545324,0x102545338,...]
+                              + ! : | 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2796,2912  [0x102545de8,0x102545e5c]  generational.ts:125
+                              + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 112  [0x10254536c]  generational.ts:94
+                              + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2048  [0x102545afc]  generational.ts:116
+                              + ! : 59 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 576  [0x102437f74]  scan.ts:62
+                              + ! : | 23 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1572,392,...  [0x102545920,0x102545484,...]  generational.ts:117
+                              + ! : | 16 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 728,644,...  [0x1025455d4,0x102545580,...]  generational.ts:118
+                              + ! : | 15 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1432,1264,...  [0x102545894,0x1025457ec,...]  generational.ts:119
+                              + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2612  [0x102545d30]  generational.ts:124
+                              + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2940  [0x102545e78]  generational.ts:125
+                              + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 40  [0x102545324]
+                              + ! : 34 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2332  [0x102438650]  scan.ts:81
+                              + ! : | 17 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 192,700,...  [0x1025453bc,0x1025455b8,...]  generational.ts:117
+                              + ! : | 10 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 740,644,...  [0x1025455e0,0x102545580,...]  generational.ts:118
+                              + ! : | 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1164,1264,...  [0x102545788,0x1025457ec,...]  generational.ts:119
+                              + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 96  [0x10254535c]
+                              + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2796  [0x102545de8]  generational.ts:125
+                              + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 112  [0x10254536c]  generational.ts:94
+                              + ! : 15 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 1596,1664,...  [0x102438370,0x1024383b4,...]  scan.ts:66
+                              + ! : 11 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 3952  [0x102438ca4]  scan.ts:78
+                              + ! : | 11 runtime:helper:string-equal  (in stage1) + 0  [0x102554530]
+                              + ! : 10 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 3680,3560,...  [0x102438b94,0x102438b1c,...]  scan.ts:77
+                              + ! : 5 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 1944,2000,...  [0x1024384cc,0x102438504,...]  scan.ts:68
+                              + ! : 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2728  [0x1024387dc]  scan.ts:69
+                              + ! : 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2228,2244,...  [0x1024385e8,0x1024385f8,...]  scan.ts:81
+                              + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 48,92  [0x102437d64,0x102437d90]
+                              + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 460,468  [0x102437f00,0x102437f08]  scan.ts:62
+                              + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2608  [0x102438764]  scan.ts:70
+                              + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 5080,5564  [0x10243910c,0x1024392f0]  scan.ts:85
+                              + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 272  [0x102437e44]  scan.ts:25
+                              + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 1928  [0x1024384bc]  scan.ts:67
+                              + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2112  [0x102438574]  scan.ts:80
+                              + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1) + 2388  [0x102438688]  scan.ts:82
+                              + ! 36 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2856,2888  [0x10243a510,0x10243a530]  scan.ts:122
+                              + ! 34 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 548,532  [0x102439c0c,0x102439bfc]  weak-slot.ts:7
+                              + ! 31 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 13232  [0x10243cd98]  scan.ts:189
+                              + ! : 10 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 828,740,...  [0x102545638,0x1025455e0,...]  generational.ts:118
+                              + ! : 8 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 228,700,...  [0x1025453e0,0x1025455b8,...]  generational.ts:117
+                              + ! : 8 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 1048,1084,...  [0x102545714,0x102545738,...]  generational.ts:119
+                              + ! : 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2572,2600,...  [0x102545d08,0x102545d24,...]  generational.ts:124
+                              + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2016  [0x102545adc]  generational.ts:116
+                              + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2872  [0x102545e34]  generational.ts:125
+                              + ! 13 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14360  [0x10243d200]  scan.ts:198
+                              + ! 12 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2720,2576,...  [0x10243a488,0x10243a3f8,...]  scan.ts:121
+                              + ! 11 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2720  [0x10243a488]  scan.ts:121
+                              + ! : 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2012  [0x102545ad8]  generational.ts:116
+                              + ! : 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 192,224,...  [0x1025453bc,0x1025453dc,...]  generational.ts:117
+                              + ! : 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2600,2740  [0x102545d24,0x102545db0]  generational.ts:124
+                              + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2892  [0x102545e48]  generational.ts:125
+                              + ! 10 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 3308,3148,...  [0x10243a6d4,0x10243a634,...]  scan.ts:123
+                              + ! 8 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 1180,1048,...  [0x102439e84,0x102439e00,...]  scan.ts:113
+                              + ! 8 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2508  [0x10243a3b4]  scan.ts:120
+                              + ! : 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 228,556,...  [0x1025453e0,0x102545528,...]  generational.ts:117
+                              + ! : 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2940,2912  [0x102545e78,0x102545e5c]  generational.ts:125
+                              + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 68  [0x102545340]
+                              + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 2628  [0x102545d40]  generational.ts:124
+                              + ! 5 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 1124  [0x102439e4c]  scan.ts:113
+                              + ! : 4 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1) + 172,268,...  [0x102436a00,0x102436a60,...]  scan.ts:20
+                              + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1) + 176  [0x102436a04]  scan.ts:20
+                              + ! :   1 runtime:helper:remainder  (in stage1) + 192  [0x102554518]
+                              + ! 5 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14692,14244,...  [0x10243d34c,0x10243d18c,...]  scan.ts:196
+                              + ! 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2392,2400,...  [0x10243a340,0x10243a348,...]  scan.ts:120
+                              + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 76,184,...  [0x102439a34,0x102439aa0,...]
+                              + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 5744,5748,...  [0x10243b058,0x10243b05c,...]  scan.ts:145
+                              + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 888,884  [0x102439d60,0x102439d5c]  scan.ts:53
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14728,14804  [0x10243d370,0x10243d3bc]  scan.ts:117
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 12720  [0x10243cb98]  scan.ts:188
+                              + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1) + 352,460  [0x102436ab4,0x102436b20]  scan.ts:20
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 12476,12680  [0x10243caa4,0x10243cb70]  scan.ts:188
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 13284,13340  [0x10243cdcc,0x10243ce04]  scan.ts:190
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 13480  [0x10243ce90]  scan.ts:192
+                              + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 604,648  [0x102439c44,0x102439c70]  weak-slot.ts:10
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 2212  [0x10243a28c]  scan.ts:112
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 8736  [0x10243bc08]  scan.ts:163
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 13156  [0x10243cd4c]  scan.ts:189
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14444  [0x10243d254]  scan.ts:200
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 14484  [0x10243d27c]  scan.ts:203
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 716  [0x102439cb4]  scan.ts:22
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 772  [0x102439cec]  scan.ts:25
+                              + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1) + 236  [0x102439ad4]  weak-slot.ts:3
+                              + 29 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1) + 672,484,...  [0x10243f124,0x10243f068,...]  scan.ts:282
+                              + 6 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1) + 168  [0x10243ef2c]  scan.ts:103
+                              + 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1) + 40,64,...  [0x10243eeac,0x10243eec4,...]
+                              + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1) + 252  [0x10243ef80]  scan.ts:279
+                              58 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 50548,50032,...  [0x1024ea770,0x1024ea56c,...]  nursery.ts:298
+                              43 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 54764,58540,...  [0x1024eb7e8,0x1024ec6a8,...]  nursery.ts:305
+                              25 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 56548  [0x1024ebee0]  nursery.ts:307
+                              5 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 42140,41924,...  [0x1024e8698,0x1024e85c0,...]  nursery.ts:288
+                              4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 43228,43232,...  [0x1024e8ad8,0x1024e8adc,...]  nursery.ts:289
+                              4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 46176,45072,...  [0x1024e965c,0x1024e920c,...]  nursery.ts:291
+                              3 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 52264,53348,...  [0x1024eae24,0x1024eb260,...]  nursery.ts:299
+                              2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 43892,45052  [0x1024e8d70,0x1024e91f8]  nursery.ts:290
+                              2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 46276,46928  [0x1024e96c0,0x1024e994c]  nursery.ts:293
+                              2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 46848,46852  [0x1024e98fc,0x1024e9900]  nursery.ts:294
+                              2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 54852,55424  [0x1024eb840,0x1024eba7c]  nursery.ts:306
+                              1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 46972  [0x1024e9978]  nursery.ts:295
+                              1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 54028  [0x1024eb508]  nursery.ts:300
+                              + 1 runtime:helper:to-uint32  (in stage1) + 16  [0x10255440c]
+                              1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 54004  [0x1024eb4f0]  nursery.ts:300
+                              1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1) + 58592  [0x1024ec6dc]  nursery.ts:304
+
+Total number in stack (recursive counted multiple, when >=5):
+        11       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 0  [0x1025452fc]  generational.ts:117
+        10       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 0  [0x1025452fc]  generational.ts:125
+        8       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 0  [0x1025452fc]  generational.ts:124
+        7       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 0  [0x1025452fc]
+        5       runtime:helper:remainder  (in stage1) + 0  [0x102554458]
+        5       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1) + 0  [0x1025452fc]  generational.ts:118
+
+Sort by top of stack, same collapsed (when >= 5):
+        runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in stage1)        451
+        runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in stage1)        410
+        runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in stage1)        160
+        runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in stage1)        153
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in stage1)        149
+        runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in stage1)        62
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in stage1)        48
+        runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in stage1)        43
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in stage1)        40
+        runtime:helper:remainder  (in stage1)        37
+        runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in stage1)        31
+        runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in stage1)        30
+        runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in stage1)        24
+        runtime:packages/native-runtime/src/generational.ts:closure@7187 [closure_141]  (in stage1)        14
+        runtime:helper:string-equal  (in stage1)        11
+        runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in stage1)        5
+
+Binary Images:
+       0x102414000 -        0x1052c4e0f +stage1 (???) <C43A16A5-DB22-8DAE-B43A-50879CB0A922> /Users/*/stage1
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib

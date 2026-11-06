@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "kind": "frozen-native-selfbuild",
+  "codeRange": "b7aa59a..9dc06b8",
+  "frozenToolchain": "17c019fae4b12984cacc3ff573d1163a9a11bda82c98ffbadb8d9d495a547f1b",
+  "slotClass": "selfbuild-perf",
+  "concurrency": 1,
+  "firstSuccessfulExecution": {
+    "snapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-codegen-copy-v1/source",
+    "stage1": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-codegen-copy-v1/stage1",
+    "stage2": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-codegen-copy-v1/stage2",
+    "bytes": 71138370,
+    "sha256": "2f637f67c2da2a1eceaa7bae7176f35294987176fb3ad141e515fefe9d3d1f08",
+    "initial": {
+      "state": "stopped",
+      "pid": 56058
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "identical": true,
+    "dwarfExit": 0
+  },
+  "metadata": {
+    "stage1": {
+      "debugSections": {
+        "__debug_abbrev": 69,
+        "__debug_info": 2187630,
+        "__debug_line": 18534501
+      },
+      "codesignExit": 0
+    },
+    "stage2": {
+      "debugSections": {
+        "__debug_abbrev": 69,
+        "__debug_info": 2187630,
+        "__debug_line": 18534501
+      },
+      "codesignExit": 0
+    }
+  },
+  "cpu": {
+    "pid": 56058,
+    "timebase": {
+      "numer": 125,
+      "denom": 3
+    },
+    "lastCPU": {
+      "userTicks": 49835000331,
+      "systemTicks": 316565938
+    },
+    "cpuMsLowerBound": 2089648.5945416668,
+    "finalUnobservedWallBoundMs": 101.695541,
+    "probes": 10347,
+    "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+  },
+  "wallScope": {
+    "stage1NodeWallSeconds": 124.6,
+    "nativePhaseStartUTC": "2026-11-06T17:47:10.660Z",
+    "nativePhaseEndUTC": "2026-11-06T18:42:17.509Z",
+    "nativePhaseWallSeconds": 3306.849,
+    "limitation": "Phase interval includes debugger launch/initial stop. Process CPU excludes waiting and was sampled until exit; final missing CPU is bounded by 101.7 ms of wall time."
+  },
+  "selfbuildTimingComparison": "No matched uncached self-build baseline completed, so no whole-compiler speedup is claimed. The isolated same-source record-walk CPU reduction is in native-codegen-register-copies-cpu-v3.json.",
+  "scriptWrapperIncident": {
+    "firstValidation": "Native inferior 56058 exited 0, stage images matched, and dwarfdump verified. The successful result is preserved independently of later observation files.",
+    "duplicate": "The shared slot script changed in place while the wrapper was running. After successful completion the old wrapper reported command not found: ne and unexpectedly executed the same command again. The repeated inferior 74546 was stopped via SIGSTOP; LLDB recorded stopped state and killed it. Its wrapper 54269 was terminated. The stage images were re-compared after cleanup and remain identical.",
+    "duplicateInitial": {
+      "state": "stopped",
+      "pid": 74546
+    },
+    "duplicateFinal": {
+      "state": "5",
+      "exitStatus": -1
+    },
+    "notATest262Interruption": true
+  },
+  "validation": "Exact rebased copy-only workspace gate pending before marking this range merge-ready. Future inline-union/control-flow changes are separate uncommitted work.",
+  "mergeReady": false
+}

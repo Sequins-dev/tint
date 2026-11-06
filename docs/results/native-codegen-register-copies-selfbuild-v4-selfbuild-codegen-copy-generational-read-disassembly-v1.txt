@@ -1,0 +1,939 @@
+(lldb) target create ".tint-bootstrap/perf/selfbuild-codegen-copy-v1/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-codegen-copy-v1/stage1' (arm64).
+(lldb) disassemble --name "runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]"
+stage1`runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]:
+stage1[0x1001312fc] <+0>:    stp    x29, x30, [sp, #-0x10]!
+stage1[0x100131300] <+4>:    mov    x29, sp
+stage1[0x100131304] <+8>:    sub    sp, sp, #0x1e0
+stage1[0x100131308] <+12>:   str    x0, [sp, #0x20]
+stage1[0x10013130c] <+16>:   str    x3, [sp, #0x28]
+stage1[0x100131310] <+20>:   str    xzr, [sp, #0x40]
+stage1[0x100131314] <+24>:   str    xzr, [sp, #0x58]
+stage1[0x100131318] <+28>:   str    xzr, [sp, #0x60]
+stage1[0x10013131c] <+32>:   str    xzr, [sp, #0xc8]
+stage1[0x100131320] <+36>:   str    xzr, [sp, #0xd0]
+stage1[0x100131324] <+40>:   str    xzr, [sp, #0x188]
+stage1[0x100131328] <+44>:   str    xzr, [sp, #0x190]
+stage1[0x10013132c] <+48>:   str    xzr, [sp, #0x198]
+stage1[0x100131330] <+52>:   str    x1, [sp, #0x40]
+stage1[0x100131334] <+56>:   str    d0, [sp, #0x48]
+stage1[0x100131338] <+60>:   ldr    x10, [sp, #0x20]
+stage1[0x10013133c] <+64>:   ldr    x9, [x10]
+stage1[0x100131340] <+68>:   str    x9, [sp, #0x30]
+stage1[0x100131344] <+72>:   adr    x9, 0x100131344           ; <+72>
+stage1[0x100131348] <+76>:   mov    x17, #0x8164              ; =33124 
+stage1[0x10013134c] <+80>:   movk   x17, #0x1, lsl #16
+stage1[0x100131350] <+84>:   add    x9, x9, x17
+stage1[0x100131354] <+88>:   str    x9, [sp, #0x38]
+stage1[0x100131358] <+92>:   add    x9, sp, #0x30
+stage1[0x10013135c] <+96>:   str    x9, [x10]
+stage1[0x100131360] <+100>:  b      0x100131364               ; <+104>
+stage1[0x100131364] <+104>:  ldr    x9, [sp, #0x40]
+stage1[0x100131368] <+108>:  str    x9, [sp, #0x188]
+stage1[0x10013136c] <+112>:  ldr    x9, [sp, #0x188]
+stage1[0x100131370] <+116>:  cbnz   x9, 0x100131378           ; <+124> at generational.ts:94:9
+stage1[0x100131374] <+120>:  b      0x1001313fc               ; <+256>
+stage1[0x100131378] <+124>:  ldr    x10, [x9]
+stage1[0x10013137c] <+128>:  adr    x11, 0x10013137c          ; <+128> at generational.ts:94:9
+stage1[0x100131380] <+132>:  mov    x17, #0x284c              ; =10316 
+stage1[0x100131384] <+136>:  movk   x17, #0x1, lsl #16
+stage1[0x100131388] <+140>:  add    x11, x11, x17
+stage1[0x10013138c] <+144>:  cmp    x10, x11
+stage1[0x100131390] <+148>:  b.eq   0x100131398               ; <+156> at generational.ts:94:9
+stage1[0x100131394] <+152>:  b      0x1001313fc               ; <+256>
+stage1[0x100131398] <+156>:  ldr    x10, [x9, #0x10]
+stage1[0x10013139c] <+160>:  str    x10, [sp, #0x60]
+stage1[0x1001313a0] <+164>:  b      0x1001313a4               ; <+168>
+stage1[0x1001313a4] <+168>:  str    xzr, [sp, #0x188]
+stage1[0x1001313a8] <+172>:  ldr    x9, [sp, #0x60]
+stage1[0x1001313ac] <+176>:  str    x9, [sp, #0x188]
+stage1[0x1001313b0] <+180>:  ldr    x9, [sp, #0x188]
+stage1[0x1001313b4] <+184>:  cbnz   x9, 0x1001313bc           ; <+192> at generational.ts:117:16
+stage1[0x1001313b8] <+188>:  b      0x100131458               ; <+348>
+stage1[0x1001313bc] <+192>:  ldr    x10, [x9]
+stage1[0x1001313c0] <+196>:  adr    x11, 0x1001313c0          ; <+196> at generational.ts:117:16
+stage1[0x1001313c4] <+200>:  mov    x17, #0x1338              ; =4920 
+stage1[0x1001313c8] <+204>:  movk   x17, #0x1, lsl #16
+stage1[0x1001313cc] <+208>:  add    x11, x11, x17
+stage1[0x1001313d0] <+212>:  cmp    x10, x11
+stage1[0x1001313d4] <+216>:  b.eq   0x1001313dc               ; <+224> at generational.ts:117:16
+stage1[0x1001313d8] <+220>:  b      0x100131458               ; <+348>
+stage1[0x1001313dc] <+224>:  ldr    x9, [sp, #0x188]
+stage1[0x1001313e0] <+228>:  ldrb   w10, [x9, #0x10]
+stage1[0x1001313e4] <+232>:  cmp    w10, #0x1
+stage1[0x1001313e8] <+236>:  b.eq   0x1001313f0               ; <+244> at generational.ts:117:16
+stage1[0x1001313ec] <+240>:  b      0x100131458               ; <+348>
+stage1[0x1001313f0] <+244>:  ldr    x10, [x9, #0x18]
+stage1[0x1001313f4] <+248>:  str    x10, [sp, #0x58]
+stage1[0x1001313f8] <+252>:  b      0x100131414               ; <+280>
+stage1[0x1001313fc] <+256>:  str    xzr, [sp, #0x58]
+stage1[0x100131400] <+260>:  str    xzr, [sp, #0x60]
+stage1[0x100131404] <+264>:  str    xzr, [sp, #0xc8]
+stage1[0x100131408] <+268>:  str    xzr, [sp, #0xd0]
+stage1[0x10013140c] <+272>:  str    xzr, [sp, #0x188]
+stage1[0x100131410] <+276>:  brk    #0
+stage1[0x100131414] <+280>:  str    xzr, [sp, #0x188]
+stage1[0x100131418] <+284>:  ldr    x9, [sp, #0x58]
+stage1[0x10013141c] <+288>:  str    x9, [sp, #0x188]
+stage1[0x100131420] <+292>:  ldr    x9, [sp, #0x188]
+stage1[0x100131424] <+296>:  cbnz   x9, 0x10013142c           ; <+304> at generational.ts:117:16
+stage1[0x100131428] <+300>:  b      0x1001314a0               ; <+420>
+stage1[0x10013142c] <+304>:  ldr    x10, [x9]
+stage1[0x100131430] <+308>:  adr    x11, 0x100131430          ; <+308> at generational.ts:117:16
+stage1[0x100131434] <+312>:  mov    x17, #0x3020              ; =12320 
+stage1[0x100131438] <+316>:  movk   x17, #0x1, lsl #16
+stage1[0x10013143c] <+320>:  add    x11, x11, x17
+stage1[0x100131440] <+324>:  cmp    x10, x11
+stage1[0x100131444] <+328>:  b.eq   0x10013144c               ; <+336> at generational.ts:117:16
+stage1[0x100131448] <+332>:  b      0x1001314a0               ; <+420>
+stage1[0x10013144c] <+336>:  ldr    x10, [x9, #0x10]
+stage1[0x100131450] <+340>:  str    x10, [sp, #0x68]
+stage1[0x100131454] <+344>:  b      0x100131470               ; <+372>
+stage1[0x100131458] <+348>:  str    xzr, [sp, #0x58]
+stage1[0x10013145c] <+352>:  str    xzr, [sp, #0x60]
+stage1[0x100131460] <+356>:  str    xzr, [sp, #0xc8]
+stage1[0x100131464] <+360>:  str    xzr, [sp, #0xd0]
+stage1[0x100131468] <+364>:  str    xzr, [sp, #0x188]
+stage1[0x10013146c] <+368>:  brk    #0
+stage1[0x100131470] <+372>:  str    xzr, [sp, #0x188]
+stage1[0x100131474] <+376>:  ldr    x9, [sp, #0x60]
+stage1[0x100131478] <+380>:  str    x9, [sp, #0x188]
+stage1[0x10013147c] <+384>:  ldr    x9, [sp, #0x188]
+stage1[0x100131480] <+388>:  ldr    x9, [sp, #0x188]
+stage1[0x100131484] <+392>:  ldrb   w10, [x9, #0x10]
+stage1[0x100131488] <+396>:  cmp    w10, #0x1
+stage1[0x10013148c] <+400>:  b.eq   0x100131494               ; <+408> at generational.ts:117:38
+stage1[0x100131490] <+404>:  b      0x1001314fc               ; <+512>
+stage1[0x100131494] <+408>:  ldr    x10, [x9, #0x18]
+stage1[0x100131498] <+412>:  str    x10, [sp, #0x58]
+stage1[0x10013149c] <+416>:  b      0x1001314b8               ; <+444>
+stage1[0x1001314a0] <+420>:  str    xzr, [sp, #0x58]
+stage1[0x1001314a4] <+424>:  str    xzr, [sp, #0x60]
+stage1[0x1001314a8] <+428>:  str    xzr, [sp, #0xc8]
+stage1[0x1001314ac] <+432>:  str    xzr, [sp, #0xd0]
+stage1[0x1001314b0] <+436>:  str    xzr, [sp, #0x188]
+stage1[0x1001314b4] <+440>:  brk    #0
+stage1[0x1001314b8] <+444>:  str    xzr, [sp, #0x188]
+stage1[0x1001314bc] <+448>:  ldr    x9, [sp, #0x58]
+stage1[0x1001314c0] <+452>:  str    x9, [sp, #0x188]
+stage1[0x1001314c4] <+456>:  ldr    x9, [sp, #0x188]
+stage1[0x1001314c8] <+460>:  cbnz   x9, 0x1001314d0           ; <+468> at generational.ts:117:38
+stage1[0x1001314cc] <+464>:  b      0x100131534               ; <+568>
+stage1[0x1001314d0] <+468>:  ldr    x10, [x9]
+stage1[0x1001314d4] <+472>:  adr    x11, 0x1001314d4          ; <+472> at generational.ts:117:38
+stage1[0x1001314d8] <+476>:  mov    x17, #0x2f7c              ; =12156 
+stage1[0x1001314dc] <+480>:  movk   x17, #0x1, lsl #16
+stage1[0x1001314e0] <+484>:  add    x11, x11, x17
+stage1[0x1001314e4] <+488>:  cmp    x10, x11
+stage1[0x1001314e8] <+492>:  b.eq   0x1001314f0               ; <+500> at generational.ts:117:38
+stage1[0x1001314ec] <+496>:  b      0x100131534               ; <+568>
+stage1[0x1001314f0] <+500>:  ldr    x10, [x9, #0x18]
+stage1[0x1001314f4] <+504>:  str    x10, [sp, #0x70]
+stage1[0x1001314f8] <+508>:  b      0x100131514               ; <+536>
+stage1[0x1001314fc] <+512>:  str    xzr, [sp, #0x58]
+stage1[0x100131500] <+516>:  str    xzr, [sp, #0x60]
+stage1[0x100131504] <+520>:  str    xzr, [sp, #0xc8]
+stage1[0x100131508] <+524>:  str    xzr, [sp, #0xd0]
+stage1[0x10013150c] <+528>:  str    xzr, [sp, #0x188]
+stage1[0x100131510] <+532>:  brk    #0
+stage1[0x100131514] <+536>:  str    xzr, [sp, #0x188]
+stage1[0x100131518] <+540>:  ldr    d16, [sp, #0x48]
+stage1[0x10013151c] <+544>:  ldr    d17, [sp, #0x68]
+stage1[0x100131520] <+548>:  ldr    d18, [sp, #0x70]
+stage1[0x100131524] <+552>:  str    d17, [sp, #0xe8]
+stage1[0x100131528] <+556>:  str    d18, [sp, #0xf0]
+stage1[0x10013152c] <+560>:  str    d16, [sp, #0xf8]
+stage1[0x100131530] <+564>:  b      0x100131ea8               ; <+2988> at generational.ts:117:7
+stage1[0x100131534] <+568>:  str    xzr, [sp, #0x58]
+stage1[0x100131538] <+572>:  str    xzr, [sp, #0x60]
+stage1[0x10013153c] <+576>:  str    xzr, [sp, #0xc8]
+stage1[0x100131540] <+580>:  str    xzr, [sp, #0xd0]
+stage1[0x100131544] <+584>:  str    xzr, [sp, #0x188]
+stage1[0x100131548] <+588>:  brk    #0
+stage1[0x10013154c] <+592>:  ldr    x9, [sp, #0x60]
+stage1[0x100131550] <+596>:  str    x9, [sp, #0x188]
+stage1[0x100131554] <+600>:  ldr    x9, [sp, #0x188]
+stage1[0x100131558] <+604>:  cbnz   x9, 0x100131560           ; <+612> at generational.ts:118:16
+stage1[0x10013155c] <+608>:  b      0x10013160c               ; <+784>
+stage1[0x100131560] <+612>:  ldr    x10, [x9]
+stage1[0x100131564] <+616>:  adr    x11, 0x100131564          ; <+616> at generational.ts:118:16
+stage1[0x100131568] <+620>:  mov    x17, #0x1194              ; =4500 
+stage1[0x10013156c] <+624>:  movk   x17, #0x1, lsl #16
+stage1[0x100131570] <+628>:  add    x11, x11, x17
+stage1[0x100131574] <+632>:  cmp    x10, x11
+stage1[0x100131578] <+636>:  b.eq   0x100131580               ; <+644> at generational.ts:118:16
+stage1[0x10013157c] <+640>:  b      0x10013160c               ; <+784>
+stage1[0x100131580] <+644>:  ldr    x9, [sp, #0x188]
+stage1[0x100131584] <+648>:  ldrb   w10, [x9, #0x10]
+stage1[0x100131588] <+652>:  cmp    w10, #0x1
+stage1[0x10013158c] <+656>:  b.eq   0x100131594               ; <+664> at generational.ts:118:16
+stage1[0x100131590] <+660>:  b      0x10013160c               ; <+784>
+stage1[0x100131594] <+664>:  ldr    x10, [x9, #0x18]
+stage1[0x100131598] <+668>:  str    x10, [sp, #0x58]
+stage1[0x10013159c] <+672>:  b      0x1001315c8               ; <+716>
+stage1[0x1001315a0] <+676>:  ldr    d16, [sp, #0x78]
+stage1[0x1001315a4] <+680>:  str    d16, [sp, #0x90]
+stage1[0x1001315a8] <+684>:  fmov   x9, d16
+stage1[0x1001315ac] <+688>:  cmp    x9, #0x0
+stage1[0x1001315b0] <+692>:  cset   w9, ne
+stage1[0x1001315b4] <+696>:  fmov   d17, x9
+stage1[0x1001315b8] <+700>:  fmov   x9, d17
+stage1[0x1001315bc] <+704>:  cbz    x9, 0x1001315c4           ; <+712> at generational.ts:117:7
+stage1[0x1001315c0] <+708>:  b      0x100131754               ; <+1112> at generational.ts:117:7
+stage1[0x1001315c4] <+712>:  b      0x100131700               ; <+1028> at generational.ts:119:16
+stage1[0x1001315c8] <+716>:  str    xzr, [sp, #0x188]
+stage1[0x1001315cc] <+720>:  ldr    x9, [sp, #0x58]
+stage1[0x1001315d0] <+724>:  str    x9, [sp, #0x188]
+stage1[0x1001315d4] <+728>:  ldr    x9, [sp, #0x188]
+stage1[0x1001315d8] <+732>:  cbnz   x9, 0x1001315e0           ; <+740> at generational.ts:118:16
+stage1[0x1001315dc] <+736>:  b      0x100131654               ; <+856>
+stage1[0x1001315e0] <+740>:  ldr    x10, [x9]
+stage1[0x1001315e4] <+744>:  adr    x11, 0x1001315e4          ; <+744> at generational.ts:118:16
+stage1[0x1001315e8] <+748>:  mov    x17, #0x2e6c              ; =11884 
+stage1[0x1001315ec] <+752>:  movk   x17, #0x1, lsl #16
+stage1[0x1001315f0] <+756>:  add    x11, x11, x17
+stage1[0x1001315f4] <+760>:  cmp    x10, x11
+stage1[0x1001315f8] <+764>:  b.eq   0x100131600               ; <+772> at generational.ts:118:16
+stage1[0x1001315fc] <+768>:  b      0x100131654               ; <+856>
+stage1[0x100131600] <+772>:  ldr    x10, [x9, #0x20]
+stage1[0x100131604] <+776>:  str    x10, [sp, #0x80]
+stage1[0x100131608] <+780>:  b      0x100131624               ; <+808>
+stage1[0x10013160c] <+784>:  str    xzr, [sp, #0x58]
+stage1[0x100131610] <+788>:  str    xzr, [sp, #0x60]
+stage1[0x100131614] <+792>:  str    xzr, [sp, #0xc8]
+stage1[0x100131618] <+796>:  str    xzr, [sp, #0xd0]
+stage1[0x10013161c] <+800>:  str    xzr, [sp, #0x188]
+stage1[0x100131620] <+804>:  brk    #0
+stage1[0x100131624] <+808>:  str    xzr, [sp, #0x188]
+stage1[0x100131628] <+812>:  ldr    x9, [sp, #0x60]
+stage1[0x10013162c] <+816>:  str    x9, [sp, #0x188]
+stage1[0x100131630] <+820>:  ldr    x9, [sp, #0x188]
+stage1[0x100131634] <+824>:  ldr    x9, [sp, #0x188]
+stage1[0x100131638] <+828>:  ldrb   w10, [x9, #0x10]
+stage1[0x10013163c] <+832>:  cmp    w10, #0x1
+stage1[0x100131640] <+836>:  b.eq   0x100131648               ; <+844> at generational.ts:118:38
+stage1[0x100131644] <+840>:  b      0x1001316b0               ; <+948>
+stage1[0x100131648] <+844>:  ldr    x10, [x9, #0x18]
+stage1[0x10013164c] <+848>:  str    x10, [sp, #0x58]
+stage1[0x100131650] <+852>:  b      0x10013166c               ; <+880>
+stage1[0x100131654] <+856>:  str    xzr, [sp, #0x58]
+stage1[0x100131658] <+860>:  str    xzr, [sp, #0x60]
+stage1[0x10013165c] <+864>:  str    xzr, [sp, #0xc8]
+stage1[0x100131660] <+868>:  str    xzr, [sp, #0xd0]
+stage1[0x100131664] <+872>:  str    xzr, [sp, #0x188]
+stage1[0x100131668] <+876>:  brk    #0
+stage1[0x10013166c] <+880>:  str    xzr, [sp, #0x188]
+stage1[0x100131670] <+884>:  ldr    x9, [sp, #0x58]
+stage1[0x100131674] <+888>:  str    x9, [sp, #0x188]
+stage1[0x100131678] <+892>:  ldr    x9, [sp, #0x188]
+stage1[0x10013167c] <+896>:  cbnz   x9, 0x100131684           ; <+904> at generational.ts:118:38
+stage1[0x100131680] <+900>:  b      0x1001316e8               ; <+1004>
+stage1[0x100131684] <+904>:  ldr    x10, [x9]
+stage1[0x100131688] <+908>:  adr    x11, 0x100131688          ; <+908> at generational.ts:118:38
+stage1[0x10013168c] <+912>:  mov    x17, #0x2dc8              ; =11720 
+stage1[0x100131690] <+916>:  movk   x17, #0x1, lsl #16
+stage1[0x100131694] <+920>:  add    x11, x11, x17
+stage1[0x100131698] <+924>:  cmp    x10, x11
+stage1[0x10013169c] <+928>:  b.eq   0x1001316a4               ; <+936> at generational.ts:118:38
+stage1[0x1001316a0] <+932>:  b      0x1001316e8               ; <+1004>
+stage1[0x1001316a4] <+936>:  ldr    x10, [x9, #0x28]
+stage1[0x1001316a8] <+940>:  str    x10, [sp, #0x88]
+stage1[0x1001316ac] <+944>:  b      0x1001316c8               ; <+972>
+stage1[0x1001316b0] <+948>:  str    xzr, [sp, #0x58]
+stage1[0x1001316b4] <+952>:  str    xzr, [sp, #0x60]
+stage1[0x1001316b8] <+956>:  str    xzr, [sp, #0xc8]
+stage1[0x1001316bc] <+960>:  str    xzr, [sp, #0xd0]
+stage1[0x1001316c0] <+964>:  str    xzr, [sp, #0x188]
+stage1[0x1001316c4] <+968>:  brk    #0
+stage1[0x1001316c8] <+972>:  str    xzr, [sp, #0x188]
+stage1[0x1001316cc] <+976>:  ldr    d16, [sp, #0x48]
+stage1[0x1001316d0] <+980>:  ldr    d17, [sp, #0x80]
+stage1[0x1001316d4] <+984>:  ldr    d18, [sp, #0x88]
+stage1[0x1001316d8] <+988>:  str    d17, [sp, #0x110]
+stage1[0x1001316dc] <+992>:  str    d18, [sp, #0x118]
+stage1[0x1001316e0] <+996>:  str    d16, [sp, #0x120]
+stage1[0x1001316e4] <+1000>: b      0x100131f58               ; <+3164> at generational.ts:118:7
+stage1[0x1001316e8] <+1004>: str    xzr, [sp, #0x58]
+stage1[0x1001316ec] <+1008>: str    xzr, [sp, #0x60]
+stage1[0x1001316f0] <+1012>: str    xzr, [sp, #0xc8]
+stage1[0x1001316f4] <+1016>: str    xzr, [sp, #0xd0]
+stage1[0x1001316f8] <+1020>: str    xzr, [sp, #0x188]
+stage1[0x1001316fc] <+1024>: brk    #0
+stage1[0x100131700] <+1028>: ldr    x9, [sp, #0x60]
+stage1[0x100131704] <+1032>: str    x9, [sp, #0x188]
+stage1[0x100131708] <+1036>: ldr    x9, [sp, #0x188]
+stage1[0x10013170c] <+1040>: cbnz   x9, 0x100131714           ; <+1048> at generational.ts:119:16
+stage1[0x100131710] <+1044>: b      0x1001317c0               ; <+1220>
+stage1[0x100131714] <+1048>: ldr    x10, [x9]
+stage1[0x100131718] <+1052>: adr    x11, 0x100131718          ; <+1052> at generational.ts:119:16
+stage1[0x10013171c] <+1056>: mov    x17, #0xfe0               ; =4064 
+stage1[0x100131720] <+1060>: movk   x17, #0x1, lsl #16
+stage1[0x100131724] <+1064>: add    x11, x11, x17
+stage1[0x100131728] <+1068>: cmp    x10, x11
+stage1[0x10013172c] <+1072>: b.eq   0x100131734               ; <+1080> at generational.ts:119:16
+stage1[0x100131730] <+1076>: b      0x1001317c0               ; <+1220>
+stage1[0x100131734] <+1080>: ldr    x9, [sp, #0x188]
+stage1[0x100131738] <+1084>: ldrb   w10, [x9, #0x10]
+stage1[0x10013173c] <+1088>: cmp    w10, #0x1
+stage1[0x100131740] <+1092>: b.eq   0x100131748               ; <+1100> at generational.ts:119:16
+stage1[0x100131744] <+1096>: b      0x1001317c0               ; <+1220>
+stage1[0x100131748] <+1100>: ldr    x10, [x9, #0x18]
+stage1[0x10013174c] <+1104>: str    x10, [sp, #0x58]
+stage1[0x100131750] <+1108>: b      0x10013177c               ; <+1152>
+stage1[0x100131754] <+1112>: ldr    d16, [sp, #0x90]
+stage1[0x100131758] <+1116>: str    d16, [sp, #0xa8]
+stage1[0x10013175c] <+1120>: fmov   x9, d16
+stage1[0x100131760] <+1124>: cmp    x9, #0x0
+stage1[0x100131764] <+1128>: cset   w9, ne
+stage1[0x100131768] <+1132>: fmov   d17, x9
+stage1[0x10013176c] <+1136>: fmov   x9, d17
+stage1[0x100131770] <+1140>: cbz    x9, 0x100131778           ; <+1148> at generational.ts:117:7
+stage1[0x100131774] <+1144>: b      0x100131908               ; <+1548> at generational.ts:117:7
+stage1[0x100131778] <+1148>: b      0x1001318b4               ; <+1464> at generational.ts:120:16
+stage1[0x10013177c] <+1152>: str    xzr, [sp, #0x188]
+stage1[0x100131780] <+1156>: ldr    x9, [sp, #0x58]
+stage1[0x100131784] <+1160>: str    x9, [sp, #0x188]
+stage1[0x100131788] <+1164>: ldr    x9, [sp, #0x188]
+stage1[0x10013178c] <+1168>: cbnz   x9, 0x100131794           ; <+1176> at generational.ts:119:16
+stage1[0x100131790] <+1172>: b      0x100131808               ; <+1292>
+stage1[0x100131794] <+1176>: ldr    x10, [x9]
+stage1[0x100131798] <+1180>: adr    x11, 0x100131798          ; <+1180> at generational.ts:119:16
+stage1[0x10013179c] <+1184>: mov    x17, #0x2cb8              ; =11448 
+stage1[0x1001317a0] <+1188>: movk   x17, #0x1, lsl #16
+stage1[0x1001317a4] <+1192>: add    x11, x11, x17
+stage1[0x1001317a8] <+1196>: cmp    x10, x11
+stage1[0x1001317ac] <+1200>: b.eq   0x1001317b4               ; <+1208> at generational.ts:119:16
+stage1[0x1001317b0] <+1204>: b      0x100131808               ; <+1292>
+stage1[0x1001317b4] <+1208>: ldr    x10, [x9, #0x30]
+stage1[0x1001317b8] <+1212>: str    x10, [sp, #0x98]
+stage1[0x1001317bc] <+1216>: b      0x1001317d8               ; <+1244>
+stage1[0x1001317c0] <+1220>: str    xzr, [sp, #0x58]
+stage1[0x1001317c4] <+1224>: str    xzr, [sp, #0x60]
+stage1[0x1001317c8] <+1228>: str    xzr, [sp, #0xc8]
+stage1[0x1001317cc] <+1232>: str    xzr, [sp, #0xd0]
+stage1[0x1001317d0] <+1236>: str    xzr, [sp, #0x188]
+stage1[0x1001317d4] <+1240>: brk    #0
+stage1[0x1001317d8] <+1244>: str    xzr, [sp, #0x188]
+stage1[0x1001317dc] <+1248>: ldr    x9, [sp, #0x60]
+stage1[0x1001317e0] <+1252>: str    x9, [sp, #0x188]
+stage1[0x1001317e4] <+1256>: ldr    x9, [sp, #0x188]
+stage1[0x1001317e8] <+1260>: ldr    x9, [sp, #0x188]
+stage1[0x1001317ec] <+1264>: ldrb   w10, [x9, #0x10]
+stage1[0x1001317f0] <+1268>: cmp    w10, #0x1
+stage1[0x1001317f4] <+1272>: b.eq   0x1001317fc               ; <+1280> at generational.ts:119:36
+stage1[0x1001317f8] <+1276>: b      0x100131864               ; <+1384>
+stage1[0x1001317fc] <+1280>: ldr    x10, [x9, #0x18]
+stage1[0x100131800] <+1284>: str    x10, [sp, #0x58]
+stage1[0x100131804] <+1288>: b      0x100131820               ; <+1316>
+stage1[0x100131808] <+1292>: str    xzr, [sp, #0x58]
+stage1[0x10013180c] <+1296>: str    xzr, [sp, #0x60]
+stage1[0x100131810] <+1300>: str    xzr, [sp, #0xc8]
+stage1[0x100131814] <+1304>: str    xzr, [sp, #0xd0]
+stage1[0x100131818] <+1308>: str    xzr, [sp, #0x188]
+stage1[0x10013181c] <+1312>: brk    #0
+stage1[0x100131820] <+1316>: str    xzr, [sp, #0x188]
+stage1[0x100131824] <+1320>: ldr    x9, [sp, #0x58]
+stage1[0x100131828] <+1324>: str    x9, [sp, #0x188]
+stage1[0x10013182c] <+1328>: ldr    x9, [sp, #0x188]
+stage1[0x100131830] <+1332>: cbnz   x9, 0x100131838           ; <+1340> at generational.ts:119:36
+stage1[0x100131834] <+1336>: b      0x10013189c               ; <+1440>
+stage1[0x100131838] <+1340>: ldr    x10, [x9]
+stage1[0x10013183c] <+1344>: adr    x11, 0x10013183c          ; <+1344> at generational.ts:119:36
+stage1[0x100131840] <+1348>: mov    x17, #0x2c14              ; =11284 
+stage1[0x100131844] <+1352>: movk   x17, #0x1, lsl #16
+stage1[0x100131848] <+1356>: add    x11, x11, x17
+stage1[0x10013184c] <+1360>: cmp    x10, x11
+stage1[0x100131850] <+1364>: b.eq   0x100131858               ; <+1372> at generational.ts:119:36
+stage1[0x100131854] <+1368>: b      0x10013189c               ; <+1440>
+stage1[0x100131858] <+1372>: ldr    x10, [x9, #0x38]
+stage1[0x10013185c] <+1376>: str    x10, [sp, #0xa0]
+stage1[0x100131860] <+1380>: b      0x10013187c               ; <+1408>
+stage1[0x100131864] <+1384>: str    xzr, [sp, #0x58]
+stage1[0x100131868] <+1388>: str    xzr, [sp, #0x60]
+stage1[0x10013186c] <+1392>: str    xzr, [sp, #0xc8]
+stage1[0x100131870] <+1396>: str    xzr, [sp, #0xd0]
+stage1[0x100131874] <+1400>: str    xzr, [sp, #0x188]
+stage1[0x100131878] <+1404>: brk    #0
+stage1[0x10013187c] <+1408>: str    xzr, [sp, #0x188]
+stage1[0x100131880] <+1412>: ldr    d16, [sp, #0x48]
+stage1[0x100131884] <+1416>: ldr    d17, [sp, #0x98]
+stage1[0x100131888] <+1420>: ldr    d18, [sp, #0xa0]
+stage1[0x10013188c] <+1424>: str    d17, [sp, #0x138]
+stage1[0x100131890] <+1428>: str    d18, [sp, #0x140]
+stage1[0x100131894] <+1432>: str    d16, [sp, #0x148]
+stage1[0x100131898] <+1436>: b      0x100132008               ; <+3340> at generational.ts:119:7
+stage1[0x10013189c] <+1440>: str    xzr, [sp, #0x58]
+stage1[0x1001318a0] <+1444>: str    xzr, [sp, #0x60]
+stage1[0x1001318a4] <+1448>: str    xzr, [sp, #0xc8]
+stage1[0x1001318a8] <+1452>: str    xzr, [sp, #0xd0]
+stage1[0x1001318ac] <+1456>: str    xzr, [sp, #0x188]
+stage1[0x1001318b0] <+1460>: brk    #0
+stage1[0x1001318b4] <+1464>: ldr    x9, [sp, #0x60]
+stage1[0x1001318b8] <+1468>: str    x9, [sp, #0x188]
+stage1[0x1001318bc] <+1472>: ldr    x9, [sp, #0x188]
+stage1[0x1001318c0] <+1476>: cbnz   x9, 0x1001318c8           ; <+1484> at generational.ts:120:16
+stage1[0x1001318c4] <+1480>: b      0x100131974               ; <+1656>
+stage1[0x1001318c8] <+1484>: ldr    x10, [x9]
+stage1[0x1001318cc] <+1488>: adr    x11, 0x1001318cc          ; <+1488> at generational.ts:120:16
+stage1[0x1001318d0] <+1492>: mov    x17, #0xe2c               ; =3628 
+stage1[0x1001318d4] <+1496>: movk   x17, #0x1, lsl #16
+stage1[0x1001318d8] <+1500>: add    x11, x11, x17
+stage1[0x1001318dc] <+1504>: cmp    x10, x11
+stage1[0x1001318e0] <+1508>: b.eq   0x1001318e8               ; <+1516> at generational.ts:120:16
+stage1[0x1001318e4] <+1512>: b      0x100131974               ; <+1656>
+stage1[0x1001318e8] <+1516>: ldr    x9, [sp, #0x188]
+stage1[0x1001318ec] <+1520>: ldrb   w10, [x9, #0x10]
+stage1[0x1001318f0] <+1524>: cmp    w10, #0x1
+stage1[0x1001318f4] <+1528>: b.eq   0x1001318fc               ; <+1536> at generational.ts:120:16
+stage1[0x1001318f8] <+1532>: b      0x100131974               ; <+1656>
+stage1[0x1001318fc] <+1536>: ldr    x10, [x9, #0x18]
+stage1[0x100131900] <+1540>: str    x10, [sp, #0x58]
+stage1[0x100131904] <+1544>: b      0x100131930               ; <+1588>
+stage1[0x100131908] <+1548>: ldr    d16, [sp, #0xa8]
+stage1[0x10013190c] <+1552>: str    d16, [sp, #0xc0]
+stage1[0x100131910] <+1556>: fmov   x9, d16
+stage1[0x100131914] <+1560>: cmp    x9, #0x0
+stage1[0x100131918] <+1564>: cset   w9, ne
+stage1[0x10013191c] <+1568>: fmov   d17, x9
+stage1[0x100131920] <+1572>: fmov   x9, d17
+stage1[0x100131924] <+1576>: cbz    x9, 0x10013192c           ; <+1584> at generational.ts:117:7
+stage1[0x100131928] <+1580>: b      0x100131abc               ; <+1984>
+stage1[0x10013192c] <+1584>: b      0x100131a68               ; <+1900> at generational.ts:121:7
+stage1[0x100131930] <+1588>: str    xzr, [sp, #0x188]
+stage1[0x100131934] <+1592>: ldr    x9, [sp, #0x58]
+stage1[0x100131938] <+1596>: str    x9, [sp, #0x188]
+stage1[0x10013193c] <+1600>: ldr    x9, [sp, #0x188]
+stage1[0x100131940] <+1604>: cbnz   x9, 0x100131948           ; <+1612> at generational.ts:120:16
+stage1[0x100131944] <+1608>: b      0x1001319bc               ; <+1728>
+stage1[0x100131948] <+1612>: ldr    x10, [x9]
+stage1[0x10013194c] <+1616>: adr    x11, 0x10013194c          ; <+1616> at generational.ts:120:16
+stage1[0x100131950] <+1620>: mov    x17, #0x2b04              ; =11012 
+stage1[0x100131954] <+1624>: movk   x17, #0x1, lsl #16
+stage1[0x100131958] <+1628>: add    x11, x11, x17
+stage1[0x10013195c] <+1632>: cmp    x10, x11
+stage1[0x100131960] <+1636>: b.eq   0x100131968               ; <+1644> at generational.ts:120:16
+stage1[0x100131964] <+1640>: b      0x1001319bc               ; <+1728>
+stage1[0x100131968] <+1644>: ldr    x10, [x9, #0x40]
+stage1[0x10013196c] <+1648>: str    x10, [sp, #0xb0]
+stage1[0x100131970] <+1652>: b      0x10013198c               ; <+1680>
+stage1[0x100131974] <+1656>: str    xzr, [sp, #0x58]
+stage1[0x100131978] <+1660>: str    xzr, [sp, #0x60]
+stage1[0x10013197c] <+1664>: str    xzr, [sp, #0xc8]
+stage1[0x100131980] <+1668>: str    xzr, [sp, #0xd0]
+stage1[0x100131984] <+1672>: str    xzr, [sp, #0x188]
+stage1[0x100131988] <+1676>: brk    #0
+stage1[0x10013198c] <+1680>: str    xzr, [sp, #0x188]
+stage1[0x100131990] <+1684>: ldr    x9, [sp, #0x60]
+stage1[0x100131994] <+1688>: str    x9, [sp, #0x188]
+stage1[0x100131998] <+1692>: ldr    x9, [sp, #0x188]
+stage1[0x10013199c] <+1696>: ldr    x9, [sp, #0x188]
+stage1[0x1001319a0] <+1700>: ldrb   w10, [x9, #0x10]
+stage1[0x1001319a4] <+1704>: cmp    w10, #0x1
+stage1[0x1001319a8] <+1708>: b.eq   0x1001319b0               ; <+1716> at generational.ts:120:36
+stage1[0x1001319ac] <+1712>: b      0x100131a18               ; <+1820>
+stage1[0x1001319b0] <+1716>: ldr    x10, [x9, #0x18]
+stage1[0x1001319b4] <+1720>: str    x10, [sp, #0x58]
+stage1[0x1001319b8] <+1724>: b      0x1001319d4               ; <+1752>
+stage1[0x1001319bc] <+1728>: str    xzr, [sp, #0x58]
+stage1[0x1001319c0] <+1732>: str    xzr, [sp, #0x60]
+stage1[0x1001319c4] <+1736>: str    xzr, [sp, #0xc8]
+stage1[0x1001319c8] <+1740>: str    xzr, [sp, #0xd0]
+stage1[0x1001319cc] <+1744>: str    xzr, [sp, #0x188]
+stage1[0x1001319d0] <+1748>: brk    #0
+stage1[0x1001319d4] <+1752>: str    xzr, [sp, #0x188]
+stage1[0x1001319d8] <+1756>: ldr    x9, [sp, #0x58]
+stage1[0x1001319dc] <+1760>: str    x9, [sp, #0x188]
+stage1[0x1001319e0] <+1764>: ldr    x9, [sp, #0x188]
+stage1[0x1001319e4] <+1768>: cbnz   x9, 0x1001319ec           ; <+1776> at generational.ts:120:36
+stage1[0x1001319e8] <+1772>: b      0x100131a50               ; <+1876>
+stage1[0x1001319ec] <+1776>: ldr    x10, [x9]
+stage1[0x1001319f0] <+1780>: adr    x11, 0x1001319f0          ; <+1780> at generational.ts:120:36
+stage1[0x1001319f4] <+1784>: mov    x17, #0x2a60              ; =10848 
+stage1[0x1001319f8] <+1788>: movk   x17, #0x1, lsl #16
+stage1[0x1001319fc] <+1792>: add    x11, x11, x17
+stage1[0x100131a00] <+1796>: cmp    x10, x11
+stage1[0x100131a04] <+1800>: b.eq   0x100131a0c               ; <+1808> at generational.ts:120:36
+stage1[0x100131a08] <+1804>: b      0x100131a50               ; <+1876>
+stage1[0x100131a0c] <+1808>: ldr    x10, [x9, #0x48]
+stage1[0x100131a10] <+1812>: str    x10, [sp, #0xb8]
+stage1[0x100131a14] <+1816>: b      0x100131a30               ; <+1844>
+stage1[0x100131a18] <+1820>: str    xzr, [sp, #0x58]
+stage1[0x100131a1c] <+1824>: str    xzr, [sp, #0x60]
+stage1[0x100131a20] <+1828>: str    xzr, [sp, #0xc8]
+stage1[0x100131a24] <+1832>: str    xzr, [sp, #0xd0]
+stage1[0x100131a28] <+1836>: str    xzr, [sp, #0x188]
+stage1[0x100131a2c] <+1840>: brk    #0
+stage1[0x100131a30] <+1844>: str    xzr, [sp, #0x188]
+stage1[0x100131a34] <+1848>: ldr    d16, [sp, #0x48]
+stage1[0x100131a38] <+1852>: ldr    d17, [sp, #0xb0]
+stage1[0x100131a3c] <+1856>: ldr    d18, [sp, #0xb8]
+stage1[0x100131a40] <+1860>: str    d17, [sp, #0x160]
+stage1[0x100131a44] <+1864>: str    d18, [sp, #0x168]
+stage1[0x100131a48] <+1868>: str    d16, [sp, #0x170]
+stage1[0x100131a4c] <+1872>: b      0x1001320b8               ; <+3516> at generational.ts:120:7
+stage1[0x100131a50] <+1876>: str    xzr, [sp, #0x58]
+stage1[0x100131a54] <+1880>: str    xzr, [sp, #0x60]
+stage1[0x100131a58] <+1884>: str    xzr, [sp, #0xc8]
+stage1[0x100131a5c] <+1888>: str    xzr, [sp, #0xd0]
+stage1[0x100131a60] <+1892>: str    xzr, [sp, #0x188]
+stage1[0x100131a64] <+1896>: brk    #0
+stage1[0x100131a68] <+1900>: ldr    x9, [sp, #0x60]
+stage1[0x100131a6c] <+1904>: str    x9, [sp, #0x188]
+stage1[0x100131a70] <+1908>: ldr    x9, [sp, #0x188]
+stage1[0x100131a74] <+1912>: cbnz   x9, 0x100131a7c           ; <+1920> at generational.ts:121:7
+stage1[0x100131a78] <+1916>: b      0x100131b54               ; <+2136>
+stage1[0x100131a7c] <+1920>: ldr    x10, [x9]
+stage1[0x100131a80] <+1924>: adr    x11, 0x100131a80          ; <+1924> at generational.ts:121:7
+stage1[0x100131a84] <+1928>: mov    x17, #0xc78               ; =3192 
+stage1[0x100131a88] <+1932>: movk   x17, #0x1, lsl #16
+stage1[0x100131a8c] <+1936>: add    x11, x11, x17
+stage1[0x100131a90] <+1940>: cmp    x10, x11
+stage1[0x100131a94] <+1944>: b.eq   0x100131a9c               ; <+1952> at generational.ts:121:7
+stage1[0x100131a98] <+1948>: b      0x100131b54               ; <+2136>
+stage1[0x100131a9c] <+1952>: ldr    x9, [sp, #0x188]
+stage1[0x100131aa0] <+1956>: ldrb   w10, [x9, #0x10]
+stage1[0x100131aa4] <+1960>: cmp    w10, #0x1
+stage1[0x100131aa8] <+1964>: b.eq   0x100131ab0               ; <+1972> at generational.ts:121:7
+stage1[0x100131aac] <+1968>: b      0x100131b54               ; <+2136>
+stage1[0x100131ab0] <+1972>: ldr    x10, [x9, #0x18]
+stage1[0x100131ab4] <+1976>: str    x10, [sp, #0x58]
+stage1[0x100131ab8] <+1980>: b      0x100131b0c               ; <+2064>
+stage1[0x100131abc] <+1984>: str    xzr, [sp, #0x58]
+stage1[0x100131ac0] <+1988>: str    xzr, [sp, #0x60]
+stage1[0x100131ac4] <+1992>: str    xzr, [sp, #0xc8]
+stage1[0x100131ac8] <+1996>: str    xzr, [sp, #0xd0]
+stage1[0x100131acc] <+2000>: str    xzr, [sp, #0x188]
+stage1[0x100131ad0] <+2004>: str    xzr, [sp, #0x190]
+stage1[0x100131ad4] <+2008>: str    xzr, [sp, #0x198]
+stage1[0x100131ad8] <+2012>: ldr    d16, [sp, #0xc0]
+stage1[0x100131adc] <+2016>: fmov   x9, d16
+stage1[0x100131ae0] <+2020>: cmp    x9, #0x0
+stage1[0x100131ae4] <+2024>: cset   w9, eq
+stage1[0x100131ae8] <+2028>: fmov   d17, x9
+stage1[0x100131aec] <+2032>: fmov   x9, d17
+stage1[0x100131af0] <+2036>: cmp    x9, #0x0
+stage1[0x100131af4] <+2040>: cset   w9, ne
+stage1[0x100131af8] <+2044>: fmov   d16, x9
+stage1[0x100131afc] <+2048>: fmov   x9, d16
+stage1[0x100131b00] <+2052>: cbz    x9, 0x100131b08           ; <+2060> at generational.ts:116:5
+stage1[0x100131b04] <+2056>: b      0x100131cb4               ; <+2488> at generational.ts:123:14
+stage1[0x100131b08] <+2060>: b      0x100131cf0               ; <+2548> at generational.ts:116:5
+stage1[0x100131b0c] <+2064>: str    xzr, [sp, #0x60]
+stage1[0x100131b10] <+2068>: str    xzr, [sp, #0x188]
+stage1[0x100131b14] <+2072>: ldr    x9, [sp, #0x58]
+stage1[0x100131b18] <+2076>: str    x9, [sp, #0x188]
+stage1[0x100131b1c] <+2080>: ldr    x9, [sp, #0x188]
+stage1[0x100131b20] <+2084>: cbnz   x9, 0x100131b28           ; <+2092> at generational.ts:121:7
+stage1[0x100131b24] <+2088>: b      0x100131bb4               ; <+2232>
+stage1[0x100131b28] <+2092>: ldr    x10, [x9]
+stage1[0x100131b2c] <+2096>: adr    x11, 0x100131b2c          ; <+2096> at generational.ts:121:7
+stage1[0x100131b30] <+2100>: mov    x17, #0x2924              ; =10532 
+stage1[0x100131b34] <+2104>: movk   x17, #0x1, lsl #16
+stage1[0x100131b38] <+2108>: add    x11, x11, x17
+stage1[0x100131b3c] <+2112>: cmp    x10, x11
+stage1[0x100131b40] <+2116>: b.eq   0x100131b48               ; <+2124> at generational.ts:121:7
+stage1[0x100131b44] <+2120>: b      0x100131bb4               ; <+2232>
+stage1[0x100131b48] <+2124>: ldr    x10, [x9, #0x50]
+stage1[0x100131b4c] <+2128>: str    x10, [sp, #0xc8]
+stage1[0x100131b50] <+2132>: b      0x100131b6c               ; <+2160>
+stage1[0x100131b54] <+2136>: str    xzr, [sp, #0x58]
+stage1[0x100131b58] <+2140>: str    xzr, [sp, #0x60]
+stage1[0x100131b5c] <+2144>: str    xzr, [sp, #0xc8]
+stage1[0x100131b60] <+2148>: str    xzr, [sp, #0xd0]
+stage1[0x100131b64] <+2152>: str    xzr, [sp, #0x188]
+stage1[0x100131b68] <+2156>: brk    #0
+stage1[0x100131b6c] <+2160>: str    xzr, [sp, #0x58]
+stage1[0x100131b70] <+2164>: str    xzr, [sp, #0x188]
+stage1[0x100131b74] <+2168>: ldr    x9, [sp, #0xc8]
+stage1[0x100131b78] <+2172>: str    x9, [sp, #0x188]
+stage1[0x100131b7c] <+2176>: ldr    x9, [sp, #0x188]
+stage1[0x100131b80] <+2180>: cbnz   x9, 0x100131b88           ; <+2188> at generational.ts:121:7
+stage1[0x100131b84] <+2184>: b      0x100131ca4               ; <+2472>
+stage1[0x100131b88] <+2188>: ldr    x10, [x9]
+stage1[0x100131b8c] <+2192>: adr    x11, 0x100131b8c          ; <+2192> at generational.ts:121:7
+stage1[0x100131b90] <+2196>: mov    x17, #0x25ac              ; =9644 
+stage1[0x100131b94] <+2200>: movk   x17, #0x1, lsl #16
+stage1[0x100131b98] <+2204>: add    x11, x11, x17
+stage1[0x100131b9c] <+2208>: cmp    x10, x11
+stage1[0x100131ba0] <+2212>: b.eq   0x100131ba8               ; <+2220> at generational.ts:121:7
+stage1[0x100131ba4] <+2216>: b      0x100131ca4               ; <+2472>
+stage1[0x100131ba8] <+2220>: ldr    x10, [x9, #0x18]
+stage1[0x100131bac] <+2224>: str    x10, [sp, #0xd0]
+stage1[0x100131bb0] <+2228>: b      0x100131bc8               ; <+2252>
+stage1[0x100131bb4] <+2232>: str    xzr, [sp, #0x58]
+stage1[0x100131bb8] <+2236>: str    xzr, [sp, #0xc8]
+stage1[0x100131bbc] <+2240>: str    xzr, [sp, #0xd0]
+stage1[0x100131bc0] <+2244>: str    xzr, [sp, #0x188]
+stage1[0x100131bc4] <+2248>: brk    #0
+stage1[0x100131bc8] <+2252>: str    xzr, [sp, #0x188]
+stage1[0x100131bcc] <+2256>: ldr    x9, [sp, #0x48]
+stage1[0x100131bd0] <+2260>: str    x9, [sp, #0x1a0]
+stage1[0x100131bd4] <+2264>: ldr    x9, [sp, #0xc8]
+stage1[0x100131bd8] <+2268>: str    x9, [sp, #0x188]
+stage1[0x100131bdc] <+2272>: ldr    x9, [sp, #0x188]
+stage1[0x100131be0] <+2276>: str    x9, [sp, #0x198]
+stage1[0x100131be4] <+2280>: mov    x9, #0x5                  ; =5 
+stage1[0x100131be8] <+2284>: str    x9, [sp, #0x190]
+stage1[0x100131bec] <+2288>: mov    x9, #0x0                  ; =0 
+stage1[0x100131bf0] <+2292>: movk   x9, #0x0, lsl #32
+stage1[0x100131bf4] <+2296>: movk   x9, #0x4020, lsl #48
+stage1[0x100131bf8] <+2300>: str    x9, [sp, #0x1a8]
+stage1[0x100131bfc] <+2304>: ldr    x9, [sp, #0xd0]
+stage1[0x100131c00] <+2308>: str    x9, [sp, #0x188]
+stage1[0x100131c04] <+2312>: ldr    d0, [sp, #0x1a0]
+stage1[0x100131c08] <+2316>: ldr    d1, [sp, #0x1a8]
+stage1[0x100131c0c] <+2320>: str    xzr, [sp]
+stage1[0x100131c10] <+2324>: str    xzr, [sp, #0x8]
+stage1[0x100131c14] <+2328>: str    xzr, [sp, #0x10]
+stage1[0x100131c18] <+2332>: str    xzr, [sp, #0x18]
+stage1[0x100131c1c] <+2336>: ldr    x0, [sp, #0x20]
+stage1[0x100131c20] <+2340>: mov    x1, #0x0                  ; =0 
+stage1[0x100131c24] <+2344>: add    x2, sp, #0x190
+stage1[0x100131c28] <+2348>: mov    x3, sp
+stage1[0x100131c2c] <+2352>: ldr    x12, [sp, #0x188]
+stage1[0x100131c30] <+2356>: cbnz   x12, 0x100131c38          ; <+2364> at generational.ts:121:7
+stage1[0x100131c34] <+2360>: brk    #0x3
+stage1[0x100131c38] <+2364>: ldr    x10, [x12]
+stage1[0x100131c3c] <+2368>: adr    x11, 0x100131c3c          ; <+2368> at generational.ts:121:7
+stage1[0x100131c40] <+2372>: mov    x17, #0x285c              ; =10332 
+stage1[0x100131c44] <+2376>: movk   x17, #0x1, lsl #16
+stage1[0x100131c48] <+2380>: add    x11, x11, x17
+stage1[0x100131c4c] <+2384>: cmp    x10, x11
+stage1[0x100131c50] <+2388>: b.eq   0x100131c58               ; <+2396> at generational.ts:121:7
+stage1[0x100131c54] <+2392>: brk    #0x3
+stage1[0x100131c58] <+2396>: ldr    x10, [x12, #0x20]
+stage1[0x100131c5c] <+2400>: adr    x11, 0x100131c5c          ; <+2400> at generational.ts:121:7
+stage1[0x100131c60] <+2404>: mov    x17, #0x871c              ; =34588 
+stage1[0x100131c64] <+2408>: movk   x17, #0x1, lsl #16
+stage1[0x100131c68] <+2412>: add    x11, x11, x17
+stage1[0x100131c6c] <+2416>: cmp    x10, x11
+stage1[0x100131c70] <+2420>: b.eq   0x100131c78               ; <+2428> at generational.ts:121:7
+stage1[0x100131c74] <+2424>: brk    #0x3
+stage1[0x100131c78] <+2428>: ldr    x1, [x12, #0x18]
+stage1[0x100131c7c] <+2432>: ldr    x16, [x12, #0x10]
+stage1[0x100131c80] <+2436>: blr    x16
+stage1[0x100131c84] <+2440>: cmp    w0, #0x1
+stage1[0x100131c88] <+2444>: b.eq   0x100131c90               ; <+2452> at generational.ts:121:7
+stage1[0x100131c8c] <+2448>: b      0x10013215c               ; <+3680> at generational.ts:120:7
+stage1[0x100131c90] <+2452>: ldr    x9, [sp, #0x10]
+stage1[0x100131c94] <+2456>: str    x9, [sp, #0x1b0]
+stage1[0x100131c98] <+2460>: ldr    x9, [sp, #0x1b0]
+stage1[0x100131c9c] <+2464>: str    x9, [sp, #0xc0]
+stage1[0x100131ca0] <+2468>: b      0x100131abc               ; <+1984>
+stage1[0x100131ca4] <+2472>: str    xzr, [sp, #0xc8]
+stage1[0x100131ca8] <+2476>: str    xzr, [sp, #0xd0]
+stage1[0x100131cac] <+2480>: str    xzr, [sp, #0x188]
+stage1[0x100131cb0] <+2484>: brk    #0
+stage1[0x100131cb4] <+2488>: str    xzr, [sp, #0x1a0]
+stage1[0x100131cb8] <+2492>: str    xzr, [sp, #0x1a8]
+stage1[0x100131cbc] <+2496>: ldr    x10, [sp, #0x28]
+stage1[0x100131cc0] <+2500>: ldr    x9, [sp, #0x1a0]
+stage1[0x100131cc4] <+2504>: str    x9, [x10, #0x10]
+stage1[0x100131cc8] <+2508>: ldr    x11, [sp, #0x1a8]
+stage1[0x100131ccc] <+2512>: str    x11, [x10, #0x18]
+stage1[0x100131cd0] <+2516>: mov    x0, #0x1                  ; =1 
+stage1[0x100131cd4] <+2520>: str    w0, [x10]
+stage1[0x100131cd8] <+2524>: ldr    x10, [sp, #0x20]
+stage1[0x100131cdc] <+2528>: ldr    x9, [sp, #0x30]
+stage1[0x100131ce0] <+2532>: str    x9, [x10]
+stage1[0x100131ce4] <+2536>: add    sp, sp, #0x1e0
+stage1[0x100131ce8] <+2540>: ldp    x29, x30, [sp], #0x10
+stage1[0x100131cec] <+2544>: ret    
+stage1[0x100131cf0] <+2548>: b      0x100131cf4               ; <+2552> at generational.ts:124:34
+stage1[0x100131cf4] <+2552>: ldr    x9, [sp, #0x48]
+stage1[0x100131cf8] <+2556>: str    x9, [sp, #0x1a0]
+stage1[0x100131cfc] <+2560>: mov    x9, #0x0                  ; =0 
+stage1[0x100131d00] <+2564>: movk   x9, #0x0, lsl #32
+stage1[0x100131d04] <+2568>: movk   x9, #0x4020, lsl #48
+stage1[0x100131d08] <+2572>: str    x9, [sp, #0x1a8]
+stage1[0x100131d0c] <+2576>: mov    x9, #0x0                  ; =0 
+stage1[0x100131d10] <+2580>: movk   x9, #0x0, lsl #32
+stage1[0x100131d14] <+2584>: movk   x9, #0x0, lsl #48
+stage1[0x100131d18] <+2588>: str    x9, [sp, #0x1b0]
+stage1[0x100131d1c] <+2592>: ldr    d0, [sp, #0x1a0]
+stage1[0x100131d20] <+2596>: fcvtzs x0, d0
+stage1[0x100131d24] <+2600>: scvtf  d1, x0
+stage1[0x100131d28] <+2604>: fcmp   d0, d1
+stage1[0x100131d2c] <+2608>: b.ne   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d30] <+2612>: mvn    x9, xzr
+stage1[0x100131d34] <+2616>: ubfx   x9, x9, #0, #53
+stage1[0x100131d38] <+2620>: cmp    x0, x9
+stage1[0x100131d3c] <+2624>: b.hi   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d40] <+2628>: mov    x1, #0x8                  ; =8 
+stage1[0x100131d44] <+2632>: mov    x2, #0x0                  ; =0 
+stage1[0x100131d48] <+2636>: mov    x9, #0x0                  ; =0 
+stage1[0x100131d4c] <+2640>: cmp    x0, x9
+stage1[0x100131d50] <+2644>: b.eq   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d54] <+2648>: add    x10, x0, x2
+stage1[0x100131d58] <+2652>: mvn    x9, xzr
+stage1[0x100131d5c] <+2656>: ubfx   x9, x9, #0, #53
+stage1[0x100131d60] <+2660>: sub    x9, x9, #0x7
+stage1[0x100131d64] <+2664>: cmp    x10, x9
+stage1[0x100131d68] <+2668>: b.hi   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d6c] <+2672>: mov    x9, #0x7                  ; =7 
+stage1[0x100131d70] <+2676>: and    x11, x10, x9
+stage1[0x100131d74] <+2680>: mov    x9, #0x0                  ; =0 
+stage1[0x100131d78] <+2684>: cmp    x11, x9
+stage1[0x100131d7c] <+2688>: b.ne   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d80] <+2692>: ldr    x0, [x10]
+stage1[0x100131d84] <+2696>: mvn    x9, xzr
+stage1[0x100131d88] <+2700>: ubfx   x9, x9, #0, #53
+stage1[0x100131d8c] <+2704>: cmp    x0, x9
+stage1[0x100131d90] <+2708>: b.hi   0x100131d9c               ; <+2720> at generational.ts:124:19
+stage1[0x100131d94] <+2712>: scvtf  d0, x0
+stage1[0x100131d98] <+2716>: b      0x100131da8               ; <+2732> at generational.ts:124:19
+stage1[0x100131d9c] <+2720>: mov    x9, #0x1                  ; =1 
+stage1[0x100131da0] <+2724>: scvtf  d0, x9
+stage1[0x100131da4] <+2728>: fneg   d0, d0
+stage1[0x100131da8] <+2732>: str    d0, [sp, #0x1b8]
+stage1[0x100131dac] <+2736>: ldr    x9, [sp, #0x1b8]
+stage1[0x100131db0] <+2740>: str    x9, [sp, #0x50]
+stage1[0x100131db4] <+2744>: mov    x9, #0x0                  ; =0 
+stage1[0x100131db8] <+2748>: movk   x9, #0x0, lsl #32
+stage1[0x100131dbc] <+2752>: movk   x9, #0x0, lsl #48
+stage1[0x100131dc0] <+2756>: fmov   d16, x9
+stage1[0x100131dc4] <+2760>: ldr    d0, [sp, #0x1b8]
+stage1[0x100131dc8] <+2764>: fmov   d1, d16
+stage1[0x100131dcc] <+2768>: fcmp   d0, d1
+stage1[0x100131dd0] <+2772>: cset   w9, mi
+stage1[0x100131dd4] <+2776>: fmov   d17, x9
+stage1[0x100131dd8] <+2780>: fmov   x9, d17
+stage1[0x100131ddc] <+2784>: cmp    x9, #0x0
+stage1[0x100131de0] <+2788>: cset   w9, ne
+stage1[0x100131de4] <+2792>: fmov   d16, x9
+stage1[0x100131de8] <+2796>: fmov   x9, d16
+stage1[0x100131dec] <+2800>: cbz    x9, 0x100131df4           ; <+2808> at generational.ts:125:12
+stage1[0x100131df0] <+2804>: b      0x100131df8               ; <+2812> at generational.ts:125:24
+stage1[0x100131df4] <+2808>: b      0x100131e14               ; <+2840> at generational.ts:125:36
+stage1[0x100131df8] <+2812>: str    xzr, [sp, #0x1a0]
+stage1[0x100131dfc] <+2816>: str    xzr, [sp, #0x1a8]
+stage1[0x100131e00] <+2820>: ldr    x9, [sp, #0x1a0]
+stage1[0x100131e04] <+2824>: str    x9, [sp, #0xd8]
+stage1[0x100131e08] <+2828>: ldr    x9, [sp, #0x1a8]
+stage1[0x100131e0c] <+2832>: str    x9, [sp, #0xe0]
+stage1[0x100131e10] <+2836>: b      0x100131e3c               ; <+2880> at generational.ts:125:5
+stage1[0x100131e14] <+2840>: ldr    d16, [sp, #0x50]
+stage1[0x100131e18] <+2844>: fmov   x9, d16
+stage1[0x100131e1c] <+2848>: str    x9, [sp, #0x1a8]
+stage1[0x100131e20] <+2852>: mov    x10, #0x1                 ; =1 
+stage1[0x100131e24] <+2856>: str    x10, [sp, #0x1b0]
+stage1[0x100131e28] <+2860>: ldr    x9, [sp, #0x1a8]
+stage1[0x100131e2c] <+2864>: str    x9, [sp, #0xd8]
+stage1[0x100131e30] <+2868>: ldr    x9, [sp, #0x1b0]
+stage1[0x100131e34] <+2872>: str    x9, [sp, #0xe0]
+stage1[0x100131e38] <+2876>: b      0x100131e3c               ; <+2880> at generational.ts:125:5
+stage1[0x100131e3c] <+2880>: ldr    x9, [sp, #0xd8]
+stage1[0x100131e40] <+2884>: str    x9, [sp, #0x1a0]
+stage1[0x100131e44] <+2888>: ldr    x9, [sp, #0xe0]
+stage1[0x100131e48] <+2892>: str    x9, [sp, #0x1a8]
+stage1[0x100131e4c] <+2896>: ldr    x10, [sp, #0x28]
+stage1[0x100131e50] <+2900>: ldr    x9, [sp, #0x1a0]
+stage1[0x100131e54] <+2904>: str    x9, [x10, #0x10]
+stage1[0x100131e58] <+2908>: ldr    x11, [sp, #0x1a8]
+stage1[0x100131e5c] <+2912>: str    x11, [x10, #0x18]
+stage1[0x100131e60] <+2916>: mov    x0, #0x1                  ; =1 
+stage1[0x100131e64] <+2920>: str    w0, [x10]
+stage1[0x100131e68] <+2924>: ldr    x10, [sp, #0x20]
+stage1[0x100131e6c] <+2928>: ldr    x9, [sp, #0x30]
+stage1[0x100131e70] <+2932>: str    x9, [x10]
+stage1[0x100131e74] <+2936>: add    sp, sp, #0x1e0
+stage1[0x100131e78] <+2940>: ldp    x29, x30, [sp], #0x10
+stage1[0x100131e7c] <+2944>: ret    
+stage1[0x100131e80] <+2948>: ldr    d16, [sp, #0x108]
+stage1[0x100131e84] <+2952>: str    d16, [sp, #0x78]
+stage1[0x100131e88] <+2956>: fmov   x9, d16
+stage1[0x100131e8c] <+2960>: cmp    x9, #0x0
+stage1[0x100131e90] <+2964>: cset   w9, ne
+stage1[0x100131e94] <+2968>: fmov   d17, x9
+stage1[0x100131e98] <+2972>: fmov   x9, d17
+stage1[0x100131e9c] <+2976>: cbz    x9, 0x100131ea4           ; <+2984> at generational.ts:117:7
+stage1[0x100131ea0] <+2980>: b      0x1001315a0               ; <+676> at generational.ts:117:7
+stage1[0x100131ea4] <+2984>: b      0x10013154c               ; <+592> at generational.ts:118:16
+stage1[0x100131ea8] <+2988>: ldr    d16, [sp, #0xf8]
+stage1[0x100131eac] <+2992>: ldr    d17, [sp, #0xe8]
+stage1[0x100131eb0] <+2996>: fmov   d0, d16
+stage1[0x100131eb4] <+3000>: fmov   d1, d17
+stage1[0x100131eb8] <+3004>: fcmp   d0, d1
+stage1[0x100131ebc] <+3008>: cset   w9, ge
+stage1[0x100131ec0] <+3012>: fmov   d18, x9
+stage1[0x100131ec4] <+3016>: str    d18, [sp, #0x100]
+stage1[0x100131ec8] <+3020>: fmov   x9, d18
+stage1[0x100131ecc] <+3024>: cmp    x9, #0x0
+stage1[0x100131ed0] <+3028>: cset   w9, ne
+stage1[0x100131ed4] <+3032>: fmov   d16, x9
+stage1[0x100131ed8] <+3036>: fmov   x9, d16
+stage1[0x100131edc] <+3040>: cbz    x9, 0x100131ee4           ; <+3048> at generational.ts:117:7
+stage1[0x100131ee0] <+3044>: b      0x100131ee8               ; <+3052> at generational.ts:117:7
+stage1[0x100131ee4] <+3048>: b      0x100131f40               ; <+3140> at generational.ts:117:7
+stage1[0x100131ee8] <+3052>: ldr    d16, [sp, #0xf8]
+stage1[0x100131eec] <+3056>: ldr    d17, [sp, #0xe8]
+stage1[0x100131ef0] <+3060>: fmov   d0, d16
+stage1[0x100131ef4] <+3064>: fmov   d1, d17
+stage1[0x100131ef8] <+3068>: fsub   d0, d0, d1
+stage1[0x100131efc] <+3072>: fmov   d18, d0
+stage1[0x100131f00] <+3076>: ldr    d16, [sp, #0xf0]
+stage1[0x100131f04] <+3080>: mov    x9, #0x0                  ; =0 
+stage1[0x100131f08] <+3084>: movk   x9, #0x0, lsl #32
+stage1[0x100131f0c] <+3088>: movk   x9, #0x4020, lsl #48
+stage1[0x100131f10] <+3092>: fmov   d17, x9
+stage1[0x100131f14] <+3096>: fmov   d0, d16
+stage1[0x100131f18] <+3100>: fmov   d1, d17
+stage1[0x100131f1c] <+3104>: fsub   d0, d0, d1
+stage1[0x100131f20] <+3108>: fmov   d19, d0
+stage1[0x100131f24] <+3112>: fmov   d0, d18
+stage1[0x100131f28] <+3116>: fmov   d1, d19
+stage1[0x100131f2c] <+3120>: fcmp   d0, d1
+stage1[0x100131f30] <+3124>: cset   w9, ls
+stage1[0x100131f34] <+3128>: fmov   d16, x9
+stage1[0x100131f38] <+3132>: str    d16, [sp, #0x100]
+stage1[0x100131f3c] <+3136>: b      0x100131f40               ; <+3140> at generational.ts:117:7
+stage1[0x100131f40] <+3140>: ldr    d16, [sp, #0x100]
+stage1[0x100131f44] <+3144>: str    d16, [sp, #0x108]
+stage1[0x100131f48] <+3148>: b      0x100131e80               ; <+2948> at generational.ts:117:7
+stage1[0x100131f4c] <+3152>: ldr    d16, [sp, #0x130]
+stage1[0x100131f50] <+3156>: str    d16, [sp, #0x78]
+stage1[0x100131f54] <+3160>: b      0x1001315a0               ; <+676> at generational.ts:117:7
+stage1[0x100131f58] <+3164>: ldr    d16, [sp, #0x120]
+stage1[0x100131f5c] <+3168>: ldr    d17, [sp, #0x110]
+stage1[0x100131f60] <+3172>: fmov   d0, d16
+stage1[0x100131f64] <+3176>: fmov   d1, d17
+stage1[0x100131f68] <+3180>: fcmp   d0, d1
+stage1[0x100131f6c] <+3184>: cset   w9, ge
+stage1[0x100131f70] <+3188>: fmov   d18, x9
+stage1[0x100131f74] <+3192>: str    d18, [sp, #0x128]
+stage1[0x100131f78] <+3196>: fmov   x9, d18
+stage1[0x100131f7c] <+3200>: cmp    x9, #0x0
+stage1[0x100131f80] <+3204>: cset   w9, ne
+stage1[0x100131f84] <+3208>: fmov   d16, x9
+stage1[0x100131f88] <+3212>: fmov   x9, d16
+stage1[0x100131f8c] <+3216>: cbz    x9, 0x100131f94           ; <+3224> at generational.ts:118:7
+stage1[0x100131f90] <+3220>: b      0x100131f98               ; <+3228> at generational.ts:118:7
+stage1[0x100131f94] <+3224>: b      0x100131ff0               ; <+3316> at generational.ts:118:7
+stage1[0x100131f98] <+3228>: ldr    d16, [sp, #0x120]
+stage1[0x100131f9c] <+3232>: ldr    d17, [sp, #0x110]
+stage1[0x100131fa0] <+3236>: fmov   d0, d16
+stage1[0x100131fa4] <+3240>: fmov   d1, d17
+stage1[0x100131fa8] <+3244>: fsub   d0, d0, d1
+stage1[0x100131fac] <+3248>: fmov   d18, d0
+stage1[0x100131fb0] <+3252>: ldr    d16, [sp, #0x118]
+stage1[0x100131fb4] <+3256>: mov    x9, #0x0                  ; =0 
+stage1[0x100131fb8] <+3260>: movk   x9, #0x0, lsl #32
+stage1[0x100131fbc] <+3264>: movk   x9, #0x4020, lsl #48
+stage1[0x100131fc0] <+3268>: fmov   d17, x9
+stage1[0x100131fc4] <+3272>: fmov   d0, d16
+stage1[0x100131fc8] <+3276>: fmov   d1, d17
+stage1[0x100131fcc] <+3280>: fsub   d0, d0, d1
+stage1[0x100131fd0] <+3284>: fmov   d19, d0
+stage1[0x100131fd4] <+3288>: fmov   d0, d18
+stage1[0x100131fd8] <+3292>: fmov   d1, d19
+stage1[0x100131fdc] <+3296>: fcmp   d0, d1
+stage1[0x100131fe0] <+3300>: cset   w9, ls
+stage1[0x100131fe4] <+3304>: fmov   d16, x9
+stage1[0x100131fe8] <+3308>: str    d16, [sp, #0x128]
+stage1[0x100131fec] <+3312>: b      0x100131ff0               ; <+3316> at generational.ts:118:7
+stage1[0x100131ff0] <+3316>: ldr    d16, [sp, #0x128]
+stage1[0x100131ff4] <+3320>: str    d16, [sp, #0x130]
+stage1[0x100131ff8] <+3324>: b      0x100131f4c               ; <+3152> at generational.ts:118:7
+stage1[0x100131ffc] <+3328>: ldr    d16, [sp, #0x158]
+stage1[0x100132000] <+3332>: str    d16, [sp, #0x90]
+stage1[0x100132004] <+3336>: b      0x100131754               ; <+1112> at generational.ts:117:7
+stage1[0x100132008] <+3340>: ldr    d16, [sp, #0x148]
+stage1[0x10013200c] <+3344>: ldr    d17, [sp, #0x138]
+stage1[0x100132010] <+3348>: fmov   d0, d16
+stage1[0x100132014] <+3352>: fmov   d1, d17
+stage1[0x100132018] <+3356>: fcmp   d0, d1
+stage1[0x10013201c] <+3360>: cset   w9, ge
+stage1[0x100132020] <+3364>: fmov   d18, x9
+stage1[0x100132024] <+3368>: str    d18, [sp, #0x150]
+stage1[0x100132028] <+3372>: fmov   x9, d18
+stage1[0x10013202c] <+3376>: cmp    x9, #0x0
+stage1[0x100132030] <+3380>: cset   w9, ne
+stage1[0x100132034] <+3384>: fmov   d16, x9
+stage1[0x100132038] <+3388>: fmov   x9, d16
+stage1[0x10013203c] <+3392>: cbz    x9, 0x100132044           ; <+3400> at generational.ts:119:7
+stage1[0x100132040] <+3396>: b      0x100132048               ; <+3404> at generational.ts:119:7
+stage1[0x100132044] <+3400>: b      0x1001320a0               ; <+3492> at generational.ts:119:7
+stage1[0x100132048] <+3404>: ldr    d16, [sp, #0x148]
+stage1[0x10013204c] <+3408>: ldr    d17, [sp, #0x138]
+stage1[0x100132050] <+3412>: fmov   d0, d16
+stage1[0x100132054] <+3416>: fmov   d1, d17
+stage1[0x100132058] <+3420>: fsub   d0, d0, d1
+stage1[0x10013205c] <+3424>: fmov   d18, d0
+stage1[0x100132060] <+3428>: ldr    d16, [sp, #0x140]
+stage1[0x100132064] <+3432>: mov    x9, #0x0                  ; =0 
+stage1[0x100132068] <+3436>: movk   x9, #0x0, lsl #32
+stage1[0x10013206c] <+3440>: movk   x9, #0x4020, lsl #48
+stage1[0x100132070] <+3444>: fmov   d17, x9
+stage1[0x100132074] <+3448>: fmov   d0, d16
+stage1[0x100132078] <+3452>: fmov   d1, d17
+stage1[0x10013207c] <+3456>: fsub   d0, d0, d1
+stage1[0x100132080] <+3460>: fmov   d19, d0
+stage1[0x100132084] <+3464>: fmov   d0, d18
+stage1[0x100132088] <+3468>: fmov   d1, d19
+stage1[0x10013208c] <+3472>: fcmp   d0, d1
+stage1[0x100132090] <+3476>: cset   w9, ls
+stage1[0x100132094] <+3480>: fmov   d16, x9
+stage1[0x100132098] <+3484>: str    d16, [sp, #0x150]
+stage1[0x10013209c] <+3488>: b      0x1001320a0               ; <+3492> at generational.ts:119:7
+stage1[0x1001320a0] <+3492>: ldr    d16, [sp, #0x150]
+stage1[0x1001320a4] <+3496>: str    d16, [sp, #0x158]
+stage1[0x1001320a8] <+3500>: b      0x100131ffc               ; <+3328> at generational.ts:119:7
+stage1[0x1001320ac] <+3504>: ldr    d16, [sp, #0x180]
+stage1[0x1001320b0] <+3508>: str    d16, [sp, #0xa8]
+stage1[0x1001320b4] <+3512>: b      0x100131908               ; <+1548> at generational.ts:117:7
+stage1[0x1001320b8] <+3516>: ldr    d16, [sp, #0x170]
+stage1[0x1001320bc] <+3520>: ldr    d17, [sp, #0x160]
+stage1[0x1001320c0] <+3524>: fmov   d0, d16
+stage1[0x1001320c4] <+3528>: fmov   d1, d17
+stage1[0x1001320c8] <+3532>: fcmp   d0, d1
+stage1[0x1001320cc] <+3536>: cset   w9, ge
+stage1[0x1001320d0] <+3540>: fmov   d18, x9
+stage1[0x1001320d4] <+3544>: str    d18, [sp, #0x178]
+stage1[0x1001320d8] <+3548>: fmov   x9, d18
+stage1[0x1001320dc] <+3552>: cmp    x9, #0x0
+stage1[0x1001320e0] <+3556>: cset   w9, ne
+stage1[0x1001320e4] <+3560>: fmov   d16, x9
+stage1[0x1001320e8] <+3564>: fmov   x9, d16
+stage1[0x1001320ec] <+3568>: cbz    x9, 0x1001320f4           ; <+3576> at generational.ts:120:7
+stage1[0x1001320f0] <+3572>: b      0x1001320f8               ; <+3580> at generational.ts:120:7
+stage1[0x1001320f4] <+3576>: b      0x100132150               ; <+3668> at generational.ts:120:7
+stage1[0x1001320f8] <+3580>: ldr    d16, [sp, #0x170]
+stage1[0x1001320fc] <+3584>: ldr    d17, [sp, #0x160]
+stage1[0x100132100] <+3588>: fmov   d0, d16
+stage1[0x100132104] <+3592>: fmov   d1, d17
+stage1[0x100132108] <+3596>: fsub   d0, d0, d1
+stage1[0x10013210c] <+3600>: fmov   d18, d0
+stage1[0x100132110] <+3604>: ldr    d16, [sp, #0x168]
+stage1[0x100132114] <+3608>: mov    x9, #0x0                  ; =0 
+stage1[0x100132118] <+3612>: movk   x9, #0x0, lsl #32
+stage1[0x10013211c] <+3616>: movk   x9, #0x4020, lsl #48
+stage1[0x100132120] <+3620>: fmov   d17, x9
+stage1[0x100132124] <+3624>: fmov   d0, d16
+stage1[0x100132128] <+3628>: fmov   d1, d17
+stage1[0x10013212c] <+3632>: fsub   d0, d0, d1
+stage1[0x100132130] <+3636>: fmov   d19, d0
+stage1[0x100132134] <+3640>: fmov   d0, d18
+stage1[0x100132138] <+3644>: fmov   d1, d19
+stage1[0x10013213c] <+3648>: fcmp   d0, d1
+stage1[0x100132140] <+3652>: cset   w9, ls
+stage1[0x100132144] <+3656>: fmov   d16, x9
+stage1[0x100132148] <+3660>: str    d16, [sp, #0x178]
+stage1[0x10013214c] <+3664>: b      0x100132150               ; <+3668> at generational.ts:120:7
+stage1[0x100132150] <+3668>: ldr    d16, [sp, #0x178]
+stage1[0x100132154] <+3672>: str    d16, [sp, #0x180]
+stage1[0x100132158] <+3676>: b      0x1001320ac               ; <+3504> at generational.ts:120:7
+stage1[0x10013215c] <+3680>: cmp    w0, #0x2
+stage1[0x100132160] <+3684>: b.eq   0x100132168               ; <+3692> at generational.ts:120:7
+stage1[0x100132164] <+3688>: brk    #0
+stage1[0x100132168] <+3692>: ldr    x10, [sp, #0x28]
+stage1[0x10013216c] <+3696>: ldr    x9, [sp, #0x10]
+stage1[0x100132170] <+3700>: ldr    x11, [sp, #0x18]
+stage1[0x100132174] <+3704>: str    x9, [x10, #0x10]
+stage1[0x100132178] <+3708>: str    x11, [x10, #0x18]
+stage1[0x10013217c] <+3712>: str    w0, [x10]
+stage1[0x100132180] <+3716>: ldr    x10, [sp, #0x20]
+stage1[0x100132184] <+3720>: ldr    x9, [sp, #0x30]
+stage1[0x100132188] <+3724>: str    x9, [x10]
+stage1[0x10013218c] <+3728>: add    sp, sp, #0x1e0
+stage1[0x100132190] <+3732>: ldp    x29, x30, [sp], #0x10
+stage1[0x100132194] <+3736>: ret    
