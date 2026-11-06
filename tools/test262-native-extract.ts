@@ -47,13 +47,16 @@ if (
   !/^[a-f0-9]{64}$/.test(header.frozenToolchainSha256 ?? "") ||
   header.revision !== suite.revision ||
   header.dirty !== suite.dirty ||
-  !(
-    header.selection === "." ||
-    selection === header.selection ||
-    selection.startsWith(header.selection + "/")
-  )
+  typeof header.selection !== "string"
 )
   throw Error("native journal does not identify this pinned selection");
+// Resolve actual membership so explicit shallow selectors remain extractable
+// without allowing a child family outside the recorded parent population.
+const parentPaths = new Set(
+  test262Checkout(checkout, header.selection).files.map((file) => file.path),
+);
+if (!suite.files.every((file) => parentPaths.has(file.path)))
+  throw Error("native journal selection does not cover the requested files");
 const harnessRoot = resolve(suite.root, "harness");
 const expected = suite.files.flatMap(({ filename, path }) => {
   const { source, sha256 } = test262Source(filename),

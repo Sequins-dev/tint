@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { resolve, relative, basename, sep } from "node:path";
+import { resolve, relative, basename, dirname, sep } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 export function within(root: string, path: string): string {
@@ -17,6 +17,21 @@ function files(path: string): string[] {
   return readdirSync(path)
     .sort()
     .flatMap((entry) => files(resolve(path, entry)));
+}
+/** A trailing *.js selects standalone files in one directory, without
+ * recursively taking ownership of its child families. */
+function selectedFiles(path: string): string[] {
+  if (basename(path) === "*.js") {
+    const directory = dirname(path);
+    return readdirSync(directory, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+      .map((entry) => resolve(directory, entry.name))
+      .sort()
+      .flatMap((file) => files(file));
+  }
+  if (path.includes("*"))
+    throw new Error("only a trailing *.js selection pattern is supported");
+  return files(path);
 }
 export function test262Checkout(checkout: string, selection: string) {
   const root = resolve(checkout),
@@ -36,7 +51,7 @@ export function test262Checkout(checkout: string, selection: string) {
     revision,
     dirty,
     selection,
-    files: files(selected).map((filename) => ({
+    files: selectedFiles(selected).map((filename) => ({
       filename,
       path: relative(tests, filename).split(sep).join("/"),
     })),

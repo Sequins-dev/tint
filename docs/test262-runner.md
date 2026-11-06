@@ -27,6 +27,11 @@ pnpm build
 
 The selection argument names a file or directory below `test/`; `.` selects the full
 suite. `_FIXTURE` files are not standalone tests. Write each run to a new report.
+An explicit trailing `/*.js` selects only standalone JavaScript files directly in
+that directory, preserving order and fixture exclusion. Quote it in a shell, for
+example `'intl402/*.js'`. This batches the namespace tests without selecting the
+Temporal child family. Complete per-file reports can be extracted from its journal
+with `test262-native-extract.ts`, retaining all source/harness hashes.
 
 ```sh
 # Inventory only; no execution.
@@ -340,10 +345,14 @@ Complete unchanged Annex B selections are queued.
 ### Debugger transport
 
 Darwin runs use `/usr/bin/lldb` and its bundled debugserver. By default the private
-stub accepts a connection before LLDB launches the inferior through `SBLaunchInfo`.
-The debugger connects asynchronously, then launches synchronously with an initial
-stop and explicit argument vector. The [native argument fixture](results/native-connected-arguments-v1.json)
-checks flag bytes received by the program; a [fixed 12-launch schedule](results/native-connected-launch-smoke-v1.json)
+stub accepts a connection before LLDB launches the inferior.
+The debugger connects asynchronously, then launches synchronously through the
+connected process's `SBProcess.RemoteLaunch` API, with an initial stop and explicit
+argument vector. This avoids target-level launch rejecting the existing connection
+as already debugged. A [fixed six-launch validation](results/native-connected-remote-launch-v1.json)
+passes without outcome-driven retries; earlier launch failures remain recorded. The [RemoteLaunch argument fixture](results/native-connected-remote-arguments-v2.json)
+checks flag bytes received by the program and exits with its expected status 42;
+a previous [fixed 12-launch schedule](results/native-connected-launch-smoke-v1.json)
 passed without outcome-driven retries. Earlier pre-entry failures remain recorded.
 
 Development images explicitly embed `com.apple.security.get-task-allow` in both
