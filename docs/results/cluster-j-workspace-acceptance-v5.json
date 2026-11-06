@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-j-workspace-acceptance",
+  "base": "4ef8ab8ac9c0c7d4cd479b4928a2e59f3e3be3e5",
+  "head": "b8d77b2",
+  "sourceSnapshot": {
+    "sha256": "eb810121f9ab6bf004b75f1f6903afa64e7c6c96bcd751f5d94a361acf737990",
+    "files": 569
+  },
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": 4519,
+  "passed": 4519,
+  "failed": 0,
+  "log": ".tint-bootstrap/j-rebased-workspace-check-v5.log",
+  "priorAttempts": [
+    {
+      "log": ".tint-bootstrap/emoji-workspace-check.log",
+      "observations": [
+        "First test invocation: 4503/4504, missing worktree Test262 fixture path; symlink to the unchanged pinned checkout fixed it.",
+        "Slot-wrapper live edit caused a second invocation: 4504/4504 tests and boundaries passed; formatting of newly added fixture failed and was corrected."
+      ]
+    },
+    {
+      "log": ".tint-bootstrap/j-combined-workspace-check-v3.log",
+      "tests": 4506,
+      "passed": 4491,
+      "failed": 15,
+      "reason": "Run overlapped indexed-set source changes; the red corpus test and linked-source type checks failed. Fresh stable source checks passed subsequently."
+    },
+    {
+      "log": ".tint-bootstrap/j-combined-workspace-check-v4.log",
+      "tests": 4507,
+      "passed": 4507,
+      "failed": 0,
+      "exitStatus": 0,
+      "scope": "Pre-rebase stable candidate."
+    }
+  ]
+}
