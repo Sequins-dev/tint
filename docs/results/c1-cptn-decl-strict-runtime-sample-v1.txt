@@ -1,0 +1,510 @@
+Analysis of sampling test (pid 11024) every 1 millisecond
+Process:         test [11024]
+Path:            /private/var/folders/*/test
+Load Address:    0x10090c000
+Identifier:      test
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [11022]
+Target Type:     live task
+
+Date/Time:       2026-11-07 05:43:07.143 +0800
+Launch Time:     2026-11-07 05:39:37.144 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         339.7M
+Physical footprint (peak):  339.7M
+Idle exit:                  untracked
+----
+
+Call graph:
+    809 Thread_21096995   DispatchQueue_1: com.apple.main-thread  (serial)
+      809 ???  (in test)  load address 0x10090c000 + 0xd6c  [0x10090cd6c]
+        809 ???  (in test)  load address 0x10090c000 + 0x20d01e4  [0x1029dc1e4]
+          809 ???  (in test)  load address 0x10090c000 + 0x4d812b8  [0x10568d2b8]
+            809 ???  (in test)  load address 0x10090c000 + 0x4d64994  [0x105670994]
+              809 ???  (in test)  load address 0x10090c000 + 0x4cb7788  [0x1055c3788]
+                809 ???  (in test)  load address 0x10090c000 + 0x4d641b0  [0x1056701b0]
+                  809 ???  (in test)  load address 0x10090c000 + 0x4dec8bc  [0x1056f88bc]
+                    809 ???  (in test)  load address 0x10090c000 + 0x9fdd910  [0x10a8e9910]
+                      809 ???  (in test)  load address 0x10090c000 + 0x29e6f58  [0x1032f2f58]
+                        809 ???  (in test)  load address 0x10090c000 + 0x29e8d8c  [0x1032f4d8c]
+                          809 ???  (in test)  load address 0x10090c000 + 0x7741fb0  [0x10804dfb0]
+                            809 ???  (in test)  load address 0x10090c000 + 0x7745ee0  [0x108051ee0]
+                              809 ???  (in test)  load address 0x10090c000 + 0x85b7fcc  [0x108ec3fcc]
+                                809 ???  (in test)  load address 0x10090c000 + 0x85792ac  [0x108e852ac]
+                                  809 ???  (in test)  load address 0x10090c000 + 0x48164d0  [0x1051224d0]
+                                    809 ???  (in test)  load address 0x10090c000 + 0x47b5d94  [0x1050c1d94]
+                                      809 ???  (in test)  load address 0x10090c000 + 0x43d2618  [0x104cde618]
+                                        809 ???  (in test)  load address 0x10090c000 + 0x43e9080  [0x104cf5080]
+                                          809 ???  (in test)  load address 0x10090c000 + 0x39b7a30  [0x1042c3a30]
+                                            809 ???  (in test)  load address 0x10090c000 + 0x7aa6af0  [0x1083b2af0]
+                                              809 ???  (in test)  load address 0x10090c000 + 0x7939810  [0x108245810]
+                                                809 ???  (in test)  load address 0x10090c000 + 0x7a9ebcc  [0x1083aabcc]
+                                                  809 ???  (in test)  load address 0x10090c000 + 0x7a8e5a8  [0x10839a5a8]
+                                                    809 ???  (in test)  load address 0x10090c000 + 0x7aaa684  [0x1083b6684]
+                                                      809 ???  (in test)  load address 0x10090c000 + 0x7960358  [0x10826c358]
+                                                        809 ???  (in test)  load address 0x10090c000 + 0x7a68f34  [0x108374f34]
+                                                          809 ???  (in test)  load address 0x10090c000 + 0x7a6a7c4  [0x1083767c4]
+                                                            809 ???  (in test)  load address 0x10090c000 + 0x7a27980  [0x108333980]
+                                                              809 ???  (in test)  load address 0x10090c000 + 0x1c9884  [0x100ad5884]
+                                                                809 ???  (in test)  load address 0x10090c000 + 0x12f364  [0x100a3b364]
+                                                                  809 ???  (in test)  load address 0x10090c000 + 0xf380c  [0x1009ff80c]
+                                                                    758 ???  (in test)  load address 0x10090c000 + 0xd852c  [0x1009e452c]
+                                                                    + 755 ???  (in test)  load address 0x10090c000 + 0x2a910  [0x100936910]
+                                                                    + ! 663 ???  (in test)  load address 0x10090c000 + 0x291c4  [0x1009351c4]
+                                                                    + ! : 532 ???  (in test)  load address 0x10090c000 + 0x24b08  [0x100930b08]
+                                                                    + ! : | 441 ???  (in test)  load address 0x10090c000 + 0x23240  [0x10092f240]
+                                                                    + ! : | + 337 ???  (in test)  load address 0x10090c000 + 0xc6fe0  [0x1009d2fe0]
+                                                                    + ! : | + ! 107 ???  (in test)  load address 0x10090c000 + 0xc3ffc  [0x1009cfffc]
+                                                                    + ! : | + ! : 23 ???  (in test)  load address 0x10090c000 + 0x3b2d0  [0x1009472d0]
+                                                                    + ! : | + ! : 20 ???  (in test)  load address 0x10090c000 + 0x3ad1c  [0x100946d1c]
+                                                                    + ! : | + ! : | 8 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : | + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12b53c  [0x100a3753c]
+                                                                    + ! : | + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12bd18  [0x100a37d18]
+                                                                    + ! : | + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12bd94  [0x100a37d94]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b36c  [0x100a3736c]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b508  [0x100a37508]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b50c  [0x100a3750c]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b5a0  [0x100a375a0]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b5d0  [0x100a375d0]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be44  [0x100a37e44]
+                                                                    + ! : | + ! : 15 ???  (in test)  load address 0x10090c000 + 0x3ade0  [0x100946de0]
+                                                                    + ! : | + ! : | 4 ???  (in test)  load address 0x10090c000 + 0x12bd94  [0x100a37d94]
+                                                                    + ! : | + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12be08  [0x100a37e08]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2f4  [0x100a372f4]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b4a0  [0x100a374a0]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b4d8  [0x100a374d8]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b528  [0x100a37528]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b548  [0x100a37548]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12baf8  [0x100a37af8]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12bdf4  [0x100a37df4]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be8c  [0x100a37e8c]
+                                                                    + ! : | + ! : 7 ???  (in test)  load address 0x10090c000 + 0x3dc9c  [0x100949c9c]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2d8  [0x100a372d8]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b4ac  [0x100a374ac]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b67c  [0x100a3767c]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b7e8  [0x100a377e8]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b808  [0x100a37808]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12bcdc  [0x100a37cdc]
+                                                                    + ! : | + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+                                                                    + ! : | + ! : 5 ???  (in test)  load address 0x10090c000 + 0x3dc34  [0x100949c34]
+                                                                    + ! : | + ! : 4 ???  (in test)  load address 0x10090c000 + 0x3ab78  [0x100946b78]
+                                                                    + ! : | + ! : 2 ???  (in test)  load address 0x10090c000 + 0x3b03c  [0x10094703c]
+                                                                    + ! : | + ! : 2 ???  (in test)  load address 0x10090c000 + 0x3b128  [0x100947128]
+                                                                    + ! : | + ! : 2 ???  (in test)  load address 0x10090c000 + 0x3b450  [0x100947450]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3a810  [0x100946810]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3a9c4  [0x1009469c4]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ad88  [0x100946d88]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ae44  [0x100946e44]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ae50  [0x100946e50]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3af14  [0x100946f14]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3b07c  [0x10094707c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3b1a4  [0x1009471a4]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3b1bc  [0x1009471bc]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3b61c  [0x10094761c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3dbb0  [0x100949bb0]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3de0c  [0x100949e0c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3de60  [0x100949e60]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3df34  [0x100949f34]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3df50  [0x100949f50]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3df64  [0x100949f64]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e27c  [0x10094a27c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e28c  [0x10094a28c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e2c4  [0x10094a2c4]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e2cc  [0x10094a2cc]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e3c0  [0x10094a3c0]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e508  [0x10094a508]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e594  [0x10094a594]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e680  [0x10094a680]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e740  [0x10094a740]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e854  [0x10094a854]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3e9cc  [0x10094a9cc]
+                                                                    + ! : | + ! 22 ???  (in test)  load address 0x10090c000 + 0xc2aa0  [0x1009ceaa0]
+                                                                    + ! : | + ! 18 ???  (in test)  load address 0x10090c000 + 0xc22dc  [0x1009ce2dc]
+                                                                    + ! : | + ! 16 ???  (in test)  load address 0x10090c000 + 0xc42bc  [0x1009d02bc]
+                                                                    + ! : | + ! : 8 ???  (in test)  load address 0x10090c000 + 0x3f0c0  [0x10094b0c0]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ea8c  [0x10094aa8c]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ec58  [0x10094ac58]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ecdc  [0x10094acdc]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ecec  [0x10094acec]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ecfc  [0x10094acfc]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3eef0  [0x10094aef0]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3ef28  [0x10094af28]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x3f1f0  [0x10094b1f0]
+                                                                    + ! : | + ! 16 ???  (in test)  load address 0x10090c000 + 0xc236c  [0x1009ce36c]
+                                                                    + ! : | + ! 15 ???  (in test)  load address 0x10090c000 + 0xc0e20  [0x1009cce20]
+                                                                    + ! : | + ! 13 ???  (in test)  load address 0x10090c000 + 0x12aa1c  [0x100a36a1c]
+                                                                    + ! : | + ! 12 ???  (in test)  load address 0x10090c000 + 0xc0b44  [0x1009ccb44]
+                                                                    + ! : | + ! 11 ???  (in test)  load address 0x10090c000 + 0xc373c  [0x1009cf73c]
+                                                                    + ! : | + ! 6 ???  (in test)  load address 0x10090c000 + 0xc0e34  [0x1009cce34]
+                                                                    + ! : | + ! 5 ???  (in test)  load address 0x10090c000 + 0xc3400  [0x1009cf400]
+                                                                    + ! : | + ! 5 ???  (in test)  load address 0x10090c000 + 0xc47a4  [0x1009d07a4]
+                                                                    + ! : | + ! 4 ???  (in test)  load address 0x10090c000 + 0xc4208  [0x1009d0208]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc264c  [0x1009ce64c]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc2750  [0x1009ce750]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc2988  [0x1009ce988]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc2fc0  [0x1009cefc0]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc4c54  [0x1009d0c54]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc0898  [0x1009cc898]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc090c  [0x1009cc90c]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc0da0  [0x1009ccda0]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc295c  [0x1009ce95c]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc2984  [0x1009ce984]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc44a8  [0x1009d04a8]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc52a4  [0x1009d12a4]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc54e4  [0x1009d14e4]
+                                                                    + ! : | + ! 2 ???  (in test)  load address 0x10090c000 + 0xc5930  [0x1009d1930]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc18e4  [0x1009cd8e4]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12ad50  [0x100a36d50]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0ad0  [0x1009ccad0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0b18  [0x1009ccb18]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0bb0  [0x1009ccbb0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0bbc  [0x1009ccbbc]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0cbc  [0x1009cccbc]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0d38  [0x1009ccd38]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0e2c  [0x1009cce2c]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc0e40  [0x1009cce40]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1040  [0x1009cd040]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1138  [0x1009cd138]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc11f8  [0x1009cd1f8]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc19dc  [0x1009cd9dc]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1c78  [0x1009cdc78]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1f10  [0x1009cdf10]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1fc0  [0x1009cdfc0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc1fd8  [0x1009cdfd8]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc209c  [0x1009ce09c]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc21ec  [0x1009ce1ec]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc22e8  [0x1009ce2e8]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2518  [0x1009ce518]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2658  [0x1009ce658]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2794  [0x1009ce794]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc27c4  [0x1009ce7c4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc27fc  [0x1009ce7fc]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2838  [0x1009ce838]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2928  [0x1009ce928]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2944  [0x1009ce944]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2958  [0x1009ce958]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2af4  [0x1009ceaf4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2af8  [0x1009ceaf8]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc2e58  [0x1009cee58]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc30a0  [0x1009cf0a0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc3214  [0x1009cf214]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc32ac  [0x1009cf2ac]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc33f0  [0x1009cf3f0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc36dc  [0x1009cf6dc]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc3a10  [0x1009cfa10]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc3fd0  [0x1009cffd0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc4194  [0x1009d0194]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc4454  [0x1009d0454]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc46e0  [0x1009d06e0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc479c  [0x1009d079c]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc47e8  [0x1009d07e8]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc482c  [0x1009d082c]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc49ec  [0x1009d09ec]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc4b54  [0x1009d0b54]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc4f34  [0x1009d0f34]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5210  [0x1009d1210]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5468  [0x1009d1468]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc54b0  [0x1009d14b0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5568  [0x1009d1568]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5624  [0x1009d1624]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5824  [0x1009d1824]
+                                                                    + ! : | + 50 ???  (in test)  load address 0x10090c000 + 0xc7c28  [0x1009d3c28]
+                                                                    + ! : | + ! 9 ???  (in test)  load address 0x10090c000 + 0xc6b74  [0x1009d2b74]
+                                                                    + ! : | + ! 7 ???  (in test)  load address 0x10090c000 + 0xc6bbc  [0x1009d2bbc]
+                                                                    + ! : | + ! 6 ???  (in test)  load address 0x10090c000 + 0xc671c  [0x1009d271c]
+                                                                    + ! : | + ! 5 ???  (in test)  load address 0x10090c000 + 0xc615c  [0x1009d215c]
+                                                                    + ! : | + ! 4 ???  (in test)  load address 0x10090c000 + 0xc671c  [0x1009d271c]
+                                                                    + ! : | + ! : 2 ???  (in test)  load address 0x10090c000 + 0x12c334  [0x100a38334]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12c1fc  [0x100a381fc]
+                                                                    + ! : | + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12c438  [0x100a38438]
+                                                                    + ! : | + ! 3 ???  (in test)  load address 0x10090c000 + 0xc6178  [0x1009d2178]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc5ef4  [0x1009d1ef4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc614c  [0x1009d214c]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6300  [0x1009d2300]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6304  [0x1009d2304]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc63ac  [0x1009d23ac]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6434  [0x1009d2434]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc65e0  [0x1009d25e0]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc65f4  [0x1009d25f4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc66c4  [0x1009d26c4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6714  [0x1009d2714]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6960  [0x1009d2960]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6c10  [0x1009d2c10]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6c94  [0x1009d2c94]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0xc6ca4  [0x1009d2ca4]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0x12c144  [0x100a38144]
+                                                                    + ! : | + ! 1 ???  (in test)  load address 0x10090c000 + 0x1403c8  [0x100a4c3c8]
+                                                                    + ! : | + 18 ???  (in test)  load address 0x10090c000 + 0xc7018  [0x1009d3018]
+                                                                    + ! : | + 10 ???  (in test)  load address 0x10090c000 + 0xc7188  [0x1009d3188]
+                                                                    + ! : | + 6 ???  (in test)  load address 0x10090c000 + 0xc730c  [0x1009d330c]
+                                                                    + ! : | + 3 ???  (in test)  load address 0x10090c000 + 0xc71e0  [0x1009d31e0]
+                                                                    + ! : | + 3 ???  (in test)  load address 0x10090c000 + 0xc7438  [0x1009d3438]
+                                                                    + ! : | + 2 ???  (in test)  load address 0x10090c000 + 0xc6e28  [0x1009d2e28]
+                                                                    + ! : | + 2 ???  (in test)  load address 0x10090c000 + 0xc72dc  [0x1009d32dc]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc6f70  [0x1009d2f70]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc6f88  [0x1009d2f88]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc6fb4  [0x1009d2fb4]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc7048  [0x1009d3048]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc72b0  [0x1009d32b0]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc7334  [0x1009d3334]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc73ec  [0x1009d33ec]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc7498  [0x1009d3498]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc74f0  [0x1009d34f0]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0xc7c28  [0x1009d3c28]
+                                                                    + ! : | 52 ???  (in test)  load address 0x10090c000 + 0x22dfc  [0x10092edfc]
+                                                                    + ! : | + 20 ???  (in test)  load address 0x10090c000 + 0x12b5cc  [0x100a375cc]
+                                                                    + ! : | + 12 ???  (in test)  load address 0x10090c000 + 0x12b468  [0x100a37468]
+                                                                    + ! : | + 7 ???  (in test)  load address 0x10090c000 + 0x12b5a0  [0x100a375a0]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b2c4  [0x100a372c4]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b460  [0x100a37460]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b480  [0x100a37480]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b484  [0x100a37484]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b498  [0x100a37498]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b4b4  [0x100a374b4]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b4dc  [0x100a374dc]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b4e4  [0x100a374e4]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b4e8  [0x100a374e8]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b4fc  [0x100a374fc]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b508  [0x100a37508]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12b53c  [0x100a3753c]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x12bcd0  [0x100a37cd0]
+                                                                    + ! : | 23 ???  (in test)  load address 0x10090c000 + 0x22e34  [0x10092ee34]
+                                                                    + ! : | 10 ???  (in test)  load address 0x10090c000 + 0x230a0  [0x10092f0a0]
+                                                                    + ! : | + 9 ???  (in test)  load address 0x10090c000 + 0x1403b8  [0x100a4c3b8]
+                                                                    + ! : | + 1 ???  (in test)  load address 0x10090c000 + 0x22964  [0x10092e964]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22c7c  [0x10092ec7c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22ca8  [0x10092eca8]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22cf0  [0x10092ecf0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22dd0  [0x10092edd0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22e6c  [0x10092ee6c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x231a0  [0x10092f1a0]
+                                                                    + ! : 30 ???  (in test)  load address 0x10090c000 + 0x24344  [0x100930344]
+                                                                    + ! : | 6 ???  (in test)  load address 0x10090c000 + 0x12bcdc  [0x100a37cdc]
+                                                                    + ! : | 5 ???  (in test)  load address 0x10090c000 + 0x12b568  [0x100a37568]
+                                                                    + ! : | 3 ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+                                                                    + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12b5a0  [0x100a375a0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2b0  [0x100a372b0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2c4  [0x100a372c4]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2e8  [0x100a372e8]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b36c  [0x100a3736c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b4ac  [0x100a374ac]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b53c  [0x100a3753c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b548  [0x100a37548]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b6d0  [0x100a376d0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b710  [0x100a37710]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b80c  [0x100a3780c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b87c  [0x100a3787c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be58  [0x100a37e58]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be84  [0x100a37e84]
+                                                                    + ! : 25 ???  (in test)  load address 0x10090c000 + 0x24264  [0x100930264]
+                                                                    + ! : 15 ???  (in test)  load address 0x10090c000 + 0x24500  [0x100930500]
+                                                                    + ! : | 5 ???  (in test)  load address 0x10090c000 + 0x12b378  [0x100a37378]
+                                                                    + ! : | 3 ???  (in test)  load address 0x10090c000 + 0x12be84  [0x100a37e84]
+                                                                    + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12b830  [0x100a37830]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b308  [0x100a37308]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b488  [0x100a37488]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b634  [0x100a37634]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b6d0  [0x100a376d0]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+                                                                    + ! : 10 ???  (in test)  load address 0x10090c000 + 0x23e24  [0x10092fe24]
+                                                                    + ! : | 3 ???  (in test)  load address 0x10090c000 + 0x12b420  [0x100a37420]
+                                                                    + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x12b710  [0x100a37710]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b2c8  [0x100a372c8]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b56c  [0x100a3756c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12b80c  [0x100a3780c]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+                                                                    + ! : 9 ???  (in test)  load address 0x10090c000 + 0x2474c  [0x10093074c]
+                                                                    + ! : | 8 ???  (in test)  load address 0x10090c000 + 0x22aec  [0x10092eaec]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22acc  [0x10092eacc]
+                                                                    + ! : 6 ???  (in test)  load address 0x10090c000 + 0x24df0  [0x100930df0]
+                                                                    + ! : | 3 ???  (in test)  load address 0x10090c000 + 0x22b30  [0x10092eb30]
+                                                                    + ! : | 2 ???  (in test)  load address 0x10090c000 + 0x22bbc  [0x10092ebbc]
+                                                                    + ! : | 1 ???  (in test)  load address 0x10090c000 + 0x22bd4  [0x10092ebd4]
+                                                                    + ! : 5 ???  (in test)  load address 0x10090c000 + 0x24220  [0x100930220]
+                                                                    + ! : 5 ???  (in test)  load address 0x10090c000 + 0x24a44  [0x100930a44]
+                                                                    + ! : 4 ???  (in test)  load address 0x10090c000 + 0x24638  [0x100930638]
+                                                                    + ! : 3 ???  (in test)  load address 0x10090c000 + 0x2466c  [0x10093066c]
+                                                                    + ! : 2 ???  (in test)  load address 0x10090c000 + 0x23f5c  [0x10092ff5c]
+                                                                    + ! : 2 ???  (in test)  load address 0x10090c000 + 0x2417c  [0x10093017c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x242ec  [0x1009302ec]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x2437c  [0x10093037c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24428  [0x100930428]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24430  [0x100930430]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24614  [0x100930614]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24678  [0x100930678]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24758  [0x100930758]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x248cc  [0x1009308cc]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24944  [0x100930944]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x249fc  [0x1009309fc]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24a0c  [0x100930a0c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24b08  [0x100930b08]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24b3c  [0x100930b3c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24d60  [0x100930d60]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x24f88  [0x100930f88]
+                                                                    + ! 38 ???  (in test)  load address 0x10090c000 + 0x26338  [0x100932338]
+                                                                    + ! : 23 ???  (in test)  load address 0x10090c000 + 0x12b6e8  [0x100a376e8]
+                                                                    + ! : 5 ???  (in test)  load address 0x10090c000 + 0x12b488  [0x100a37488]
+                                                                    + ! : 2 ???  (in test)  load address 0x10090c000 + 0x12b36c  [0x100a3736c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b2b4  [0x100a372b4]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b4c0  [0x100a374c0]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b4c8  [0x100a374c8]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b4e4  [0x100a374e4]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b4e8  [0x100a374e8]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b500  [0x100a37500]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12be84  [0x100a37e84]
+                                                                    + ! 11 ???  (in test)  load address 0x10090c000 + 0x28c48  [0x100934c48]
+                                                                    + ! : 4 ???  (in test)  load address 0x10090c000 + 0x12b710  [0x100a37710]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b408  [0x100a37408]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b460  [0x100a37460]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b4b4  [0x100a374b4]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b508  [0x100a37508]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b568  [0x100a37568]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b5ac  [0x100a375ac]
+                                                                    + ! 9 ???  (in test)  load address 0x10090c000 + 0x263e0  [0x1009323e0]
+                                                                    + ! 9 ???  (in test)  load address 0x10090c000 + 0x29130  [0x100935130]
+                                                                    + ! 7 ???  (in test)  load address 0x10090c000 + 0x26264  [0x100932264]
+                                                                    + ! : 4 ???  (in test)  load address 0x10090c000 + 0x12b5cc  [0x100a375cc]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b41c  [0x100a3741c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12b5d0  [0x100a375d0]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+                                                                    + ! 4 ???  (in test)  load address 0x10090c000 + 0x262d4  [0x1009322d4]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x25cfc  [0x100931cfc]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x22900  [0x10092e900]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x2608c  [0x10093208c]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x22aec  [0x10092eaec]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x28a48  [0x100934a48]
+                                                                    + ! : 1 ???  (in test)  load address 0x10090c000 + 0x229e4  [0x10092e9e4]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x25be8  [0x100931be8]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x25bec  [0x100931bec]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x25bfc  [0x100931bfc]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x26098  [0x100932098]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x26380  [0x100932380]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x263c0  [0x1009323c0]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x263ec  [0x1009323ec]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x28980  [0x100934980]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x28c14  [0x100934c14]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x28dd8  [0x100934dd8]
+                                                                    + ! 1 ???  (in test)  load address 0x10090c000 + 0x28f88  [0x100934f88]
+                                                                    + 1 ???  (in test)  load address 0x10090c000 + 0x2a784  [0x100936784]
+                                                                    + 1 ???  (in test)  load address 0x10090c000 + 0x2a7a4  [0x1009367a4]
+                                                                    + 1 ???  (in test)  load address 0x10090c000 + 0x2a8a4  [0x1009368a4]
+                                                                    18 ???  (in test)  load address 0x10090c000 + 0xd7b58  [0x1009e3b58]
+                                                                    13 ???  (in test)  load address 0x10090c000 + 0xd4c28  [0x1009e0c28]
+                                                                    8 ???  (in test)  load address 0x10090c000 + 0xd6cb0  [0x1009e2cb0]
+                                                                    4 ???  (in test)  load address 0x10090c000 + 0xd7fc0  [0x1009e3fc0]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd4554  [0x1009e0554]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd54f8  [0x1009e14f8]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd57e4  [0x1009e17e4]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd57fc  [0x1009e17fc]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd5878  [0x1009e1878]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd63fc  [0x1009e23fc]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd7938  [0x1009e3938]
+                                                                    1 ???  (in test)  load address 0x10090c000 + 0xd7b84  [0x1009e3b84]
+
+Total number in stack (recursive counted multiple, when >=5):
+        6       ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]
+        5       ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]
+
+Sort by top of stack, same collapsed (when >= 5):
+        ???  (in test)  load address 0x10090c000 + 0x24264  [0x100930264]        25
+        ???  (in test)  load address 0x10090c000 + 0x12b5cc  [0x100a375cc]        24
+        ???  (in test)  load address 0x10090c000 + 0x12b6e8  [0x100a376e8]        23
+        ???  (in test)  load address 0x10090c000 + 0x22e34  [0x10092ee34]        23
+        ???  (in test)  load address 0x10090c000 + 0x3b2d0  [0x1009472d0]        23
+        ???  (in test)  load address 0x10090c000 + 0xc2aa0  [0x1009ceaa0]        22
+        ???  (in test)  load address 0x10090c000 + 0xc22dc  [0x1009ce2dc]        18
+        ???  (in test)  load address 0x10090c000 + 0xc7018  [0x1009d3018]        18
+        ???  (in test)  load address 0x10090c000 + 0xd7b58  [0x1009e3b58]        18
+        ???  (in test)  load address 0x10090c000 + 0xc236c  [0x1009ce36c]        16
+        ???  (in test)  load address 0x10090c000 + 0xc0e20  [0x1009cce20]        15
+        ???  (in test)  load address 0x10090c000 + 0x12aa1c  [0x100a36a1c]        13
+        ???  (in test)  load address 0x10090c000 + 0x12b328  [0x100a37328]        13
+        ???  (in test)  load address 0x10090c000 + 0xd4c28  [0x1009e0c28]        13
+        ???  (in test)  load address 0x10090c000 + 0x12b468  [0x100a37468]        12
+        ???  (in test)  load address 0x10090c000 + 0xc0b44  [0x1009ccb44]        12
+        ???  (in test)  load address 0x10090c000 + 0xc373c  [0x1009cf73c]        11
+        ???  (in test)  load address 0x10090c000 + 0x12b5a0  [0x100a375a0]        10
+        ???  (in test)  load address 0x10090c000 + 0xc7188  [0x1009d3188]        10
+        ???  (in test)  load address 0x10090c000 + 0x1403b8  [0x100a4c3b8]        9
+        ???  (in test)  load address 0x10090c000 + 0x22aec  [0x10092eaec]        9
+        ???  (in test)  load address 0x10090c000 + 0x263e0  [0x1009323e0]        9
+        ???  (in test)  load address 0x10090c000 + 0x29130  [0x100935130]        9
+        ???  (in test)  load address 0x10090c000 + 0xc6b74  [0x1009d2b74]        9
+        ???  (in test)  load address 0x10090c000 + 0x3f0c0  [0x10094b0c0]        8
+        ???  (in test)  load address 0x10090c000 + 0xd6cb0  [0x1009e2cb0]        8
+        ???  (in test)  load address 0x10090c000 + 0x12b710  [0x100a37710]        7
+        ???  (in test)  load address 0x10090c000 + 0x12bcdc  [0x100a37cdc]        7
+        ???  (in test)  load address 0x10090c000 + 0x12be24  [0x100a37e24]        7
+        ???  (in test)  load address 0x10090c000 + 0xc6bbc  [0x1009d2bbc]        7
+        ???  (in test)  load address 0x10090c000 + 0x12b488  [0x100a37488]        6
+        ???  (in test)  load address 0x10090c000 + 0x12b568  [0x100a37568]        6
+        ???  (in test)  load address 0x10090c000 + 0x12bd94  [0x100a37d94]        6
+        ???  (in test)  load address 0x10090c000 + 0xc0e34  [0x1009cce34]        6
+        ???  (in test)  load address 0x10090c000 + 0xc671c  [0x1009d271c]        6
+        ???  (in test)  load address 0x10090c000 + 0xc730c  [0x1009d330c]        6
+        ???  (in test)  load address 0x10090c000 + 0x12b378  [0x100a37378]        5
+        ???  (in test)  load address 0x10090c000 + 0x12be84  [0x100a37e84]        5
+        ???  (in test)  load address 0x10090c000 + 0x24220  [0x100930220]        5
+        ???  (in test)  load address 0x10090c000 + 0x24a44  [0x100930a44]        5
+        ???  (in test)  load address 0x10090c000 + 0x3dc34  [0x100949c34]        5
+        ???  (in test)  load address 0x10090c000 + 0xc3400  [0x1009cf400]        5
+        ???  (in test)  load address 0x10090c000 + 0xc47a4  [0x1009d07a4]        5
+        ???  (in test)  load address 0x10090c000 + 0xc615c  [0x1009d215c]        5
+
+Binary Images:
+       0x10090c000 -        0x10c2eb0bf +test (???) <C754E558-1DBE-8E21-9B1E-2B130FD2C8C7> /var/folders/*/test
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib
