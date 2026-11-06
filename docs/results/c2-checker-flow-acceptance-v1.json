@@ -1,0 +1,59 @@
+{
+  "kind": "c2-checker-flow-acceptance",
+  "scope": "Independent checker throughput fix only; whole C2 conformance remains in progress.",
+  "conformance": false,
+  "checkerCommit": "d0a480a5705699a67c4f8639144e332397f40b07",
+  "base": "ee8713721aa453a6b04e8d33343d8172a303e194",
+  "unitValidation": {
+    "tests": 4485,
+    "passed": 4485,
+    "failed": 0,
+    "exitStatus": 0,
+    "report": "docs/results/c2-checker-validation-v1.json"
+  },
+  "costRegression": {
+    "baselineSetVisits500Declarations": 249508,
+    "fixedSetVisits500Declarations": 8,
+    "report": "docs/results/c2-checker-flow-scaling-v1.json"
+  },
+  "matchedBatchMeasurements": "docs/results/c2-batch-cost-comparison-v1.json",
+  "nativeChecker": {
+    "cases": 9,
+    "outcome": "completed",
+    "report": "docs/results/c2-checker-flow-native-v1.json"
+  },
+  "unchangedNativeSubgroup": {
+    "passed": 10,
+    "total": 10,
+    "failed": 0,
+    "unsupported": 0,
+    "infrastructure": 0,
+    "report": "docs/results/test262-c2-private-methods-direct-native-v4.json"
+  },
+  "retainedPreEntryFailure": "docs/results/test262-c2-private-methods-native-v3.json",
+  "nativeSelfBuild": {
+    "report": "docs/results/c2-checker-flow-selfbuild-v3.json",
+    "entry": "stopped",
+    "exitStatus": 0,
+    "byteIdentical": true,
+    "bytes": 71847874,
+    "sha256": "39363153e1139a9b3391bae2345b58fadb30898cae920aeee8f5e23aeaaf18c5",
+    "elapsedMs": 2874105.493,
+    "signatureExitStatus": 0,
+    "dwarfExitStatus": 0,
+    "debugValidation": "Stage 1 passed dwarfdump --verify. Stage 2 is byte-identical and also passes codesign --verify --strict.",
+    "performance": "No matched baseline self-build was measured; no native self-build speedup claim."
+  },
+  "resourceRules": {
+    "nativeRunnersPerCluster": 1,
+    "workspaceGate": "~/.t3/tint-slots/tint-check",
+    "testConcurrency": 4,
+    "selfBuildSlots": 2
+  },
+  "ongoingSelection": {
+    "selection": "language/statements/class/elements",
+    "complete": false,
+    "journal": ".tint-bootstrap/c2/test262-c2-statements-elements-native-v1.jsonl",
+    "note": "Observed prefix is not a complete selection; keep running."
+  }
+}
