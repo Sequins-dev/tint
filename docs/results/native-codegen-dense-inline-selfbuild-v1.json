@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "kind": "matched-native-compiler-codegen-performance",
+  "mergeReady": true,
+  "matchedNativeExecutions": {
+    "manifest": {
+      "kind": "frozen-native-dense-candidate-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/source-snapshot.json",
+        "sha256": "de3a79af18c67a2095ab1cac8c4044fb6bfe11c7f4e09b61536a37ba10b8e9cf"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/dense-candidate-source-v8",
+      "sourceSnapshot": {
+        "sha256": "6d9151424cea81ebd2e108fb76206a116dde58deb14e363131e32db87460e67e",
+        "files": 568
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/dense-candidate-source-v8.json",
+      "changed": [
+        "packages/ir/src/optimization/reference-list-access.ts",
+        "packages/ir/src/optimization/reference-list-contract.ts",
+        "packages/ir/src/optimization/reference-lists.ts"
+      ],
+      "adapter": {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prototype-dense-general-v2.mjs",
+        "sha256": "48d3b21f2137fe61566715303610655bce7ef0ea04283300fca20d8a12248ab5"
+      },
+      "scope": "Read-only Node loader adapter plus three immutable TypeScript implementation changes. Native stage 2 compiles these same TypeScript sources. Production source/dist equivalence must be verified before merge readiness."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 97362,
+          "monotonicNs": 2118263833
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 3087853314541
+        },
+        "loadBefore": [21.361328125, 23.70654296875, 30.83056640625],
+        "loadAfter": [36.13037109375, 42.68603515625, 44.837890625],
+        "cpu": {
+          "pid": 97362,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 37122238398,
+            "systemTicks": 712797663
+          },
+          "cpuMsLowerBound": 1576459.835875,
+          "finalUnobservedWallBoundMs": 105.074083,
+          "probes": 28301,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 3085735.050708,
+        "outputSha256": "1dab38f754be7255d3579175932d16fceafc560640d9cabda4f8abc760b3944d",
+        "outputBytes": 60838434,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 63320,
+          "monotonicNs": 7354305375
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 534823392291
+        },
+        "loadBefore": [36.13037109375, 42.68603515625, 44.837890625],
+        "loadAfter": [35.1103515625, 33.962890625, 38.6923828125],
+        "cpu": {
+          "pid": 63320,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 9408034227,
+            "systemTicks": 142207599
+          },
+          "cpuMsLowerBound": 397926.74275,
+          "finalUnobservedWallBoundMs": 104.125625,
+          "probes": 4948,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 527469.086916,
+        "outputSha256": "1dab38f754be7255d3579175932d16fceafc560640d9cabda4f8abc760b3944d",
+        "outputBytes": 60838434,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 3.96168356260846,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. This is a prototype until production emission equivalence and workspace gates pass."
+  },
+  "productionHostEquivalence": {
+    "kind": "production-host-emission-equivalence",
+    "frozenToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/source-snapshot.json",
+      "sha256": "b7129f82bd3888e88987d57fcea785120fa8dff442d99277fc64fe4daa3ab1d8"
+    },
+    "candidateSourceSnapshot": {
+      "sha256": "6d9151424cea81ebd2e108fb76206a116dde58deb14e363131e32db87460e67e",
+      "files": 568
+    },
+    "prototypeAdapter": {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prototype-dense-general-v2.mjs",
+      "sha256": "48d3b21f2137fe61566715303610655bce7ef0ea04283300fca20d8a12248ab5"
+    },
+    "productionAdapter": null,
+    "identical": true,
+    "bytes": 60838434,
+    "sha256": "1dab38f754be7255d3579175932d16fceafc560640d9cabda4f8abc760b3944d",
+    "scope": "Unmodified production host emits exactly the matched prototype stage1/native stage2 bytes from the same sealed source input. All three implementation source files match the sealed candidate byte for byte; current workspace adds a comment-only contract clarification."
+  },
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "nonemptyDwarfSections": {
+    "__debug_abbrev": 69,
+    "__debug_info": 1024875,
+    "__debug_line": 14706531
+  },
+  "workspaceGate": {
+    "startedUTC": "2026-11-06T22:58:22.035Z",
+    "endedUTC": "2026-11-06T23:23:07.028Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 0,
+    "signal": null
+  },
+  "gateTests": {
+    "pass": 4579,
+    "fail": 0
+  },
+  "nativeBenchmark": "native-codegen-dense-inline-elements-v1.json",
+  "nativePerformance": {
+    "beforeCPUms": 1576459.835875,
+    "afterCPUms": 397926.74275,
+    "cpuSpeedup": 3.96168356260846,
+    "repetitions": "One full native compiler execution per representation; four alternating operation-benchmark pairs provide repeated CPU medians and spread.",
+    "wallInterpretation": "Inferior wall is recorded for each observation and includes varying host contention; CPU time establishes the measured gain."
+  },
+  "proof": "Sparse-generated and dense-generated executables contain the same candidate TypeScript compiler implementation. Both compile the same sealed sources and emit byte-identical dense compiler bytes. The unmodified frozen production host emits those exact bytes, proving loader-prototype equivalence.",
+  "sourceProvenance": "Candidate graph derives from post-C2 v7; the production host is v9 including current C1 changes. All three implementation files match the sealed candidate exactly. Current source adds a comment-only contract clarification; subsequent rebases through main bf4e71e contain docs only.",
+  "test262Boundary": "Managed Test262 host images still disable private dense arrays. No Test262 execution-time or coverage improvement is claimed. The separate 300-second A1 canonical run remains queued; previous resource-mismatched observations are retained in native-addition-post-C2-resource-audit-v1.",
+  "suiteProjection": "No whole-suite hours projection from this native compiler workload: current suite batch compilation is Node-hosted, and the managed-image boundary remains unchanged.",
+  "artifacts": {
+    "matched-selfbuild.log": {
+      "sha256": "75ccdb1300f4a25787e260d2fd4fd98a5ecbad5d3f053dbe4fc3c78458363a24",
+      "uncompressedBytes": 63315
+    },
+    "production-emission.log": {
+      "sha256": "e0247bd32602c1b8dd6c13f2843012bf3a7462689a14fa30ced34e8ff2f8469a",
+      "uncompressedBytes": 1213
+    },
+    "gate.log": {
+      "sha256": "40dac601e41ca2531b389fb6c6bce80814878937b2e462c97f22419e4447ed7c",
+      "uncompressedBytes": 397302
+    }
+  }
+}

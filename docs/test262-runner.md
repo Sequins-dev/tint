@@ -490,6 +490,13 @@ omitted by its five-sample leaf-summary threshold. Aggregate specializations of
 one source function, but keep workload denominators separate. Selected sampling
 windows are not duration-weighted whole-run profiles.
 
+The [private-array compiler measurement](results/native-codegen-dense-inline-selfbuild-v1.md)
+compares generated native compilers on identical frozen sources and identical
+emitted images. Its dense-array optimization still requires a closed executable
+with private headers and no managed surfaces. Test262's managed batch images
+retain their existing setting, so a native compiler speedup does not establish
+a runner compile-time or variant execution-time improvement.
+
 Retain the image and build-manifest identities, initial debugger stop, final
 inferior outcome, CPU observations and load averages with each measurement.
 Under saturation, use repeated inferior CPU measurements and emitted instruction,
