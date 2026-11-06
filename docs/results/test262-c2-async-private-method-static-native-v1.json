@@ -1,0 +1,765 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants and source/harness identities verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/elements/async-private-method-static",
+  "sourceSnapshot": {
+    "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v9/source-snapshot.json",
+  "frozenToolchainSha256": "159f0066a796cd13f45c725abd0b1f12aaf85ec37bdff58ad5e1a9061019b59f",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/statements-elements-prefix-907-v1.jsonl",
+    "journalSha256": "e3189e3029138715b9facc090d5cbb32a25d3ebdd3f8a1b34008033722270324",
+    "journalBytes": 716020,
+    "observedVariants": 907
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 19,
+        "variants": 12,
+        "kind": "syntax",
+        "compileMs": 4906.304333999753,
+        "outcome": "compiled"
+      },
+      {
+        "id": 20,
+        "variants": 15,
+        "kind": "execution",
+        "compileMs": 226843.6556250006,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-binding-identifier-escaped.js",
+      "sha256": "5eec69ef07c1a51ab9fdfebc6f0e809c40fcb7614d611f51ded8c0a4346e7889",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 251049.72970799915,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-binding-identifier-escaped.js",
+      "sha256": "5eec69ef07c1a51ab9fdfebc6f0e809c40fcb7614d611f51ded8c0a4346e7889",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6490.874374998733,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-binding-identifier.js",
+      "sha256": "3addb995619f830d727576b4db01a2b6ce3c3c7ea68eb23f3f33fdd6bde69346",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6970.352417001501,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-binding-identifier.js",
+      "sha256": "3addb995619f830d727576b4db01a2b6ce3c3c7ea68eb23f3f33fdd6bde69346",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7486.779958000407,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-identifier-reference-escaped.js",
+      "sha256": "9a9bad726d6b3a0990f46d0df9bd2a113ebb187496792e395b2529c6828f9ce3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8077.678041998297,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-identifier-reference-escaped.js",
+      "sha256": "9a9bad726d6b3a0990f46d0df9bd2a113ebb187496792e395b2529c6828f9ce3",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8645.42620800063,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-identifier-reference.js",
+      "sha256": "522c53969c5e2dbade3103f7e02f0e19b92f3281e230229a892c1d0280bdaadb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9274.095540998504,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-identifier-reference.js",
+      "sha256": "522c53969c5e2dbade3103f7e02f0e19b92f3281e230229a892c1d0280bdaadb",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9896.534958999604,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-label-identifier-escaped.js",
+      "sha256": "810789b89697b75f62a7b1655d0520d1069dbc56417b554181e3d762d460cba4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10345.6761249993,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-label-identifier-escaped.js",
+      "sha256": "810789b89697b75f62a7b1655d0520d1069dbc56417b554181e3d762d460cba4",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10815.31704199873,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-label-identifier.js",
+      "sha256": "8628bb70b71bed487652802162161780fa14a10ae144f14ff29b33c9d0e4efef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11319.060875000432,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/await-as-label-identifier.js",
+      "sha256": "8628bb70b71bed487652802162161780fa14a10ae144f14ff29b33c9d0e4efef",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11879.015374999493,
+      "batch": 19
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow-returns-arguments-from-parent-function.js",
+      "sha256": "3e610d5614328d8ff1c3c357a9bb0ca8b15eb54a5d86f82b12f476997da8be24",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 241275.21320899948,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow-returns-arguments-from-parent-function.js",
+      "sha256": "3e610d5614328d8ff1c3c357a9bb0ca8b15eb54a5d86f82b12f476997da8be24",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 229839.89895899966,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow-returns-newtarget.js",
+      "sha256": "6e7417bca2871544253fff4a15eb3adf4d7f939471149ed8fc84fd868e0d6e9f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 230286.07333300076,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow-returns-newtarget.js",
+      "sha256": "6e7417bca2871544253fff4a15eb3adf4d7f939471149ed8fc84fd868e0d6e9f",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 230753.06024999917,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow.js",
+      "sha256": "8fa52cd2357550a538e94a32b5d9522523e037c835ae5cdf8c5234e37fec4633",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 231205.32341700047,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-arrow.js",
+      "sha256": "8fa52cd2357550a538e94a32b5d9522523e037c835ae5cdf8c5234e37fec4633",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 231981.37250000052,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function-returns-arguments-from-own-function.js",
+      "sha256": "9a1c816a22b2b6f1d7e4bb094fd73cef8bf74491984946f2e9328724be1b7a37",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 232478.98687500134,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function-returns-arguments-from-own-function.js",
+      "sha256": "9a1c816a22b2b6f1d7e4bb094fd73cef8bf74491984946f2e9328724be1b7a37",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 232998.2927499991,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function-returns-newtarget.js",
+      "sha256": "b2a328627581182877d3b1d31812da1d9effb64a494655751737efe7f14b7be5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 233540.67170800082,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function-returns-newtarget.js",
+      "sha256": "b2a328627581182877d3b1d31812da1d9effb64a494655751737efe7f14b7be5",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 234014.38683299907,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function.js",
+      "sha256": "c13471ace6897bfe461ed592755eeb23591d7e8bdef05a69c9f6bab2471c3e87",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 234462.7666669991,
+      "batch": 20
+    },
+    {
+      "path": "language/statements/class/elements/async-private-method-static/returns-async-function.js",
+      "sha256": "c13471ace6897bfe461ed592755eeb23591d7e8bdef05a69c9f6bab2471c3e87",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-functions", "class-static-methods-private"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 234939.77341699973,
+      "batch": 20
+    }
+  ]
+}
