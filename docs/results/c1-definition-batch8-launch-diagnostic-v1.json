@@ -1,0 +1,44 @@
+{
+  "kind": "native-debugger-launch-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/definition",
+  "path": "language/statements/class/definition/methods-gen-yield-as-property-name.js",
+  "variant": "sloppy",
+  "batch": 8,
+  "stderr": "docs/results/test262-c1-foundation-language-statements-class-definition-v2.json.stderr.txt",
+  "journal": "docs/results/test262-c1-foundation-language-statements-class-definition-v2.jsonl",
+  "observed": {
+    "phase": "launching debugger / awaiting LLDB",
+    "elapsedMs": 102982,
+    "runner": {
+      "pid": 70687,
+      "cpu": "28:57.66",
+      "state": "S"
+    },
+    "debugger": {
+      "pid": 72822,
+      "cpu": "00:00.29",
+      "state": "S"
+    },
+    "stub": {
+      "pid": 72843,
+      "cpu": "00:00.01",
+      "state": "S"
+    },
+    "inferior": {
+      "pid": 72844,
+      "cpu": "00:00.00",
+      "state": "TX"
+    }
+  },
+  "followup": {
+    "debuggerSampleExit": 255,
+    "stubSampleExit": 255,
+    "sampleDiagnostic": "Process no longer appears to be running",
+    "privateDirectory": "Removed by runner cleanup before file inspection",
+    "variantStatus": "pass",
+    "retries": 0,
+    "interrupted": false
+  },
+  "interpretation": "Slow initial debugger handshake; the original run completed and passed within the configured containment budget. Sampling failures reflect exited processes, not native faults."
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "native-runner-stall-diagnostics",
+  "conformance": false,
+  "selection": "language/statements/class/definition",
+  "journal": "docs/results/test262-c1-foundation-language-statements-class-definition-v2.jsonl",
+  "runner": 70687,
+  "diagnostics": [
+    {
+      "batch": 0,
+      "sample": "docs/results/c1-definition-batch0-stall-v1.txt",
+      "cpuObservations": [
+        "03:08.80",
+        "03:19.81",
+        "03:41.82"
+      ]
+    },
+    {
+      "batch": 2,
+      "sample": "docs/results/c1-definition-batch2-stall-v1.txt",
+      "cpuObservations": [
+        "08:58.85",
+        "09:15.52",
+        "10:28.09",
+        "11:14.82"
+      ]
+    },
+    {
+      "batch": 4,
+      "sample": "docs/results/c1-definition-batch4-stall-v1.txt",
+      "cpuObservations": [
+        "13:38.98",
+        "14:29.10",
+        "14:35.29"
+      ]
+    }
+  ],
+  "stdin": "/dev/null",
+  "pauseMarkerConfigured": false,
+  "diagnosis": "Worker phase thresholds triggered during synchronous bootstrap compilation. Each phase was sampled; runner CPU time advanced and there were no inferior children or input/pause waits. Run continued without interruption or retry."
+}

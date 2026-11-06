@@ -1,0 +1,49 @@
+{
+  "kind": "completed-native-selection-stall-diagnostics",
+  "conformance": false,
+  "selection": "language/statements/class/definition",
+  "report": "docs/results/test262-c1-foundation-language-statements-class-definition-v2.json",
+  "priorDiagnosticPrefix": "docs/results/c1-definition-stall-diagnostics-v1.json",
+  "runner": 70687,
+  "sampledCompilationBatches": [
+    {
+      "batch": 0,
+      "sample": "docs/results/c1-definition-batch0-stall-v1.txt"
+    },
+    {
+      "batch": 2,
+      "sample": "docs/results/c1-definition-batch2-stall-v1.txt"
+    },
+    {
+      "batch": 4,
+      "sample": "docs/results/c1-definition-batch4-stall-v1.txt"
+    },
+    {
+      "batch": 6,
+      "sample": "docs/results/c1-definition-batch6-stall-v1.txt"
+    },
+    {
+      "batch": 8,
+      "sample": "docs/results/c1-definition-batch8-stall-v1.txt"
+    },
+    {
+      "batch": 10,
+      "sample": "docs/results/c1-definition-batch10-stall-v1.txt"
+    },
+    {
+      "batch": 12,
+      "sample": "docs/results/c1-definition-batch12-stall-v1.txt"
+    }
+  ],
+  "launchDiagnostic": "docs/results/c1-definition-batch8-launch-diagnostic-v1.json",
+  "result": {
+    "passed": 130,
+    "total": 130,
+    "failed": 0,
+    "unsupported": 0,
+    "infrastructureErrors": 0
+  },
+  "interrupted": false,
+  "retries": 0,
+  "interpretation": "Each long compilation was sampled and CPU advancement verified. One slow initial debugger handshake completed within its original containment budget. All original variant observations passed."
+}
