@@ -1,0 +1,22 @@
+{
+  "kind": "c1-rebased-workspace-and-compiler-graph-validation",
+  "conformance": false,
+  "base": "4ef8ab8ac9c0c7d4cd479b4928a2e59f3e3be3e5",
+  "headAtGateStart": "9895462",
+  "headAtGateCompletion": "5e3d1a2df313c0f3e88346646184b858b9727e17",
+  "workspace": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "node": "24.12.0",
+    "tests": 4524,
+    "passed": 4524,
+    "exitStatus": 0,
+    "signal": null,
+    "elapsedMs": 584300,
+    "log": "docs/results/c1-check-v7.txt",
+    "progress": "docs/results/c1-check-v7-progress.txt",
+    "quietProcessSample": "docs/results/c1-check-v7-quiet-sample.txt"
+  },
+  "compilerGraph": "docs/results/c1-codegen-copy-compiler-agreement-v1.json",
+  "acceptedSelfBuild": "docs/results/native-codegen-register-copies-selfbuild-v4.json",
+  "scope": "Gates after rebasing main register-copy backend. The only intervening commit records the completed super selection; executable source did not change. Quiet test process sampled while CPU advanced; all gates subsequently completed. Reachable compiler graph exactly matches the accepted main frozen self-build. No compiler-performance investigation."
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "c1-compiler-agreement-with-accepted-register-copy-selfbuild",
+  "conformance": false,
+  "accepted": true,
+  "baselineSelfBuild": "docs/results/native-codegen-register-copies-selfbuild-v4.json",
+  "baselineReady": "docs/results/native-codegen-register-copies-ready-v5.json",
+  "frozenSource": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-codegen-copy-v1/source",
+  "modules": 220,
+  "currentModules": 220,
+  "compilerGraphEqual": true,
+  "stageImages": {
+    "bytes": 71138370,
+    "sha256": "2f637f67c2da2a1eceaa7bae7176f35294987176fb3ad141e515fefe9d3d1f08",
+    "identical": true,
+    "initialStopped": true,
+    "exitStatus": 0,
+    "signatureExit": [
+      0,
+      0
+    ],
+    "dwarfExit": 0
+  },
+  "scope": "The reachable compiler graph in rebased C1 is identical to the accepted register-copy compiler graph. C1 private-element runtime semantics remain covered by their separate native fixture; native Test262 reports keep their frozen inputs. No compiler-performance investigation performed."
+}
