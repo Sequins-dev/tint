@@ -1,0 +1,29 @@
+{
+  "kind": "paused-cluster-workspace-validation",
+  "conformance": false,
+  "node": "v24.12.0",
+  "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": 4525,
+  "passed": 4525,
+  "failed": 0,
+  "gates": [
+    "typecheck including build",
+    "tests concurrency4",
+    "boundaries",
+    "format:check"
+  ],
+  "validatedMain": "2c0e13c282daf530fa15fd7308c06839bc4b69c4",
+  "branchHeadAtValidation": "d427b986d80e66bb4ae3abac3e9ebce4755fcc0b",
+  "log": "docs/results/a1-paused-final-check-v2.log",
+  "logSha256": "b62d438b0998e8907dd48cb75822a04e2d6e32c5769f2f19293b112106e60ce0",
+  "priorPass": {
+    "exitStatus": 0,
+    "tests": 4521,
+    "log": "docs/results/a1-paused-final-check-v1.log",
+    "reasonForRepeat": "Main added tooling and module-linking code before validation completed; rebased and reran."
+  },
+  "sourceChangesByA1": false,
+  "selfbuild": "Not required for evidence/dashboard-only changes.",
+  "clusterStatus": "Paused by user. All native runners/controllers/monitors stopped. statementList held at62/160, for unexecuted."
+}
