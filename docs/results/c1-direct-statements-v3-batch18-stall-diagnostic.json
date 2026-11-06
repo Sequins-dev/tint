@@ -1,0 +1,19 @@
+{
+  "kind": "c1-native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/*.js",
+  "phase": "compiling batch 18 (8 variants)",
+  "runnerPid": 81217,
+  "completedVariants": 440,
+  "passed": 440,
+  "cpuObservations": [
+    "77:18.89",
+    "77:36.46",
+    "77:54.13",
+    "79:10.77"
+  ],
+  "inferiorLaunched": false,
+  "sample": "docs/results/c1-direct-statements-v3-batch18-stall-sample.txt",
+  "externalSaturation": "docs/results/c1-external-saturation-v1.json",
+  "interpretation": "Worker heartbeat and CPU advance during compilation. Investigated with process state and recorded external Metal saturation; stack sample retained. No interruption or retry."
+}
