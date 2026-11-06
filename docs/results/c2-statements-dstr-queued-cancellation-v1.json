@@ -1,0 +1,29 @@
+{
+  "kind": "c2-queued-native-launch-cancellation",
+  "conformance": false,
+  "createdAt": "2026-11-06T19:43:40.667113+00:00",
+  "selection": "language/statements/class/dstr",
+  "plannedVariants": 3840,
+  "batchSize": 64,
+  "toolchain": "docs/results/c2-frozen-toolchain-v10.json",
+  "reason": "Coordinator revoked second-runner allowance during host memory emergency; cancelled extra launch while still queued.",
+  "slotWrapperPid": 83619,
+  "signal": "SIGTERM",
+  "verifiedBeforeSignal": {
+    "journalExisted": false,
+    "runnerStarted": false,
+    "onlyChild": "sleep 2"
+  },
+  "observations": 0,
+  "canonicalCompleteReport": false,
+  "journalResume": "No journal was created because no runner started. Future attempt must use a fresh toolchain and report path under current launch rules.",
+  "stderr": ".tint-bootstrap/c2/test262-c2-statements-dstr-native-v1.stderr",
+  "stderrSha256": "bd4ca02d158c91fb99cbfc6196c77a137e0533a22ffe5132923587c87e163f80",
+  "originalRunner": {
+    "pid": 38740,
+    "selection": "language/statements/class/elements",
+    "status": "Continues; 800 observed passes at cancellation verification."
+  },
+  "slotExitStatus": -15,
+  "observerExitStatus": 241
+}
