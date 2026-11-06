@@ -1,0 +1,11 @@
+{
+  "kind": "native-controller-supersession",
+  "conformance": false,
+  "stopped": { "controller": "run-operator-native-v4.mjs", "pid": 91215, "signal": "SIGTERM", "at": "2026-11-06T14:18Z" },
+  "reason": "Lane ordering rule from the language-completion delegate: remove the serial pause request and confirm both it and the owner's .ack are gone before removing the lease. v4 removed the request before the lease but did not wait for the .ack to clear. Fixed in run-operator-native-v5.mjs.",
+  "safeBoundary": "v4 held no lease (owner pid 76396, language-core) and no inferior. Multiplication runner 85897 was parked at its own pause with ack {pid:85897,state:between-variants} and had no children. Batch 0 (64 variants) had executed and batch 1 (15 variants) was compiled but not executed.",
+  "completedUnderV4": { "family": "subtraction", "report": "docs/results/test262-operator-subtraction-current-v3.json", "controller": "docs/results/test262-operator-subtraction-current-adopted-controller-v4.json", "totals": "75/75" },
+  "successor": { "controller": "run-operator-native-v5.mjs", "pid": 58998, "adopts": { "runner": 85897, "family": "multiplication", "runnerReportVersion": "v4", "adoptedControllerReport": "docs/results/test262-operator-multiplication-current-adopted-controller-v5.json" } },
+  "v4Log": "docs/results/operator-native-controller-v4.log",
+  "notes": "No variant was replayed. v4's finally block did not run under SIGTERM, so no v4 checkpoint exists. v5's checkpoint (docs/results/operator-families-current-checkpoint-v5.json) records the lineage."
+}
