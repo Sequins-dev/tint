@@ -1,0 +1,81 @@
+{
+  "kind": "native-word-parking-fixture",
+  "outcome": {
+    "kind": "completed"
+  },
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "9dc3ce08856b6575bf30c8192217f9d45c5a86ef8ae6b0cf355fd5f13bdf1952",
+      "files": 568
+    },
+    "imageSha256": "88da617358d30cebfb9b5c9b35a881cbc6fcbef6e0a9527f35c77f98cd45843a",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-word-parking-v1-8PKS5N/native-word-parking-v1.source.ts",
+    "fixtureSha256": "946d22f934719caeb6dca65414c44c683015a3b9e2773c79c402b325b8c22f02",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/build-parking-v2.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "threaded": true,
+      "managedBytes": 1048576,
+      "allocationCapacity": 65536,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "hostBindings": [
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "mapMemory",
+          "operation": "memory-map"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "unmapMemory",
+          "operation": "memory-unmap"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "startNativeThread",
+          "operation": "thread-start"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "joinNativeThread",
+          "operation": "thread-join"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "hostedThreadEntry",
+          "operation": "hosted-thread-entry"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "parkNativeWord",
+          "operation": "word-park"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "wakeNativeWord",
+          "operation": "word-wake"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedUnsigned",
+          "operation": "shared-read-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedUnsigned",
+          "operation": "shared-write-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/clock.ts",
+          "name": "monotonicMilliseconds",
+          "operation": "monotonic-time"
+        }
+      ]
+    },
+    "debugSymbols": false
+  },
+  "scope": "One short process; raw kernel timeout, mismatch, empty wake and sixteen cross-thread wake races. Not Test262 conformance."
+}

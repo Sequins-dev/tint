@@ -36,6 +36,8 @@ test("native thread leaves require explicit platform lifecycle authority", () =>
   for (const [operation, count, symbol] of [
     ["thread-start", 2, "_pthread_create"],
     ["thread-join", 1, "_pthread_join"],
+    ["word-park", 3, "___ulock_wait2"],
+    ["word-wake", 2, "___ulock_wake"],
   ] as const) {
     const ir = bound(operation as HostOperation, count);
     assert.equal(emitModule(ir).ok, false);

@@ -6,7 +6,7 @@ has no OS dependencies. The [coverage dashboard](test262.md) owns measured resul
 
 ## Validation and coercion
 
-`ordinary-object/atomics-access.ts` validates integer typed-array brands, access
+`@tint/js-runtime/objects` (`atomics-access.ts`) validates integer typed-array brands, access
 permissions and the initial index before converting operands. It revalidates the
 view after all observable conversions. Ordinary ArrayBuffer storage is legal for
 non-waiting operations; floating and clamped arrays are rejected. Immutable
@@ -42,8 +42,8 @@ nonallocating CPU hint; the AArch64 adapter emits YIELD.
 
 ## Remaining work
 
-Native pthread CAS contention [passes all three widths in the first observation](results/native-contention-validation-v1.json). A [corrected deterministic contention barrier](results/native-contention-validation-v2.json) passes u8/u16, retaining one u32 pre-entry failure. These are raw native race kernels, separate from Script-agent conformance. Managed workers need independent agent contexts and
-GC roots, or an explicit stop-the-world protocol. Payload/control mappings contain
+Native pthread CAS contention [passes all three widths in the first observation](results/native-contention-validation-v1.json). A [corrected deterministic contention barrier](results/native-contention-validation-v2.json) passes u8/u16, retaining one u32 pre-entry failure. These are raw native race kernels, separate from Script-agent conformance. Generic hosted workers now have independent managed contexts and roots; the
+Script-agent host still needs per-thread realm/job creation and shared mailboxes. Payload/control mappings contain
 no moving managed pointers and currently have bounded engine-lifetime retention.
 
 `notify` validates Int32/BigInt64 views and converts index/count before returning
@@ -80,3 +80,29 @@ and owning-agent job delivery. A worker host must execute actual Script sources;
 a precompiled native race kernel alone does not satisfy `$262.agent` conformance.
 
 A fixture-only native waiter prototype also [passes its trace-enabled observation](results/native-waiter-w1-diagnostic-v2.json), with the [earlier pre-entry failure](results/native-waiter-w1-v1.json) retained. It exercises real pthread parking, FIFO notification, timeout and cross-width shared-location matching in a bounded two-record domain. It supplies no production waiting capability, managed workers or Script agents.
+
+
+## Native lifecycle and parking prerequisites
+
+Opt-in hosted worker startup initializes a fresh stack, heap, collector and
+ownership domain for each system thread. The
+[managed lifecycle fixture](results/native-isolated-thread-lifecycle-v2.json)
+checks eight simultaneously live contexts under allocation stress and a throwing
+worker. The [executable ownership fixture](results/native-isolated-thread-lifecycle-v3.json)
+also publishes and invokes a distinct executable mapping in each live worker,
+before and after collection. These are native infrastructure fixtures, not
+unchanged Test262 agent passes.
+
+The Darwin platform adapter explicitly grants `__ulock_wait2` / `__ulock_wake`
+compare-and-park operations. Timeout arguments are relative nanoseconds (zero
+means indefinite). Raw statuses remain advisory; state, notification ownership
+and absolute deadlines belong to the waiter registry. The native leaf touches a
+caller-owned cell before waiting because XNU's locked atomic copy-in cannot fault
+an untouched page in. See Apple's [ABI header](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/ulock.h)
+and [kernel implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/sys_ulock.c).
+The [parking fixture](results/native-word-parking-v2.json) covers mismatch,
+timeout, empty wake and sixteen cross-thread publication/wake races. Its
+[initial failure](results/native-word-parking-v1.json) and
+[error-code diagnostic](results/native-word-parking-diagnostic-v1.json) retain the
+untouched-page EFAULT observation. Observable Atomics waiting remains unsupported
+until registry and owner-agent delivery are connected.

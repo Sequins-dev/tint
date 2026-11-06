@@ -3897,6 +3897,41 @@ export function emitModule(
               const resultId = op.id;
               if (resultId === undefined)
                 throw "verified host result invariant";
+              if (operation === "word-park" || operation === "word-wake") {
+                const parking = host().parking;
+                if (parking === undefined)
+                  fail("UNSUPPORTED", "target has no word parking ABI");
+                const flags = parking.compareOperation + parking.noErrnoFlag;
+                integer(0, 1, true);
+                if (operation === "word-park") {
+                  integer(1, 2, true);
+                  integer(2, 3, true);
+                  imm(0, flags);
+                  imm(4, 0);
+                  // XNU's locked copyin cannot fault a new mapping in. Touch the
+                  // caller-owned cell first; this is not waiter linearization.
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 1, offset: 0 });
+                  foreign(parking.waitSymbol);
+                } else {
+                  integer(1, 9);
+                  imm(0, flags);
+                  // all is an already validated 0/1 scalar, not a Script value.
+                  const one = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 9, displacement: 0 });
+                  imm(0, flags + parking.wakeAllFlag);
+                  patchInstruction(one, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 9,
+                    displacement: (instructions.length - one) * 4,
+                  });
+                  imm(2, 0);
+                  foreign(parking.wakeSymbol);
+                }
+                emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                floatStore(0, resultId);
+                break;
+              }
               if (operation === "hosted-thread-entry") {
                 imports.push({
                   offset: instructions.length * 4,

@@ -201,3 +201,22 @@ export function joinNativeThread(handle: number): number {
 export function hostedThreadEntry(): number {
   throw "HOST_UNAVAILABLE";
 }
+
+/** Trusted futex-style kernel leaves. The owner grants a live aligned raw 32-bit
+ * cell and excludes unmapping until every waiter has returned. Inputs are exact
+ * nonnegative integers: expected is uint32, timeoutNanoseconds is zero for an
+ * indefinite park or a positive relative duration. all is 0 (one) or 1 (all).
+ * Results are raw platform statuses (negative error numbers or nonnegative
+ * advisory wakes). Callers must recheck their atomic state and absolute deadline
+ * after every return, including spurious wakes, interrupts and value mismatches.
+ * These leaves never implement observable Atomics.wait/notify counts themselves. */
+export function parkNativeWord(
+  address: number,
+  expected: number,
+  timeoutNanoseconds: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function wakeNativeWord(address: number, all: number): number {
+  throw "HOST_UNAVAILABLE";
+}

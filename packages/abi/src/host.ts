@@ -24,6 +24,16 @@ export interface PosixHostABI {
     readonly createSymbol: string;
     readonly joinSymbol: string;
   };
+  /** Kernel compare-and-park/wake ABI. Callers own aligned raw 32-bit cells;
+   * kernel wakeups are advisory, never ECMAScript waiter completion authority. */
+  readonly parking?: {
+    readonly kind: "darwin-ulock";
+    readonly waitSymbol: string;
+    readonly wakeSymbol: string;
+    readonly compareOperation: number;
+    readonly noErrnoFlag: number;
+    readonly wakeAllFlag: number;
+  };
   readonly symbolPrefix: string;
   readonly errnoSymbol: string;
   readonly readFlags: number;

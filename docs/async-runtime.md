@@ -180,3 +180,12 @@ This lifecycle capability is a prerequisite for the agent API, not an implemente
 pump remain separate work. No Script completion is inferred from the existence of
 a thread. Whole-variant containment remains process-scoped: unsafe asynchronous
 thread cancellation cannot unwind a managed collector safely.
+
+
+Darwin now also supplies explicit raw word-parking authority through the platform
+adapter. `parkNativeWord` and `wakeNativeWord` operate only on caller-owned aligned
+raw cells; their kernel returns are advisory. The existing monotonic-clock leaf
+supplies deadline accounting. These capabilities do not expose a Script waiting
+API or settle promises. The subsequent waiter registry must compare-and-enroll
+under the same synchronization as notify, retain terminal-state ownership, and
+route completions onto the owner agent's queue.

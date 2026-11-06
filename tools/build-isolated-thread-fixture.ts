@@ -1,4 +1,18 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { encode } from "@tint/codegen/aarch64/isa";
+const codeBytes: number[] = [];
+for (const instruction of [
+  { op: "movz", width: 64, rd: 9, immediate: 19, shift: 0 },
+  { op: "scvtf-d-x", rd: 0, rn: 9 },
+  { op: "str-d", rt: 0, rn: 3, offset: 16 },
+  { op: "movz", width: 64, rd: 0, immediate: 1, shift: 0 },
+  { op: "ret", rn: 30 },
+] as const) {
+  const word = encode(instruction);
+  if (!word.ok) throw Error("fixture encoding");
+  for (let i = 0; i < 4; i++)
+    codeBytes.push(Math.floor(word.value / 2 ** (i * 8)) % 256);
+}
 if (process.env.TINT_BUILD_ONLY !== "1") throw Error("build-only fixture");
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
@@ -12,27 +26,36 @@ const names = [
   "hostedThreadEntry",
   "currentContextDomain",
   "currentRootHead",
+  "mapExecutableMemory",
+  "writeExecutableMemory",
+  "callExecutableNumber",
 ];
 verifyHostedFixture(
   `
 import {readSharedUnsigned,writeSharedUnsigned,compareExchangeSharedUnsigned} from 'shared';
-import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,joinNativeThread,hostedThreadEntry,currentContextDomain,currentRootHead} from 'memory';
+import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,joinNativeThread,hostedThreadEntry,currentContextDomain,currentRootHead,mapExecutableMemory,writeExecutableMemory,callExecutableNumber} from 'memory';
 export function run(argument:number):number {
  if(argument===1)throw 19;
  if(argument!==0){
   if(writeMemoryWord(argument,128,0,currentContextDomain())!==0)return 11;
   if(writeMemoryWord(argument,128,8,currentRootHead())!==0)return 12;
+  const code=mapExecutableMemory(16384);
+  const published=code>0?writeExecutableMemory(code,16384,0,new Uint8Array([${codeBytes.join(",")}])):-1;
+  if(writeMemoryWord(argument,128,32,code>0?code:0)!==0)return 17;
   const barrier=readMemoryWord(argument,128,24);
   while(true){
    const observed=readSharedUnsigned(barrier,8,0,4,1);
    if(compareExchangeSharedUnsigned(barrier,8,0,4,observed,observed+1)===observed)break;
   }
   while(readSharedUnsigned(barrier,8,4,4,1)!==1){}
+  if(code<=0||published!==0)return 15;
+  if(callExecutableNumber(code)!==19)return 16;
   const retained=new Float64Array(16);retained[0]=19;
   for(let i=0;i<1000;i++){
    const data=new Float64Array(512);data[0]=i;
    if(data[0]!==i||retained[0]!==19)return 13;
   }
+  if(callExecutableNumber(code)!==19||unmapMemory(code,16384)!==0)return 18;
   if(writeMemoryWord(argument,128,16,42)!==0)return 14;
   return 7;
  }
@@ -54,6 +77,9 @@ export function run(argument:number):number {
   const root=readMemoryWord(mailbox,16384,i*128+8);
   if(domain<=0||domain===currentContextDomain()||root<=0||root===currentRootHead())return 4;
   for(let j=0;j<i;j++){if(domain===domains[j]||root===roots[j])return 5;}
+  const code=readMemoryWord(mailbox,16384,i*128+32);
+  if(code<=0)return 12;
+  for(let j=0;j<i;j++){if(code===readMemoryWord(mailbox,16384,j*128+32))return 13;}
   domains[i]=domain;roots[i]=root;
   if(readMemoryWord(mailbox,16384,i*128+16)!==42)return 6;
  }
@@ -84,6 +110,7 @@ export function run(argument:number):number {
     },
   ],
   {
+    allowJit: true,
     threaded: true,
     managedBytes: 1048576,
     allocationCapacity: 65536,
@@ -103,6 +130,9 @@ export function run(argument:number):number {
             "hosted-thread-entry",
             "context-domain",
             "root-head",
+            "executable-map",
+            "executable-write",
+            "executable-call-number",
           ] as const
         )[index]!,
       })),
