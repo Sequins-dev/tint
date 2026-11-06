@@ -1,0 +1,12 @@
+(lldb) target create ".tint-bootstrap/j-emoji-stage1-v1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-emoji-stage1-v1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) process launch --stop-at-entry -- /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-emoji-source-v1 /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-emoji-stage2-v1 --debug-symbols
+Process 27544 launched: '/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-emoji-stage1-v1' (arm64)
+(lldb) script assert lldb.process.GetState() == lldb.eStateStopped
+(lldb) continue
+sources
+parse
+allocator
+runtime
+program

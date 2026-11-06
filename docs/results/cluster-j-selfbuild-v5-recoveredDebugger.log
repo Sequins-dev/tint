@@ -1,0 +1,19 @@
+(lldb) process attach --pid 27544
+Process 27544 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+    frame #0: 0x00000001041e9aec j-emoji-stage1-v1`runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134] at generational.ts:116:9
+   113 	    external,
+   114 	  };
+   115 	  function read(address: number): number | undefined {
+-> 116 	    if (!(
+    	        ^
+   117 	      contains(readable.managedBase, readable.managedLength, address) ||
+   118 	      contains(readable.controlBase, readable.controlLength, address) ||
+   119 	      contains(readable.imageBase, readable.imageLength, address) ||
+Executable binary set to "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-emoji-stage1-v1".
+Architecture set to: arm64-apple-macosx-.
+(lldb) script assert lldb.process.GetProcessID() == 27544 and lldb.process.GetState() == lldb.eStateStopped
+(lldb) continue
+Process 27544 resuming
+Process 27544 exited with status = 0 (0x00000000)
+(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 0

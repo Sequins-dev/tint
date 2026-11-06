@@ -1,0 +1,91 @@
+{
+  "kind": "cluster-j-frozen-native-selfbuild",
+  "timestamp": "2026-11-06T20:39:10.564528+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "eb810121f9ab6bf004b75f1f6903afa64e7c6c96bcd751f5d94a361acf737990",
+    "files": 569
+  },
+  "frozenToolchain": ".tint-bootstrap/cluster-j-toolchain-v5",
+  "frozenInputDirectory": ".tint-bootstrap/j-emoji-source-v1",
+  "images": [
+    {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-emoji-stage1-v1",
+      "bytes": 71138370,
+      "sha256": "fe41b94e4914823ca1339eb7cf1033abe659f5b9e87cd3d80728515bc2483f87"
+    },
+    {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-emoji-stage2-v1",
+      "bytes": 71138370,
+      "sha256": "fe41b94e4914823ca1339eb7cf1033abe659f5b9e87cd3d80728515bc2483f87"
+    }
+  ],
+  "commands": {
+    "bootstrap": {
+      "exitStatus": 0,
+      "seconds": 124.5
+    },
+    "nativeStage2": {
+      "exitStatus": 0,
+      "inferiorPid": 27544,
+      "initialState": "stopped-at-entry, asserted",
+      "finalState": "exited with status 0, asserted"
+    },
+    "stageImageComparison": {
+      "command": "cmp stage1 stage2",
+      "exitStatus": 0
+    },
+    "stage1Signature": {
+      "exitStatus": 0
+    },
+    "stage2Signature": {
+      "exitStatus": 0
+    },
+    "stage1Dwarf": {
+      "exitStatus": 0,
+      "detail": "No errors. Stage2 is byte-identical."
+    }
+  },
+  "interruption": {
+    "report": "cluster-j-external-interruption-v5.json",
+    "recovery": "Original native PID 27544 survived externally terminated parent/debugger stopped. Reattached the same process under the selfbuild slot, asserted stopped state and continued. No native restart."
+  },
+  "throughput": {
+    "lastObservedCpuTime": "35:50.61",
+    "lastObservedElapsed": "49:41",
+    "handoff": "~/.t3/tint-briefs/handoff-J-to-P.md",
+    "profile": "Most sampled time in shared GC during codegen byte emission."
+  },
+  "evidence": {
+    "bootstrap": {
+      "path": "docs/results/cluster-j-selfbuild-v5-bootstrap.log",
+      "sha256": "d7f2a9b777590726fb0f35232926ad4b72f1ca3c0b10684557af56a66a542adc"
+    },
+    "initialDebugger": {
+      "path": "docs/results/cluster-j-selfbuild-v5-initialDebugger.log",
+      "sha256": "1ec4c5028600bc23346ec6510a419f0246e679cebee026cfef55ca3ddb87c697"
+    },
+    "recoveredDebugger": {
+      "path": "docs/results/cluster-j-selfbuild-v5-recoveredDebugger.log",
+      "sha256": "7f7f2817b0de8eb31526e015a9a17ae4441ff41475a91a960bb3c4e070f2e77d"
+    },
+    "recoveredProgress": {
+      "path": "docs/results/cluster-j-selfbuild-v5-recoveredProgress.log",
+      "sha256": "41bdc61c106aabeef37b39c144e053c9a95c9b43e10f9b141e1f176c823ac5bf"
+    },
+    "dwarf": {
+      "path": "docs/results/cluster-j-selfbuild-v5-dwarf.log",
+      "sha256": "71ad1b4efc914126990aae15fd0fffbdfc6afc1e10b928c2989d9eb22d098ec6"
+    },
+    "earlyProfile": {
+      "path": "docs/results/cluster-j-selfbuild-v5-earlyProfile.log",
+      "sha256": "2b8f8b1766c8936d8f57be37afa871ecbaebdfb945c035cc22104d84f5a3fd71"
+    },
+    "lateProfile": {
+      "path": "docs/results/cluster-j-selfbuild-v5-lateProfile.log",
+      "sha256": "02e24d6eb99c978466461cd5d2fb6489a8afae30e8b18c4c0891416ed37e1c2a"
+    }
+  }
+}
