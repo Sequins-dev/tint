@@ -56,8 +56,8 @@ function methods(b: ReferenceListRuntime): number[] {
 }
 /** The embedding explicitly authorizes the bundled SparseList semantics of these
  * bindings. ABI/layout equality alone is not semantic equivalence. This first
- * policy requires one private header and managed reference, string, or boxed
- * primitive element encodings. Each encoding retains its own value-cell layout.
+ * policy requires one private header and managed reference, string, boxed
+ * primitive, or inline element encodings. Each keeps its own value-cell layout.
  * Every live header construction/root access/mutation must belong to a bound
  * method; length reads remain valid. Raw inspection and unrecognized aliases
  * decline the entire transform. Roots are actual closed-executable entries. */
@@ -104,7 +104,9 @@ export function lowerReferenceLists(
     if (
       element !== "optional-reference" &&
       element !== "optional-string" &&
-      element !== "primitive"
+      element !== "primitive" &&
+      element !== "general" &&
+      element !== "optional-boolean"
     )
       return undefined;
     let group = elements.indexOf(element);

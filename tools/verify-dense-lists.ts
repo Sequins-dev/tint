@@ -18,6 +18,12 @@ export function run():number {
  const mixed:(number|string)[]=[42,"answer"];mixed[19]=71;
  if(mixed[0]!==42||mixed[1]!=="answer"||mixed[10]!==undefined||mixed[19]!==71)return 22;
  mixed.splice(1);if(mixed[1]!==undefined)return 23;
+ const flags:boolean[]=[false,true];flags[33]=false;
+ if(flags[0]!==false||flags[1]!==true||flags[20]!==undefined||flags[33]!==false)return 31;
+ flags.splice(1);if(flags[1]!==undefined)return 32;
+ const states:(boolean|undefined)[]=[false,undefined,true];states[33]=undefined;
+ let stateCount=0;states.map((value):boolean|undefined=>{stateCount++;return value;});
+ if(stateCount!==4||states[0]!==false||states[10]!==undefined||states[33]!==undefined)return 33;
  const a:Value={value:19,next:undefined},b:Value={value:23,next:a};a.next=b;
  const index=createKeyIndex<string,Value>((key)=>key.length);
  index.set("aa",a);index.set("bb",b);
@@ -42,6 +48,8 @@ export function run():number {
   if(markers[0]!==undefined||markers[33]!==a)return 28;
   const first=values[0];if(first===undefined||get()!==first.value)return 7;
  }
+ if(flags[0]!==false||states[0]!==false||states[2]!==true||states[33]!==undefined)return 34;
+ stateCount=0;states.map((value):boolean|undefined=>{stateCount++;return value;});if(stateCount!==4)return 35;
  const copy=values.slice();copy.sort((x,y)=>{if(x===undefined||y===undefined)return 0;return x.value-y.value;});
  const low=copy[0],high=copy[15];if(low===undefined||high===undefined||low.value!==184||high.value!==199)return 8;
  let marked=0;markers.map((value):Value|undefined=>{marked++;return value;});if(marked!==2)return 29;
@@ -127,10 +135,25 @@ try {
   writeFileSync(path, built.value, { mode: 0o755 });
   console.log(path);
   for (let i = 0; i < (process.env.TINT_BUILD_ONLY === "1" ? 0 : 2); i++) {
-    const result = spawnSync("/usr/bin/lldb", ["--batch", "-o", "run", path], {
-      encoding: "utf8",
-      timeout: 60000,
-    });
+    const result = spawnSync(
+      "/usr/bin/lldb",
+      [
+        "--no-lldbinit",
+        "--batch",
+        "-o",
+        "settings set target.disable-aslr false",
+        "-o",
+        "process launch --stop-at-entry",
+        "-o",
+        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        "-o",
+        "continue",
+        "-o",
+        "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+        path,
+      ],
+      { encoding: "utf8", timeout: 60000 },
+    );
     assert.equal(result.error, undefined);
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /exited with status = 42 /, result.stdout);

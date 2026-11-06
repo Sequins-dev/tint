@@ -498,6 +498,19 @@ test("dense list representation requires a closed executable and private runtime
       'export function run():number{const values=["text"];return values.length;}',
     ).optimization.some((p) => p.pass === "dense-reference-lists"),
   );
+  for (const [type, values] of [
+    ["number|string", '42,"value"'],
+    ["boolean|string|undefined", 'true,"value",undefined'],
+    ["boolean", "true,false"],
+  ])
+    assert.ok(
+      compile(
+        `export function run():number{const items:(${type})[]=[${values}];const value=items[0];return value===undefined?0:42;}`,
+      ).optimization.some(
+        (p) => p.pass === "dense-reference-lists" && p.rewritten > 0,
+      ),
+      `${type} cells must retain the private dense representation`,
+    );
 });
 
 test("explicit runtime retention keeps binding stubs while initializing dependency state", () => {

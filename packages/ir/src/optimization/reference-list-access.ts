@@ -239,6 +239,10 @@ export function buildReferenceListAccessors(
       missing.push({ kind: "reference-none", id: 15, start: 0, end: 0 });
     else if (element === "optional-string")
       missing.push({ kind: "string-none", id: 15, start: 0, end: 0 });
+    else if (element === "general")
+      missing.push({ kind: "general-none", id: 15, start: 0, end: 0 });
+    else if (element === "optional-boolean")
+      missing.push({ kind: "boolean-none", id: 15, start: 0, end: 0 });
     else {
       // The boxed primitive runtime owns its undefined encoding. Invoke its
       // original reader on a private empty header rather than inventing a tag.

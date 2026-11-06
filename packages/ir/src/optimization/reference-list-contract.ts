@@ -31,7 +31,9 @@ export function referenceListPayload(
   const type = module.records?.[id]?.fields[0]?.type;
   return type === "optional-reference" ||
     type === "optional-string" ||
-    type === "primitive"
+    type === "primitive" ||
+    type === "general" ||
+    type === "optional-boolean"
     ? type
     : undefined;
 }

@@ -105,3 +105,52 @@ test("opaque direct-reference readers do not dereference value cells", () => {
     ),
   );
 });
+
+test("inline general and boolean cells preserve missing-value encodings", () => {
+  for (const element of ["general", "optional-boolean"] as const) {
+    const missing = element === "general" ? "general-none" : "boolean-none";
+    const input: ModuleIR = {
+      ...module,
+      records: [
+        module.records![0]!,
+        {
+          byteLength: 32,
+          fields: [{ offset: 16, type: element, mutable: true }],
+        },
+      ],
+      functions: [
+        {
+          ...fallback(0, true),
+          returnType: element,
+          blocks: [
+            {
+              id: 0,
+              instructions: [{ kind: missing, id: 0, ...s }],
+              terminator: { kind: "return", value: 0, ...s },
+            },
+          ],
+        },
+        fallback(1, false),
+        fallback(2, false),
+      ],
+    };
+    assert.deepEqual(verify(input), { ok: true });
+    const built = buildReferenceListAccessors(input, 0, 1, {
+      read: 0,
+      has: 1,
+      delete: 2,
+    });
+    assert.ok(built, element);
+    assert.deepEqual(
+      verify({ ...input, functions: [...input.functions, ...built.functions] }),
+      { ok: true },
+    );
+    const read = built.functions[0]!;
+    assert.equal(read.returnType, element);
+    assert.ok(
+      read.blocks
+        .find((block) => block.id === 5)!
+        .instructions.some((op) => op.kind === missing),
+    );
+  }
+});
