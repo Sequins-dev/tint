@@ -435,6 +435,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/regexp/engine/string-property-data.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/regexp/syntax/flags.ts",
       packageId: "foundation",
     },

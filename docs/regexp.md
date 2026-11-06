@@ -30,8 +30,15 @@ engine fixtures cover legacy uppercase canonicalization and Unicode simple foldi
 including the distinct `u`/`v` property-complement ordering. Tables are pinned to
 Unicode 17.0.0, with checked source digests and reproducible generation. General categories,
 scripts, script extensions and binary character properties use the reusable
-`@tint/unicode-properties` package. Unicode properties of strings (including RGI
-emoji sequences) remain unsupported.
+`@tint/unicode-properties` package. Unicode properties of strings use the official Unicode 17 emoji sequence and
+ZWJ sequence tables, generated with checked source digests. All seven string
+properties, including `RGI_Emoji`, compile through the existing Unicode-set string
+matcher, preserving set intersection/subtraction, longest-first matching,
+backtracking and lookbehind. The [native red/green fixture](results/regexp-string-properties-native-red-green-v1.json)
+checks the matching path; the [host corpus](results/regexp-string-properties-host-corpus-v1.json)
+checks 15,812 property/union relations against the official input files. These
+fixtures are separate from unchanged Test262 selection results; complete reruns
+and frozen self-build acceptance remain pending.
 Valid patterns outside the matching subset can still be constructed and inspected;
 attempting unsupported matching reports unsupported execution. Work-budget
 exhaustion also reports unsupported execution, never a false no-match result.

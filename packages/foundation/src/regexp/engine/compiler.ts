@@ -1,3 +1,7 @@
+import {
+  stringPropertyNames,
+  stringPropertyValues,
+} from "./string-property-data.ts";
 import { unicodePropertyRanges } from "../../unicode/properties/index.ts";
 import {
   parseRegExp,
@@ -61,14 +65,37 @@ export function compileRegExp(
     )
       reject("Unicode property membership tables are not implemented");
   }
-  function validateSet(set: ClassSetExpression): void {
-    if (set.kind === "entry") validateEntry(set.entry);
-    else if (set.kind === "complement") validateSet(set.body);
-    else if (set.kind !== "strings")
-      for (const child of set.operands) {
-        if (child === undefined) throw "REGEXP_SET_INVARIANT";
-        validateSet(child);
-      }
+  function prepareEntry(entry: ClassEntry): ClassSetExpression {
+    if (entry.kind !== "property" || !entry.strings) {
+      validateEntry(entry);
+      return { kind: "entry", entry };
+    }
+    const operands: ClassSetExpression[] = [];
+    for (let i = 0; i < stringPropertyNames.length; i++) {
+      if (
+        entry.property !== "RGI_Emoji" &&
+        entry.property !== stringPropertyNames[i]
+      )
+        continue;
+      const alternatives = stringPropertyValues[i];
+      if (alternatives === undefined) throw "REGEXP_STRING_PROPERTY_INVARIANT";
+      operands.push({ kind: "strings", alternatives });
+    }
+    if (operands.length === 0)
+      reject("Unicode string property tables are not implemented");
+    return { kind: "union", operands };
+  }
+  function prepareSet(set: ClassSetExpression): ClassSetExpression {
+    if (set.kind === "entry") return prepareEntry(set.entry);
+    if (set.kind === "strings") return set;
+    if (set.kind === "complement")
+      return { kind: "complement", body: prepareSet(set.body) };
+    const operands: ClassSetExpression[] = [];
+    for (const child of set.operands) {
+      if (child === undefined) throw "REGEXP_SET_INVARIANT";
+      operands.push(prepareSet(child));
+    }
+    return { kind: set.kind, operands };
   }
   function emit(
     node: PatternNode,
@@ -105,6 +132,21 @@ export function compileRegExp(
     if (node.kind === "dot")
       return push({ kind: "dot", dotAll: options.dotAll, next });
     if (node.kind === "class") {
+      if (
+        node.entries.some((entry) => entry.kind === "property" && entry.strings)
+      ) {
+        const operands: ClassSetExpression[] = [];
+        for (const entry of node.entries) {
+          if (entry === undefined) throw "REGEXP_CLASS_INVARIANT";
+          operands.push(prepareEntry(entry));
+        }
+        return push({
+          kind: "set",
+          ignoreCase: options.ignoreCase,
+          body: { kind: "union", operands },
+          next,
+        });
+      }
       for (const entry of node.entries) {
         if (entry === undefined) throw "REGEXP_CLASS_INVARIANT";
         validateEntry(entry);
@@ -118,11 +160,10 @@ export function compileRegExp(
       });
     }
     if (node.kind === "unicode-set") {
-      validateSet(node.body);
       return push({
         kind: "set",
         ignoreCase: options.ignoreCase,
-        body: node.body,
+        body: prepareSet(node.body),
         next,
       });
     }

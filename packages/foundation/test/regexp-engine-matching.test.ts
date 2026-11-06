@@ -120,13 +120,6 @@ test("backtracking work exhaustion is explicit and never a failed match", () => 
     "limit",
   );
 });
-test("unimplemented character tables fail explicitly at compilation", () => {
-  for (const [pattern, flags] of [[String.raw`\p{RGI_Emoji}`, "v"]]) {
-    const result = compileRegExp(pattern!, flags!);
-    assert.equal(result.ok, false);
-    if (!result.ok) assert.equal(result.error.kind, "unsupported");
-  }
-});
 
 test("Unicode starts inside a surrogate pair map to the containing code point", () => {
   for (const flags of ["uy", "vy"]) {
@@ -285,5 +278,38 @@ test("folding ranges, backreferences and boundaries agree across legacy and Unic
           );
         }
       }
+    }
+});
+
+test("Unicode 17 string properties match complete emoji sequences and set operations", () => {
+  const cases = [
+    [String.raw`^\p{Basic_Emoji}$`, "😀", true],
+    [String.raw`^\p{Basic_Emoji}$`, "©️", true],
+    [String.raw`^\p{Basic_Emoji}$`, "©", false],
+    [String.raw`^\p{Emoji_Keycap_Sequence}$`, "1️⃣", true],
+    [String.raw`^\p{Emoji_Keycap_Sequence}$`, "1⃣", false],
+    [String.raw`^\p{RGI_Emoji_Modifier_Sequence}$`, "👍🏽", true],
+    [String.raw`^\p{RGI_Emoji_Flag_Sequence}$`, "🇨🇦", true],
+    [
+      String.raw`^\p{RGI_Emoji_Tag_Sequence}$`,
+      "🏴\u{e0067}\u{e0062}\u{e0065}\u{e006e}\u{e0067}\u{e007f}",
+      true,
+    ],
+    [String.raw`^\p{RGI_Emoji_ZWJ_Sequence}$`, "👩‍💻", true],
+    [String.raw`^\p{RGI_Emoji}$`, "👩‍💻", true],
+    [String.raw`^[\p{RGI_Emoji}--\p{Basic_Emoji}]$`, "😀", false],
+    [String.raw`^[\p{RGI_Emoji}&&\p{RGI_Emoji_ZWJ_Sequence}]$`, "👩‍💻", true],
+    [String.raw`(?<=\p{RGI_Emoji})x`, "👩‍💻x", true],
+    [String.raw`^\p{RGI_Emoji}‍💻$`, "👩‍💻", true],
+  ] as const;
+  for (const flags of ["v", "vi"])
+    for (const [pattern, input, matches] of cases) {
+      const compiled = compileRegExp(pattern, flags);
+      assert.ok(compiled.ok, JSON.stringify(compiled));
+      assert.equal(
+        executeRegExp(compiled.value, input).kind,
+        matches ? "match" : "no-match",
+        pattern,
+      );
     }
 });
