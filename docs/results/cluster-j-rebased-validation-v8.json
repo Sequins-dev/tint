@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-j-rebased-validation",
+  "timestamp": "2026-11-06T21:56:51.129859+00:00",
+  "conformance": false,
+  "base": "83dae393040ff18b573b7ec30b1ab428a8ebf266",
+  "head": "9c858acb8f6c82e8e85a43096337cac228a6b69c",
+  "sourceSnapshot": {
+    "sha256": "4e9cf9167b2a8355ce4425c455b9d3a18d746ac86e3ce791f7b65f11e88c6547",
+    "files": 569
+  },
+  "workspaceBuild": {
+    "command": "pnpm build",
+    "exitStatus": 0
+  },
+  "hostTypecheck": {
+    "command": "pnpm exec tsc -p tsconfig.host.json",
+    "exitStatus": 0
+  },
+  "focusedTests": {
+    "tests": 107,
+    "passed": 107,
+    "failed": 0,
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/j-rebased-focused-v8.log"
+  },
+  "nativeRegression": {
+    "report": "cluster-j-codepoint-regression-v8.json",
+    "result": "completed; independently verified initial stopped and expected exit 42"
+  },
+  "allocationPair": "cluster-j-codepoint-allocation-acceptance-v7.json",
+  "matchedCopyingWorkload": "cluster-j-from-codepoint-native-workload-green-v7.json",
+  "pending": [
+    "Full tint-check, queued in .tint-bootstrap/j-post-rebase-check-v6.log; filename retained from initial queue, not a source identity.",
+    "Frozen v8 native selfbuild, queued via selfbuild slot 1.",
+    "Full RegExp/prototype selection, queued as the single J runner on v8."
+  ],
+  "mergeReady": false,
+  "provenanceClarification": "The v7 frozen-toolchain report base field recorded the main ref observed during freezing, not the branch merge-base. Its exact source identity and matched before/after fixture hashes remain authoritative. The v8 report records the actual merge-base and head."
+}

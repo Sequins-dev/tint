@@ -1,0 +1,20 @@
+{
+  "kind": "cluster-j-unstarted-toolchain-refresh",
+  "timestamp": "2026-11-06T21:46:47.503207+00:00",
+  "conformance": false,
+  "selection": "built-ins/RegExp/prototype",
+  "oldWrapperPid": 1601,
+  "oldCommand": "/bin/zsh /Users/stephenbelanger/.t3/tint-slots/slot runner 6 -- /Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v6/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 built-ins/RegExp/prototype 64",
+  "ownedChildrenAtStop": [
+    {
+      "pid": 44104,
+      "command": "sleep 2"
+    }
+  ],
+  "observedVariants": 0,
+  "journalPresent": false,
+  "oldStderrSha256": "07d9a3765c699525ecc448b2390de834e22f4ab829ef6b156c8ce96f30867b0f",
+  "oldToolchain": ".tint-bootstrap/cluster-j-toolchain-v6",
+  "newToolchain": ".tint-bootstrap/cluster-j-toolchain-v8",
+  "reason": "Refresh the unstarted queued selection after rebasing main checker-flow improvements and validated String.fromCodePoint allocation fix; no executing runner or inferior interrupted."
+}
