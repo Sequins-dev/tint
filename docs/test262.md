@@ -120,7 +120,7 @@ Module direct eval now passes the [three unchanged module variants](results/modu
 
 The C2 [complete early-errors directory](results/test262-c2-elements-all-early-errors-native-v2.json) records **417/444 native passes**, with **27 pre-entry LLDB crashes**. Its overlapping [syntax-negative file reports](results/c2-elements-syntax-negative-file-index-v3.json) cover **365 complete files / 722 variants: 685 passes and 37 pre-entry crashes**, with no semantic failures. [Earlier focused results](results/c2-native-evidence-index-v2.json) retain their own snapshots. Complete class elements and destructuring directory reports remain pending across the [13,779-variant scope](results/c2-scope-census-v1.json).
 
-Current C1 class reruns use complete disjoint selections; the 2,081-variant foundation queue remains in progress. These rows do not establish a whole-class pass rate. A separate [checkpoint of 175 complete statement-root file selections](results/c1-direct-statements-completed-files-v6.json) adds **344/344** verified native passes; its enclosing 504-variant direct-file selection remains in progress.
+Current C1 class reruns use complete disjoint selections; the 2,081-variant foundation queue remains in progress. These rows do not establish a whole-class pass rate. A separate [checkpoint of 190 complete statement-root file selections](results/c1-direct-statements-completed-files-v7.json) adds **374/374** verified native passes; its enclosing 504-variant direct-file selection remains in progress.
 
 | Class selection | Pass / total | Fail / unsupported / infrastructure |
 | --- | ---: | ---: |
