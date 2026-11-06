@@ -1,0 +1,20 @@
+{
+  "kind": "host-pressure-observation",
+  "at": "2026-11-07T03:10:18+0800",
+  "loadAverage": [
+    133.73,
+    118.3,
+    86.13
+  ],
+  "idlePercent": 0.0,
+  "processes": 1000,
+  "threads": 6834,
+  "memoryFreePercent": 79,
+  "source": "top -l 1 -n 0 and memory_pressure diagnostic tool output",
+  "affectedCase": "language/eval-code/indirect/lex-env-distinct-const.js [sloppy]",
+  "nativePid": 82951,
+  "lastRecordedCpuTime": "0:06.75",
+  "lastRecordedElapsed": "04:33",
+  "classification": "host-starved; no native semantic conclusion",
+  "ledger": "docs/results/d-language-indirect-phase2-v1-process.jsonl"
+}

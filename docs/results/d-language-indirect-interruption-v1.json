@@ -1,0 +1,21 @@
+{
+  "kind": "native-run-interruption",
+  "conformance": false,
+  "selection": "language/eval-code/indirect",
+  "total": 118,
+  "observed": 84,
+  "passed": 76,
+  "timeouts": 8,
+  "complete": false,
+  "journal": "docs/results/test262-d-language-indirect-phase2-v1.jsonl",
+  "preservedPrefix": "docs/results/test262-d-language-indirect-interrupted-prefix-v1.jsonl",
+  "prefixSha256": "477b544e4a3c4bcc9e780839f50317adf772ce2fc51e2a8f568412e2ef5b328c",
+  "sourceSnapshot": {
+    "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+    "files": 568
+  },
+  "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193",
+  "reason": "Turn/harness interruption stopped runner 51215 and observer. No old runner/inferior remains; journal ends with 84 observations. The in-flight switch-default variant has no recorded outcome and remains unobserved.",
+  "resumePolicy": "Same schema-2 journal and frozen toolchain, preserved outcomes, new batch for unobserved variants, unchanged 300000 ms containment; runner cap 6. Memory-emergency lift verified.",
+  "emptyStdoutPreserved": ".tint-bootstrap/d-indirect-empty-stdout-before-resume-v1.json"
+}
