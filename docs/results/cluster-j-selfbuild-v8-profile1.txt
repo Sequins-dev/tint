@@ -1,0 +1,558 @@
+Analysis of sampling j-string-stage1-v8 (pid 7092) every 1 millisecond
+Process:         j-string-stage1-v8 [7092]
+Path:            /Users/USER/*/j-string-stage1-v8
+Load Address:    0x102838000
+Identifier:      j-string-stage1-v8
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [7095]
+Target Type:     live task
+
+Date/Time:       2026-11-07 06:03:19.108 +0800
+Launch Time:     2026-11-07 06:00:38.048 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         904.7M
+Physical footprint (peak):  904.7M
+Idle exit:                  untracked
+----
+
+Call graph:
+    693 Thread_21437785   DispatchQueue_1: com.apple.main-thread  (serial)
+      693 tint:process-entry  (in j-string-stage1-v8) + 2764  [0x102838ebc]
+        693 program:__tint_invoke$14380  (in j-string-stage1-v8) + 324  [0x1030b2e24]
+          693 program:packages/compiler/src/cli.ts:main [@1:value:14$14363]  (in j-string-stage1-v8) + 28572  [0x1042e7a98]  cli.ts:68
+            693 program:packages/compiler/src/build.ts:buildMacOSProgram [@13:value:12$14291]  (in j-string-stage1-v8) + 96572  [0x1041f3538]  build.ts:247
+              693 program:packages/compiler/src/native/index.ts:compileArm64Program [@32:value:28$14196]  (in j-string-stage1-v8) + 68044  [0x104111944]  index.ts:449
+                693 program:packages/ts-native/src/runtime/index.ts:prepareCollectionRuntimes [@71:value:9$13906]  (in j-string-stage1-v8) + 1236  [0x103e33954]  index.ts:77
+                  693 program:packages/ts-native/src/runtime/index.ts:prepareCollectionPass [@71:value:10$13907]  (in j-string-stage1-v8) + 57592  [0x103e430c4]  index.ts:251
+                    693 program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots [@165:value:3$13246]  (in j-string-stage1-v8) + 34984  [0x1038059c8]  checked-specialization.ts:91
+                      693 program:packages/ts-native/src/modules/specialization.ts:specializeModule [@163:value:4$13207]  (in j-string-stage1-v8) + 63788  [0x1037c8ecc]  specialization.ts:399
+                        679 program:packages/ts-native/src/modules/specialization.ts:rewrite [@163:value:25$13213]  (in j-string-stage1-v8) + 13024  [0x104a18ab0]  specialization.ts:210
+                        + 678 program:packages/typescript/src/syntax/rewrite.ts:rewriteModule [@125:value:1$12848]  (in j-string-stage1-v8) + 14864  [0x103620724]  rewrite.ts:568
+                        + ! 554 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 143996  [0x1045b53ec]  rewrite.ts:437
+                        + ! : 554 program:packages/typescript/src/syntax/rewrite.ts:parameter [@125:value:9$12852]  (in j-string-stage1-v8) + 20208  [0x10453e6bc]  rewrite.ts:118
+                        + ! :   553 program:packages/typescript/src/syntax/rewrite.ts:type [@125:value:8$12850]  (in j-string-stage1-v8) + 16648  [0x10452bebc]  rewrite.ts:45
+                        + ! :   | 553 runtime:packages/native-runtime/src/generational.ts:closure@9764 [closure_146]  (in j-string-stage1-v8) + 7432  [0x102975688]  generational.ts:323
+                        + ! :   |   553 runtime:packages/native-runtime/src/generational.ts:collect [@6:value:56$145]  (in j-string-stage1-v8) + 4172  [0x102972f14]  generational.ts:279
+                        + ! :   |     553 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16841 [closure_71]  (in j-string-stage1-v8) + 3692  [0x10292c854]  nursery.ts:480
+                        + ! :   |       523 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 58496  [0x10291067c]  nursery.ts:305
+                        + ! :   |       + 519 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in j-string-stage1-v8) + 784  [0x102863194]  scan.ts:282
+                        + ! :   |       + ! 437 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 14636  [0x102861314]  scan.ts:196
+                        + ! :   |       + ! : 352 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 3876  [0x10285cc58]  scan.ts:77
+                        + ! :   |       + ! : | 290 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 1568  [0x10285b390]  scan.ts:35
+                        + ! :   |       + ! : | + 239 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 640  [0x1028ff130]  nursery.ts:207
+                        + ! :   |       + ! : | + ! 91 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 14228  [0x1028fc14c]  nursery.ts:166
+                        + ! :   |       + ! : | + ! : 11 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 13776  [0x102875dec]  extent.ts:79
+                        + ! :   |       + ! : | + ! : | 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 228,1572,...  [0x1029693e0,0x102969920,...]  generational.ts:117
+                        + ! :   |       + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1260,1340  [0x1029697e8,0x102969838]  generational.ts:119
+                        + ! :   |       + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2648  [0x102969d54]  generational.ts:124
+                        + ! :   |       + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 124  [0x102969378]  generational.ts:94
+                        + ! :   |       + ! : | + ! : 10 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 2180,1864,...  [0x1028730a0,0x102872f64,...]  extent.ts:32
+                        + ! :   |       + ! : | + ! : 8 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 1812  [0x102872f30]  extent.ts:30
+                        + ! :   |       + ! : | + ! : | 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2888,2940,...  [0x102969e44,0x102969e78,...]  generational.ts:125
+                        + ! :   |       + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 192  [0x1029693bc]  generational.ts:117
+                        + ! :   |       + ! : | + ! : 6 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 16824,16864  [0x1028769d4,0x1028769fc]  extent.ts:92
+                        + ! :   |       + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 692,748,...  [0x102872ad0,0x102872b08,...]  extent.ts:21
+                        + ! :   |       + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 1616  [0x102872e6c]  extent.ts:29
+                        + ! :   |       + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2032  [0x102969aec]  generational.ts:116
+                        + ! :   |       + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 180,456  [0x1029693b0,0x1029694c4]  generational.ts:117
+                        + ! :   |       + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2692  [0x102969d80]  generational.ts:124
+                        + ! :   |       + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 13432,13568  [0x102875c94,0x102875d1c]  extent.ts:78
+                        + ! :   |       + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 16016,15988  [0x1028766ac,0x102876690]  extent.ts:91
+                        + ! :   |       + ! : | + ! : 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 16412,16132,...  [0x102876838,0x102876720,...]  extent.ts:93
+                        + ! :   |       + ! : | + ! : 4 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 1812,1696,...  [0x102872f30,0x102872ebc,...]  extent.ts:30
+                        + ! :   |       + ! : | + ! : 4 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 14468,13924,...  [0x1028760a0,0x102875e80,...]  extent.ts:81
+                        + ! :   |       + ! : | + ! : 3 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 3824,3940,...  [0x10287370c,0x102873780,...]  extent.ts:43
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 0  [0x10287281c]
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 2232,2776  [0x1028730d4,0x1028732f4]  extent.ts:34
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 3544,15344  [0x1028735f4,0x10287640c]  extent.ts:39
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 5220,15120  [0x102873c80,0x10287632c]  extent.ts:56
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 8692  [0x102874a10]  extent.ts:58
+                        + ! :   |       + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 204,3044  [0x1029693c8,0x102969ee0]  generational.ts:117
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 9356,9620  [0x102874ca8,0x102874db0]  extent.ts:60
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 140  [0x1028728a8]  weak-slot.ts:3
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 844  [0x102872b68]  extent.ts:23
+                        + ! :   |       + ! : | + ! : | 1 runtime:helper:remainder  (in j-string-stage1-v8) + 92  [0x1029784b4]
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 3012  [0x1028733e0]  extent.ts:31
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 15064  [0x1028762f4]  extent.ts:80
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 14628  [0x102876140]  extent.ts:84
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 17144  [0x102876b14]  extent.ts:94
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8) + 408  [0x1028729b4]  weak-slot.ts:7
+                        + ! :   |       + ! : | + ! 16 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 4220  [0x1028f9a34]  nursery.ts:144
+                        + ! :   |       + ! : | + ! : 7 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in j-string-stage1-v8) + 1720  [0x10296d334]  generational.ts:196
+                        + ! :   |       + ! : | + ! : | 4 runtime:packages/native-runtime/src/generational.ts:oldStart [@6:value:50$135]  (in j-string-stage1-v8) + 804  [0x10296a4bc]  generational.ts:129
+                        + ! :   |       + ! : | + ! : | + 4 runtime:helper:remainder  (in j-string-stage1-v8) + 12  [0x102978464]
+                        + ! :   |       + ! : | + ! : | 2 runtime:packages/native-runtime/src/generational.ts:oldStart [@6:value:50$135]  (in j-string-stage1-v8) + 1064  [0x10296a5c0]  generational.ts:129
+                        + ! :   |       + ! : | + ! : | 1 runtime:packages/native-runtime/src/generational.ts:oldStart [@6:value:50$135]  (in j-string-stage1-v8) + 600  [0x10296a3f0]  generational.ts:128
+                        + ! :   |       + ! : | + ! : 4 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in j-string-stage1-v8) + 1416  [0x10296d204]  generational.ts:196
+                        + ! :   |       + ! : | + ! : 3 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in j-string-stage1-v8) + 512  [0x10296ce7c]  generational.ts:82
+                        + ! :   |       + ! : | + ! : 2 runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in j-string-stage1-v8) + 612,2464  [0x10296cee0,0x10296d61c]  generational.ts:194
+                        + ! :   |       + ! : | + ! 13 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 10656,10824,...  [0x1028fb358,0x1028fb400,...]  nursery.ts:161
+                        + ! :   |       + ! : | + ! 9 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 9648,10864,...  [0x1028faf68,0x1028fb428,...]  nursery.ts:160
+                        + ! :   |       + ! : | + ! 9 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 14932  [0x1028fc40c]  nursery.ts:173
+                        + ! :   |       + ! : | + ! : 3 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8) + 460,928,...  [0x102876d2c,0x102876f00,...]  index.ts:14
+                        + ! :   |       + ! : | + ! : 3 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8) + 504  [0x102876d58]  index.ts:15
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8) + 620  [0x102876dcc]  index.ts:16
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8) + 1380  [0x1028770c4]  index.ts:23
+                        + ! :   |       + ! : | + ! : | 1 runtime:helper:to-uint32  (in j-string-stage1-v8) + 64  [0x10297843c]
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8) + 1408  [0x1028770e0]  index.ts:23
+                        + ! :   |       + ! : | + ! :   1 runtime:helper:to-uint32  (in j-string-stage1-v8) + 76  [0x102978448]
+                        + ! :   |       + ! : | + ! 9 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 15996,16256,...  [0x1028fc834,0x1028fc938,...]  nursery.ts:175
+                        + ! :   |       + ! : | + ! 6 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 1108,1232,...  [0x1028f8e0c,0x1028f8e88,...]  nursery.ts:139
+                        + ! :   |       + ! : | + ! 6 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 13864,13868  [0x1028fbfe0,0x1028fbfe4]  nursery.ts:170
+                        + ! :   |       + ! : | + ! 6 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 240,248,...  [0x1028f8aa8,0x1028f8ab0,...]  weak-slot.ts:3
+                        + ! :   |       + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 724,748,...  [0x1028f8c8c,0x1028f8ca4,...]  nursery.ts:132
+                        + ! :   |       + ! : | + ! 5 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 8468,8408,...  [0x1028faacc,0x1028faa90,...]  nursery.ts:156
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 132,164,...  [0x1028f8a3c,0x1028f8a5c,...]
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 10964,11136,...  [0x1028fb48c,0x1028fb538,...]  nursery.ts:162
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 12132,11812,...  [0x1028fb91c,0x1028fb7dc,...]  nursery.ts:163
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 13496,13288,...  [0x1028fbe70,0x1028fbda0,...]  nursery.ts:169
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 14040,14356  [0x1028fc090,0x1028fc1cc]  nursery.ts:172
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 17732  [0x1028fcefc]  nursery.ts:180
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 18724,18736,...  [0x1028fd2dc,0x1028fd2e8,...]  nursery.ts:181
+                        + ! :   |       + ! : | + ! 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 20488  [0x1028fd9c0]  nursery.ts:184
+                        + ! :   |       + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 4964,4968,...  [0x1028f9d1c,0x1028f9d20,...]  nursery.ts:147
+                        + ! :   |       + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 6532,6616  [0x1028fa33c,0x1028fa390]  nursery.ts:151
+                        + ! :   |       + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 6772,6836  [0x1028fa42c,0x1028fa46c]  nursery.ts:152
+                        + ! :   |       + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 15316  [0x1028fc58c]  nursery.ts:174
+                        + ! :   |       + ! : | + ! 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 17028,17032,...  [0x1028fcc3c,0x1028fcc40,...]  nursery.ts:179
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 9060,9192  [0x1028fad1c,0x1028fada0]  nursery.ts:158
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 17812  [0x1028fcf4c]  nursery.ts:179
+                        + ! :   |       + ! : | + ! : 2 runtime:helper:to-uint32  (in j-string-stage1-v8) + 0,12  [0x1029783fc,0x102978408]
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 19524,19848  [0x1028fd5fc,0x1028fd740]  nursery.ts:182
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 20136,20348  [0x1028fd860,0x1028fd934]  nursery.ts:183
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 696  [0x1028f8c70]  nursery.ts:109
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 836  [0x1028f8cfc]  nursery.ts:137
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 2156  [0x1028f9224]  nursery.ts:141
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 4760  [0x1028f9c50]  nursery.ts:146
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 5976  [0x1028fa110]  nursery.ts:149
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 7652  [0x1028fa79c]  nursery.ts:155
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 14124  [0x1028fc0e4]  nursery.ts:166
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 14652  [0x1028fc2f4]  nursery.ts:173
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8) + 20372  [0x1028fd94c]  nursery.ts:183
+                        + ! :   |       + ! : | + !   1 runtime:helper:to-uint32  (in j-string-stage1-v8) + 76  [0x102978448]
+                        + ! :   |       + ! : | + 31 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 3784  [0x1028ffd78]  nursery.ts:222
+                        + ! :   |       + ! : | + ! 12 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 512,508,...  [0x1028fdf84,0x1028fdf80,...]  nursery.ts:191
+                        + ! :   |       + ! : | + ! 7 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 2792  [0x1028fe86c]  nursery.ts:198
+                        + ! :   |       + ! : | + ! : 6 runtime:packages/native-runtime/src/generational.ts:closure@7187 [closure_141]  (in j-string-stage1-v8) + 616,544,...  [0x10296eaac,0x10296ea64,...]  generational.ts:221
+                        + ! :   |       + ! : | + ! : 1 runtime:packages/native-runtime/src/generational.ts:closure@7187 [closure_141]  (in j-string-stage1-v8) + 188  [0x10296e900]  generational.ts:26
+                        + ! :   |       + ! : | + ! 6 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 2704,2424  [0x1028fe814,0x1028fe6fc]  nursery.ts:198
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 1804,2092  [0x1028fe490,0x1028fe5b0]  nursery.ts:197
+                        + ! :   |       + ! : | + ! 2 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 4192,4204  [0x1028fede4,0x1028fedf0]  nursery.ts:203
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 68  [0x1028fddc8]
+                        + ! :   |       + ! : | + ! 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8) + 3468  [0x1028feb10]  nursery.ts:202
+                        + ! :   |       + ! : | + 6 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 552,676,...  [0x1028ff0d8,0x1028ff154,...]  nursery.ts:207
+                        + ! :   |       + ! : | + 4 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 3652,3708,...  [0x1028ffcf4,0x1028ffd2c,...]  nursery.ts:222
+                        + ! :   |       + ! : | + 3 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 1980,1452  [0x1028ff66c,0x1028ff45c]  nursery.ts:217
+                        + ! :   |       + ! : | + 2 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 1392  [0x1028ff420]  nursery.ts:210
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 68  [0x1028feef4]
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 968  [0x1028ff278]  nursery.ts:209
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 1292  [0x1028ff3bc]  nursery.ts:211
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 1596  [0x1028ff4ec]  nursery.ts:213
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8) + 288  [0x1028fefd0]  nursery.ts:94
+                        + ! :   |       + ! : | 40 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 476  [0x10285af4c]  scan.ts:31
+                        + ! :   |       + ! : | + 34 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 180,228,...  [0x1029693b0,0x1029693e0,...]  generational.ts:117
+                        + ! :   |       + ! : | + 3 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 112,124  [0x10296936c,0x102969378]  generational.ts:94
+                        + ! :   |       + ! : | + 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2004  [0x102969ad0]  generational.ts:121
+                        + ! :   |       + ! : | + 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 32  [0x10296931c]
+                        + ! :   |       + ! : | 10 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 1408,1492,...  [0x10285b2f0,0x10285b344,...]  scan.ts:35
+                        + ! :   |       + ! : | 7 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 1152  [0x10285b1f0]  scan.ts:34
+                        + ! :   |       + ! : | + 7 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in j-string-stage1-v8) + 96,112  [0x10285a9b4,0x10285a9c4]  scan.ts:20
+                        + ! :   |       + ! : | 3 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 896,1008,...  [0x10285b0f0,0x10285b160,...]  scan.ts:34
+                        + ! :   |       + ! : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 400  [0x10285af00]  scan.ts:31
+                        + ! :   |       + ! : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 720  [0x10285b040]  scan.ts:33
+                        + ! :   |       + ! : 40 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1888  [0x10285c494]  scan.ts:67
+                        + ! :   |       + ! : | 21 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1136,3036,...  [0x10296976c,0x102969ed8,...]  generational.ts:117
+                        + ! :   |       + ! : | 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1260,1264,...  [0x1029697e8,0x1029697ec,...]  generational.ts:119
+                        + ! :   |       + ! : | 5 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 648,892,...  [0x102969584,0x102969678,...]  generational.ts:118
+                        + ! :   |       + ! : | 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 112  [0x10296936c]  generational.ts:94
+                        + ! :   |       + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2912  [0x102969e5c]  generational.ts:125
+                        + ! :   |       + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 0  [0x1029692fc]
+                        + ! :   |       + ! : 18 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 576  [0x10285bf74]  scan.ts:62
+                        + ! :   |       + ! : | 16 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1136,392,...  [0x10296976c,0x102969484,...]  generational.ts:117
+                        + ! :   |       + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 728,752  [0x1029695d4,0x1029695ec]  generational.ts:118
+                        + ! :   |       + ! : 10 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 2332  [0x10285c650]  scan.ts:81
+                        + ! :   |       + ! : | 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 648  [0x102969584]  generational.ts:118
+                        + ! :   |       + ! : | 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1328,3384  [0x10296982c,0x10296a034]  generational.ts:119
+                        + ! :   |       + ! : | 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 124  [0x102969378]  generational.ts:94
+                        + ! :   |       + ! : 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1940  [0x10285c4c8]  scan.ts:68
+                        + ! :   |       + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 272  [0x10285be44]  scan.ts:25
+                        + ! :   |       + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1728,1800  [0x10285c3f4,0x10285c43c]  scan.ts:67
+                        + ! :   |       + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 3560  [0x10285cb1c]  scan.ts:77
+                        + ! :   |       + ! : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 3952  [0x10285cca4]  scan.ts:78
+                        + ! :   |       + ! : | 2 runtime:helper:string-equal  (in j-string-stage1-v8) + 0  [0x102978530]
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 176  [0x10285bde4]  scan.ts:22
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 456  [0x10285befc]  scan.ts:62
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1372  [0x10285c290]  scan.ts:65
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1584  [0x10285c364]  scan.ts:66
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 4300  [0x10285ce00]  scan.ts:83
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 4808  [0x10285cffc]  scan.ts:84
+                        + ! :   |       + ! 18 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 13232  [0x102860d98]  scan.ts:189
+                        + ! :   |       + ! : 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1176,1340  [0x102969794,0x102969838]  generational.ts:119
+                        + ! :   |       + ! : 5 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 456,1120,...  [0x1029694c4,0x10296975c,...]  generational.ts:117
+                        + ! :   |       + ! : 5 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2600,2684  [0x102969d24,0x102969d78]  generational.ts:124
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 644  [0x102969580]  generational.ts:118
+                        + ! :   |       + ! 12 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 2720  [0x10285e488]  scan.ts:121
+                        + ! :   |       + ! : 7 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 456,700  [0x1029694c4,0x1029695b8]  generational.ts:117
+                        + ! :   |       + ! : 5 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2940,2860  [0x102969e78,0x102969e28]  generational.ts:125
+                        + ! :   |       + ! 10 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 2632,2720,...  [0x10285e430,0x10285e488,...]  scan.ts:121
+                        + ! :   |       + ! 8 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 1816,1772,...  [0x10285e100,0x10285e0d4,...]  scan.ts:116
+                        + ! :   |       + ! 7 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 2508  [0x10285e3b4]  scan.ts:120
+                        + ! :   |       + ! : 4 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2956  [0x102969e88]  generational.ts:117
+                        + ! :   |       + ! : 2 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 0  [0x1029692fc]
+                        + ! :   |       + ! : 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 2600  [0x102969d24]  generational.ts:124
+                        + ! :   |       + ! 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 2972,2836,...  [0x10285e584,0x10285e4fc,...]  scan.ts:122
+                        + ! :   |       + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 148,228  [0x10285da7c,0x10285dacc]
+                        + ! :   |       + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 9260  [0x10285fe14]  scan.ts:165
+                        + ! :   |       + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 12720  [0x102860b98]  scan.ts:188
+                        + ! :   |       + ! : 3 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in j-string-stage1-v8) + 352  [0x10285aab4]  scan.ts:20
+                        + ! :   |       + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 2164  [0x10285e25c]  scan.ts:117
+                        + ! :   |       + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 3148  [0x10285e634]  scan.ts:123
+                        + ! :   |       + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 3528  [0x10285e7b0]  scan.ts:125
+                        + ! :   |       + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 13288  [0x102860dd0]  scan.ts:190
+                        + ! :   |       + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 14332,14516  [0x1028611e4,0x10286129c]  scan.ts:196
+                        + ! :   |       + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 5780  [0x10285f07c]  scan.ts:145
+                        + ! :   |       + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 8916  [0x10285fcbc]  scan.ts:163
+                        + ! :   |       + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 13224  [0x102860d90]  scan.ts:189
+                        + ! :   |       + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8) + 13616  [0x102860f18]  scan.ts:192
+                        + ! :   |       + 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in j-string-stage1-v8) + 532  [0x102863098]  scan.ts:282
+                        + ! :   |       + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in j-string-stage1-v8) + 168  [0x102862f2c]  scan.ts:103
+                        + ! :   |       + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor [@11:value:16$34]  (in j-string-stage1-v8) + 420  [0x102863028]  scan.ts:280
+                        + ! :   |       5 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 9324,9340,...  [0x102904668,0x102904678,...]  nursery.ts:259
+                        + ! :   |       4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 8744,7816,...  [0x102904424,0x102904084,...]  nursery.ts:258
+                        + ! :   |       4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 36192  [0x10290af5c]  nursery.ts:282
+                        + ! :   |       + 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeRootsWithVerifiedDescriptors [@11:value:17$35]  (in j-string-stage1-v8) + 764  [0x102863524]  scan.ts:301
+                        + ! :   |       +   4 runtime:packages/native-runtime/src/tracing/scan.ts:scanRoots [@11:value:13$31]  (in j-string-stage1-v8) + 3640  [0x102862320]  scan.ts:226
+                        + ! :   |       +     1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1888  [0x10285c494]  scan.ts:67
+                        + ! :   |       +     ! 1 runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 1164  [0x102969788]  generational.ts:119
+                        + ! :   |       +     1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 1940  [0x10285c4c8]  scan.ts:68
+                        + ! :   |       +     1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 3876  [0x10285cc58]  scan.ts:77
+                        + ! :   |       +     ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8) + 352  [0x10285aed0]  scan.ts:31
+                        + ! :   |       +     1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8) + 3928  [0x10285cc8c]  scan.ts:78
+                        + ! :   |       4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 52784,52796  [0x10290f02c,0x10290f038]  nursery.ts:299
+                        + ! :   |       3 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 13532,13572,...  [0x1029056d8,0x102905700,...]  nursery.ts:261
+                        + ! :   |       3 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 49916,51100,...  [0x10290e4f8,0x10290e998,...]  nursery.ts:298
+                        + ! :   |       2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 42140,43220  [0x10290c698,0x10290cad0]  nursery.ts:288
+                        + ! :   |       2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 43244,43812  [0x10290cae8,0x10290cd20]  nursery.ts:289
+                        + ! :   |       1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 10056  [0x102904944]  nursery.ts:260
+                        + ! :   |       1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 54652  [0x10290f778]  nursery.ts:302
+                        + ! :   |       1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8) + 58324  [0x1029105d0]  nursery.ts:305
+                        + ! :   1 program:packages/typescript/src/syntax/rewrite.ts:type [@125:value:8$12850]  (in j-string-stage1-v8) + 15404  [0x10452b9e0]  rewrite.ts:49
+                        + ! :     1 program:packages/typescript/src/syntax/rewrite.ts:type [@125:value:8$12850]  (in j-string-stage1-v8) + 46772  [0x104533468]  rewrite.ts:96
+                        + ! :       1 program:packages/ts-native/src/modules/specialization.ts:closure@6949 [closure_13217]  (in j-string-stage1-v8) + 2648  [0x105310210]  specialization.ts:219
+                        + ! :         1 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_4778$4954]  (in j-string-stage1-v8) + 392  [0x102b36eb4]  linked-map.ts:75
+                        + ! 121 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 149176  [0x1045b6828]  rewrite.ts:443
+                        + ! : 65 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 126240  [0x1045b0e90]  rewrite.ts:423
+                        + ! : | 23 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 153632  [0x1045b7990]  rewrite.ts:449
+                        + ! : | + 17 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 124264  [0x10456d9a8]  rewrite.ts:326
+                        + ! : | + ! 10 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 159376  [0x1045762d0]  rewrite.ts:363
+                        + ! : | + ! : 6 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 1048  [0x10454f858]
+                        + ! : | + ! : 4 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + ! :   4 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 10236  [0x105331b94]  specialization.ts:250
+                        + ! : | + ! :     4 program:packages/foundation/src/collections/linked-map.ts:hasMap [__tint_specialized_4768$4943]  (in j-string-stage1-v8) + 152  [0x102b346b4]  linked-map.ts:70
+                        + ! : | + ! :       4 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_7712$8357]  (in j-string-stage1-v8) + 660  [0x102d2cf58]  linked-map.ts:55
+                        + ! : | + ! :         4 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_8362]  (in j-string-stage1-v8) + 964  [0x1031fd3bc]  key-index.ts:94
+                        + ! : | + ! :           4 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$8360]  (in j-string-stage1-v8) + 420  [0x1031fb884]  key-index.ts:49
+                        + ! : | + ! 6 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + ! : 6 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 134032  [0x10534ff28]  specialization.ts:281
+                        + ! : | + ! :   6 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 1532  [0x104a13068]  specialization.ts:169
+                        + ! : | + ! :     6 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_4767$4942]  (in j-string-stage1-v8) + 168  [0x102b34490]  linked-map.ts:73
+                        + ! : | + ! :       6 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_7712$8357]  (in j-string-stage1-v8) + 660  [0x102d2cf58]  linked-map.ts:55
+                        + ! : | + ! :         6 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_8362]  (in j-string-stage1-v8) + 964  [0x1031fd3bc]  key-index.ts:94
+                        + ! : | + ! :           6 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$8360]  (in j-string-stage1-v8) + 1528  [0x1031fbcd8]  key-index.ts:59
+                        + ! : | + ! :             6 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_465$622]  (in j-string-stage1-v8) + 336  [0x1029ebc8c]  sparse-list.ts:122
+                        + ! : | + ! :               6 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5653$6136]  (in j-string-stage1-v8) + 436  [0x102c0425c]  sparse-list.ts:65
+                        + ! : | + ! 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 157424  [0x104575b30]  rewrite.ts:362
+                        + ! : | + !   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !     1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+                        + ! : | + !       1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 1004  [0x10312bbe4]  key-index.ts:94
+                        + ! : | + !         1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5781]  (in j-string-stage1-v8) + 1688  [0x10312a3e4]  key-index.ts:59
+                        + ! : | + !           1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_201$358]  (in j-string-stage1-v8) + 336  [0x1029d13fc]  sparse-list.ts:122
+                        + ! : | + !             1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5521$6004]  (in j-string-stage1-v8) + 432  [0x102bee1dc]  sparse-list.ts:65
+                        + ! : | + 5 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 128316  [0x10456e97c]  rewrite.ts:331
+                        + ! : | + ! 5 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 128316  [0x10456e97c]  rewrite.ts:331
+                        + ! : | + !   5 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 124264  [0x10456d9a8]  rewrite.ts:326
+                        + ! : | + !     4 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 157424  [0x104575b30]  rewrite.ts:362
+                        + ! : | + !     : 3 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 166864  [0x104578010]  rewrite.ts:368
+                        + ! : | + !     : | 2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !     : | + 2 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 53616  [0x10533c508]  specialization.ts:259
+                        + ! : | + !     : | 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 1140  [0x10454f8b4]
+                        + ! : | + !     : 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 34196  [0x1045579d4]  rewrite.ts:238
+                        + ! : | + !     1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 159376  [0x1045762d0]  rewrite.ts:363
+                        + ! : | + !       1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !         1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+                        + ! : | + !           1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 840  [0x10312bb40]  key-index.ts:94
+                        + ! : | + !             1 program:packages/foundation/src/collections/key-index.ts:index [@20:value:14$5780]  (in j-string-stage1-v8) + 0  [0x103129750]
+                        + ! : | + 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 129360  [0x10456ed90]  rewrite.ts:332
+                        + ! : | +   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 129360  [0x10456ed90]  rewrite.ts:332
+                        + ! : | +     1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 166864  [0x104578010]  rewrite.ts:368
+                        + ! : | +       1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +         1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 10236  [0x105331b94]  specialization.ts:250
+                        + ! : | +           1 program:packages/foundation/src/collections/linked-map.ts:hasMap [__tint_specialized_4768$4943]  (in j-string-stage1-v8) + 152  [0x102b346b4]  linked-map.ts:70
+                        + ! : | +             1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_7712$8357]  (in j-string-stage1-v8) + 660  [0x102d2cf58]  linked-map.ts:55
+                        + ! : | +               1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_8362]  (in j-string-stage1-v8) + 964  [0x1031fd3bc]  key-index.ts:94
+                        + ! : | +                 1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$8360]  (in j-string-stage1-v8) + 1528  [0x1031fbcd8]  key-index.ts:59
+                        + ! : | +                   1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_465$622]  (in j-string-stage1-v8) + 336  [0x1029ebc8c]  sparse-list.ts:122
+                        + ! : | +                     1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5653$6136]  (in j-string-stage1-v8) + 100  [0x102c0410c]  sparse-list.ts:63
+                        + ! : | 18 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 201180  [0x1045c334c]  rewrite.ts:530
+                        + ! : | + 10 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 157424  [0x104575b30]  rewrite.ts:362
+                        + ! : | + ! 10 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !   7 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+                        + ! : | + !   : 5 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 1604  [0x10312be3c]  key-index.ts:95
+                        + ! : | + !   : | 5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_201$358]  (in j-string-stage1-v8) + 336  [0x1029d13fc]  sparse-list.ts:122
+                        + ! : | + !   : |   5 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5521$6004]  (in j-string-stage1-v8) + 436  [0x102bee1e0]  sparse-list.ts:65
+                        + ! : | + !   : 2 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 1004  [0x10312bbe4]  key-index.ts:94
+                        + ! : | + !   :   2 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5781]  (in j-string-stage1-v8) + 3436  [0x10312aab8]  key-index.ts:69
+                        + ! : | + !   3 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 11304  [0x105331fc0]  specialization.ts:251
+                        + ! : | + !     3 program:packages/foundation/src/collections/key-index.ts:closure@3419 [closure_5714]  (in j-string-stage1-v8) + 684  [0x1030f9504]  key-index.ts:99
+                        + ! : | + !       3 program:packages/foundation/src/collections/key-index.ts:index [@20:value:14$5710]  (in j-string-stage1-v8) + 0  [0x1030f69d8]
+                        + ! : | + 4 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 134376  [0x104570128]  rewrite.ts:339
+                        + ! : | + ! 4 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 166864  [0x104578010]  rewrite.ts:368
+                        + ! : | + !   4 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !     4 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 59204  [0x10533dadc]  specialization.ts:259
+                        + ! : | + 3 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 135556  [0x1045705c4]  rewrite.ts:340
+                        + ! : | + ! 3 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !   3 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 134032  [0x10534ff28]  specialization.ts:281
+                        + ! : | + !     1 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 5980  [0x104a141c8]  specialization.ts:175
+                        + ! : | + !     : 1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_9064]  (in j-string-stage1-v8) + 1004  [0x10330127c]  key-index.ts:94
+                        + ! : | + !     :   1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$9062]  (in j-string-stage1-v8) + 1688  [0x1032ffa48]  key-index.ts:59
+                        + ! : | + !     :     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_889$1046]  (in j-string-stage1-v8) + 336  [0x102a0adcc]  sparse-list.ts:122
+                        + ! : | + !     :       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5865$6348]  (in j-string-stage1-v8) + 436  [0x102c1e68c]  sparse-list.ts:65
+                        + ! : | + !     1 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 8004  [0x104a149b0]  specialization.ts:180
+                        + ! : | + !     : 1 program:packages/foundation/src/collections/key-index.ts:closure@3419 [closure_9045]  (in j-string-stage1-v8) + 848  [0x1032f32a0]  key-index.ts:99
+                        + ! : | + !     :   1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$9042]  (in j-string-stage1-v8) + 1688  [0x1032f1330]  key-index.ts:59
+                        + ! : | + !     :     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_873$1030]  (in j-string-stage1-v8) + 336  [0x102a0922c]  sparse-list.ts:122
+                        + ! : | + !     :       1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5857$6340]  (in j-string-stage1-v8) + 432  [0x102c1cf30]  sparse-list.ts:65
+                        + ! : | + !     1 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 8408  [0x104a14b44]  specialization.ts:181
+                        + ! : | + !       1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_9046]  (in j-string-stage1-v8) + 1960  [0x1032f3d98]  key-index.ts:104
+                        + ! : | + !         1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$9042]  (in j-string-stage1-v8) + 1688  [0x1032f1330]  key-index.ts:59
+                        + ! : | + !           1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_873$1030]  (in j-string-stage1-v8) + 336  [0x102a0922c]  sparse-list.ts:122
+                        + ! : | + !             1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5857$6340]  (in j-string-stage1-v8) + 544  [0x102c1cfa0]  sparse-list.ts:65
+                        + ! : | + 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +   1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 134032  [0x10534ff28]  specialization.ts:281
+                        + ! : | +     1 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 5980  [0x104a141c8]  specialization.ts:175
+                        + ! : | +       1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_9064]  (in j-string-stage1-v8) + 1004  [0x10330127c]  key-index.ts:94
+                        + ! : | +         1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$9062]  (in j-string-stage1-v8) + 1688  [0x1032ffa48]  key-index.ts:59
+                        + ! : | +           1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_889$1046]  (in j-string-stage1-v8) + 336  [0x102a0adcc]  sparse-list.ts:122
+                        + ! : | +             1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5865$6348]  (in j-string-stage1-v8) + 432  [0x102c1e688]  sparse-list.ts:65
+                        + ! : | 16 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 156020  [0x1045b82e4]  rewrite.ts:454
+                        + ! : | + 16 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 154536  [0x1045b7d18]  rewrite.ts:450
+                        + ! : | +   10 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 126240  [0x1045b0e90]  rewrite.ts:423
+                        + ! : | +   ! 8 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 167760  [0x1045bb0c0]  rewrite.ts:472
+                        + ! : | +   ! : 5 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! : | +   ! : | 5 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 102876  [0x10532ef64]  specialization.ts:242
+                        + ! : | +   ! : |   5 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5807]  (in j-string-stage1-v8) + 2028  [0x10313b830]  key-index.ts:104
+                        + ! : | +   ! : |     5 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 1688  [0x103138d9c]  key-index.ts:59
+                        + ! : | +   ! : |       5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_225$382]  (in j-string-stage1-v8) + 336  [0x1029d2f9c]  sparse-list.ts:122
+                        + ! : | +   ! : |         4 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 432,436  [0x102bef934,0x102bef938]  sparse-list.ts:65
+                        + ! : | +   ! : |         1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 264  [0x102bef88c]  sparse-list.ts:64
+                        + ! : | +   ! : 3 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 126240  [0x1045b0e90]  rewrite.ts:423
+                        + ! : | +   ! :   2 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 201180  [0x1045c334c]  rewrite.ts:530
+                        + ! : | +   ! :   + 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 134376  [0x104570128]  rewrite.ts:339
+                        + ! : | +   ! :   + ! 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 34384  [0x104557a90]  rewrite.ts:250
+                        + ! : | +   ! :   + 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 135556  [0x1045705c4]  rewrite.ts:340
+                        + ! : | +   ! :   +   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 159376  [0x1045762d0]  rewrite.ts:363
+                        + ! : | +   ! :   +     1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 166864  [0x104578010]  rewrite.ts:368
+                        + ! : | +   ! :   +       1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +   ! :   +         1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+                        + ! : | +   ! :   +           1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 840  [0x10312bb40]  key-index.ts:94
+                        + ! : | +   ! :   +             1 program:packages/foundation/src/collections/key-index.ts:index [@20:value:14$5780]  (in j-string-stage1-v8) + 364  [0x1031298bc]  key-index.ts:39
+                        + ! : | +   ! :   +               1 program:packages/typescript/src/syntax/rewrite.ts:syntaxHash [@125:value:0$12847]  (in j-string-stage1-v8) + 3820  [0x103618610]  rewrite.ts:17
+                        + ! : | +   ! :   1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 131140  [0x1045b21b4]  rewrite.ts:428
+                        + ! : | +   ! :     1 program:packages/typescript/src/syntax/rewrite.ts:variableBinding [@125:value:11$12854]  (in j-string-stage1-v8) + 30272  [0x104549c38]  rewrite.ts:147
+                        + ! : | +   ! :       1 program:packages/typescript/src/syntax/rewrite.ts:binding [@125:value:10$12853]  (in j-string-stage1-v8) + 6320  [0x104541684]  rewrite.ts:129
+                        + ! : | +   ! :         1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +   ! :           1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 131820  [0x10534f684]  specialization.ts:267
+                        + ! : | +   ! :             1 program:packages/foundation/src/collections/linked-map.ts:getMap [__tint_specialized_4767$4942]  (in j-string-stage1-v8) + 168  [0x102b34490]  linked-map.ts:73
+                        + ! : | +   ! :               1 program:packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_7712$8357]  (in j-string-stage1-v8) + 660  [0x102d2cf58]  linked-map.ts:55
+                        + ! : | +   ! :                 1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_8362]  (in j-string-stage1-v8) + 964  [0x1031fd3bc]  key-index.ts:94
+                        + ! : | +   ! :                   1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$8360]  (in j-string-stage1-v8) + 1528  [0x1031fbcd8]  key-index.ts:59
+                        + ! : | +   ! :                     1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_465$622]  (in j-string-stage1-v8) + 140  [0x1029ebbc8]  sparse-list.ts:121
+                        + ! : | +   ! 2 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 166872  [0x1045bad48]  rewrite.ts:471
+                        + ! : | +   !   2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 129360  [0x10456ed90]  rewrite.ts:332
+                        + ! : | +   !     2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +   !       2 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+                        + ! : | +   !         2 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_5783]  (in j-string-stage1-v8) + 1004  [0x10312bbe4]  key-index.ts:94
+                        + ! : | +   !           1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5781]  (in j-string-stage1-v8) + 1688  [0x10312a3e4]  key-index.ts:59
+                        + ! : | +   !           | 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_201$358]  (in j-string-stage1-v8) + 336  [0x1029d13fc]  sparse-list.ts:122
+                        + ! : | +   !           |   1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5521$6004]  (in j-string-stage1-v8) + 436  [0x102bee1e0]  sparse-list.ts:65
+                        + ! : | +   !           1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5781]  (in j-string-stage1-v8) + 1648  [0x10312a3bc]  key-index.ts:59
+                        + ! : | +   6 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! : | +     6 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 102876  [0x10532ef64]  specialization.ts:242
+                        + ! : | +       6 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5807]  (in j-string-stage1-v8) + 2028  [0x10313b830]  key-index.ts:104
+                        + ! : | +         5 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 1688  [0x103138d9c]  key-index.ts:59
+                        + ! : | +         : 5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_225$382]  (in j-string-stage1-v8) + 336  [0x1029d2f9c]  sparse-list.ts:122
+                        + ! : | +         :   3 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 436,432  [0x102bef938,0x102bef934]  sparse-list.ts:65
+                        + ! : | +         :   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 264  [0x102bef88c]  sparse-list.ts:64
+                        + ! : | +         1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 1492  [0x103138cd8]  key-index.ts:59
+                        + ! : | 3 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 198052  [0x1045c2714]  rewrite.ts:525
+                        + ! : | + 2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 120276  [0x10456ca14]  rewrite.ts:323
+                        + ! : | + ! 2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 129360  [0x10456ed90]  rewrite.ts:332
+                        + ! : | + !   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 128316  [0x10456e97c]  rewrite.ts:331
+                        + ! : | + !   : 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !   :   1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 134032  [0x10534ff28]  specialization.ts:281
+                        + ! : | + !   :     1 program:packages/ts-native/src/modules/specialization.ts:instantiate [@163:value:24$13212]  (in j-string-stage1-v8) + 5980  [0x104a141c8]  specialization.ts:175
+                        + ! : | + !   :       1 program:packages/foundation/src/collections/key-index.ts:closure@3246 [closure_9064]  (in j-string-stage1-v8) + 1004  [0x10330127c]  key-index.ts:94
+                        + ! : | + !   :         1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$9062]  (in j-string-stage1-v8) + 1688  [0x1032ffa48]  key-index.ts:59
+                        + ! : | + !   :           1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_889$1046]  (in j-string-stage1-v8) + 336  [0x102a0adcc]  sparse-list.ts:122
+                        + ! : | + !   :             1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5865$6348]  (in j-string-stage1-v8) + 264  [0x102c1e5e0]  sparse-list.ts:64
+                        + ! : | + !   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | + !     1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 87044  [0x10534479c]  specialization.ts:259
+                        + ! : | + !       1 program:helper:string-equal  (in j-string-stage1-v8) + 24  [0x105427d14]
+                        + ! : | + 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+                        + ! : | +   1 program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 42600  [0x105339a00]  specialization.ts:259
+                        + ! : | 2 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 154536  [0x1045b7d18]  rewrite.ts:450
+                        + ! : | + 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 201180  [0x1045c334c]  rewrite.ts:530
+                        + ! : | + ! 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 134376  [0x104570128]  rewrite.ts:339
+                        + ! : | + !   1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 17656  [0x104553938]  rewrite.ts:209
+                        + ! : | + 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! : | +   1 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 88572  [0x10532b784]  specialization.ts:240
+                        + ! : | 2 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! : | + 1 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 80492  [0x1053297f4]  specialization.ts:240
+                        + ! : | + ! 1 program:helper:string-equal  (in j-string-stage1-v8) + 0  [0x105427cfc]
+                        + ! : | + 1 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 15960  [0x105319be0]  specialization.ts:240
+                        + ! : | 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 199184  [0x1045c2b80]  rewrite.ts:530
+                        + ! : 56 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! :   56 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 102876  [0x10532ef64]  specialization.ts:242
+                        + ! :     52 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5807]  (in j-string-stage1-v8) + 2028  [0x10313b830]  key-index.ts:104
+                        + ! :     + 46 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 1688  [0x103138d9c]  key-index.ts:59
+                        + ! :     + ! 42 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_225$382]  (in j-string-stage1-v8) + 336  [0x1029d2f9c]  sparse-list.ts:122
+                        + ! :     + ! : 29 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 436,432,...  [0x102bef938,0x102bef934,...]  sparse-list.ts:65
+                        + ! :     + ! : 12 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 264,112,...  [0x102bef88c,0x102bef7f4,...]  sparse-list.ts:64
+                        + ! :     + ! : 1 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8) + 92  [0x102bef7e0]  sparse-list.ts:63
+                        + ! :     + ! 3 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_225$382]  (in j-string-stage1-v8) + 672,752,...  [0x1029d30ec,0x1029d313c,...]  sparse-list.ts:121
+                        + ! :     + ! 1 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_225$382]  (in j-string-stage1-v8) + 348  [0x1029d2fa8]  sparse-list.ts:122
+                        + ! :     + 4 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 2020,2024  [0x103138ee8,0x103138eec]  key-index.ts:62
+                        + ! :     + 1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 1172  [0x103138b98]  key-index.ts:56
+                        + ! :     + 1 program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8) + 2096  [0x103138f34]  key-index.ts:63
+                        + ! :     3 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5807]  (in j-string-stage1-v8) + 3500  [0x10313bdf0]  key-index.ts:112
+                        + ! :     1 program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_5807]  (in j-string-stage1-v8) + 6980  [0x10313cb88]  key-index.ts:126
+                        + ! :       1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_227$384]  (in j-string-stage1-v8) + 216  [0x1029d3778]  sparse-list.ts:135
+                        + ! :         1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_226$383]  (in j-string-stage1-v8) + 328  [0x1029d336c]  sparse-list.ts:131
+                        + ! :           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                   1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                     1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                       1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                           1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                             1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                               1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+                        + ! :                                 1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2256  [0x102bf0284]  sparse-list.ts:82
+                        + ! :                                   1 program:packages/foundation/src/collections/sparse-list.ts:balance [__tint_specialized_7968$9126]  (in j-string-stage1-v8) + 2084  [0x102def6dc]  sparse-list.ts:55
+                        + ! :                                     1 program:packages/foundation/src/collections/sparse-list.ts:rotateLeft [__tint_specialized_9156$10314]  (in j-string-stage1-v8) + 532  [0x102ecb250]  sparse-list.ts:30
+                        + ! :                                       1 program:packages/foundation/src/collections/sparse-list.ts:updateHeight [__tint_specialized_9154$10312]  (in j-string-stage1-v8) + 256  [0x102ecae00]  sparse-list.ts:22
+                        + ! :                                         1 program:packages/foundation/src/collections/sparse-list.ts:height [__tint_specialized_9155$10313]  (in j-string-stage1-v8) + 92  [0x102ecafb0]  sparse-list.ts:18
+                        + ! 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 145396  [0x1045b5964]  rewrite.ts:439
+                        + ! : 1 program:packages/typescript/src/syntax/rewrite.ts:type [@125:value:8$12850]  (in j-string-stage1-v8) + 6756  [0x104529818]  rewrite.ts:43
+                        + ! 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + ! : 1 program:packages/ts-native/src/modules/specialization.ts:closure@7370 [closure_13218]  (in j-string-stage1-v8) + 72812  [0x1053279f4]  specialization.ts:240
+                        + ! :   1 program:helper:string-equal  (in j-string-stage1-v8) + 24  [0x105427d14]
+                        + ! 1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+                        + 1 program:packages/typescript/src/syntax/rewrite.ts:rewriteModule [@125:value:1$12848]  (in j-string-stage1-v8) + 9092  [0x10361f098]  rewrite.ts:133
+                        13 program:packages/ts-native/src/modules/specialization.ts:rewrite [@163:value:25$13213]  (in j-string-stage1-v8) + 7068  [0x104a1736c]  specialization.ts:193
+                        + 13 program:packages/typescript/src/syntax/rewrite.ts:rewriteModule [@125:value:1$12848]  (in j-string-stage1-v8) + 14864  [0x103620724]  rewrite.ts:568
+                        +   8 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 149176  [0x1045b6828]  rewrite.ts:443
+                        +   ! 8 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 126240  [0x1045b0e90]  rewrite.ts:423
+                        +   !   4 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 154536  [0x1045b7d18]  rewrite.ts:450
+                        +   !   : 4 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 198668  [0x1045c297c]  rewrite.ts:520
+                        +   !   3 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 201180  [0x1045c334c]  rewrite.ts:530
+                        +   !   : 2 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 4036  [0x104550404]  rewrite.ts:32
+                        +   !   : 1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 131348  [0x10456f554]  rewrite.ts:338
+                        +   !   1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 198052  [0x1045c2714]  rewrite.ts:525
+                        +   !     1 program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 84084  [0x104563cb4]  rewrite.ts:275
+                        +   !       1 program:packages/foundation/src/collections/sparse-list.ts:writeList [__tint_specialized_1290$1447]  (in j-string-stage1-v8) + 328  [0x102a3bfd8]  sparse-list.ts:131
+                        +   !         1 program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_6066$6549]  (in j-string-stage1-v8) + 2016  [0x102c41a84]  sparse-list.ts:81
+                        +   3 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 8676  [0x104594354]  rewrite.ts:38
+                        +   1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 143996  [0x1045b53ec]  rewrite.ts:437
+                        +   ! 1 program:packages/typescript/src/syntax/rewrite.ts:parameter [@125:value:9$12852]  (in j-string-stage1-v8) + 524  [0x1045399d8]
+                        +   1 program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 145396  [0x1045b5964]  rewrite.ts:439
+                        +     1 program:packages/typescript/src/syntax/rewrite.ts:type [@125:value:8$12850]  (in j-string-stage1-v8) + 3584  [0x104528bb4]  rewrite.ts:39
+                        1 program:packages/ts-native/src/modules/specialization.ts:rewrite [@163:value:25$13213]  (in j-string-stage1-v8) + 2640  [0x104a16220]  specialization.ts:191
+                          1 program:packages/foundation/src/collections/key-index.ts:createKeyIndex [__tint_specialized_5376$5709]  (in j-string-stage1-v8) + 716  [0x102b98a78]  key-index.ts:29
+
+Total number in stack (recursive counted multiple, when >=5):
+        16       program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8) + 174852  [0x104579f44]  rewrite.ts:379
+        11       program:packages/foundation/src/collections/sparse-list.ts:insertEntry [__tint_specialized_5534$6017]  (in j-string-stage1-v8) + 2004  [0x102bf0188]  sparse-list.ts:81
+        10       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 0  [0x1029692fc]  generational.ts:117
+        6       program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8) + 229352  [0x1045ca158]  rewrite.ts:562
+        5       program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8) + 9108  [0x10533172c]  specialization.ts:247
+        5       runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8) + 0  [0x1029692fc]  generational.ts:119
+
+Sort by top of stack, same collapsed (when >= 5):
+        runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]  (in j-string-stage1-v8)        172
+        runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in j-string-stage1-v8)        120
+        runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in j-string-stage1-v8)        64
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5533$6016]  (in j-string-stage1-v8)        52
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in j-string-stage1-v8)        42
+        runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in j-string-stage1-v8)        26
+        runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in j-string-stage1-v8)        24
+        runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in j-string-stage1-v8)        20
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in j-string-stage1-v8)        17
+        runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in j-string-stage1-v8)        16
+        program:packages/typescript/src/syntax/rewrite.ts:expression [@125:value:14$12860]  (in j-string-stage1-v8)        13
+        runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in j-string-stage1-v8)        10
+        program:packages/typescript/src/syntax/rewrite.ts:statement [@125:value:15$12862]  (in j-string-stage1-v8)        9
+        runtime:packages/native-runtime/src/generational.ts:closure@6246 [closure_139]  (in j-string-stage1-v8)        9
+        program:packages/foundation/src/collections/key-index.ts:position [@20:value:15$5803]  (in j-string-stage1-v8)        7
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5521$6004]  (in j-string-stage1-v8)        7
+        program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_5653$6136]  (in j-string-stage1-v8)        7
+        program:packages/ts-native/src/modules/specialization.ts:closure@8120 [closure_13219]  (in j-string-stage1-v8)        7
+        runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in j-string-stage1-v8)        7
+        runtime:packages/native-runtime/src/generational.ts:closure@7187 [closure_141]  (in j-string-stage1-v8)        7
+        runtime:helper:remainder  (in j-string-stage1-v8)        5
+        runtime:helper:to-uint32  (in j-string-stage1-v8)        5
+
+Binary Images:
+       0x102838000 -        0x105670f8f +j-string-stage1-v8 (???) <BBCBC481-BEDC-84C3-A634-D0289979A168> /Users/*/j-string-stage1-v8
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib

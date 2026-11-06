@@ -1,0 +1,20 @@
+(lldb) target create ".tint-bootstrap/j-string-stage1-v8"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-stage1-v8' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) process launch --stop-at-entry -- /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-source-v8 /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-stage2-v8 --debug-symbols
+Process 7092 launched: '/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-stage1-v8' (arm64)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open('.tint-bootstrap/j-selfbuild-v8-initial.json','w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+33
+(lldb) continue
+sources
+parse
+allocator
+runtime
+program
+startup
+image
+wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-stage2-v8 (70692578 bytes)
+Process 7092 resuming
+Process 7092 exited with status = 0 (0x00000000)
+(lldb) script p=lldb.debugger.GetSelectedTarget().GetProcess(); open('.tint-bootstrap/j-selfbuild-v8-final.json','w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); assert p.GetState()==lldb.eStateExited and p.GetExitStatus()==0
+36

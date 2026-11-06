@@ -1,0 +1,111 @@
+{
+  "kind": "cluster-j-frozen-native-selfbuild",
+  "at": "2026-11-06T23:08:21.783190+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "4e9cf9167b2a8355ce4425c455b9d3a18d746ac86e3ce791f7b65f11e88c6547",
+    "files": 569
+  },
+  "frozenToolchain": ".tint-bootstrap/cluster-j-toolchain-v8",
+  "frozenInputDirectory": ".tint-bootstrap/j-string-source-v8",
+  "images": [
+    {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-string-stage1-v8",
+      "bytes": 70692578,
+      "sha256": "ff17c867b173d6c855ef04c527f77809528dd96dd95c708e02f91cce55e59c14"
+    },
+    {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-string-stage2-v8",
+      "bytes": 70692578,
+      "sha256": "ff17c867b173d6c855ef04c527f77809528dd96dd95c708e02f91cce55e59c14"
+    }
+  ],
+  "commands": {
+    "bootstrap": {
+      "exitStatus": 0,
+      "seconds": 121.7
+    },
+    "nativeStage2": {
+      "exitStatus": 0,
+      "inferiorPid": 7092,
+      "debuggerLaunch": "LLDB local stopped-at-entry; this run began before the direct-mode directive",
+      "initial": {
+        "state": "stopped",
+        "pid": 7092
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      }
+    },
+    "stageImageComparison": {
+      "exitStatus": 0
+    },
+    "stage1Signature": {
+      "exitStatus": 0
+    },
+    "stage2Signature": {
+      "exitStatus": 0
+    },
+    "stage1Dwarf": {
+      "exitStatus": 0,
+      "detail": "No errors. Stage2 is byte-identical."
+    }
+  },
+  "completionEvidence": "Fail-fast script reached its final success marker after independent state assertions and every verification command. All original wrapper/debugger/inferior processes gone.",
+  "throughput": {
+    "lastObservedCpuTime": "36:39.07",
+    "lastObservedElapsed": "01:05:57",
+    "finding": "Symbolized samples demonstrate progress through specialization, closure lowering, ARM64 emission and relocation patching. Most sampled time in shared generational GC; external saturation impaired CPU share.",
+    "handoff": "~/.t3/tint-briefs/handoff-J-to-P.md"
+  },
+  "provenanceLimit": "Selfbuild includes all J portable fixes on frozen v8, before P d2be77b codegen was rebased. Do not attribute these images to newer v9 source5fa3391. All five focused native fixture groups separately passed on that combined P/J source through direct launch (cluster-j-current-native-acceptance-v9.json).",
+  "evidence": {
+    "bootstrap": {
+      "path": "docs/results/cluster-j-selfbuild-v8-bootstrap.log",
+      "sha256": "737d3fd1ccc765beb99589d69b59de28c7b5afc30c4656eb3315230a97b1598a"
+    },
+    "native": {
+      "path": "docs/results/cluster-j-selfbuild-v8-native.log",
+      "sha256": "32fdc86c0cbc0bf5dad41934aa0f73b44a9f1ce77879fe47ba8559821ce5c553"
+    },
+    "progress": {
+      "path": "docs/results/cluster-j-selfbuild-v8-progress.log",
+      "sha256": "19669a3dcaf2448a68a7983105613a1660750d20cd2c0e0c086d6e2373a326cd"
+    },
+    "dwarf": {
+      "path": "docs/results/cluster-j-selfbuild-v8-dwarf.log",
+      "sha256": "e6004e1659297c017bbde4f2be6f75252d187fe2b8a4d0b94848df1e57befda1"
+    },
+    "initial": {
+      "path": "docs/results/cluster-j-selfbuild-v8-initial.json",
+      "sha256": "abe76a01107a0b4651471ce3d6c313978d3f5ca7eb270676bea2ed06c4449800"
+    },
+    "final": {
+      "path": "docs/results/cluster-j-selfbuild-v8-final.json",
+      "sha256": "aa603f8d60adb6c2d575584df27495df53986e3c4a3330e2f36b05de6db8fa1e"
+    },
+    "script": {
+      "path": "docs/results/cluster-j-selfbuild-v8-script.sh",
+      "sha256": "2b703098beec60d04eddb78aeefa8455abee1ec667804dd61d50eb9fdc65ff44"
+    },
+    "profile1": {
+      "path": "docs/results/cluster-j-selfbuild-v8-profile1.txt",
+      "sha256": "9559601e7116e43070128f1d616ca675ac3a189433b1cd31287b4ba7c792bdce"
+    },
+    "profile2": {
+      "path": "docs/results/cluster-j-selfbuild-v8-profile2.txt",
+      "sha256": "7ea4b157d33167971b8d63bef888bfb27114980dc3eb385759079329ddbba09b"
+    },
+    "profile3": {
+      "path": "docs/results/cluster-j-selfbuild-v8-profile3.txt",
+      "sha256": "debc2fa76b0a4fc7aa38c472d5a1767f3cca940c0f057f0985ed3c335b8f6fe4"
+    },
+    "profile4": {
+      "path": "docs/results/cluster-j-selfbuild-v8-profile4.txt",
+      "sha256": "5527e42f03463d1109ba37c1c2545ee29ed6b5cac35211f77fbe81d6cd267e4f"
+    }
+  }
+}
