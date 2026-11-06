@@ -1,0 +1,77 @@
+{
+  "kind": "native-assignment-phase2-acceptance",
+  "complete": true,
+  "conformance": true,
+  "finishedAt": "2026-11-06T22:44:40.146142+00:00",
+  "selection": "language/expressions/assignment",
+  "report": "docs/results/test262-assignment-phase2-v1.json",
+  "totals": {
+    "total": 850,
+    "passed": 850,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "runnerExitStatus": 0,
+  "batchSize": 64,
+  "sourceSnapshot": {
+    "sha256": "2e899ef5cedd34b7cb2efd8f0f45c38f28f2a8b220b0f0b999e8571833fa0c4f",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-assignment-phase2-v1.json",
+  "frozenToolchainSha256": "75440f476434d733f59d9ac60b0d0981d7a7e235dffc5722496951860b306d6b",
+  "journal": ".tint-bootstrap/test262-assignment-phase2-v1.jsonl",
+  "journalSha256": "1765aa2fb586bf42d6f418f95266928569119293010510e2ba3afafcf56b77a9",
+  "resumption": {
+    "restoredVariants": 702,
+    "events": [
+      {
+        "kind": "resume",
+        "startedAt": "2026-11-06T21:16:47.950Z",
+        "previousJournalSha256": "d3ab5d6ca532db1addae8fc032a6397cfcd0177cf4705f8f92a440c542896446",
+        "observedVariants": 702
+      }
+    ]
+  },
+  "originalInterruption": "docs/results/test262-assignment-phase2-memory-emergency-interruption-v1.json",
+  "preservedPrefixSha256": "d3ab5d6ca532db1addae8fc032a6397cfcd0177cf4705f8f92a440c542896446",
+  "resumedVariants": 148,
+  "resumeInvocation": {
+    "slot": "~/.t3/tint-slots/slot runner 6",
+    "slotAcquired": "runner/slot-5",
+    "slotWaitSeconds": 3974,
+    "node": "v24.12.0",
+    "heartbeatEnv": {
+      "TINT_TEST262_HEARTBEAT_MS": "30000",
+      "TINT_TEST262_STALL_MS": "150000"
+    },
+    "note": "Original frozen host predates heartbeat support; source identity preserved as explicitly required. External journal, CPU, child-process and sample polling supplied visible progress."
+  },
+  "historicalFunctionNameFailures": [
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "sloppy",
+      "status": "pass",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "language/expressions/assignment/fn-name-lhs-cover.js",
+      "variant": "strict",
+      "status": "pass",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "delayedLaunch": "docs/results/assignment-phase2-delayed-launch-observation-v1.json",
+  "infraRecheckList": [],
+  "infraRecheckNote": "No original infrastructure errors or timeouts were recorded. The sampled pre-entry delay recovered within the original containment budget and its original outcome was pass, so no isolated rechecks were needed or launched.",
+  "compilerOrRuntimeChanges": false,
+  "selfBuild": "No implementation changes in this slice; evidence-only delta.",
+  "pauseDirective": "No further native selections or implementation work. Complete merge-ready gate and handoff, then pause E."
+}
