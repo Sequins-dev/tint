@@ -1,0 +1,58 @@
+{
+  "kind": "c1-phase1-completion",
+  "mergeReady": true,
+  "conformance": false,
+  "base": "ee8713721aa453a6b04e8d33343d8172a303e194",
+  "retainedPatch": "bad35477fa3d68dbf88968435ac3180c1cf9a018",
+  "supersedesPendingGate": "docs/results/c1-phase1-handoff-v1.json",
+  "retainedInterruptedObservation": "docs/results/c1-selfbuild-v1.txt",
+  "coordinatorDirective": "No compiler-performance investigation. Let CPU-advancing builds finish under shared load.",
+  "selfBuild": "docs/results/c1-frozen-selfbuild-v2.json",
+  "selfBuildElapsedMs": 3375842,
+  "stageImagesByteIdentical": true,
+  "signatureAndDWARF": [
+    {
+      "tool": "/usr/bin/codesign",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1",
+      "exitStatus": 0
+    },
+    {
+      "tool": "/usr/bin/codesign",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2",
+      "exitStatus": 0
+    },
+    {
+      "tool": "/usr/bin/dwarfdump",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1",
+      "exitStatus": 0
+    },
+    {
+      "tool": "/usr/bin/dwarfdump",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2",
+      "exitStatus": 0
+    }
+  ],
+  "compilerGraph": "docs/results/c1-post-rebase-compiler-graph-v2.json",
+  "workspace": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "node": "24.12.0",
+    "tests": 4489,
+    "passed": 4489,
+    "exitStatus": 0,
+    "log": "docs/results/c1-check-v4.txt",
+    "progress": "docs/results/c1-check-v4-progress.txt"
+  },
+  "nativeRegression": {
+    "passed": 11,
+    "total": 11,
+    "report": "docs/results/c1-instance-elements-native-v1.json"
+  },
+  "inheritedTest262": {
+    "passed": 331,
+    "total": 331,
+    "report": "docs/results/class-realm-native-v7.json",
+    "rerun": false
+  },
+  "processesRunning": [],
+  "next": "Phase 2 C1 foundation queue; one slotted runner with fresh frozen heartbeat toolchain. No performance changes made."
+}

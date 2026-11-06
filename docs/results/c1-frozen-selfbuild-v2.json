@@ -1,0 +1,71 @@
+{
+  "kind": "c1-frozen-native-self-build",
+  "conformance": false,
+  "accepted": true,
+  "elapsedMs": 3375842,
+  "priorInterruptedRun": "docs/results/c1-phase1-handoff-v1.json",
+  "stage1": {
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1",
+    "sha256": "6a220d3ac5b1f5655ee89b0fc0440f93818e89f095db18c2ad7aa58f7bcedd86"
+  },
+  "frozenSource": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-source-v1",
+    "manifestSha256": "bc00aea7235f77ffd174ada52f83cc2b9905715c819ede651cda8004324a44e3",
+    "files": 568
+  },
+  "stage2": {
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2",
+    "sha256": "6a220d3ac5b1f5655ee89b0fc0440f93818e89f095db18c2ad7aa58f7bcedd86"
+  },
+  "byteIdentical": true,
+  "initialStopped": true,
+  "expectedExitZero": true,
+  "debuggerShellExit": 0,
+  "signal": null,
+  "checks": [
+    {
+      "tool": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1"
+      ],
+      "exitStatus": 0,
+      "stdout": "",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1: satisfies its Designated Requirement\n"
+    },
+    {
+      "tool": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2"
+      ],
+      "exitStatus": 0,
+      "stdout": "",
+      "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2: satisfies its Designated Requirement\n"
+    },
+    {
+      "tool": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1"
+      ],
+      "exitStatus": 0,
+      "stdout": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage1-v1:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+      "stderr": ""
+    },
+    {
+      "tool": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2"
+      ],
+      "exitStatus": 0,
+      "stdout": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/c1-stage2-v2:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+      "stderr": ""
+    }
+  ]
+}
