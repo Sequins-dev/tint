@@ -1,0 +1,219 @@
+{
+  "sampledMs": 390465.79099974333,
+  "stages": [
+    {
+      "stage": "check",
+      "sampledMs": 206317.25399999577
+    },
+    {
+      "stage": "lower",
+      "sampledMs": 68589.95700000008
+    },
+    {
+      "stage": "codegen",
+      "sampledMs": 32946.92100000003
+    },
+    {
+      "stage": "ir-optimize",
+      "sampledMs": 22083.888000004008
+    },
+    {
+      "stage": "other",
+      "sampledMs": 19195.56399999997
+    },
+    {
+      "stage": "parse",
+      "sampledMs": 14239.531999999967
+    },
+    {
+      "stage": "gc",
+      "sampledMs": 14066.287000000004
+    },
+    {
+      "stage": "image-link-sign",
+      "sampledMs": 6629.249999999997
+    },
+    {
+      "stage": "bind",
+      "sampledMs": 2767.420999999997
+    },
+    {
+      "stage": "specialize",
+      "sampledMs": 2409.258
+    },
+    {
+      "stage": "source-link",
+      "sampledMs": 871.0429999999997
+    },
+    {
+      "stage": "external-process-wait",
+      "sampledMs": 348.666
+    },
+    {
+      "stage": "writeback",
+      "sampledMs": 0.75
+    }
+  ],
+  "leaves": [
+    {
+      "frame": "stableFacts @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 53273.61200000021
+    },
+    {
+      "frame": "forgetNarrowed @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 47793.98400000003
+    },
+    {
+      "frame": "set @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/collections/key-index.js",
+      "sampledMs": 33199.22400000015
+    },
+    {
+      "frame": "get @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/collections/key-index.js",
+      "sampledMs": 21419.17200000004
+    },
+    {
+      "frame": "relates @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/types/index.js",
+      "sampledMs": 15791.528999999973
+    },
+    {
+      "frame": "(garbage collector) @ ",
+      "sampledMs": 14066.287000000004
+    },
+    {
+      "frame": "position @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/collections/key-index.js",
+      "sampledMs": 13646.474999999977
+    },
+    {
+      "frame": "verify @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ir/dist/scalar/index.js",
+      "sampledMs": 11800.092999999255
+    },
+    {
+      "frame": "emitModule @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/codegen/dist/aarch64/scalar/index.js",
+      "sampledMs": 11331.156000000008
+    },
+    {
+      "frame": "compileArm64Program @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/compiler/dist/native/index.js",
+      "sampledMs": 9171.737000000006
+    },
+    {
+      "frame": "collectTag @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 6266.544999999999
+    },
+    {
+      "frame": "lowerEntries @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/index.js",
+      "sampledMs": 6136.881999999986
+    },
+    {
+      "frame": "store @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/binary/bytes.js",
+      "sampledMs": 6127.084000000005
+    },
+    {
+      "frame": "stringExpression @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/index.js",
+      "sampledMs": 5304.864000000001
+    },
+    {
+      "frame": "expression @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 5109.507000000001
+    },
+    {
+      "frame": "compressWords @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/binary/sha256-compression.js",
+      "sampledMs": 4500.794000000001
+    },
+    {
+      "frame": "typeOf @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 4447.502
+    },
+    {
+      "frame": "next @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/syntax/lexer.js",
+      "sampledMs": 3491.708
+    },
+    {
+      "frame": " @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/interfaces.js",
+      "sampledMs": 3367.749999999998
+    },
+    {
+      "frame": " @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/codegen/dist/aarch64/scalar/index.js",
+      "sampledMs": 3077.085
+    },
+    {
+      "frame": "statement @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 3046.1210000000005
+    },
+    {
+      "frame": "expr @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/index.js",
+      "sampledMs": 2780.0069999999982
+    },
+    {
+      "frame": "callbackSignature @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/index.js",
+      "sampledMs": 2675.791
+    },
+    {
+      "frame": "encode @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/codegen/dist/aarch64/isa.js",
+      "sampledMs": 2665.836
+    },
+    {
+      "frame": "functionOf @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 2588.709
+    },
+    {
+      "frame": "writeUnsigned @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/binary/bytes.js",
+      "sampledMs": 2438.423999999999
+    },
+    {
+      "frame": " @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 2371.339
+    },
+    {
+      "frame": "emit @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/codegen/dist/aarch64/scalar/index.js",
+      "sampledMs": 2117.415
+    },
+    {
+      "frame": "collect @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 2057.5319999999997
+    },
+    {
+      "frame": "info @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/scalar.js",
+      "sampledMs": 2002.8350000000005
+    },
+    {
+      "frame": "spreadProperties @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/records.js",
+      "sampledMs": 1998.4590000000003
+    },
+    {
+      "frame": "lowerModuleEntries @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/index.js",
+      "sampledMs": 1919.875000000001
+    },
+    {
+      "frame": "sha256 @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/foundation/dist/binary/sha256.js",
+      "sampledMs": 1873.5820000000006
+    },
+    {
+      "frame": " @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/ts-native/dist/closure/lowering/records.js",
+      "sampledMs": 1800.7909999999995
+    },
+    {
+      "frame": "expression @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/syntax/parser.js",
+      "sampledMs": 1787.049999999999
+    },
+    {
+      "frame": "narrowedType @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/closures.js",
+      "sampledMs": 1753.7490000000003
+    },
+    {
+      "frame": "(program) @ ",
+      "sampledMs": 1703.1599999999994
+    },
+    {
+      "frame": "resolveInterfaceTypes @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/checker/interfaces.js",
+      "sampledMs": 1675.7500000000002
+    },
+    {
+      "frame": "expression @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/syntax/rewrite.js",
+      "sampledMs": 1645.7099999999984
+    },
+    {
+      "frame": "widerProperty @ file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/frozen-current-B-comparison-v1/packages/typescript/dist/types/index.js",
+      "sampledMs": 1622.335999999999
+    }
+  ]
+}

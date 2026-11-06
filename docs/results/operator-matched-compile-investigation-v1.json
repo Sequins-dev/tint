@@ -1,0 +1,38 @@
+{
+  "kind": "operator-matched-compile-investigation",
+  "conformance": false,
+  "selection": "language/expressions/left-shift/S11.7.1_A1.js",
+  "variants": 2,
+  "identicalSourceAndHarnessInputs": true,
+  "main": {
+    "wallMs": 341556.693416,
+    "cpuMs": 327529.639,
+    "sourceSnapshot": {
+      "sha256": "449314e5e5fa186f989c4f0da8e41587594a222de7113b0d7b8b1db9b77e62ab",
+      "files": 568
+    },
+    "profile": "docs/results/operator-main-tiny-profile-analysis-v1.json"
+  },
+  "B": {
+    "wallMs": 376629.738625,
+    "cpuMs": 365817.888,
+    "sourceSnapshot": {
+      "sha256": "bb9bce32cacb56e9e4b9635e01240ea48a534c5978948d9a329d7daab30a60c8",
+      "files": 568
+    },
+    "profile": "docs/results/operator-current-B-tiny-profile-analysis-v1.json"
+  },
+  "BtoMainCPUratio": 1.1169001044207787,
+  "productionSourceDifference": [
+    "packages/ts-native/src/modules/index.ts"
+  ],
+  "checkerSampledElapsedMs": {
+    "main": 205364.918,
+    "B": 206317.254
+  },
+  "scope": "One matched cold-process pair, same two variants and flags; profiler weights are sampled elapsed intervals, not CPU accounting. Does not establish whole-suite speedup or rule out a hash effect at batch size 64.",
+  "findings": "Main itself takes minutes. Shared checking, stableFacts and forgetNarrowed dominate both tiny profiles. B uses 11.7% more total CPU in this pair; extra sampled cost is principally codegen/IR/image/GC, while checking is nearly unchanged. Hash fix has semantic/native validation but no demonstrated overall throughput benefit.",
+  "v15Tiny": "Original attempt interrupted by harness turn interruption; repeated attempt explicitly stopped on pause directive (143) during compilation. No completed v15 tiny result.",
+  "leftShift64": "Interrupted by harness turn interruption after more than 45 CPU minutes with zero variant outcomes. Five-second sample and live V8 stack retained. No observed native coercion loop. A full matched 64-variant main/B comparison remains open.",
+  "nextOwner": "P: investigate shared closure fact scanning and batch-size scaling; B: fix/withdraw hash if a causal regression is demonstrated. No timeout raised."
+}
