@@ -1,0 +1,29 @@
+{
+  "kind": "native-selection-controller-interruption",
+  "conformance": false,
+  "selection": "annexB/language/eval-code/direct",
+  "controllerPid": 53873,
+  "runnerPid": 97757,
+  "controllerExit": 1,
+  "reason": "Legacy scheduler rejected active peer runners; controller exited while child remained acknowledged between variants. No inferior was executing at adoption.",
+  "journal": ".tint-bootstrap/test262-annexb-closure-annexB-language-eval-code-direct-v3.jsonl",
+  "journalPrefixSha256": "5fa5a99605721a72a9efab5e7e8d2241842fa287e5e656c9ef2b003780b60b6e",
+  "observed": 192,
+  "passed": 192,
+  "expectedTotal": 310,
+  "scope": "Interrupted controller prefix, not a complete selection. Child continued in place after its worktree-local pause marker was removed; no retry or new selection.",
+  "logTail": [
+    "{\"selection\":\"annexB/language/eval-code/direct\",\"grant\":{\"id\":1,\"variants\":64,\"kind\":\"execution\",\"outcome\":\"compiled\"},\"at\":\"2026-11-06T13:27:19.770Z\"}",
+    "{\"selection\":\"annexB/language/eval-code/direct\",\"grant\":{\"id\":2,\"variants\":64,\"kind\":\"execution\",\"outcome\":\"compiled\"},\"at\":\"2026-11-06T14:24:06.834Z\"}",
+    "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/run-annexb-closure-native-v3.mjs:56",
+    "  if(unknown.length!==0){await release();throw Error('Unrecognised or active native runner live; request guidance: '+JSON.stringify(unknown));}",
+    "                                               ^",
+    "",
+    "Error: Unrecognised or active native runner live; request guidance: [{\"pid\":6622,\"ppid\":1,\"children\":[90082],\"listed\":true,\"paused\":false,\"ok\":false},{\"pid\":87865,\"ppid\":17919,\"children\":[],\"listed\":false,\"paused\":false,\"ok\":false},{\"pid\":88701,\"ppid\":17919,\"children\":[],\"listed\":false,\"paused\":false,\"ok\":false}]",
+    "    at acquire (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/run-annexb-closure-native-v3.mjs:56:48)",
+    "    at async file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366/.tint-bootstrap/run-annexb-closure-native-v3.mjs:122:17",
+    "",
+    "Node.js v24.12.0",
+    ""
+  ]
+}

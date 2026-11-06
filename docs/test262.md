@@ -151,6 +151,7 @@ Each row retains its own frozen source; these totals are not a combined current 
 | `annexB/language/expressions`             |          43/43 | [Report](results/test262-annexb-expressions-native-v1.json)           |
 | `annexB/language/global-code`             |        153/153 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
 | `annexB/language/statements`              |          41/41 | [Report](results/test262-annexb-statements-native-v2.json)            |
+| `language/eval-code/direct`              |        336/336 | [Report](results/test262-language-direct-eval-current-v1.json) |
 | `built-ins/ArrayBuffer`                   |        442/442 | [Report](results/test262-arraybuffer-shared-native-v2.json)           |
 | `built-ins/ArrayIteratorPrototype`        |          46/46 | [Report](results/test262-array-iterator-family-native-v2.json)        |
 | `built-ins/BigInt`                        |        154/154 | [Report](results/test262-bigint-family-native-v2.json)                |
