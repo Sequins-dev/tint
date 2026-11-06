@@ -146,9 +146,11 @@ listed separately from older workspace-snapshot and unattributed reports. Node
 reference reports are excluded. Partial reports add an outcome footprint only;
 overlapping reports are never summed.
 
-New complete core-family selections run on the
-[annexb-eval-copy frozen host](results/frozen-node-toolchain-annexb-eval-copy-v1.json),
-with LLDB entry/exit containment and unchanged harnesses:
+Complete core-family reports use LLDB entry/exit containment and unchanged
+harnesses. Each report retains its own frozen source identity; the inherited
+reports use the [annexb-eval-copy host](results/frozen-node-toolchain-annexb-eval-copy-v1.json),
+and later reruns freeze current main. These selections are not a combined
+current-toolchain pass rate:
 
 | Family | Passed / total | Report |
 | --- | ---: | --- |
