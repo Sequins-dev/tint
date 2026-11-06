@@ -26,6 +26,24 @@ function realms() {
   );
   return { caller, callee };
 }
+/** Compare identities only; diffing realm graphs makes failures unbounded. */
+function throwsIn(
+  action: () => unknown,
+  realm: { readonly prototypes: Map<string, unknown> },
+  kind: string,
+): void {
+  let thrown: unknown;
+  try {
+    action();
+  } catch (error) {
+    thrown = error;
+  }
+  assert.ok(thrown !== undefined, `expected a ${kind} error`);
+  assert.ok(
+    errorPrototype(thrown) === realm.prototypes.get(kind),
+    `expected the ${kind} error from the selected realm`,
+  );
+}
 function errorPrototype(error: unknown) {
   return (error as OrdinaryObject<ScriptPropertyKey, unknown>).prototype;
 }
@@ -223,4 +241,61 @@ test("base fields and body still execute in their defining source context", () =
   });
   assert.deepEqual(order, ["field", "body"]);
   assert.equal(caller.agent.activeContext, undefined);
+});
+
+test("base OrdinaryCreateFromConstructor runs before entering the class realm", () => {
+  const { caller, callee } = realms();
+  const order: string[] = [];
+  const constructor = objects.createBaseClass(
+    "Base",
+    0,
+    () => {
+      order.push("body");
+      return undefined;
+    },
+    [],
+    callee,
+    hooks,
+  );
+  // A newTarget whose prototype lookup revokes it, as Proxy.revocable can.
+  const newTarget = objects.createExoticObject<ScriptPropertyKey, unknown>(
+    undefined,
+    {
+      get: () => {
+        order.push(
+          caller.agent.activeContext?.realm === caller
+            ? "prototype in caller"
+            : "prototype in callee",
+        );
+        state.target = undefined;
+        state.handler = undefined;
+        return undefined;
+      },
+    },
+    () => undefined,
+    () => undefined,
+  );
+  const state: { target: typeof newTarget | undefined; handler: unknown } = {
+    target: objects.createObject(callee.objectPrototype),
+    handler: objects.createObject(callee.objectPrototype),
+  };
+  newTarget.internalProxyData = state as NonNullable<
+    typeof newTarget.internalProxyData
+  >;
+  // GetFunctionRealm(revoked proxy) reports in the caller's realm.
+  throwsIn(
+    () =>
+      caller.executionContext.run(() =>
+        objects.constructObject(
+          constructor,
+          [],
+          { value: newTarget, object: newTarget },
+          undefined,
+        ),
+      ),
+    caller,
+    "type",
+  );
+  assert.deepEqual(order, ["prototype in caller"]);
+  assert.ok(caller.agent.activeContext === undefined);
 });

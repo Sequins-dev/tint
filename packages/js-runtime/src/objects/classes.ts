@@ -132,15 +132,14 @@ export function createBaseClass(
     (receiver, args): unknown => {
       throw createRuntimeError(realm, "type");
     },
-    (args, newTarget): unknown =>
-      execution.run((): unknown => {
-        const prototype = constructorPrototype(
-          newTarget,
-          "object",
-          realm,
-          hooks,
-        );
-        const instance = createObject<ScriptPropertyKey, unknown>(prototype);
+    (args, newTarget): unknown => {
+      // OrdinaryCreateFromConstructor precedes PrepareForOrdinaryCall, so its
+      // abrupt completions (such as GetFunctionRealm of a revoked proxy
+      // newTarget) are created in the caller's realm, not the class realm.
+      const instance = createObject<ScriptPropertyKey, unknown>(
+        constructorPrototype(newTarget, "object", realm, hooks),
+      );
+      return execution.run((): unknown => {
         // InitializeInstanceElements precedes parameter defaults and the body.
         initializeClassPrivateMethods(instance, privateMethods, realm);
         initializeClassFields(instance, fields, realm, hooks);
@@ -149,7 +148,8 @@ export function createBaseClass(
         return viewObjectValue(returned, realm.objectPrototype) === undefined
           ? instance
           : returned;
-      }),
+      });
+    },
     classConstructorContext(realm),
   );
   initializeClassConstructor(constructor, prototype, name, length, hooks);
