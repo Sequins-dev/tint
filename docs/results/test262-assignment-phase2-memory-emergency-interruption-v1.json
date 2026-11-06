@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-selection-interruption",
+  "complete": false,
+  "conformance": false,
+  "at": "2026-11-06T19:43:49.241084+00:00",
+  "selection": "language/expressions/assignment",
+  "reason": "Coordinator-directed emergency stop: host swap at 83.7 of 85 GB. Resume prohibited until coordinator lifts emergency.",
+  "stop": {
+    "kind": "native-memory-emergency-stop",
+    "at": "2026-11-06T19:43:13.353018+00:00",
+    "pid": 34979,
+    "signal": "SIGTERM",
+    "boundary": "No children or inferior; runner synchronously compiling the next batch, between native variants. Verified process identity and child table immediately before signal.",
+    "process": [
+      "34979",
+      "17919",
+      "Rs",
+      "node .tint-bootstrap/node-toolchain-assignment-phase2-v1/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/expressions/assignment 64"
+    ],
+    "children": [],
+    "coordinatorReason": "Host swap 83.7 of 85 GB; stop unslotted pre-rule runners now. Resume only after coordinator lifts emergency, one runner under slot runner 6 and same frozen toolchain with TINT_TEST262_RESUME=1."
+  },
+  "sourceSnapshot": {
+    "sha256": "2e899ef5cedd34b7cb2efd8f0f45c38f28f2a8b220b0f0b999e8571833fa0c4f",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-assignment-phase2-v1.json",
+  "frozenToolchainSha256": "75440f476434d733f59d9ac60b0d0981d7a7e235dffc5722496951860b306d6b",
+  "nodeVersion": "v24.12.0",
+  "batchSize": 64,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "observedTotals": {
+    "expectedFullSelection": 850,
+    "observed": 702,
+    "passed": 702,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "unobserved": 148
+  },
+  "compilationBatches": 62,
+  "journalPrefix": "docs/results/test262-assignment-phase2-memory-emergency-interruption-v1.jsonl",
+  "journalPrefixSha256": "d3ab5d6ca532db1addae8fc032a6397cfcd0177cf4705f8f92a440c542896446",
+  "resumableOriginalJournal": ".tint-bootstrap/test262-assignment-phase2-v1.jsonl",
+  "noNativeInferiorKilled": true,
+  "runnerExited": true,
+  "runningProcesses": [],
+  "resume": {
+    "authorizedNow": false,
+    "condition": "Coordinator explicitly lifts the memory emergency",
+    "sameFrozenToolchainRequired": true,
+    "note": "Schema-2 resume retains every observation. This is the pre-heartbeat frozen host; do not refreeze or mutate it for this existing run. Visible external polling must continue while resuming under slot runner 6.",
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH TINT_TEST262_RESUME=1 TINT_TEST262_SOURCES=$PWD/.tint-bootstrap/node-toolchain-assignment-phase2-v1/source-snapshot.json TINT_TEST262_JOURNAL=$PWD/.tint-bootstrap/test262-assignment-phase2-v1.jsonl TINT_TEST262_MODULES=1 TINT_TEST262_DEBUGGER_LAUNCH=debugserver-direct TINT_TEST262_DEBUGGER_TRACE=1 TINT_TEST262_CONTAINMENT_MS=300000 ~/.t3/tint-slots/slot runner 6 -- node .tint-bootstrap/node-toolchain-assignment-phase2-v1/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/expressions/assignment 64 > .tint-bootstrap/test262-assignment-phase2-v1.json 2> .tint-bootstrap/test262-assignment-phase2-resume-v1.log"
+  },
+  "scope": "702 observed passes are an interrupted prefix, not a complete 850-variant selection. No denominator exclusions, no full-selection pass claim. Completed compound-assignment report is separate and remains 786/786."
+}
