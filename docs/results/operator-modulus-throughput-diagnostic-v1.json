@@ -1,0 +1,77 @@
+{
+  "kind": "operator-modulus-throughput-and-wrapper-diagnostic",
+  "conformance": false,
+  "selectionReport": "docs/results/test262-operator-modulus-native-v1.json",
+  "totals": {
+    "total": 79,
+    "passed": 77,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9746835443037974
+  },
+  "sourceSnapshot": {
+    "sha256": "5b24685791f295badbb6a0b6d095cf561b78cc1fd23b9597c11f6f1ebfdb1583",
+    "files": 568
+  },
+  "timeoutVariants": [
+    "S11.5.3_A1.js sloppy",
+    "S11.5.3_A1.js strict"
+  ],
+  "timeoutPhase": "after initial stop",
+  "containmentMs": 300000,
+  "cpuObservations": [
+    {
+      "variant": "sloppy",
+      "wallSeconds": 288,
+      "cpuSeconds": 235.53
+    },
+    {
+      "variant": "strict",
+      "wallSeconds": 289,
+      "cpuSeconds": 197.66
+    }
+  ],
+  "hostLoadObservation": 64.51,
+  "compileBatches": [
+    {
+      "id": 0,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 380154.036209,
+      "outcome": "compiled"
+    },
+    {
+      "id": 1,
+      "variants": 15,
+      "kind": "execution",
+      "compileMs": 1211911.9008749998,
+      "outcome": "compiled"
+    }
+  ],
+  "driver": {
+    "wrapperExitStatus": 1,
+    "nativeSelectionCompleted": true,
+    "journalStarts": 1,
+    "journalCompleteRecords": 1,
+    "observations": 79,
+    "subsequentDuplicateAttempt": "Rejected before executing variants with EEXIST from immutable journal creation.",
+    "wrapperModifiedDuringRun": "2026-11-07T02:33:21+0800; run began around 01:58 and completed 02:39 local.",
+    "observedError": "slot:27: command not found: ne; then a second acquired line and duplicate runner launch.",
+    "likelyCause": "The shared zsh wrapper was rewritten while a child command was running. Shell source-file offsets can resume inside changed content. Current wrapper text is valid; no operator/runtime fault is implied.",
+    "wrapperSha256": "171551603ecb7d58f9db18279d17275f34a2ef7fbeede2321904dafab54ab858",
+    "nextLaunchMitigation": "Load the provided slot wrapper as one in-memory shell script before execution; preserve its class, cap, waiting heartbeat and cleanup behavior. Shared script edits should use atomic replacement."
+  },
+  "blocker": "P owns shared eval/Function preparation throughput. Retain both timeouts and rerun the complete affected selection once the fix is on main; saturated-host timing remains inconclusive.",
+  "artifacts": [
+    "docs/results/operator-modulus-native-v1.stderr.log",
+    "docs/results/operator-modulus-cpu-v1.log",
+    "docs/results/operator-modulus-eval-sample-v1.txt",
+    "docs/results/operator-modulus-strict-eval-sample-v1.txt",
+    "docs/results/operator-modulus-final-batch-sample-v1.txt",
+    "docs/results/operator-modulus-final-batch-sample-v7.txt",
+    "docs/results/operator-modulus-slot-wrapper-observed-v1.txt"
+  ]
+}
