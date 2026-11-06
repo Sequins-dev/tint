@@ -1,0 +1,53 @@
+{
+  "kind": "paused-cluster-integration-validation",
+  "base": "951fedc0f2cf92b22a486bb67d6a58fd6ba21e32",
+  "fullEarlierWorkspaceGate": {
+    "report": "modules-a3-merge-ready-validation-v1.json",
+    "exitStatus": 0,
+    "tests": 4517,
+    "passed": 4517
+  },
+  "upstreamChanges": {
+    "remoteLaunchCommit": "4514550",
+    "shallowSelectionCommit": "614e676",
+    "resolution": "Keep upstream RemoteLaunch source/tests unchanged. Preserve A3 event-consuming candidate reports only as historical evidence. Combine fixture identity verification with upstream selection-membership validation."
+  },
+  "postRebaseChecks": [
+    {
+      "command": "node --test --test-concurrency=2 tools/native-debugger-session.test.ts tools/test262-checkout.test.ts tools/test262-native-extract.test.ts tools/native-selection-order.test.ts tools/test262-coverage-ledger.test.ts",
+      "exitStatus": 0,
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "logSha256": "57c911f041d9d91b2a050bfeec572226fe2a1b1d8c5b66070d22aef11836ef21",
+      "log": "✔ debugserver terminates option parsing before forwarding inferior flags (1.424667ms)\n✔ debugger startup uses the caller's complete execution budget (0.424ms)\n✔ synchronous debugger launch can own an isolated POSIX process group (13.531625ms)\n✔ connected launch publishes the stub before requesting the inferior (1.793041ms)\n✔ debugger scripts preserve Python syntax for quoted paths and arguments (90.140583ms)\n✔ debugger diagnostics retain launch state and bounded protocol evidence (2.363542ms)\n✔ optional process tracing quotes private paths and captures remote startup packets (0.268666ms)\n✔ Darwin debugger socket paths are checked in UTF-8 bytes before launch (0.363625ms)\n✔ connected sessions launch through the existing process rather than replacing it (44.474917ms)\n✔ native selection groups syntax negatives without changing either lane's order (1.104041ms)\n✔ an explicit top-level JavaScript selector batches every standalone file without descending (169.780917ms)\n✔ a completed shallow batch extracts canonical complete per-file reports (732.182916ms)\n✔ shallow selection retains the checkout boundary and rejects unsupported wildcard forms (139.758083ms)\n[coverage-ledger 2026-11-06T20:25:14.872Z] reading checkout revision, tracked state and file inventory\n[coverage-ledger 2026-11-06T20:25:14.919Z] inventory 0/6 files, 1 variants\n✔ denominator shares strictness, raw, module, negative and fixture policy (158.8035ms)\n✔ latest complete overlap replaces passes with failures; ties use lexical filename (0.624542ms)\n✔ rejects source, harness, path, status, duplicates and incomplete selection evidence (0.30525ms)\n✔ streamed journal must end in a consistent complete record (30.167834ms)\n✔ explicit completed subset reports deduplicate with directory runs (0.321375ms)\n✔ canonical full table is independent of input order and has a verifiable hash (0.851125ms)\n✔ compact evidence keeps accepted names and selected provenance without per-variant rows (0.407458ms)\n✔ native extraction verifies recorded fixture bytes and absent siblings (1026.538083ms)\nℹ tests 21\nℹ suites 0\nℹ pass 21\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1850.559708\n"
+    },
+    {
+      "command": "pnpm exec tsc -p tsconfig.tests.json",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm exec tsc -p tsconfig.host.json",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm exec prettier --check (all touched/merged tools and tests)",
+      "exitStatus": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitStatus": 0
+    }
+  ],
+  "currentNativeDriver": "Upstream RemoteLaunch, validated by main native-connected-remote-launch-v1.json and native-connected-remote-arguments-v2.json. A3 native fixture report covers its superseded candidate, not this current implementation.",
+  "remainingSourceChanges": [
+    "tools/native-selection-order.test.ts",
+    "tools/native-selection-order.ts",
+    "tools/test262-native-extract.test.ts",
+    "tools/test262-native-extract.ts",
+    "tools/test262-native-run.ts"
+  ],
+  "paused": true,
+  "activeA3Processes": [],
+  "freshMeasurementWarning": "Old frozen toolchain-v5 contains the superseded A3 driver candidate. Re-freeze current integrated code after A3 is reactivated before new complete selections. Original journals must resume only on their original frozen toolchains."
+}
