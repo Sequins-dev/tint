@@ -1,0 +1,122 @@
+{
+  "kind": "native-self-build-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+  "sourceSnapshot": {
+    "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+    "files": 568
+  },
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-temporal-partial-h-v9",
+  "session": "/tmp/tint-h9-hA0yQF",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 10800000,
+  "checks": [
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "dwarfdump --verify",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "prepare-frozen-smoke",
+      "code": 0,
+      "signal": null,
+      "logTail": "allocator\nruntime\nprogram\nstartup\nimage\n{\"snapshot\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-temporal-partial-h-v9\",\"root\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/.tint-bootstrap/smoke-project\",\"output\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/.tint-bootstrap/smoke-node\",\"bytes\":1967458}\n"
+    },
+    {
+      "command": "stage2-smoke-compiler",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native",
+        "--debug-symbols"
+      ],
+      "expectedExit": 0,
+      "session": "/tmp/tint-h9-smoke-ug0VHN",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 18328
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 0,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h9-smoke-ug0VHN/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h9-smoke-ug0VHN/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h9-smoke-ug0VHN/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/.tint-bootstrap/smoke-project\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h9-smoke-ug0VHN/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h9-smoke-ug0VHN/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h9-smoke-ug0VHN/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h9-smoke-ug0VHN/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 18328 resuming\nProcess 18328 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h9-smoke-ug0VHN/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n"
+    },
+    {
+      "command": "compare smoke images",
+      "byteIdentical": true,
+      "nodeSha256": "47decbd224bc719bfc3df8d7a62b3496cf6cc6e0bf590279dd07c5170d9e3ffb",
+      "nativeSha256": "47decbd224bc719bfc3df8d7a62b3496cf6cc6e0bf590279dd07c5170d9e3ffb"
+    },
+    {
+      "command": "smoke-execution",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native",
+      "args": [],
+      "expectedExit": 42,
+      "session": "/tmp/tint-h9-smoke-nCGSwG",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 21874
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h9-smoke-nCGSwG/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h9-smoke-nCGSwG/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h9-smoke-nCGSwG/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-temporal-partial-h-v9/smoke-native\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h9-smoke-nCGSwG/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h9-smoke-nCGSwG/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h9-smoke-nCGSwG/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h9-smoke-nCGSwG/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 21874 resuming\nProcess 21874 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h9-smoke-nCGSwG/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n59\n"
+    }
+  ],
+  "bootstrap": {
+    "code": 0,
+    "signal": null
+  },
+  "bootstrapLog": "/tmp/tint-h9-hA0yQF/bootstrap.log",
+  "bootstrapTail": "[0.0s] sources\n[0.2s] parse\n[2.1s] allocator\n[2.4s] runtime\n[3.8s] program\n[125.5s] startup\n[125.5s] image\n[127.8s] wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9 (69486994 bytes)\n",
+  "snapshotVerified": true,
+  "debugger": {
+    "code": 0,
+    "signal": null
+  },
+  "initial": {
+    "stopped": true,
+    "pid": 55342
+  },
+  "result": {
+    "exited": true,
+    "exitStatus": 0,
+    "stopDescription": null
+  },
+  "debuggerLog": "/tmp/tint-h9-hA0yQF/debugger.log",
+  "debuggerTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h9-hA0yQF/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h9-hA0yQF/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h9-hA0yQF/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-partial-h-v9\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-temporal-partial-h-v9\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-temporal-partial-h-v9\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h9-hA0yQF/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h9-hA0yQF/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h9-hA0yQF/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h9-hA0yQF/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 55342 resuming\nProcess 55342 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h9-hA0yQF/result.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n",
+  "stage1Sha256": "912949206589c4b8818b9713f2ca32e3b10feb9dc030ac8e990deb905578394a",
+  "stage2Sha256": "912949206589c4b8818b9713f2ca32e3b10feb9dc030ac8e990deb905578394a",
+  "bytes": 69486994,
+  "byteIdentical": true,
+  "success": true,
+  "elapsedMs": 2773293,
+  "timedOut": false
+}
