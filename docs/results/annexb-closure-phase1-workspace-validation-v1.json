@@ -1,0 +1,35 @@
+{
+  "kind": "workspace-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "805725455afa320309563b24bcaf8f712827b8f3a5a2a584447acb02712395ab",
+    "files": 568
+  },
+  "node": "v24.12.0",
+  "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH pnpm check",
+  "exitStatus": 0,
+  "tests": {
+    "total": 4468,
+    "passed": 4468,
+    "failed": 0
+  },
+  "gates": [
+    "typecheck (including pnpm build)",
+    "test (including pnpm build)",
+    "boundaries",
+    "format:check"
+  ],
+  "log": ".tint-bootstrap/phase1-rebased-node24-check.log",
+  "logSha256": "5cb4cd96bd381b8cc0a8a3bafd7a4459746703d62546f9b88a2913643b5f0548",
+  "supersededAttempt": {
+    "log": ".tint-bootstrap/phase1-workspace-check.log",
+    "exitStatus": 143,
+    "reason": "Stopped obsolete Node 26 check after rebase; supported Node 24 check above is complete."
+  },
+  "compilerGraphAgreement": "docs/results/annexb-closure-bootstrap-graph-rebased-node-v1.json",
+  "nativeFixtures": [
+    "docs/results/annexb-closure-direct-eval-closure-validation-v3.json",
+    "docs/results/annexb-closure-direct-eval-annex-validation-v3.json",
+    "docs/results/annexb-closure-arguments-scope-validation-v3.json"
+  ]
+}
