@@ -1,0 +1,55 @@
+{
+  "kind": "native-class-construction-realm-fixture",
+  "conformance": false,
+  "cases": [
+    {
+      "name": "foreign base class revoked newTarget reports in the caller realm",
+      "source": "const r=$262.createRealm(),o=r.global,C=r.evalScript('(class {})'),h=Proxy.revocable(function(){},{get(){h.revoke();}});let ok=false;try{Reflect.construct(C,[],h.proxy);}catch(e){ok=e instanceof TypeError&&!(e instanceof o.TypeError);}if(!ok)throw 90;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign base class with field still reports revocation in the caller realm",
+      "source": "const r=$262.createRealm(),o=r.global,C=r.evalScript('(class {x=1;#y=2;})'),h=Proxy.revocable(function(){},{get(){h.revoke();}});let ok=false;try{Reflect.construct(C,[],h.proxy);}catch(e){ok=e instanceof TypeError&&!(e instanceof o.TypeError);}if(!ok)throw 91;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "non-object newTarget prototype falls back to the newTarget realm",
+      "source": "const r=$262.createRealm(),o=r.global,C=r.evalScript('(class {})'),N=function(){};N.prototype=null;const a=Reflect.construct(C,[],N);if(Object.getPrototypeOf(a)!==Object.prototype)throw 92;const M=o.Function();M.prototype=1;const b=Reflect.construct(C,[],M);if(Object.getPrototypeOf(b)!==o.Object.prototype)throw 93;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign base field initializer errors use the class realm",
+      "source": "const r=$262.createRealm(),o=r.global,C=r.evalScript('(class {x=null.y;})');let ok=false;try{new C();}catch(e){ok=e instanceof o.TypeError&&!(e instanceof TypeError);}if(!ok)throw 94;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "prototype lookup precedes fields and body",
+      "source": "const log=[];class C{x=log.push('field');constructor(){log.push('body');}}const N=new Proxy(function(){},{get(t,k){log.push('proto');return Reflect.get(t,k);}});Reflect.construct(C,[],N);if(log.join()!=='proto,field,body')throw 95;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "baseline private fields and methods attach to non-extensible objects",
+      "source": "class B{constructor(o){return o;}}class F extends B{#v=42;static g(o){return o.#v;}}class M extends B{#m(){return 7;}get #a(){return 8;}static g(o){return o.#m()+o.#a;}}const s=Object.preventExtensions({});if(new F(s)!==s||F.g(s)!==42)throw 96;const f=Object.freeze({});new M(f);if(M.g(f)!==15||!Object.isFrozen(f))throw 97;",
+      "expected": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "baseline private field stays writable after freeze",
+      "source": "class B{constructor(o){return o;}}class A extends B{#a=1;static inc(o){return ++o.#a;}}const o={};new A(o);Object.freeze(o);if(A.inc(o)!==2)throw 98;",
+      "expected": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

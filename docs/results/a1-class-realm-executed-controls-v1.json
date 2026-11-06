@@ -1,0 +1,49 @@
+{
+  "kind": "executed-bespoke-control-identities",
+  "conformance": false,
+  "interruption": "docs/results/language-main-controls-interruption-v3.json",
+  "fixture": "docs/results/a1-class-realm-control-fixture-v1.json",
+  "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+  "cases": [
+    {
+      "index": 0,
+      "name": "foreign base class revoked newTarget reports in the caller realm",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": "completed",
+      "initialStop": "confirmed",
+      "report": "docs/results/language-main-control-class-construction-realm-case-0-direct-v3.json"
+    },
+    {
+      "index": 1,
+      "name": "foreign base class with field still reports revocation in the caller realm",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": "completed",
+      "initialStop": "confirmed",
+      "report": "docs/results/language-main-control-class-construction-realm-case-1-direct-v3.json"
+    },
+    {
+      "index": 2,
+      "name": "non-object newTarget prototype falls back to the newTarget realm",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": "completed",
+      "initialStop": "confirmed",
+      "report": "docs/results/language-main-control-class-construction-realm-case-2-direct-v3.json"
+    },
+    {
+      "index": 3,
+      "name": "foreign base field initializer errors use the class realm",
+      "expected": {
+        "kind": "completed"
+      },
+      "outcome": "completed",
+      "initialStop": "confirmed",
+      "report": "docs/results/language-main-control-class-construction-realm-case-3-direct-v3.json"
+    }
+  ]
+}
