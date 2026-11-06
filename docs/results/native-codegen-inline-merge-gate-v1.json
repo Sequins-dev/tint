@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "merge-ready-native-codegen-slice",
+  "base": "dbaee0937c7f842b63ba20b3ec097a53f3a5e1b7",
+  "gate": {
+    "startedUTC": "2026-11-06T22:29:05.886Z",
+    "endedUTC": "2026-11-06T22:44:15.587Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 0,
+    "signal": null
+  },
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "tests": {
+    "pass": 4578,
+    "fail": 0
+  },
+  "log": {
+    "path": "native-codegen-inline-merge-gate-v1.log.gz",
+    "uncompressedSha256": "bd668c5da0e70439f7254652282e9d00a06a757ec7454d5b45ea4460e47b6cfc"
+  },
+  "rebaseAfterGate": "Only docs changed between checked main f74cb1e and current main 0bc51ae. No portable or tooling implementation delta. Dashboard conflict resolved retaining main generator rows and changing only P validation link.",
+  "nativeSelfbuild": "native-codegen-inline-post-C2-v1.json",
+  "measuredPerformance": "native-codegen-inline-primitive-unions-v2.json",
+  "nativeAttribution": [
+    "native-hot-functions-v2.md",
+    "native-hot-functions-v3.md",
+    "native-hot-functions-v4-cross-source-hash.md"
+  ],
+  "scope": "General numeric equality storage correctness; inline heterogeneous primitive union fields; boolean carriers and adjacent block fallthrough. No budget or resource limit increases.",
+  "outcomeEvidence": "Eight matched store benchmark native exits 42; semantic/native fixtures; byte-identical frozen post-C2 compiler images. Focused addition A1 remains 0/2 with two timeouts; this is timeout classification equivalence, not completed-value equivalence.",
+  "suiteProjection": "No suite execution-hours speedup inferred from the microbenchmark. Historical compilation-only projections remain separately qualified."
+}

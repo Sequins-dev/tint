@@ -32,10 +32,10 @@ confirms that the repaired native compiler can compile this frozen graph.
 
 The frozen graph includes `63e5264` and the linked-syntax hash fix; it predates
 later C1 private-element changes. Current main integration is checked separately:
-the preceding workspace gate passed **4,577/4,577** tests, and a fresh gate is
-queued after rebasing onto `f74cb1e`, which adds debugger connection readiness.
+the preceding workspace gate passed **4,577/4,577** tests, and the [current-main gate](native-codegen-inline-merge-gate-v1.json) passes
+**4,578/4,578** after integrating debugger connection readiness.
 The newly added debugger-session test passes together with its nine existing
-tests. A gate completion record will establish merge readiness separately.
+tests. The subsequent rebase contains only main documentation updates.
 
 The first post-C2 A1 launcher was rejected before compilation because P set
 `TINT_TEST262_MODULES=0`; that variable accepts unset or `1`. Its error and exit
