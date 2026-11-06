@@ -269,13 +269,16 @@ function run(
     }
   }
 }
-/** Input and capture offsets are UTF-16; execution never mutates the program. */
+/** Input and capture offsets are UTF-16; execution never mutates the program.
+ * Default work grows linearly with input size so a long linear scan is not
+ * rejected solely for exceeding the small-input allowance. Explicit embedding
+ * budgets remain absolute limits, including for large inputs. */
 export function executeRegExp(
   program: RegExpProgram,
   input: string,
   start: number = 0,
   sticky: boolean = program.flags.sticky,
-  maxSteps: number = 1000000,
+  maxSteps: number = Math.max(1000000, (input.length + 1) * 16),
 ): MatchResult {
   if (
     !Number.isSafeInteger(start) ||

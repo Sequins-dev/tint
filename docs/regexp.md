@@ -40,8 +40,12 @@ checks 15,812 property/union relations against the official input files. These
 fixtures are separate from unchanged Test262 selection results; complete reruns
 and frozen self-build acceptance remain pending.
 Valid patterns outside the matching subset can still be constructed and inspected;
-attempting unsupported matching reports unsupported execution. Work-budget
-exhaustion also reports unsupported execution, never a false no-match result.
+attempting unsupported matching reports unsupported execution. The default matching work allowance grows linearly with UTF-16 input length,
+with a one-million-step floor; explicit embedding budgets remain absolute limits.
+A [native red/green fixture](results/regexp-default-work-budget-native-red-green-v1.json)
+covers a 1,000,001-character linear search and an explicit budget override, retaining
+the initial small-fixture resource fault. Work-budget exhaustion reports unsupported
+execution, never a false no-match result.
 
 `Symbol.match` and `Symbol.search` now share RegExpExec, preserve overridden
 `exec` results, and cover Unicode empty-match advancement and observable

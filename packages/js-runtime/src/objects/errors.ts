@@ -149,7 +149,8 @@ export interface ErrorRealm {
     ScriptPropertyKey,
     unknown
   >;
-  regexpMaxSteps: number;
+  /** Undefined selects the engine's input-proportional default work allowance. */
+  regexpMaxSteps: number | undefined;
   readonly regexpLegacyState: RegExpLegacyState;
   readonly regexpPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   /** Embedding resource limit in base-2^26 digits; defaults to the representation limit. */
@@ -467,7 +468,7 @@ export function createErrorRealm(
     sharedArrayBufferPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),
-    regexpMaxSteps: 1000000,
+    regexpMaxSteps: undefined,
     regexpLegacyState: createRegExpLegacyState(),
     regexpPrototype: createObject<ScriptPropertyKey, unknown>(objectPrototype),
     bigIntPrototype: createObject<ScriptPropertyKey, unknown>(objectPrototype),

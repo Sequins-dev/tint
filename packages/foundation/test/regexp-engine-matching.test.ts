@@ -313,3 +313,14 @@ test("Unicode 17 string properties match complete emoji sequences and set operat
       );
     }
 });
+
+test("default matching budget permits linear scans of large inputs while explicit budgets remain exact", () => {
+  const compiled = compileRegExp("a", "");
+  assert.ok(compiled.ok);
+  const input = "b".repeat(1000001);
+  assert.equal(executeRegExp(compiled.value, input).kind, "no-match");
+  assert.equal(
+    executeRegExp(compiled.value, input, 0, false, 1000000).kind,
+    "limit",
+  );
+});
