@@ -1,0 +1,63 @@
+{
+  "kind": "native-compound-assignment-merge-ready-checkpoint",
+  "at": "2026-11-06T19:11:23.516312+00:00",
+  "base": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "validatedCommit": "7cffe6c550d10e90c23ec922e63ae869c7a75bff",
+  "nativeAcceptance": "docs/results/assignment-phase2-compound-acceptance-v1.json",
+  "nativeReport": "docs/results/test262-compound-assignment-phase2-v1.json",
+  "totals": {
+    "total": 786,
+    "passed": 786,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "validation": {
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "nodeVersion": "v24.12.0",
+    "exitStatus": 0,
+    "tests": 4504,
+    "passed": 4504,
+    "failed": 0,
+    "testConcurrency": 4,
+    "machineWideGateLimit": 2,
+    "log": "docs/results/assignment-phase2-rebased-check-v1.log",
+    "rebaseExitStatus": 0,
+    "diffCheckExitStatus": 0
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/assignment-phase2-rebased-check-v1.log",
+      "sha256": "0f8a7e2fd171b4554ba6045a7dd9c6f150c77301b9ca93ce4febfd83735b94f3"
+    },
+    {
+      "path": "docs/results/assignment-phase2-compound-progress-sample-v1.txt",
+      "sha256": "4125685208b288e70823ab115bfe6be44004b24ce0c3f89059d18f5d58677352"
+    },
+    {
+      "path": "docs/results/assignment-phase2-progress-sample-v1.txt",
+      "sha256": "19ce1936d4a2346b4c7e5bac475e2725c535afd0688902173ee232d48cbb941c"
+    },
+    {
+      "path": "docs/results/assignment-phase2-saturation-sample-v2.txt",
+      "sha256": "ccdb6c068f046ec3bf5655fa67535d1940cbde79de3c4302db510217e92ea26e"
+    }
+  ],
+  "diagnostics": {
+    "compilerSilence": "sample and lsof showed active V8 execution, CPU counters rising, no pause markers, no blocked stdin; no runner restarted or modified",
+    "gateSilence": "Parent waited on four compiler/runtime test workers actively consuming CPU; they completed normally. Parent sample exit 0. Worker sample for PID 57233 returned 255 because that worker had already exited; observation retained here.",
+    "hostSaturation": "Observed load 118.86 on 18 cores. Assignment compiler CPU progress slowed significantly; sample completed with active V8 property operations. No timeout observed or hidden."
+  },
+  "compilerOrRuntimeChanges": false,
+  "selfBuild": "Not required for this evidence-only branch delta; no new compiler/runtime implementation changes. Native report preserves its actual frozen source snapshot independently of the final rebased workspace.",
+  "remainingWork": {
+    "selection": "language/expressions/assignment",
+    "runnerPid": 34979,
+    "journal": ".tint-bootstrap/test262-assignment-phase2-v1.jsonl",
+    "reportInProgress": ".tint-bootstrap/test262-assignment-phase2-v1.json",
+    "logicalAssignment": "Complete inherited selection already passes 132/132; retained in phase 1."
+  }
+}
