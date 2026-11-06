@@ -469,6 +469,11 @@ helper attributes V8 sampling intervals to the innermost compiler stage and keep
 GC and synchronous child-process waits separate. Sampled intervals are elapsed
 time, not process CPU accounting.
 
+The [historical corpus refresh](results/native-journal-throughput-v3.md) separates
+compiled execution batches from syntax and fast rejected compilations. It also
+excludes exact copied journals before aggregation; distinct overlapping runs
+remain separate workload observations.
+
 For generated-code work, profile native execution separately from the Node build
 host. The [native workload attribution](results/native-hot-functions-v2.md)
 retains symbolized stage-2 compiler, addition, division and eval/catch samples.
