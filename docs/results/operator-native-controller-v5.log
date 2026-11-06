@@ -1,0 +1,11 @@
+{"event":"lease-wait","state":"turn:central-language","at":"2026-11-06T14:18:35.572Z"}
+{"event":"lease-wait","state":"turn:reference-keys","at":"2026-11-06T14:21:21.877Z"}
+{"event":"lease-acquired","purpose":"Test262 language/expressions/multiplication batch 1","turn":{"owner":"operator","pids":[58998,85897],"remaining":1,"setBy":"reference-keys release","at":"2026-11-06T14:21:28.489Z"},"at":"2026-11-06T14:21:28.889Z"}
+{"event":"grant","purpose":"Test262 language/expressions/multiplication batch 1","protocol":"operator-native-v5 (lease+turn+known-owner serial pause, or keeper-verified lease-only; one batch per grant)","serialOwner":{"name":"language-core","parent":19496,"entry":"node-toolchain-module-await-assignment-v1/tools/test262-native-run.ts","request":"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause","ackPid":87092},"acknowledgedAt":"2026-11-06T14:21:31.967Z","at":"2026-11-06T14:21:31.967Z"}
+{"event":"batch-start","family":"multiplication","batch":{"id":1,"variants":15,"kind":"execution","outcome":"compiled"},"at":"2026-11-06T14:21:31.967Z"}
+{"event":"serial-ack-clearing-retaining-lease","request":"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause","at":"2026-11-06T14:21:43.906Z"}
+{"event":"serial-pause-cleared","request":"/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/language-core-conformance.pause","at":"2026-11-06T14:21:44.008Z"}
+{"event":"turn-passed","to":"annexb-closure","at":"2026-11-06T14:21:44.009Z"}
+{"event":"family-result","family":"multiplication","totals":{"total":79,"passed":79,"failed":0,"unsupported":0,"timeouts":0,"harnessErrors":0,"crashes":0,"passFraction":1},"checks":{"total":true,"observations":true,"source":true,"identity":true,"fresh":true,"clean":true,"adapter":"native-script-v19-managed-templates"},"result":{"exitStatus":"unobservable (adopted orphaned runner 85897)"},"at":"2026-11-06T14:21:44.511Z"}
+{"event":"lease-wait","state":"turn:annexb-closure","at":"2026-11-06T14:24:17.561Z"}
+{"event":"lease-wait","state":"turn:iterator","at":"2026-11-06T15:02:01.879Z"}

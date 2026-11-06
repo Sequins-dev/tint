@@ -1,0 +1,55 @@
+{
+  "kind": "interrupted-native-selection",
+  "selection": "language/expressions/division",
+  "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/test262-operator-division-current-v5.jsonl",
+  "observedVariants": 0,
+  "compiledVariants": 64,
+  "boundary": {
+    "pid": 74602,
+    "state": "between-variants"
+  },
+  "reason": "Coordinator directive replaces obsolete lease controller with direct frozen runners; original journal retained for schema-2 resume.",
+  "controllerPid": 58998,
+  "runnerPid": 74602,
+  "secondaryCommit": "25103bfb4d356d5756430d518be109548f8ef69d",
+  "secondaryDisposition": "git cherry reports patch equivalent; primary already includes 16f9b81",
+  "retainedArtifacts": [
+    {
+      "path": "docs/results/operator-v5-interrupted-journal.jsonl",
+      "sha256": "f62bbb0e7d1c3161463ec5fdc3922cb82b9abb53cd40d52f583695fa6c0ceba8"
+    },
+    {
+      "path": "docs/results/operator-native-controller-v5.log",
+      "sha256": "254efe97e0b5b9953ff5581b7926e33dacfb7fda96975f3eb41ca49d5b4fd440"
+    }
+  ],
+  "recordedAt": "2026-11-06T15:13:33.425495+00:00",
+  "status": "interrupted; no variants executed; not a complete selection",
+  "controllerObservation": "Division first batch compiled at 14:24 UTC; journal unchanged through inherited inspection, controller log waited on obsolete rotation turn. Runner acknowledged between-variants and had no children before SIGTERM.",
+  "queuedButNotStarted": [
+    "modulus",
+    "left-shift",
+    "right-shift",
+    "unsigned-right-shift",
+    "bitwise-and",
+    "bitwise-or",
+    "bitwise-xor",
+    "bitwise-not",
+    "less-than-or-equal",
+    "greater-than",
+    "greater-than-or-equal",
+    "does-not-equals",
+    "strict-equals",
+    "strict-does-not-equals",
+    "unary-plus",
+    "unary-minus",
+    "logical-not",
+    "typeof",
+    "void",
+    "postfix-increment",
+    "postfix-decrement",
+    "prefix-increment",
+    "prefix-decrement"
+  ],
+  "phase1Disposition": "Stuck inherited run interrupted at a safe boundary under PHASE 1 FIRST. No new selections started. Resume division using the frozen identity and retained schema-2 journal in Phase 2; do not claim queued selections ran."
+}
