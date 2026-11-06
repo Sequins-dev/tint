@@ -1,0 +1,62 @@
+{
+  "kind": "native-selection-adoption-harvest",
+  "conformance": true,
+  "wholeSuite": false,
+  "selection": "annexB/language/eval-code/direct",
+  "report": "docs/results/test262-annexb-closure-annexB-language-eval-code-direct-v3.json",
+  "journal": "docs/results/test262-annexb-closure-annexB-language-eval-code-direct-v3.jsonl",
+  "stderr": "docs/results/test262-annexb-closure-annexB-language-eval-code-direct-v3.json.log",
+  "reportSha256": "b82e01336a8202b533f4e6ce3bea7a006fac74c317c2c2ff0784fccaa4b8cadd",
+  "journalSha256": "f50f7b08a23b933cabe919dcf749b5fa501fed462fc6e62d85b8439e4536d187",
+  "sourceSnapshot": {
+    "sha256": "da3801b4ef587f71b83e44cf92c994be989f7ec82bca425e816d2c6ccc582c60",
+    "files": 568
+  },
+  "frozenToolchainSha256": "043aaa0a56732dbd5ceacf0264e74036e786a35da867943d37860098ae1e5044",
+  "totals": {
+    "total": 310,
+    "passed": 309,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9967741935483871
+  },
+  "verification": {
+    "completeJournal": true,
+    "canonicalMatchesJournal": true,
+    "uniqueVariants": 310,
+    "sourceAndHarnessHashesMatchPinnedCheckout": true,
+    "frozenSourceAndToolchainMatch": true
+  },
+  "adoption": {
+    "originalController": 53873,
+    "originalRunner": 97757,
+    "controllerFailure": "docs/results/annexb-closure-controller-interruption-v1.json",
+    "action": "Removed only the worktree-local between-variant pause; same child, journal and frozen toolchain continued in place. No retry.",
+    "inheritedProcessesRemaining": [],
+    "orphanExitStatus": null,
+    "exitEvidence": "Process absent; complete journal and canonical stdout report emitted. Orphan process exit status was not available."
+  },
+  "nonPasses": [
+    {
+      "path": "annexB/language/eval-code/direct/var-env-lower-lex-catch-non-strict.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcomeKind": "timeout",
+      "detail": "Timeout after confirmed initial stop under unchanged 300000 ms containment."
+    }
+  ],
+  "blocker": {
+    "path": "annexB/language/eval-code/direct/var-env-lower-lex-catch-non-strict.js",
+    "reason": "Native completion was not established within 300000 ms. The source performs eight direct evals in a catch block. Sampling returned no native stack frames; process snapshots showed increasing CPU time. Exact compiler/runtime subphase remains unlocalized.",
+    "hostLoadAfterRun": [
+      51.71,
+      40.48,
+      29.44
+    ],
+    "nextStep": "Retain this timeout. Once host load is normal, recheck this one case separately under a new frozen toolchain from current main, runner slot, 30000 ms heartbeat and 150000 ms stall diagnostic. Instrument per-eval compilation if it remains slow. No new selection started in Phase 1."
+  },
+  "scope": "Full inherited selection only. Earlier prefix and failed controller are retained separately; no conformance outcomes combined across runs."
+}

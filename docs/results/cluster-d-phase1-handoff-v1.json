@@ -1,0 +1,124 @@
+{
+  "kind": "cluster-phase1-handoff",
+  "cluster": "D (Eval and Annex B)",
+  "branch": "fix/direct-eval-closure-resolution",
+  "base": "ee8713721aa453a6b04e8d33343d8172a303e194",
+  "mergeReadyRange": "main..fix/direct-eval-closure-resolution",
+  "implementationCommits": {
+    "original": [
+      "bd4b484",
+      "c597fd0"
+    ],
+    "rebased": [
+      "8121335",
+      "4ee3711"
+    ]
+  },
+  "selections": [
+    {
+      "selection": "language/eval-code/direct",
+      "totals": {
+        "total": 336,
+        "passed": 336,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-language-direct-eval-current-v1.json"
+    },
+    {
+      "selection": "annexB/language/eval-code/direct",
+      "totals": {
+        "total": 310,
+        "passed": 309,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 1,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9967741935483871
+      },
+      "report": "docs/results/test262-annexb-closure-annexB-language-eval-code-direct-v3.json"
+    }
+  ],
+  "nativeFixtures": {
+    "passed": 53,
+    "total": 53,
+    "conformance": false,
+    "reports": [
+      "docs/results/annexb-closure-direct-eval-closure-validation-v3.json",
+      "docs/results/annexb-closure-direct-eval-annex-validation-v3.json",
+      "docs/results/annexb-closure-arguments-scope-validation-v3.json"
+    ]
+  },
+  "retainedNonPasses": [
+    {
+      "path": "annexB/language/eval-code/direct/var-env-lower-lex-catch-non-strict.js",
+      "status": "timeout",
+      "blocker": "Native completion not established within original 300000 ms after confirmed initial stop; host load at end 51.71. Compiler/runtime subphase not localized.",
+      "nextStep": "Separate single-case recheck after load normalizes, fresh frozen toolchain, runner slot, heartbeat 30000 ms, stall diagnostic 150000 ms. See harvest for exact evidence.",
+      "evidence": "docs/results/annexb-closure-native-harvest-v4.json"
+    }
+  ],
+  "retainedControllerFailure": {
+    "exitStatus": 1,
+    "evidence": "docs/results/annexb-closure-controller-interruption-v1.json",
+    "recovery": "Same orphan child resumed by removing its worktree-local between-variant pause. No outcome retried."
+  },
+  "validation": [
+    {
+      "command": "~/.t3/tint-slots/tint-check (Node v24.12.0)",
+      "exitStatus": 0,
+      "tests": 4504,
+      "passed": 4504,
+      "evidence": "docs/results/annexb-closure-phase1-integrated-validation-v3.json"
+    },
+    {
+      "command": "Verify moved direct-eval report identities and pinned hashes",
+      "exitStatus": 0,
+      "variants": 336,
+      "evidence": "docs/results/language-direct-eval-moved-report-verification-v1.json"
+    },
+    {
+      "command": "Verify canonical Annex B report against complete journal, frozen identity and pinned hashes",
+      "exitStatus": 0,
+      "variants": 310,
+      "evidence": "docs/results/annexb-closure-native-harvest-v4.json"
+    },
+    {
+      "command": "Compare integrated 220-module bootstrap graph and AST to accepted self-building compiler",
+      "exitStatus": 0,
+      "evidence": "docs/results/annexb-closure-bootstrap-graph-integrated-node-v2.json"
+    },
+    {
+      "command": "git diff --cached --check",
+      "exitStatus": 0
+    }
+  ],
+  "selfBuild": {
+    "mode": "Existing accepted byte-identical native self-build reused; no new self-build run",
+    "reason": "The complete 220-module compiler graph and AST are unchanged. Changed runtime/lowering sources lie outside that graph; 53 bespoke native cases exercise them.",
+    "accepted": "docs/results/json-await-native-compiler-acceptance-v1.json",
+    "stageImageComparison": "docs/results/bootstrap-json-await-chains-v1.json",
+    "artifactChecks": "docs/results/json-await-chains-selfbuild-artifact-validation-v1.json"
+  },
+  "inheritedUntrackedFiles": "All three specified eval result files moved from main, verified and committed; none discarded.",
+  "inheritedProcessesRemaining": [],
+  "worktreesSafeToRemoveNow": [],
+  "retainedWorktrees": [
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ab259366",
+      "reason": "Primary branch awaiting coordinator merge."
+    },
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8ed2e4e5",
+      "branch": "fix/annexb-eval-copy-target-on-6a2b7aa",
+      "reason": "All four commits patch-equivalent to main (git cherry reports minus for each); frozen toolchain still retained for A1 per brief. Do not delete until coordinator confirms dependency ended."
+    }
+  ],
+  "phase2": "No new selections started. Indirect eval, other Annex B selections, built-ins/eval, built-ins/Function and remaining eval-dependent cases remain deferred.",
+  "delivery": "No main-checkout edits beyond the three authorized mv operations, no push and no merge performed."
+}

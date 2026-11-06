@@ -151,7 +151,6 @@ Each row retains its own frozen source; these totals are not a combined current 
 | `annexB/language/expressions`             |          43/43 | [Report](results/test262-annexb-expressions-native-v1.json)           |
 | `annexB/language/global-code`             |        153/153 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
 | `annexB/language/statements`              |          41/41 | [Report](results/test262-annexb-statements-native-v2.json)            |
-| `language/eval-code/direct`              |        336/336 | [Report](results/test262-language-direct-eval-current-v1.json) |
 | `built-ins/ArrayBuffer`                   |        442/442 | [Report](results/test262-arraybuffer-shared-native-v2.json)           |
 | `built-ins/ArrayIteratorPrototype`        |          46/46 | [Report](results/test262-array-iterator-family-native-v2.json)        |
 | `built-ins/BigInt`                        |        154/154 | [Report](results/test262-bigint-family-native-v2.json)                |
@@ -173,6 +172,7 @@ Each row retains its own frozen source; these totals are not a combined current 
 | `intl402/ListFormat`                      |        162/162 | [Report](results/test262-list-format-native-v1.json)                  |
 | `intl402/Number`                          |          14/14 | [Report](results/test262-number-locale-intl-native-v3.json)           |
 | `intl402/RelativeTimeFormat`              |        160/160 | [Report](results/test262-relative-time-native-v1.json)                |
+| `language/eval-code/direct`              |        336/336 | [Report](results/test262-language-direct-eval-current-v1.json) |
 
 ### Measured families with remaining work
 
@@ -186,7 +186,7 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`intl402/PluralRules`](results/test262-plural-rules-native-v1.json)                                                |     104 / 106 (98.11%) | 2 shared harness failures: missing Intl service constructors                                              |
 | [`annexB/built-ins/RegExp`](results/test262-annexb-regexp-native-v2.json)                                           |     120 / 124 (96.77%) | 4 unsupported                                                                                             |
 | [`annexB/language/function-code`](results/test262-annexb-function-code-current-v3.json)                             |     158 / 159 (99.37%) | 1 failure: pinned implicit-arguments expectation predates current B.3.2.1                                 |
-| [`annexB/language/eval-code/direct`](results/test262-annexb-eval-copy-annexB-language-eval-code-direct-v2.json)     |     254 / 310 (81.94%) | 56 unsupported ([analysis](results/annexb-eval-copy-direct-unsupported-analysis-v1.json)); no failures    |
+| [`annexB/language/eval-code/direct`](results/test262-annexb-closure-annexB-language-eval-code-direct-v3.json) | 309 / 310 (99.68%) | 1 native timeout after entry; 0 unsupported ([harvest and blocker](results/annexb-closure-native-harvest-v4.json)) |
 | [`language/module-code/ambiguous-export-bindings`](results/test262-module-ambiguous-export-bindings-native-v1.json) |        9 / 10 (90.00%) | 1 unsupported source-phase import; no failures, crashes or timeouts                                       |
 | [`language/global-code`](results/test262-global-code-direct-eval-native-v1.json)                                    |       74 / 75 (98.67%) | 1 pre-entry debugger timeout; no failures or unsupported                                                  |
 | [`built-ins/AsyncDisposableStack`](results/test262-async-disposable-stack-native-v1.json)                           |     206 / 208 (99.04%) | 2 unsupported                                                                                             |
