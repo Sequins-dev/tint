@@ -373,6 +373,38 @@ test("primitive boxes use pointer ABI slots and traced record fields", () => {
     index: 4,
   });
 });
+function liveLocalFrame(count: number): ModuleIR {
+  // Explicit stores keep the wide-addressing case after unused-slot cleanup.
+  return {
+    functions: [
+      {
+        id: 0,
+        name: "large",
+        exported: true,
+        parameters: [],
+        slots: Array.from({ length: count }, () => "number"),
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 7, ...span },
+              ...Array.from({ length: count }, (_, slot) => ({
+                kind: "store" as const,
+                slot,
+                value: 0,
+                ...span,
+              })),
+              { kind: "load", id: 1, slot: count - 1, ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  };
+}
 function fixture(): ModuleIR {
   return {
     functions: [
@@ -461,11 +493,7 @@ test("remainder emits a shared helper and large frames use indirect addressing",
       "shared helper calls must use full-range addressing",
     );
   }
-  const large = emitModule({
-    functions: [
-      { ...f, slots: Array.from({ length: 4096 }, () => "number" as const) },
-    ],
-  });
+  const large = emitModule(liveLocalFrame(4096));
   assert.ok(large.ok, JSON.stringify(large));
   assert.ok(large.value.functions[0]!.frameBytes > 32752);
 });
@@ -1116,41 +1144,10 @@ test("subarray allocation roots the owner and result without tracing bounds", ()
 });
 
 test("frames larger than one immediate retain addressable local storage", () => {
-  const module: ModuleIR = {
-    functions: [
-      {
-        id: 0,
-        name: "large",
-        exported: true,
-        parameters: [],
-        slots: Array.from({ length: 600 }, () => "number"),
-        returnType: "number",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "constant", id: 0, value: 7, ...span },
-              { kind: "store", slot: 599, value: 0, ...span },
-              { kind: "load", id: 1, slot: 599, ...span },
-            ],
-            terminator: { kind: "return", value: 1, ...span },
-          },
-        ],
-      },
-    ],
-  };
-  const r = emitModule(module);
+  const r = emitModule(liveLocalFrame(600));
   assert.ok(r.ok, JSON.stringify(r));
   assert.ok(r.value.functions[0]!.frameBytes > 4096);
-  const excessive: ModuleIR = {
-    ...module,
-    functions: module.functions.map((f) => ({
-      ...f,
-      slots: Array.from({ length: 4096 }, () => "number"),
-    })),
-  };
-  const expanded = emitModule(excessive);
+  const expanded = emitModule(liveLocalFrame(4096));
   assert.ok(expanded.ok, JSON.stringify(expanded));
   assert.ok(expanded.value.functions[0]!.frameBytes > 32752);
 });

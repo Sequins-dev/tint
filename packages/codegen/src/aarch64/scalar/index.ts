@@ -106,6 +106,7 @@ import {
   type ScalarType,
   type Span,
 } from "@tint/ir/scalar";
+import { compactSlots } from "@tint/ir/optimization";
 import {
   patchBranch,
   patchRelativeAddress,
@@ -699,6 +700,14 @@ export function emitModule(
         span = { start: operation.start, end: operation.end };
       fail("INVALID_IR", error.message);
     }
+    // Optional scalar optimization can exhaust its module budget before slot
+    // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
+    // Normalize before slot-indexed analyses; a bounded failure keeps the input.
+    const frameFunctions = module.functions.map(
+      (fn) => compactSlots(fn, 1000000)?.fn ?? fn,
+    );
+    if (frameFunctions.some((fn, index) => fn !== module.functions[index]))
+      module = { ...module, functions: frameFunctions };
     const managedABI = options.managedABI;
     if (managedABI !== undefined) {
       if (managedABI.version !== 1)
