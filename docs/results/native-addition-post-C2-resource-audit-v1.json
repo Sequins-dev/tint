@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-selection-diagnostic-resource-audit",
+  "nativeReport": "native-addition-post-C2-resource-audit-v1-native-report.json",
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/source-snapshot.json",
+    "sha256": "de3a79af18c67a2095ab1cac8c4044fb6bfe11c7f4e09b61536a37ba10b8e9cf"
+  },
+  "nativeRunIdentity": "5836e6f6707c5ee1ac6dcd1c21e60929d676c8f05e7aa96a008922ec8632b3ff",
+  "sourceSnapshot": {
+    "sha256": "57d40829b280e7432424eb41fe40ecd4646e74898f7d6997c5f4a048eaab0625",
+    "files": 568
+  },
+  "runnerExit": {
+    "startedUTC": "2026-11-06T22:10:55.958Z",
+    "endedUTC": "2026-11-06T22:54:16.853Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "args": [
+      "runner",
+      "8",
+      "--",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-post-C2-toolchain-v7/tools/test262-native-run.ts",
+      "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+      "language/expressions/addition/S11.6.1_A1.js",
+      "64"
+    ],
+    "status": 0,
+    "signal": null
+  },
+  "selection": "language/expressions/addition/S11.6.1_A1.js",
+  "totals": {
+    "pass": 0,
+    "total": 2,
+    "preEntryCrash": 1,
+    "postEntryTimeout": 1,
+    "semanticFailure": 0,
+    "unsupported": 0
+  },
+  "recordedTimeoutMs": 60000,
+  "intendedTimeoutMs": 300000,
+  "configurationMismatch": "P launcher did not set the actual TINT_TEST262_CONTAINMENT_MS variable. The run used the documented default 60000 ms. This observation cannot establish equivalence or regression against the earlier 300000 ms selection.",
+  "nativeCPU": [
+    {
+      "kind": "inferior-finished",
+      "pid": 62200,
+      "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-rrp4Ln/test 1",
+      "cpuMsLowerBound": 24404.160666666667,
+      "finalUnobservedWallBoundMs": 101.038666,
+      "scope": "Process CPU including loader; final poll wall gap bounds missing CPU. Debugger outcome remains in the native report.",
+      "utc": "2026-11-06T22:54:16Z"
+    }
+  ],
+  "observerAudit": {
+    "discardedNonInferiorCPURecords": 2,
+    "reason": "The v1 observer matched LLDB arguments containing the native image path as well as the executable itself. Raw events are retained. Only records whose first command token is the native /test executable are used. The v2 observer fixes this filter."
+  },
+  "compile": null,
+  "classification": "Sloppy failed before entry with pid 0/state connected; strict started and received only 24.404 seconds CPU in its 60-second budget. Native timeout is load-sensitive and inconclusive. No new native performance claim.",
+  "separateNextRun": "v3 on frozen production v9 with async connection readiness, explicit TINT_TEST262_CONTAINMENT_MS=300000, no module switch, the same default memory/code budgets, and an exact-executable CPU observer.",
+  "artifacts": {
+    "journal.jsonl": {
+      "uncompressedSha256": "bf9853d3c7ed0f87c59a5b17864c07d62032357d91e0eb8d4601189704637260",
+      "bytes": 7386
+    },
+    "runner.log": {
+      "uncompressedSha256": "0be4ade8f5f02067ddc22e55cbbb70436889075c9adac278e0d2979dfdcee77f",
+      "bytes": 51153
+    },
+    "cpu-observer.jsonl": {
+      "uncompressedSha256": "ad4f00b983e704ad50f232572f451db47dd69bd955d97cee7263967046e07b59",
+      "bytes": 105600
+    },
+    "node-compile.sample.txt": {
+      "uncompressedSha256": "6c1e63465bea596cd1a06fb2b358958591ae9ed9558138a0fd9947da47b468b8",
+      "bytes": 240637
+    }
+  }
+}
