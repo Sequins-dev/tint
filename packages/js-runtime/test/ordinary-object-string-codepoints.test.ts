@@ -7,7 +7,7 @@ const views = bindHostRecordViews();
 after(() => views.deregister());
 const objects = await import("../src/objects/index.ts");
 
-function setup() {
+function setup(methodName = "fromCodePoint") {
   const root = objects.createObject<ScriptPropertyKey, unknown>(undefined);
   const hooks: ObjectHooks<unknown> = {
     undefinedValue: undefined,
@@ -26,7 +26,7 @@ function setup() {
     root,
   );
   assert.ok(constructor);
-  const method = objects.getOwnProperty(constructor, "fromCodePoint")!.value;
+  const method = objects.getOwnProperty(constructor, methodName)!.value;
   return {
     root,
     realm,
@@ -100,4 +100,62 @@ test("String.fromCodePoint converts arguments in order and stops at abrupt compl
       fixture.realm.prototypes.get("range"),
   );
   assert.deepEqual(events, [1]);
+});
+
+test("String.fromCharCode preserves ToUint16 boundaries and lone surrogates", () => {
+  const fixture = setup("fromCharCode");
+  const points = [
+    0,
+    -0,
+    1.9,
+    -1.9,
+    65535,
+    65536,
+    65537,
+    -65537,
+    NaN,
+    Infinity,
+    -Infinity,
+    0xd800,
+    0xdfff,
+  ];
+  assert.equal(fixture.call([]), "");
+  assert.equal(fixture.call(points), String.fromCharCode(...points));
+  assert.equal(fixture.call([null, false, true, "0x41"]), "\0\0\x01A");
+});
+test("String.fromCharCode builds large BMP argument lists exactly", () => {
+  const fixture = setup("fromCharCode");
+  const points = Array.from({ length: 20000 }, (_, index) =>
+    index % 3 === 0 ? 0xd800 + (index % 0x800) : 65 + (index % 26),
+  );
+  assert.equal(fixture.call(points), String.fromCharCode(...points));
+});
+test("String.fromCharCode converts in order and stops on abrupt completion", () => {
+  const fixture = setup("fromCharCode");
+  const events: number[] = [];
+  const marker = {};
+  function argument(index: number, value: number, abrupt = false) {
+    const object = objects.createObject<ScriptPropertyKey, unknown>(
+      fixture.realm.objectPrototype,
+    );
+    const valueOf = objects.createCallableObject<ScriptPropertyKey, unknown>(
+      fixture.realm.functionPrototype,
+      () => {
+        events.push(index);
+        if (abrupt) throw marker;
+        return value;
+      },
+    );
+    objects.createDataProperty(object, "valueOf", valueOf, fixture.hooks);
+    return object;
+  }
+  assert.equal(fixture.call([argument(1, 65), argument(2, 65537)]), "A\x01");
+  assert.deepEqual(events, [1, 2]);
+  events.length = 0;
+  assert.throws(
+    () =>
+      fixture.call([argument(1, 65), argument(2, 66, true), argument(3, 67)]),
+    (error) => error === marker,
+  );
+  assert.deepEqual(events, [1, 2]);
 });
