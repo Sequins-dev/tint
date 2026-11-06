@@ -8,16 +8,28 @@ provides FIFO checkpoints; `@tint/js-runtime/promises`
 owns settlement, resolving functions, thenable assimilation and reactions.
 
 The Script host exposes Promise construction, `then`, `catch`, `finally`, `resolve`,
-`reject`, `try`, `race`, `all`, `allSettled`, `any`, `withResolvers`, `Symbol.species` and AggregateError.
+`reject`, `try`, `race`, `all`, `allSettled`, `allKeyed`, `allSettledKeyed`, `any`,
+`withResolvers`, `Symbol.species` and AggregateError.
 `Promise.try` follows the current specification: the callback runs before the
 constructor is consulted, and a normal result goes through PromiseResolve.
-Native validation covers the unchanged `built-ins/Promise/try` tests (30/30
-variants) and the job-realm cases ([try](results/promise-try-native-validation-v1.json),
-[jobs](results/promise-jobs-native-validation-v3.json)). The
-[built-ins/Promise rerun](results/test262-builtins-promise-native-v2-partial.json)
-is partial (576 of 1,458 variants observed, paused); it is not a family result.
-Combinators share iterator acquisition/closing and generic constructor capabilities.
-Native errors and result arrays use intrinsic identities rather than mutable globals.
+Native regression evidence for try and job realms is retained separately
+([try](results/promise-try-native-validation-v1.json),
+[jobs](results/promise-jobs-native-validation-v3.json)); complete conformance
+measurements live in the [Test262 dashboard](test262.md).
+Iterator combinators share iterator acquisition/closing and generic constructor
+capabilities. Native errors and result arrays use intrinsic identities rather
+than mutable globals.
+
+Keyed combinators accept objects, including functions, and visit enumerable own
+string and symbol keys. They snapshot keys once, then interleave descriptor checks
+and value reads with resolution and `then` calls. Both return a null-prototype
+aggregate; `allSettledKeyed` puts ordinary status records in that aggregate.
+Constructor validation precedes the single `resolve` lookup; later abrupt
+completions reject the capability. Per-key callback guards and a sentinel count
+prevent duplicate or premature settlement. Final keyed callbacks forward a custom
+resolve function's return value. See the
+[Await Dictionary specification](https://tc39.es/proposal-await-dictionary/) and
+[bespoke native regressions](results/native-promise-keyed-validation-v3.json).
 
 Shared agents retain callback realms and enqueue-time Script/module identities.
 Promise reaction and thenable jobs enter `GetFunctionRealm(handler)`, following
