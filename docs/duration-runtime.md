@@ -24,8 +24,9 @@ clock time and retain the exact remaining epoch difference. Offset changes and
 repeated local clocks therefore cannot be reduced to civil-time subtraction.
 Calendar totals and single-unit calendar rounding share an exact fraction between
 adjacent calendar endpoints. Rounding uses integer distances and parity rather
-than first converting that fraction to Number. Mixed-unit named calendar rounding
-remains incomplete; unsupported branches fail explicitly.
+than first converting that fraction to Number. Clock-unit rounding retains calendar
+prefixes and carries expanded results through actual zone boundaries. Non-ISO
+calendar conversion remains explicitly unsupported.
 
 ## String precision
 

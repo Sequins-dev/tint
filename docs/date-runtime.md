@@ -94,8 +94,9 @@ clamps to Instant bounds, floors before exact nanosecond multiplication, and all
 Instant in the method's realm. It shares exact conversion with Date-to-Instant
 and Instant.fromEpochMilliseconds. The [controlled-clock native fixture](results/native-temporal-now-clock-v2.json)
 passes, including clamping and unavailable-capability handling; the complete
-[instant selection](results/test262-temporal-now-instant-native-v1.json) passes 18/18. Other Now methods, including default-zone
-identification, remain unimplemented pending the named-zone adapter. Clock precision
+[instant selection](results/test262-temporal-now-instant-native-v1.json) passes 18/18. The ISO view methods and default-zone identification use the
+embedding's system-zone callback and named-zone provider. The recorded complete
+[Now selection](results/test262-temporal-now-system-host-native-v1.json) passes 132/132. Clock precision
 can increase without changing those object-allocation or conversion contracts.
 The host clock contract follows [HostSystemUTCEpochNanoseconds](https://tc39.es/proposal-temporal/#sec-hostsystemutcepochnanoseconds).
 
@@ -111,8 +112,9 @@ internal slots; calendar conversion reads those slots rather than public getters
   calendar/time-duration arithmetic and conversion to zoned time.
 - **Duration:** exact aggregate range validation, common-sign fields, negation,
   absolute value, ISO string/property-bag conversion, partial replacement and default
-  formatting, context-free day/clock addition/subtraction, relative comparison and
-  exact unit totals. Duration.round remains incomplete.
+  formatting, context-free day/clock addition/subtraction, relative comparison,
+  exact unit totals and relative rounding through shared calendar/zoned difference
+  primitives. Non-ISO calendar conversion remains unsupported.
 - **PlainDateTime:** ISO constructor, nanosecond clock fields, range validation,
   subclassing, string/property-bag/Temporal conversion, comparison and calendar/time
   arithmetic, partial-field/clock replacement, day/clock rounding, precision/calendar-name
@@ -152,14 +154,14 @@ internal slots; calendar conversion reads those slots rather than public getters
   values and ISO property bags; comparison uses exact epochs, while equality also
   compares canonical zone identifiers. Property-bag reads and coercions follow
   field order before options and calendar/clock regulation. Offset use/ignore/
-  prefer/reject policies share the fixed-zone interpretation path.
-  Named zones require a future time-zone database adapter; syntactically valid
-  named-zone requests are explicitly unsupported. Zoned formatting controls precision,
+  prefer/reject policies share the zone interpretation path.
+  Named zones use the embedding's bounded TZif provider; unavailable data remains
+  explicitly unsupported. Zoned formatting controls precision,
   offset/time-zone display and calendar annotations, rounding the exact epoch before
   converting to local time. Display options are read in specification order.
 
 Exact arithmetic and rounding use shared `@tint/foundation/numeric/big-integer`,
-`@tint/temporal-duration` and `@tint/foundation/numeric/integer-rounding` primitives. The object
+`@tint/foundation/chrono/temporal-duration` and `@tint/foundation/numeric/integer-rounding` primitives. The object
 adapters own observable option reads, coercions, branding and range checks.
 Instant rounding follows the specification's positive-coordinate tie rules;
 clock rounding wraps a day rather than imposing Instant's epoch bounds.
@@ -197,7 +199,7 @@ Additional native regressions cover [partial zoned replacement](results/native-t
 [clock replacement and day boundaries](results/native-temporal-zoned-time-copy-green-v1.json),
 and [calendar/exact-time arithmetic](results/native-temporal-zoned-arithmetic-green-v1.json).
 
-Plain-date and date-time conversion use the existing fixed-zone resolver and
+Plain-date and date-time conversion use the shared zone resolver and
 intrinsic zoned allocation. [Date conversion](results/native-temporal-date-to-zoned-green-v1.json)
 and [date-time conversion](results/native-temporal-date-time-to-zoned-green-v1.json)
 cover observable reads, branded zones and epoch bounds. Zoned display/precision
@@ -207,8 +209,10 @@ unchanged complete selections are indexed in the Test262 dashboard.
 Clock-difference options share a validated settings record between Instant,
 PlainTime and ZonedDateTime. Zoned clock units compare exact instants across
 zones; calendar units first require matching zone identities. Equal instants
-produce zero durations, while nonzero relative-calendar differences remain
-explicitly unsupported until their calendar and rounding algorithms are implemented.
+produce zero durations. Nonzero named-zone calendar differences retain a local
+date prefix and an exact epoch remainder, with calendar and clock rounding using
+actual zone endpoints. The [named-calendar fixture](results/native-temporal-zoned-calendar-v1.json)
+passes five focused cases; these are separate from complete selection results.
 
 PlainDate differences use the shared Gregorian calendar difference primitive.
 Month/year decomposition compares unregulated anniversaries, constraining only
@@ -223,7 +227,8 @@ Complete unchanged selections remain separate conformance measurements.
 
 Duration totals share a single relativeTo conversion with branded fast paths and
 ordered calendar/clock/offset/zone property reads. Plain ISO dates use actual
-calendar spans; fixed-offset zoned values use exact epoch differences. Conversion
+calendar spans; zoned values resolve local endpoints before comparing exact
+epoch differences. Conversion
 of the resulting integer ratio to binary64 rounds once, including subnormal and
 overflow handling, using `@tint/foundation/numeric/big-integer.divideToNumber`. Its
 [native numeric fixture](results/native-integer-ratio-focused-v1.json) is separate

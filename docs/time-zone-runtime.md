@@ -1,6 +1,6 @@
 # Time-zone runtime
 
-`@tint/tzif` supplies portable transition data and local-time resolution. It owns
+`@tint/foundation/chrono/tzif` supplies portable transition data and local-time resolution. It owns
 no filesystem or default-zone selection. The pipeline is binary TZif → recorded
 transitions plus parsed POSIX future rules → offset lookup and local resolution.
 Date and Temporal adapters retain their own coercion, fractional precision and
@@ -32,7 +32,7 @@ budget are recorded in execution resources. Node only generates the executable;
 zone data is loaded and evaluated by native output. Missing data leaves the
 capability unavailable. Filesystem policy stays outside the portable model.
 
-`@tint/time-zone-identifiers` extracts Zone and Link records from zic metadata,
+`@tint/foundation/chrono/time-zone-identifiers` extracts Zone and Link records from zic metadata,
 resolves chains and preserves case-correct identifiers separately from terminal
 data targets. It rejects duplicate names, cycles, missing targets and unsafe paths.
 The [Node system index inventory](results/time-zone-identifier-system-index-node-v1.json)
@@ -82,9 +82,12 @@ intrinsic allocation, clock precision and conversion-before-clock ordering. Its
 [missing-host observation](results/native-temporal-named-host-red-v1.json) remains
 recorded separately. Full Test262 selection reports belong in the dashboard.
 
-Named-zone Duration relativeTo totals and nonzero calendar differences remain
-explicitly unsupported. Fixed-offset calendar differences reuse the civil-calendar
-algorithm while validating zoned rounding endpoints against Instant limits. The native Test262 host obtains the system zone from explicit TZ configuration
+Named-zone Duration relativeTo totals and nonzero calendar differences use actual
+local calendar endpoints and exact epoch remainders. The
+[named-calendar fixture](results/native-temporal-zoned-calendar-v1.json) covers
+variable-length days, totals and rounding. Fixed-offset calendar differences reuse
+the civil-calendar algorithm while validating zoned rounding endpoints against
+Instant limits. The native Test262 host obtains the system zone from explicit TZ configuration
 or the /etc/localtime symlink, then validates it through the database and primary
 identifier policy. Equal TZif bytes never determine identity. The
 [native system-host fixture](results/native-temporal-now-system-host-v1.json) and
