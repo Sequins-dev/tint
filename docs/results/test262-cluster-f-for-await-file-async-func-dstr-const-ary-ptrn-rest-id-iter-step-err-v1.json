@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/for-await-of/async-func-dstr-const-ary-ptrn-rest-id-iter-step-err.js",
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/node-toolchain-cluster-f-for-await-of-statements-v1/source-snapshot.json",
+  "frozenToolchainSha256": "9cadd25621435ced6d92c78fe69a216dea726339fb133887edacd0bdc9492da5",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/cluster-f-for-await-completed-files-prefix-v5.jsonl",
+    "journalSha256": "418afe03e86fa1f568581f1c08bad3b9a09af3d51735a11935d32c2c05d37813",
+    "journalBytes": 820952,
+    "observedVariants": 562
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 8,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 488535.1092079999,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-const-ary-ptrn-rest-id-iter-step-err.js",
+      "sha256": "0d829eba9553a35024bdda9a77a4445f8f49f81ab7d3cc63143eb26f5c990f79",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 495443.6465830002,
+      "batch": 8
+    },
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-const-ary-ptrn-rest-id-iter-step-err.js",
+      "sha256": "0d829eba9553a35024bdda9a77a4445f8f49f81ab7d3cc63143eb26f5c990f79",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "generators",
+          "destructuring-binding",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 497661.13737499993,
+      "batch": 8
+    }
+  ]
+}
