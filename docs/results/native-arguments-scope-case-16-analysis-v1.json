@@ -1,0 +1,27 @@
+{
+  "kind": "native-fixture-failure-analysis",
+  "conformance": false,
+  "validation": "native-arguments-scope-validation-v1.json",
+  "caseReport": "native-arguments-scope-case-16-v1.json",
+  "selectedCase": 16,
+  "imageSha256": "15211714b37427ea8b1fb42f73ded8b165dde73da6848fb0e870b36ffb277934",
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "observation": "LLDB confirmed the initial stop; the inferior then exited with the runtime-error status (post-entry semantic failure, not a launch failure). Not retried.",
+  "source": "function f(){try{throw 1;}catch(g){eval(\"{ function g(){return 3;} }\");var inner=g;}return[inner,typeof g];}",
+  "expected": "[1, \"function\"]",
+  "specification": {
+    "url": "https://tc39.es/ecma262/multipage/global-object.html#sec-evaldeclarationinstantiation",
+    "rule": "EvalDeclarationInstantiation step 13 (Normative Optional block-level functions): the bindingExists walk skips the Catch clause Environment Record when VariableStatements in Catch Blocks (B.3.4) is supported, so a var binding is created in the function VariableEnvironment and FunctionDeclaration evaluation performs variableEnv.SetMutableBinding with the block function.",
+    "nodeReference": "Node v24.12.0 produces [1, \"function\"]."
+  },
+  "rootCause": {
+    "owner": "js-engine lowering (packages/js-engine/src/lowering/**), forwarded to delegate-task 3d441c25-b2ee-47f3-b8fb-6745b7a6b06e",
+    "detail": "For entryKind direct-eval the top-level annexVariableRecord is undefined, so the Annex B copy lowers to setGlobalBinding($global, ...). The runtime admission (instantiateDirectEvalDeclarations) correctly exempts the catch record and creates g in the caller variable record, but evaluation writes the global object instead: the function-scope binding stays undefined and the function leaks onto globalThis.",
+    "staticProbe": "lowerDirectEvalScript(\"{ function g(){ return 3; } }\", flags=directEvalInFunction) emits getBindingValue + setGlobalBinding and no setMutableBinding on $site.variables.declarative."
+  },
+  "runtimeOwnedCode": "packages/js-runtime/src/environments/global/eval-declarations.ts admission is correct for this case; no runtime change.",
+  "status": "open; native acceptance of the 20-case fixture remains false until the lowering fix and a rerun"
+}
