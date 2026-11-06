@@ -2067,6 +2067,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/shared-memory-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-waiters.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/tracing/collector.ts",
       packageId: "native-runtime",
     },

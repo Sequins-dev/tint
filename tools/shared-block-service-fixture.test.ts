@@ -12,7 +12,7 @@ for (const [builderPath, factories] of [
   ],
 ] as const)
   test(`${builderPath} closes every trusted factory capability explicitly`, () => {
-    const servicePath = "packages/native-runtime/src/shared-blocks.ts";
+    const servicePath = "packages/native-runtime/src/shared-memory-host.ts";
     const service = ts.createSourceFile(
       servicePath,
       readFileSync(servicePath, "utf8"),

@@ -1,0 +1,342 @@
+import type { SharedResult } from "@tint/js-runtime/bytes/shared";
+import { parkNativeWord, wakeNativeWord } from "./intrinsics/memory.ts";
+import {
+  integer,
+  readNumber,
+  writeNumber,
+  compareNumber,
+  type NativeSharedMemoryHost,
+  type NativeSharedBlockRegistry,
+} from "./shared-memory-host.ts";
+
+/** Raw cells remain mapped through engine shutdown. Each facade and its scratch
+ * belong to one managed context; only scalar table contents cross agents. */
+export interface NativeWaiterParkingHost {
+  park(address: number, expected: number, timeoutNanoseconds: number): number;
+  wake(address: number): number;
+}
+export function nativeWaiterParkingHost(): NativeWaiterParkingHost {
+  return {
+    park: (address, expected, timeout): number =>
+      parkNativeWord(address, expected, timeout),
+    wake: (address): number => wakeNativeWord(address, 0),
+  };
+}
+export interface NativeWaitLocation {
+  readonly engineId: number;
+  readonly blockId: number;
+  /** Trusted stable backing grant, obtained after view validation. Never a heap. */
+  readonly address: number;
+  readonly byteLength: number;
+  readonly byteOffset: number;
+  readonly width: 4 | 8;
+}
+export type NativeWaitState = "waiting" | "notified" | "timed-out";
+export interface NativeWaitRegistration {
+  readonly state: NativeWaitState | "not-equal";
+  /** Zero for immediate results; otherwise a never-reissued registration token. */
+  readonly ticket: number;
+}
+export interface NativeWaitRegistry {
+  readonly registry: NativeSharedBlockRegistry;
+  register(
+    location: NativeWaitLocation,
+    lo: number,
+    hi: number,
+    zeroTimeout: boolean,
+  ): SharedResult<NativeWaitRegistration>;
+  notify(
+    blockId: number,
+    offset: number,
+    width: 4 | 8,
+    count: number,
+  ): SharedResult<number>;
+  poll(ticket: number): SharedResult<NativeWaitState>;
+  expire(ticket: number): SharedResult<boolean>;
+  take(ticket: number): SharedResult<NativeWaitState>;
+  park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;
+}
+const MAGIC = 0x54575231,
+  HEADER = 64,
+  ROW = 48;
+// Header: lock, magic, capacity, next ticket, engine. Row: state, ticket,
+// block identity, absolute byte offset. Width never participates in queue identity.
+const LOCK = 0,
+  MAGIC_AT = 8,
+  CAPACITY = 16,
+  NEXT = 24,
+  ENGINE = 32;
+const STATE = 0,
+  TICKET = 8,
+  BLOCK = 16,
+  OFFSET = 24;
+function word(value: number): boolean {
+  return integer(value) && value <= 4294967295;
+}
+export function createNativeWaitRegistry(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  engineId: number,
+  capacity: number,
+): SharedResult<NativeWaitRegistry> {
+  if (
+    !integer(engineId) ||
+    engineId === 0 ||
+    !integer(capacity) ||
+    capacity < 1 ||
+    capacity > 65536
+  )
+    return { ok: false, error: "invalid-length" };
+  const length = Math.ceil((HEADER + capacity * ROW) / 16384) * 16384;
+  const base = host.mapMemory(length);
+  if (!integer(base) || base <= 0 || base % 8 !== 0 || !integer(base + length))
+    return { ok: false, error: "allocation-limit" };
+  const registry = { base, byteLength: length, engineId };
+  writeNumber(host, registry, CAPACITY, capacity);
+  writeNumber(host, registry, ENGINE, engineId);
+  writeNumber(host, registry, MAGIC_AT, MAGIC);
+  return { ok: true, value: facade(host, parking, registry, capacity) };
+}
+export function attachNativeWaitRegistry(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+): SharedResult<NativeWaitRegistry> {
+  if (
+    !integer(registry.base) ||
+    registry.base <= 0 ||
+    registry.base % 8 !== 0 ||
+    !integer(registry.byteLength) ||
+    registry.byteLength < HEADER ||
+    !integer(registry.engineId) ||
+    registry.engineId === 0
+  )
+    return { ok: false, error: "invalid-handle" };
+  const scratch = new Uint32Array(2);
+  const capacity = readNumber(host, registry, CAPACITY, scratch);
+  if (
+    readNumber(host, registry, MAGIC_AT, scratch) !== MAGIC ||
+    readNumber(host, registry, ENGINE, scratch) !== registry.engineId ||
+    capacity < 1 ||
+    capacity > 65536 ||
+    HEADER + capacity * ROW > registry.byteLength
+  )
+    return { ok: false, error: "invalid-handle" };
+  return { ok: true, value: facade(host, parking, registry, capacity) };
+}
+function facade(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  capacity: number,
+): NativeWaitRegistry {
+  function lock(scratch: Uint32Array): void {
+    while (compareNumber(host, registry, LOCK, 0, 1, scratch) !== 0)
+      parking.park(registry.base + LOCK, 1, 1000000);
+  }
+  function unlock(): void {
+    writeNumber(host, registry, LOCK, 0);
+    parking.wake(registry.base + LOCK);
+  }
+  function find(ticket: number, scratch: Uint32Array): number {
+    for (let i = 0; i < capacity; i++) {
+      const row = HEADER + i * ROW;
+      if (
+        readNumber(host, registry, row + TICKET, scratch) === ticket &&
+        readNumber(host, registry, row + STATE, scratch) !== 0
+      )
+        return row;
+    }
+    return -1;
+  }
+  function state(code: number): NativeWaitState {
+    if (code === 1) return "waiting";
+    if (code === 2) return "notified";
+    if (code === 3) return "timed-out";
+    throw "NATIVE_WAITER_STATE";
+  }
+  function validTicket(ticket: number): boolean {
+    return integer(ticket) && ticket > 0;
+  }
+  function register(
+    location: NativeWaitLocation,
+    lo: number,
+    hi: number,
+    zeroTimeout: boolean,
+  ): SharedResult<NativeWaitRegistration> {
+    if (
+      location.engineId !== registry.engineId ||
+      !integer(location.blockId) ||
+      location.blockId === 0
+    )
+      return { ok: false, error: "invalid-handle" };
+    const width = location.width;
+    if (width !== 4 && width !== 8)
+      return { ok: false, error: "invalid-width" };
+    if (
+      !integer(location.address) ||
+      location.address === 0 ||
+      !integer(location.byteLength) ||
+      !integer(location.byteOffset) ||
+      !integer(location.address + location.byteLength) ||
+      location.byteOffset > location.byteLength ||
+      width > location.byteLength - location.byteOffset ||
+      (location.address + location.byteOffset) % width !== 0
+    )
+      return { ok: false, error: "invalid-range" };
+    if (!word(lo) || !word(hi) || (width === 4 && hi !== 0))
+      return { ok: false, error: "invalid-value" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    let matches = false,
+      fault = false;
+    if (width === 4) {
+      const observed = host.readSharedUnsigned(
+        location.address,
+        location.byteLength,
+        location.byteOffset,
+        4,
+        1,
+      );
+      fault = observed < 0;
+      matches = observed === lo;
+    } else {
+      fault =
+        host.readSharedWord64(
+          location.address,
+          location.byteLength,
+          location.byteOffset,
+          1,
+          scratch,
+        ) !== 0;
+      matches = scratch[0] === lo && scratch[1] === hi;
+    }
+    let result: NativeWaitState | "not-equal" = "not-equal",
+      ticket = 0,
+      full = false;
+    if (!fault && matches) {
+      result = "timed-out";
+      if (!zeroTimeout) {
+        let free = -1;
+        for (let i = 0; i < capacity; i++)
+          if (
+            readNumber(host, registry, HEADER + i * ROW + STATE, scratch) === 0
+          ) {
+            free = HEADER + i * ROW;
+            break;
+          }
+        const next = readNumber(host, registry, NEXT, scratch) + 1;
+        full = free < 0 || !integer(next);
+        if (!full) {
+          ticket = next;
+          result = "waiting";
+          writeNumber(host, registry, NEXT, next);
+          writeNumber(host, registry, free + TICKET, ticket);
+          writeNumber(host, registry, free + BLOCK, location.blockId);
+          writeNumber(host, registry, free + OFFSET, location.byteOffset);
+          writeNumber(host, registry, free + STATE, 1);
+        }
+      }
+    }
+    unlock();
+    if (fault) throw "NATIVE_WAITER_PAYLOAD_READ";
+    if (full) return { ok: false, error: "allocation-limit" };
+    return { ok: true, value: { state: result, ticket } };
+  }
+  function notify(
+    block: number,
+    offset: number,
+    width: 4 | 8,
+    count: number,
+  ): SharedResult<number> {
+    if (!integer(block) || block === 0)
+      return { ok: false, error: "invalid-handle" };
+    if (width !== 4 && width !== 8)
+      return { ok: false, error: "invalid-width" };
+    if (!integer(offset) || offset % width !== 0)
+      return { ok: false, error: "invalid-range" };
+    if (count < 0 || (count !== Infinity && !integer(count)))
+      return { ok: false, error: "invalid-value" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    let notified = 0;
+    while (notified < count) {
+      let row = -1,
+        first = Infinity;
+      for (let i = 0; i < capacity; i++) {
+        const at = HEADER + i * ROW;
+        if (
+          readNumber(host, registry, at + STATE, scratch) === 1 &&
+          readNumber(host, registry, at + BLOCK, scratch) === block &&
+          readNumber(host, registry, at + OFFSET, scratch) === offset
+        ) {
+          const ticket = readNumber(host, registry, at + TICKET, scratch);
+          if (ticket < first) {
+            first = ticket;
+            row = at;
+          }
+        }
+      }
+      if (row < 0) break;
+      writeNumber(host, registry, row + STATE, 2);
+      parking.wake(registry.base + row + STATE);
+      notified++;
+    }
+    unlock();
+    return { ok: true, value: notified };
+  }
+  function inspect(
+    ticket: number,
+    consume: boolean,
+  ): SharedResult<NativeWaitState> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    const row = find(ticket, scratch);
+    const code = row < 0 ? 0 : readNumber(host, registry, row + STATE, scratch);
+    if (consume && row >= 0 && code !== 1) {
+      writeNumber(host, registry, row + TICKET, 0);
+      writeNumber(host, registry, row + STATE, 0);
+    }
+    unlock();
+    if (row < 0) return { ok: false, error: "invalid-handle" };
+    return { ok: true, value: state(code) };
+  }
+  function expire(ticket: number): SharedResult<boolean> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    const row = find(ticket, scratch);
+    const won =
+      row >= 0 && readNumber(host, registry, row + STATE, scratch) === 1;
+    if (won) {
+      writeNumber(host, registry, row + STATE, 3);
+      parking.wake(registry.base + row + STATE);
+    }
+    unlock();
+    if (row < 0) return { ok: false, error: "invalid-handle" };
+    return { ok: true, value: won };
+  }
+  function park(ticket: number, timeout: number): SharedResult<number> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    if (!integer(timeout)) return { ok: false, error: "invalid-value" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    const row = find(ticket, scratch);
+    unlock();
+    if (row < 0) return { ok: false, error: "invalid-handle" };
+    return {
+      ok: true,
+      value: parking.park(registry.base + row + STATE, 1, timeout),
+    };
+  }
+  return {
+    registry,
+    register,
+    notify,
+    poll: (ticket) => inspect(ticket, false),
+    take: (ticket) => inspect(ticket, true),
+    expire,
+    park,
+  };
+}

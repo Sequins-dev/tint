@@ -106,3 +106,15 @@ timeout, empty wake and sixteen cross-thread publication/wake races. Its
 [error-code diagnostic](results/native-word-parking-diagnostic-v1.json) retain the
 untouched-page EFAULT observation. Observable Atomics waiting remains unsupported
 until registry and owner-agent delivery are connected.
+
+The native engine now also has an explicit scalar waiter registry. Its facades
+are local managed objects; descriptors, ticket identities, location keys and
+terminal states live in raw engine-lifetime storage. Compare-and-enroll and notify
+share one registry lock. Notifications use registration order, including across
+recycled slots, and match block identity plus byte offset independently of width.
+Timeout and notification compete for one terminal state. Only the ticket owner
+consumes a terminal result, after its in-flight park has returned. Kernel wakes
+alone never complete a registration. The [native registry fixture](results/native-wait-registry-v1.json)
+checks two isolated worker facades, cross-width FIFO notification, native parking
+and timeout ownership. Script adapters and owner-agent promise delivery are still
+pending; this does not change the Test262 agent-host status above.

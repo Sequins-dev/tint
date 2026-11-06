@@ -146,10 +146,7 @@ test("atomic backing authority follows captured exports rather than current work
   const id = "packages/native-runtime/src/shared-blocks.ts";
   const input = snapshot.inputs.find((input) => input.id === id)!;
   const original = new TextDecoder().decode(input.bytes);
-  const text = original.replace(
-    "export function nativeSharedAtomicMemoryHost",
-    "function nativeSharedAtomicMemoryHost",
-  );
+  const text = original.replace("  nativeSharedAtomicMemoryHost,\n", "");
   assert.notEqual(text, original);
   const historical = {
     ...snapshot,
