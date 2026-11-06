@@ -1,0 +1,34 @@
+{
+  "kind": "cluster-j-native-regression-fixture",
+  "timestamp": "2026-11-06T21:40:20.834Z",
+  "conformance": false,
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "22f0ec733560b20a7c545916dcded28378394a01f76b62e538aa87d80a905762",
+      "files": 569
+    },
+    "imageSha256": "482fc132997af01ca718905e498cac02db2afba8d9e1dec3017ecf0945c35f3e",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-codepoints-cdZ1Ou/string-codepoints.source.ts",
+    "fixtureSha256": "e12e0b33801f37d9d8ff36ef8872b95aa9421d947e281842b5dc23d80b9ede3e",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/tools/verify-hosted-string-codepoints.ts"
+    ],
+    "generatedModulesSha256": "8a48c79679237e0179964f019447cf48feaa877532b482b3aa50068974847fb6",
+    "options": {
+      "runtimeModule": "string-codepoints-region-runtime",
+      "runtimeEntry": "initializeRuntime",
+      "managedBytes": 67108864,
+      "allocationCapacity": 1048576,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": true
+  },
+  "fixture": "\nimport {createObject,createErrorRealm,installPrimitiveIntrinsics,getOwnProperty,viewObjectValue,callObjectValue,type ObjectHooks,type ScriptPropertyKey} from \"objects\";\nexport function run():number {\n const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):unknown=>undefined};\n const root=createObject<ScriptPropertyKey,unknown>(undefined),realm=createErrorRealm(root,hooks);\n installPrimitiveIntrinsics(root,realm,hooks);\n const descriptor=getOwnProperty<ScriptPropertyKey,unknown>(root,\"String\");if(descriptor===undefined)return 1;\n const constructor=viewObjectValue(descriptor.value,realm.objectPrototype);if(constructor===undefined)return 2;\n const method=getOwnProperty<ScriptPropertyKey,unknown>(constructor,\"fromCodePoint\");if(method===undefined)return 3;\n const args:unknown[]=[];for(let i=0;i<10000;i++)args.push(65536+(i%4096));\n const result=callObjectValue(method.value,undefined,args,root);if(result.error!==\"none\")return 4;\n const text=result.value;if(typeof text!==\"string\"||text.length!==20000)return 5;\n if(text.charCodeAt(0)!==55296||text.charCodeAt(1)!==56320)return 6;\n if(text.charCodeAt(19998)!==55297||text.charCodeAt(19999)!==57103)return 7;\n return 42;\n}",
+  "outcome": {
+    "kind": "completed"
+  },
+  "elapsedMs": 6943.817291,
+  "entryAndExitPolicy": "executeNativeFile independently validates initial stopped state and accepts completed only for exit 42."
+}

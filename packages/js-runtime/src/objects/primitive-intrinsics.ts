@@ -470,19 +470,25 @@ export function installPrimitiveIntrinsics(
       "fromCodePoint",
       1,
       (receiver, args): unknown => {
-        let text = "";
+        const output = createStringBuilder();
         for (const argument of args) {
           const point = number(argument);
           if (!(point >= 0 && point <= 0x10ffff) || Math.floor(point) !== point)
             throw createRuntimeError(realm, "range");
-          if (point <= 0xffff) text += String.fromCharCode(point);
+          if (point <= 0xffff) appendString(output, String.fromCharCode(point));
           else {
             const offset = point - 0x10000;
-            text += String.fromCharCode(0xd800 + Math.floor(offset / 0x400));
-            text += String.fromCharCode(0xdc00 + (offset % 0x400));
+            appendString(
+              output,
+              String.fromCharCode(0xd800 + Math.floor(offset / 0x400)),
+            );
+            appendString(
+              output,
+              String.fromCharCode(0xdc00 + (offset % 0x400)),
+            );
           }
         }
-        return text;
+        return finishString(output);
       },
       hooks,
     ),

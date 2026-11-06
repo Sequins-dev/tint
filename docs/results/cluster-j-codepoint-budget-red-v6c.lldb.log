@@ -1,0 +1,43 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-budget-dhsbfN/codepoint-budget-red3"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-budget-dhsbfN/codepoint-budget-red3' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(60)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/port\",\"--\",\"127.0.0.1:0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(60)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.SetAsync(True)\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()\nlldb.debugger.SetAsync(False)\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\nlaunch_error = lldb.SBError()\nlaunch_succeeded = launch_process.RemoteLaunch([], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/launch.log\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/pid",'w').write(str(p.GetProcessID())); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-j-codepoint-allocation-N1wSWR/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped; print('INITIAL_STOP_CONFIRMED')
+5
+34
+INITIAL_STOP_CONFIRMED
+Process 73559 stopped
+* thread #1, stop reason = signal SIGSTOP
+       frame #0: 0x0000000106a489c0 dyld`_dyld_start
+dyld`_dyld_start:
+->  0x106a489c0 <+0>:  mov    x0, sp
+    0x106a489c4 <+4>:  and    sp, x0, #0xfffffffffffffff0
+    0x106a489c8 <+8>:  mov    x29, #0x0                 ; =0 
+    0x106a489cc <+12>: mov    x30, #0x0                 ; =0 
+Target 0: (codepoint-budget-red3) stopped.
+(lldb) continue
+Process 73559 resuming
+Process 73559 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x105aff380)
+       frame #0: 0x0000000105aff380 codepoint-budget-red3`program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059] at primitive-intrinsics.ts:482:13
+   479 	          else {
+   480 	            const offset = point - 0x10000;
+   481 	            text += String.fromCharCode(0xd800 + Math.floor(offset / 0x400));
+-> 482 	            text += String.fromCharCode(0xdc00 + (offset % 0x400));
+    	            ^
+   483 	          }
+   484 	        }
+   485 	        return text;
+Target 0: (codepoint-budget-red3) stopped.
+(lldb) bt 25
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x105aff380)
+   * frame #0: 0x0000000105aff380 codepoint-budget-red3`program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059] at primitive-intrinsics.ts:482:13
+     frame #1: 0x0000000105c9b900 codepoint-budget-red3`program:packages/js-runtime/src/objects/call.ts:closure@1577 [closure_5022] at call.ts:40:36
+     frame #2: 0x0000000105961930 codepoint-budget-red3`program:packages/js-runtime/src/objects/jobs.ts:runScriptContext [__tint_specialized_1278$5038] at jobs.ts:84:12
+     frame #3: 0x00000001059ea278 codepoint-budget-red3`program:packages/js-runtime/src/objects/errors.ts:closure@10919 [closure_3409] at errors.ts:259:14
+     frame #4: 0x0000000105958b38 codepoint-budget-red3`program:packages/js-runtime/src/objects/call.ts:callObject [__tint_specialized_1264$5021] at call.ts:40:11
+     frame #5: 0x00000001054b012c codepoint-budget-red3`program:packages/js-runtime/src/objects/values.ts:callObjectValue [@23:value:24$3446] at values.ts:137:10
+     frame #6: 0x0000000105955144 codepoint-budget-red3`program:fixture:run [@1:value:6$5014] + 5772
+     frame #7: 0x0000000105397e28 codepoint-budget-red3`program:__tint_invoke$5143 + 316
+     frame #8: 0x0000000104c00ebc codepoint-budget-red3`tint:process-entry + 2764
+

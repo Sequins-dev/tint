@@ -1,0 +1,317 @@
+Analysis of sampling from-codepoint-chunks-probe (pid 12234) every 1 millisecond
+Process:         from-codepoint-chunks-probe [12234]
+Path:            /private/var/folders/*/from-codepoint-chunks-probe
+Load Address:    0x1023f4000
+Identifier:      from-codepoint-chunks-probe
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [12218]
+Target Type:     live task
+
+Date/Time:       2026-11-07 05:15:09.828 +0800
+Launch Time:     2026-11-07 05:14:35.723 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         261.5M
+Physical footprint (peak):  261.5M
+Idle exit:                  untracked
+----
+
+Call graph:
+    795 Thread_20748474   DispatchQueue_1: com.apple.main-thread  (serial)
+      795 tint:process-entry  (in from-codepoint-chunks-probe) + 2764  [0x1023f4ebc]
+        795 program:__tint_invoke$5143  (in from-codepoint-chunks-probe) + 316  [0x102c51fd8]
+          795 program:fixture:run [@1:value:6$5014]  (in from-codepoint-chunks-probe) + 6072  [0x10326e664]  fixture:12
+            795 program:packages/js-runtime/src/objects/values.ts:callObjectValue [@23:value:24$3446]  (in from-codepoint-chunks-probe) + 344  [0x102d78698]  values.ts:137
+              795 program:packages/js-runtime/src/objects/call.ts:callObject [__tint_specialized_1264$5021]  (in from-codepoint-chunks-probe) + 7252  [0x103272378]  call.ts:40
+                795 program:packages/js-runtime/src/objects/errors.ts:closure@10919 [closure_3409]  (in from-codepoint-chunks-probe) + 1692  [0x10330a1d8]  errors.ts:259
+                  795 program:packages/js-runtime/src/objects/jobs.ts:runScriptContext [__tint_specialized_1278$5038]  (in from-codepoint-chunks-probe) + 520  [0x10327b9a4]  jobs.ts:84
+                    795 program:packages/js-runtime/src/objects/call.ts:closure@1577 [closure_5022]  (in from-codepoint-chunks-probe) + 856  [0x1035ca4b4]  call.ts:40
+                      243 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 3480  [0x1034271e8]  primitive-intrinsics.ts:481
+                      + 238 runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]  (in from-codepoint-chunks-probe) + 3404  [0x1025234b4]  copying.ts:155
+                      + ! 238 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]  (in from-codepoint-chunks-probe) + 4400  [0x1024e795c]  nursery.ts:450
+                      + !   216 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 58496  [0x1024cc67c]  nursery.ts:305
+                      + !   : 214 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe) + 784  [0x10241ea60]  scan.ts:250
+                      + !   : | 190 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 14636  [0x10241d314]  scan.ts:196
+                      + !   : | + 156 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3876  [0x102418c58]  scan.ts:77
+                      + !   : | + ! 141 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 1568  [0x102417390]  scan.ts:35
+                      + !   : | + ! : 127 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 640  [0x1024bb130]  nursery.ts:207
+                      + !   : | + ! : | 105 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 14228  [0x1024b814c]  nursery.ts:166
+                      + !   : | + ! : | + 48 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 15064  [0x1024322f4]  extent.ts:80
+                      + !   : | + ! : | + 19 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 13776  [0x102431dec]  extent.ts:79
+                      + !   : | + ! : | + ! 9 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 44  [0x10251f404]
+                      + !   : | + ! : | + ! 9 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 540  [0x10251f5f4]  copying.ts:25
+                      + !   : | + ! : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1056  [0x10251f7f8]  copying.ts:90
+                      + !   : | + ! : | + 11 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 15120  [0x10243232c]  extent.ts:56
+                      + !   : | + ! : | + 8 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 1812  [0x10242ef30]  extent.ts:30
+                      + !   : | + ! : | + ! 6 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 536  [0x10251f5f0]  copying.ts:25
+                      + !   : | + ! : | + ! 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 640,676  [0x10251f658,0x10251f67c]  copying.ts:58
+                      + !   : | + ! : | + 6 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 2224,2324  [0x10242f0cc,0x10242f130]  extent.ts:34
+                      + !   : | + ! : | + 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 1948,2176,...  [0x10242efb8,0x10242f09c,...]  extent.ts:32
+                      + !   : | + ! : | + 3 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 3548  [0x10242f5f8]  extent.ts:39
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 1616  [0x10242ee6c]  extent.ts:29
+                      + !   : | + ! : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1476  [0x10251f99c]  copying.ts:89
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 1736  [0x10242eee4]  extent.ts:30
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 13420  [0x102431c88]  extent.ts:78
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 13596  [0x102431d38]  extent.ts:81
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 16016  [0x1024326ac]  extent.ts:91
+                      + !   : | + ! : | 6 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 9476  [0x1024b6ebc]  nursery.ts:160
+                      + !   : | + ! : | 4 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 14932  [0x1024b840c]  nursery.ts:173
+                      + !   : | + ! : | + 4 runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear [@20:value:0$58]  (in from-codepoint-chunks-probe) + 332  [0x102432cac]  index.ts:12
+                      + !   : | + ! : | 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 2148  [0x1024b521c]  nursery.ts:141
+                      + !   : | + ! : | 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 14680,14888  [0x1024b8310,0x1024b83e0]  nursery.ts:173
+                      + !   : | + ! : | 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 17788,17848  [0x1024b8f34,0x1024b8f70]  nursery.ts:179
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 840  [0x1024b4d00]  nursery.ts:137
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 4220  [0x1024b5a34]  nursery.ts:144
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2559 [closure_123]  (in from-codepoint-chunks-probe) + 1236  [0x10251f040]  copying.ts:83
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 4488  [0x1024b5b40]  nursery.ts:146
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 6836  [0x1024b646c]  nursery.ts:152
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 11160  [0x1024b7550]  nursery.ts:162
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 13664  [0x1024b7f18]  nursery.ts:169
+                      + !   : | + ! : 12 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 3784  [0x1024bbd78]  nursery.ts:222
+                      + !   : | + ! : | 11 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 2792  [0x1024ba86c]  nursery.ts:198
+                      + !   : | + ! : | + 9 runtime:packages/native-runtime/src/copying.ts:closure@3358 [closure_126]  (in from-codepoint-chunks-probe) + 496  [0x102520484]  copying.ts:102
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@3358 [closure_126]  (in from-codepoint-chunks-probe) + 124  [0x102520310]  copying.ts:19
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@3358 [closure_126]  (in from-codepoint-chunks-probe) + 384  [0x102520414]  copying.ts:26
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 3272  [0x1024baa4c]  nursery.ts:201
+                      + !   : | + ! : 2 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 640  [0x1024bb130]  nursery.ts:207
+                      + !   : | + ! 8 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 476  [0x102416f4c]  scan.ts:31
+                      + !   : | + ! : 5 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 484  [0x10251f5bc]  copying.ts:23
+                      + !   : | + ! : 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1120,3068  [0x10251f838,0x10251ffd4]  copying.ts:89
+                      + !   : | + ! : 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 228  [0x10251f4bc]  copying.ts:20
+                      + !   : | + ! 4 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 720,804  [0x102417040,0x102417094]  scan.ts:33
+                      + !   : | + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 1708  [0x10241741c]  scan.ts:35
+                      + !   : | + 8 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2000  [0x102418504]  scan.ts:68
+                      + !   : | + 7 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 576  [0x102417f74]  scan.ts:62
+                      + !   : | + ! 5 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 404  [0x10251f56c]  copying.ts:22
+                      + !   : | + ! 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2840  [0x10251fef0]  copying.ts:99
+                      + !   : | + 5 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2920  [0x10241889c]  scan.ts:71
+                      + !   : | + ! 5 runtime:packages/native-runtime/src/tracing/scan.ts:bounded [@11:value:8$26]  (in from-codepoint-chunks-probe) + 384,448  [0x102416d24,0x102416d64]  scan.ts:23
+                      + !   : | + 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 1664,1652  [0x1024183b4,0x1024183a8]  scan.ts:66
+                      + !   : | + 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 1888  [0x102418494]  scan.ts:67
+                      + !   : | + ! 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1160,3212  [0x10251f860,0x102520064]  copying.ts:90
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 60  [0x10251f414]
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 3420  [0x102520134]  copying.ts:91
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 628  [0x102417fa8]  scan.ts:63
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2988  [0x1024188e0]  scan.ts:71
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3900  [0x102418c70]  scan.ts:77
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2332  [0x102418650]  scan.ts:81
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 160  [0x10251f478]  copying.ts:19
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 7016  [0x10241989c]  scan.ts:96
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:general [@11:value:10$28]  (in from-codepoint-chunks-probe) + 1748  [0x102417b64]  scan.ts:48
+                      + !   : | + !   1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 1568  [0x102417390]  scan.ts:35
+                      + !   : | + !     1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 640  [0x1024bb130]  nursery.ts:207
+                      + !   : | + !       1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 232  [0x1024b4aa0]
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 5596  [0x102419310]  scan.ts:99
+                      + !   : | 10 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2508  [0x10241a3b4]  scan.ts:120
+                      + !   : | + 9 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 3004  [0x10251ff94]  copying.ts:89
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 512  [0x10251f5d8]  copying.ts:24
+                      + !   : | 5 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 13232  [0x10241cd98]  scan.ts:189
+                      + !   : | + 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 88  [0x10251f430]
+                      + !   : | + 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1408,3476  [0x10251f958,0x10252016c]  copying.ts:91
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 452  [0x10251f59c]  copying.ts:23
+                      + !   : | 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2384,2388  [0x10241a338,0x10241a33c]  scan.ts:120
+                      + !   : | 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 12720  [0x10241cb98]  scan.ts:188
+                      + !   : | + 2 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in from-codepoint-chunks-probe) + 172,516  [0x102416a00,0x102416b58]  scan.ts:20
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2720  [0x10241a488]  scan.ts:121
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 3076  [0x10251ffdc]  copying.ts:89
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 12576  [0x10241cb08]  scan.ts:188
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 13524  [0x10241cebc]  scan.ts:192
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 14244  [0x10241d18c]  scan.ts:196
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 14380  [0x10241d214]  scan.ts:198
+                      + !   : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe) + 500,740  [0x10241e944,0x10241ea34]  scan.ts:250
+                      + !   6 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 51092  [0x1024ca990]  nursery.ts:298
+                      + !   4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 43792,43860  [0x1024c8d0c,0x1024c8d50]  nursery.ts:289
+                      + !   4 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 58564  [0x1024cc6c0]  nursery.ts:305
+                      + !   : 4 runtime:helper:string-equal  (in from-codepoint-chunks-probe) + 0  [0x102534530]
+                      + !   3 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 46324  [0x1024c96f0]  nursery.ts:293
+                      + !   2 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 45060  [0x1024c9200]  nursery.ts:291
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 7860  [0x1024c00b0]  nursery.ts:258
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 14320  [0x1024c19ec]  nursery.ts:261
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 142560  [0x1024e0edc]  nursery.ts:392
+                      + 5 runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]  (in from-codepoint-chunks-probe) + 6908  [0x102524264]  copying.ts:166
+                      +   2 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 6904  [0x1024ea3d8]  nursery.ts:502
+                      +   : 1 runtime:packages/native-runtime/src/copying.ts:closure@3674 [closure_128]  (in from-codepoint-chunks-probe) + 508  [0x102520d84]  copying.ts:113
+                      +   : 1 runtime:packages/native-runtime/src/copying.ts:closure@3674 [closure_128]  (in from-codepoint-chunks-probe) + 1152  [0x102521008]  copying.ts:114
+                      +   2 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 7928  [0x1024ea7d8]  nursery.ts:505
+                      +   : 2 runtime:packages/native-runtime/src/copying.ts:closure@3993 [closure_129]  (in from-codepoint-chunks-probe) + 2392,2488  [0x102521c50,0x102521cb0]  copying.ts:125
+                      +   1 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 4828  [0x1024e9bbc]  nursery.ts:495
+                      +     1 runtime:packages/native-runtime/src/copying.ts:closure@3476 [closure_127]  (in from-codepoint-chunks-probe) + 288  [0x1025208ec]  copying.ts:106
+                      200 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 4336  [0x103427540]  primitive-intrinsics.ts:482
+                      + 194 runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]  (in from-codepoint-chunks-probe) + 3404  [0x1025234b4]  copying.ts:155
+                      + ! 194 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@16423 [closure_70]  (in from-codepoint-chunks-probe) + 4400  [0x1024e795c]  nursery.ts:450
+                      + !   190 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 58496  [0x1024cc67c]  nursery.ts:305
+                      + !   : 187 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe) + 784  [0x10241ea60]  scan.ts:250
+                      + !   : | 167 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 14636  [0x10241d314]  scan.ts:196
+                      + !   : | + 126 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3876  [0x102418c58]  scan.ts:77
+                      + !   : | + ! 101 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 1568  [0x102417390]  scan.ts:35
+                      + !   : | + ! : 82 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 640  [0x1024bb130]  nursery.ts:207
+                      + !   : | + ! : | 58 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 14228  [0x1024b814c]  nursery.ts:166
+                      + !   : | + ! : | + 22 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 1812  [0x10242ef30]  extent.ts:30
+                      + !   : | + ! : | + ! 12 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1808  [0x10251fae8]  copying.ts:89
+                      + !   : | + ! : | + ! 10 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 160  [0x10251f478]  copying.ts:19
+                      + !   : | + ! : | + 11 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 3452  [0x10242f598]  extent.ts:39
+                      + !   : | + ! : | + 9 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 14628  [0x102432140]  extent.ts:84
+                      + !   : | + ! : | + 7 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 16160  [0x10243273c]  extent.ts:92
+                      + !   : | + ! : | + 5 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 2912  [0x10242f37c]  extent.ts:35
+                      + !   : | + ! : | + 2 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 13776  [0x102431dec]  extent.ts:79
+                      + !   : | + ! : | + ! 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 3200  [0x102520058]  copying.ts:90
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 13336  [0x102431c34]  extent.ts:78
+                      + !   : | + ! : | + 1 runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe) + 14796  [0x1024321e8]  extent.ts:80
+                      + !   : | + ! : | 12 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 16356  [0x1024b899c]  nursery.ts:178
+                      + !   : | + ! : | 3 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 17024,17388  [0x1024b8c38,0x1024b8da4]  nursery.ts:179
+                      + !   : | + ! : | 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 15076  [0x1024b849c]  nursery.ts:174
+                      + !   : | + ! : | 2 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 15496,15732  [0x1024b8640,0x1024b872c]  nursery.ts:175
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 720  [0x1024b4c88]  nursery.ts:132
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 780  [0x1024b4cc4]  nursery.ts:133
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 8464  [0x1024b6ac8]  nursery.ts:156
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 12636  [0x1024b7b14]  nursery.ts:166
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe) + 14832  [0x1024b83a8]  nursery.ts:173
+                      + !   : | + ! : 18 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 3784  [0x1024bbd78]  nursery.ts:222
+                      + !   : | + ! : | 7 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 1352  [0x1024ba2cc]  nursery.ts:196
+                      + !   : | + ! : | 5 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 1816,1940  [0x1024ba49c,0x1024ba518]  nursery.ts:197
+                      + !   : | + ! : | 3 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 3420  [0x1024baae0]  nursery.ts:201
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 2952  [0x1024ba90c]  nursery.ts:190
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 2784  [0x1024ba864]  nursery.ts:198
+                      + !   : | + ! : | 1 runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe) + 3724  [0x1024bac10]  nursery.ts:202
+                      + !   : | + ! : 1 runtime:packages/native-runtime/src/tracing/nursery.ts:visit [@16:value:29$64]  (in from-codepoint-chunks-probe) + 308  [0x1024bafe4]  nursery.ts:189
+                      + !   : | + ! 16 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 804,720  [0x102417094,0x102417040]  scan.ts:33
+                      + !   : | + ! 5 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 476  [0x102416f4c]  scan.ts:31
+                      + !   : | + ! : 4 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 692,3124  [0x10251f68c,0x10252000c]  copying.ts:89
+                      + !   : | + ! : 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 512  [0x10251f5d8]  copying.ts:24
+                      + !   : | + ! 2 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 528,532  [0x102416f80,0x102416f84]  scan.ts:32
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 132  [0x102416df4]
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe) + 1152  [0x1024171f0]  scan.ts:34
+                      + !   : | + !   1 runtime:packages/native-runtime/src/tracing/scan.ts:pointer [@11:value:7$25]  (in from-codepoint-chunks-probe) + 352  [0x102416ab4]  scan.ts:20
+                      + !   : | + 13 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3440,2844  [0x102418aa4,0x102418850]  scan.ts:71
+                      + !   : | + 8 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 7016  [0x10241989c]  scan.ts:96
+                      + !   : | + ! 8 runtime:packages/native-runtime/src/tracing/scan.ts:general [@11:value:10$28]  (in from-codepoint-chunks-probe) + 332  [0x1024175dc]  scan.ts:44
+                      + !   : | + !   6 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 528  [0x10251f5e8]  copying.ts:24
+                      + !   : | + !   2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2660  [0x10251fe3c]  copying.ts:98
+                      + !   : | + 4 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3772,3560,...  [0x102418bf0,0x102418b1c,...]  scan.ts:77
+                      + !   : | + 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2920  [0x10241889c]  scan.ts:71
+                      + !   : | + ! 3 runtime:packages/native-runtime/src/tracing/scan.ts:bounded [@11:value:8$26]  (in from-codepoint-chunks-probe) + 384,120  [0x102416d24,0x102416c1c]  scan.ts:23
+                      + !   : | + 3 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 5372  [0x102419230]  scan.ts:86
+                      + !   : | + ! 2 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 692,1120  [0x10251f68c,0x10251f838]  copying.ts:89
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 1512  [0x10251f9c0]  copying.ts:91
+                      + !   : | + 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 576  [0x102417f74]  scan.ts:62
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 608  [0x10251f638]  copying.ts:26
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 736  [0x10251f6b8]  copying.ts:89
+                      + !   : | + 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 1888  [0x102418494]  scan.ts:67
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 560  [0x10251f608]  copying.ts:25
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2632  [0x10251fe20]  copying.ts:98
+                      + !   : | + 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 1800  [0x10241843c]  scan.ts:67
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 3056  [0x102418924]  scan.ts:72
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2332  [0x102418650]  scan.ts:81
+                      + !   : | + ! 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2972  [0x10251ff74]  copying.ts:99
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 2388  [0x102418688]  scan.ts:82
+                      + !   : | + 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe) + 4620  [0x102418f40]  scan.ts:83
+                      + !   : | +   1 runtime:packages/native-runtime/src/tracing/scan.ts:bounded [@11:value:8$26]  (in from-codepoint-chunks-probe) + 120  [0x102416c1c]  scan.ts:23
+                      + !   : | 12 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2720  [0x10241a488]  scan.ts:121
+                      + !   : | + 11 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2680  [0x10251fe50]  copying.ts:98
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 632  [0x10251f650]  copying.ts:58
+                      + !   : | 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2508  [0x10241a3b4]  scan.ts:120
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 424  [0x10251f580]  copying.ts:22
+                      + !   : | + 1 runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 2828  [0x10251fee4]  copying.ts:99
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2364  [0x10241a324]  scan.ts:112
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 1288  [0x102419ef0]  scan.ts:114
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 2620  [0x10241a424]  scan.ts:121
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 13288  [0x10241cdd0]  scan.ts:190
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 13524  [0x10241cebc]  scan.ts:192
+                      + !   : | 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe) + 14432  [0x10241d248]  scan.ts:200
+                      + !   : 2 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe) + 300  [0x10241e87c]  scan.ts:247
+                      + !   : 1 runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe) + 708  [0x10241ea14]  scan.ts:250
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 43232  [0x1024c8adc]  nursery.ts:289
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 44992  [0x1024c91bc]  nursery.ts:290
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 46904  [0x1024c9934]  nursery.ts:293
+                      + !   1 runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe) + 149708  [0x1024e2ac8]  nursery.ts:398
+                      + 6 runtime:packages/native-runtime/src/copying.ts:closure@4842 [closure_130]  (in from-codepoint-chunks-probe) + 6908  [0x102524264]  copying.ts:166
+                      +   3 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 7928  [0x1024ea7d8]  nursery.ts:505
+                      +   : 2 runtime:packages/native-runtime/src/copying.ts:closure@3993 [closure_129]  (in from-codepoint-chunks-probe) + 2348,2396  [0x102521c24,0x102521c54]  copying.ts:125
+                      +   : 1 runtime:packages/native-runtime/src/copying.ts:closure@3993 [closure_129]  (in from-codepoint-chunks-probe) + 4192  [0x102522358]  copying.ts:131
+                      +   :   1 runtime:helper:to-uint32  (in from-codepoint-chunks-probe) + 84  [0x102534450]
+                      +   2 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 6904  [0x1024ea3d8]  nursery.ts:502
+                      +   : 1 runtime:packages/native-runtime/src/copying.ts:closure@3674 [closure_128]  (in from-codepoint-chunks-probe) + 496  [0x102520d78]  copying.ts:113
+                      +   : 1 runtime:packages/native-runtime/src/copying.ts:closure@3674 [closure_128]  (in from-codepoint-chunks-probe) + 1092  [0x102520fcc]  copying.ts:117
+                      +   1 runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765 [closure_72]  (in from-codepoint-chunks-probe) + 1864  [0x1024e9028]  nursery.ts:487
+                      187 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 4492  [0x1034275dc]  primitive-intrinsics.ts:482
+                      + 187 program:helper:string-concat-copy  (in from-codepoint-chunks-probe) + 56,68,...  [0x10366b438,0x10366b444,...]
+                      157 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 3636  [0x103427284]  primitive-intrinsics.ts:481
+                      + 157 program:helper:string-concat-copy  (in from-codepoint-chunks-probe) + 56,72,...  [0x10366b438,0x10366b448,...]
+                      7 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 556  [0x10342667c]  primitive-intrinsics.ts:474
+                      + 5 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_137$297]  (in from-codepoint-chunks-probe) + 168  [0x1025ae354]  sparse-list.ts:121
+                      + 2 program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_137$297]  (in from-codepoint-chunks-probe) + 424  [0x1025ae454]  sparse-list.ts:122
+                      +   2 program:packages/foundation/src/collections/sparse-list.ts:findEntry [__tint_specialized_1412$1547]  (in from-codepoint-chunks-probe) + 336,448  [0x102609aa0,0x102609b10]  sparse-list.ts:65
+                      1 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@16060 [closure_4059]  (in from-codepoint-chunks-probe) + 1008  [0x103426840]  primitive-intrinsics.ts:475
+                        1 program:packages/js-runtime/src/objects/primitive-intrinsics.ts:number [@53:value:43$4020]  (in from-codepoint-chunks-probe) + 1124  [0x103413290]  primitive-intrinsics.ts:77
+                          1 program:packages/js-runtime/src/objects/coercion.ts:numberValue [@48:value:17$3139]  (in from-codepoint-chunks-probe) + 344  [0x102cc9bb8]  coercion.ts:122
+                            1 program:packages/js-runtime/src/objects/operators.ts:primitiveToNumber [@65:value:2$3123]  (in from-codepoint-chunks-probe) + 1096  [0x102cb44dc]  operators.ts:19
+
+Total number in stack (recursive counted multiple, when >=5):
+        8       runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe) + 0  [0x10251f3d8]  copying.ts:89
+
+Sort by top of stack, same collapsed (when >= 5):
+        program:helper:string-concat-copy  (in from-codepoint-chunks-probe)        344
+        runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]  (in from-codepoint-chunks-probe)        123
+        runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent [@15:value:4$57]  (in from-codepoint-chunks-probe)        111
+        runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]  (in from-codepoint-chunks-probe)        42
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanFields [@11:value:11$29]  (in from-codepoint-chunks-probe)        37
+        runtime:packages/native-runtime/src/tracing/scan.ts:reference [@11:value:9$27]  (in from-codepoint-chunks-probe)        26
+        runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan [@16:value:33$68]  (in from-codepoint-chunks-probe)        22
+        runtime:packages/native-runtime/src/tracing/nursery.ts:append [@16:value:28$63]  (in from-codepoint-chunks-probe)        19
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanObject [@11:value:12$30]  (in from-codepoint-chunks-probe)        12
+        runtime:packages/native-runtime/src/copying.ts:closure@3358 [closure_126]  (in from-codepoint-chunks-probe)        11
+        runtime:packages/native-runtime/src/tracing/scan.ts:bounded [@11:value:8$26]  (in from-codepoint-chunks-probe)        9
+        program:packages/foundation/src/collections/sparse-list.ts:readList [__tint_specialized_137$297]  (in from-codepoint-chunks-probe)        5
+        runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject [@11:value:14$32]  (in from-codepoint-chunks-probe)        5
+
+Binary Images:
+       0x1023f4000 -        0x103997177 +from-codepoint-chunks-probe (???) <6B053F2C-C9B4-83BD-A82F-8FF7D87E7E58> /var/folders/*/from-codepoint-chunks-probe
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib

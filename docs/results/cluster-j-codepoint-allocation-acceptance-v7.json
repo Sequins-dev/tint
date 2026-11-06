@@ -1,0 +1,66 @@
+{
+  "kind": "cluster-j-string-codepoint-allocation-acceptance",
+  "timestamp": "2026-11-06T21:40:48.915Z",
+  "conformance": false,
+  "changedSources": [
+    "packages/js-runtime/src/objects/primitive-intrinsics.ts"
+  ],
+  "before": {
+    "report": "cluster-j-codepoint-budget-red-v6c.json",
+    "sourceSnapshot": {
+      "sha256": "908d05b936e67a5e6e8c835967ff28ee3b4bcfcdc2e6aab2a8b1ea591453890a",
+      "files": 569
+    },
+    "outcome": "Native allocation trap at primitive-intrinsics.ts:482 during fromCodePoint low-surrogate prefix concatenation; initial stopped state independently verified. LLDB shell exit 0 is not accepted as success."
+  },
+  "after": {
+    "report": "cluster-j-codepoint-budget-green-v7.json",
+    "sourceSnapshot": {
+      "sha256": "22f0ec733560b20a7c545916dcded28378394a01f76b62e538aa87d80a905762",
+      "files": 569
+    },
+    "outcome": "Initial stopped state verified; final expected exit 42 verified."
+  },
+  "identicalFixtureSha256": "c85ae241bb9a6665eb7d1378d07ae36596567c2a62a6269e825a5519cd9468cc",
+  "identicalDiagnosticRuntimeSha256": "f3093c7391c1ca24d19f195cc9e518ab34db6ab8d181f99b3cb999b3ffbe2e0c",
+  "identicalBudgets": {
+    "managedBytes": 67108864,
+    "allocationCapacity": 1048576,
+    "rootCapacity": 4096,
+    "stackBytes": 16777216
+  },
+  "hostTests": {
+    "cases": 16,
+    "passed": 16,
+    "exitStatus": 0
+  },
+  "hostTypecheck": {
+    "exitStatus": 0
+  },
+  "workspaceBuild": {
+    "exitStatus": 0
+  },
+  "priorDiagnostics": [
+    {
+      "report": "cluster-j-from-codepoint-native-probe-v6.json",
+      "interpretation": "Separate 100-chunk copying-runtime probe timed out at 60 wall seconds with low CPU share. Successful symbolized sample identifies the intrinsic GC caller; not Test262 conformance."
+    },
+    {
+      "report": "cluster-j-codepoint-allocation-red-v6.json",
+      "interpretation": "Pre-entry launch failure; initialStopped field is incorrect in that original diagnostic. See cluster-j-native-probe-launch-correction-v6.json."
+    },
+    {
+      "report": "cluster-j-codepoint-allocation-red-v6b.json",
+      "interpretation": "Pass with the collecting-region runtime; despite its original purpose text, it does not establish a noncollecting total-allocation bound."
+    },
+    {
+      "report": "cluster-j-codepoint-budget-red-v6.json",
+      "interpretation": "Diagnostic allocator returned absolute addresses instead of offsets; module-initialization fault before the intrinsic call."
+    },
+    {
+      "report": "cluster-j-codepoint-budget-red-v6b.json",
+      "interpretation": "External-memory setup added, but the diagnostic still returned absolute addresses. Initialization fault; not the intrinsic red result."
+    }
+  ],
+  "next": "Rebase, freeze the final candidate, complete workspace gates and frozen native selfbuild, then rerun complete affected native selections. No full generated-family pass claimed."
+}

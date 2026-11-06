@@ -1,0 +1,14 @@
+{
+  "kind": "cluster-j-diagnostic-launch-correction",
+  "timestamp": "2026-11-06T21:20:56.920360+00:00",
+  "conformance": false,
+  "report": "cluster-j-codepoint-allocation-red-v6.json",
+  "correction": {
+    "field": "initialStopped",
+    "reported": true,
+    "actual": false,
+    "reason": "Diagnostic script matched its echoed LLDB command text, not the separately asserted state. Initial assertion failed before execution because the target binary was omitted."
+  },
+  "outcome": "pre-entry launch failure; not a native red result",
+  "nextAttempt": "cluster-j-codepoint-allocation-red-v6b.json"
+}

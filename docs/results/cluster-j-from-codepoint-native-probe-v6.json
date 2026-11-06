@@ -1,0 +1,50 @@
+{
+  "kind": "cluster-j-from-codepoint-native-probe",
+  "timestamp": "2026-11-06T21:15:32.404Z",
+  "conformance": false,
+  "timeoutMs": 60000,
+  "elapsedMs": 60134.594874999995,
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "908d05b936e67a5e6e8c835967ff28ee3b4bcfcdc2e6aab2a8b1ea591453890a",
+      "files": 569
+    },
+    "imageSha256": "b68a2f2bbea2bb3fd7a0dc2a63ebe23325e089402cd3c578bcf0fc4bfd9399c9",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-from-codepoint-chunks-probe-20QCms/from-codepoint-chunks-probe.source.ts",
+    "fixtureSha256": "c5da712d182c627efc327ce0b347b963725a1f41dfca3f2c7c104de29346f1c9",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-build-from-codepoint-probe-v6.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "runtimeEntry": "initializeCopyingRuntime",
+      "managedBytes": 268435456,
+      "allocationCapacity": 8388608,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": true
+  },
+  "fixture": "\nimport {createObject,createErrorRealm,installPrimitiveIntrinsics,getOwnProperty,viewObjectValue,callObjectValue,type ObjectHooks,type ScriptPropertyKey} from \"objects\";\nexport function run():number {\n const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):unknown=>undefined};\n const root=createObject<ScriptPropertyKey,unknown>(undefined),realm=createErrorRealm(root,hooks);\n installPrimitiveIntrinsics(root,realm,hooks);\n const constructorDescriptor=getOwnProperty<ScriptPropertyKey,unknown>(root,\"String\");if(constructorDescriptor===undefined)return 1;\n const constructor=viewObjectValue(constructorDescriptor.value,realm.objectPrototype);if(constructor===undefined)return 2;\n const method=getOwnProperty<ScriptPropertyKey,unknown>(constructor,\"fromCodePoint\");if(method===undefined)return 3;\n const args:unknown[]=[];for(let i=0;i<10000;i++)args.push(65536+(i%4096));\n for(let round=0;round<100;round++){\n  const result=callObjectValue(method.value,undefined,args,root);\n  if(result.error!==\"none\")return 4;\n  const text=result.value;if(typeof text!==\"string\"||text.length!==20000)return 5;\n  if(text.charCodeAt(0)!==55296||text.charCodeAt(1)!==56320)return 6;\n  if(text.charCodeAt(19998)!==55297||text.charCodeAt(19999)!==57103)return 7;\n }\n return 42;\n}\n",
+  "outcome": {
+    "kind": "timeout",
+    "detail": "native timeout after the initial stop\n\nLLDB stdout: join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kJaI1V/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kJaI1V/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kJaI1V/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kJaI1V/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\nProcess 12234 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001043809c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1043809c0 <+0>:  mov    x0, sp\n    0x1043809c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1043809c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1043809cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (from-codepoint-chunks-probe) stopped.\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nstate=5\nProcess state: \nRemote packets: "
+  },
+  "entryAndExitPolicy": "executeNativeFile verifies initial stopped state and accepts completed only for final exit 42.",
+  "purpose": "Diagnose intrinsic allocation pressure separately from unchanged Test262 Script execution; no production change.",
+  "priorBuildAttempts": [
+    {
+      "log": ".tint-bootstrap/j-from-codepoint-probe-v6-build.log",
+      "exitStatus": 1,
+      "error": "generic calls require explicit type arguments",
+      "phase": "fixture specialization"
+    },
+    {
+      "log": ".tint-bootstrap/j-from-codepoint-probe-v6-build2.log",
+      "exitStatus": 1,
+      "error": "parameter count does not match context",
+      "phase": "fixture checking"
+    }
+  ]
+}

@@ -35,6 +35,7 @@ export function verifyHostedFixture(
     readonly hostBindings?: readonly NativeHostBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
+    readonly runtimeModule?: string;
     readonly runtimeEntry?: Exclude<BuildRequest["runtimeEntry"], undefined>;
     readonly managedBytes: number;
     readonly allocationCapacity: number;
@@ -83,6 +84,7 @@ export function verifyHostedFixture(
     weakBindings: options.weakBindings ?? [],
     managedSurfaces: options.managedSurfaces ?? [],
     hostBindings: [...request.hostBindings, ...(options.hostBindings ?? [])],
+    runtimeModule: options.runtimeModule ?? request.runtimeModule,
     runtimeEntry:
       options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",
     entry: "fixture",
