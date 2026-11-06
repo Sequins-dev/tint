@@ -24,8 +24,14 @@ is the variable environment itself, so a surrounding `with` cannot intercept it.
 
 Conditional function declarations use synthetic blocks. Labels remain transparent
 to function-declaration collection. These rules share ordinary scope, function and
-binding operations; they do not introduce a second execution engine. Dynamic eval
-remains separate work. Native measurements belong in the [coverage dashboard](test262.md).
+binding operations; they do not introduce a second execution engine. Native
+measurements belong in the [coverage dashboard](test262.md).
+
+Sloppy direct eval admits optional vars at runtime, during EvalDeclarationInstantiation.
+The walk to the caller's variable environment skips Catch clause records. Reaching
+the declaration copies into the eval caller's VariableEnvironment: the enclosing
+function, arrow or parameter record when one exists, and the global object only
+for global-level eval. Strict eval code or a strict caller makes no copy.
 
 The pinned `block-decl-func-skip-arguments.js` case expects the implicit arguments
 binding to prevent a copy. [Current FunctionDeclarationInstantiation](https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-functiondeclarationinstantiation) distinguishes

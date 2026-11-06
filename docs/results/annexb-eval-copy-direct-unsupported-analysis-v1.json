@@ -1,0 +1,24 @@
+{
+  "kind": "native-selection-nonpass-analysis",
+  "conformance": false,
+  "selection": "annexB/language/eval-code/direct",
+  "report": "test262-annexb-eval-copy-annexB-language-eval-code-direct-v2.json",
+  "checkpoint": "annexb-eval-copy-native-checkpoint-v2.json",
+  "sourceSnapshot": {
+    "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+    "files": 568
+  },
+  "totals": { "total": 310, "passed": 254, "failed": 0, "unsupported": 56 },
+  "unsupportedOutcome": "native runtime reached an unsupported operation",
+  "pattern": "All 56 are *-skip-early-err-* variants (48 func-*, 8 global-*-try). Every one reads an unresolvable name from a function created inside the direct-eval code (assert.throws(ReferenceError, function() { f; })); none of the 254 passes do. The 8 global ones are only the -try forms, which also use a destructuring catch parameter ({ f }) inside the global-level eval code; the other global skip-early-err forms pass.",
+  "nodeOracle": "The Node lowered-output oracle (packages/js-engine/test/lowered-node-host.ts, this checkout's lowering and runtime) completes func-block-decl-eval-func-skip-early-err-{block,try,for-of}.js and global-block-decl-eval-global-skip-early-err-{block,try}.js with a minimal assert stand-in, and lowerDirectEvalScript accepts each block-function shape. The unsupported operation is native-only and not in the Annex B copy-target semantics.",
+  "priorObservation": {
+    "journal": "/Users/stephenbelanger/Code/nodejs/tint/docs/results/test262-annexb-direct-eval-host-native-v1.jsonl",
+    "sourceSnapshot": {
+      "sha256": "5d1967574760292ac65d6c7ef1cd8ae1a1d5266b2b3193cc0fd694825066cef8",
+      "files": 552
+    },
+    "note": "Older host, still in progress at 73 variants; not a same-host baseline. Its 24 unsupported variants (func-block-decl and func-if-decl-* skip-early-err) are unsupported here too. Over the 73 overlapping variants, there is no pass-to-non-pass change; 32 earlier Test262Error/TypeError failures of function-level copy tests (init, update, existing-*-update, no-skip-*, block-scoping) now pass. The 8 global -try variants were not reached there and have no prior observation."
+  },
+  "attribution": "Not caused by the copy-target change. That change only selects $site.variables.declarative versus setGlobalBinding for an admitted copy. The candidate native gaps are (1) an unresolvable identifier read from a closure created by direct eval nested in a function, and (2) a destructuring catch parameter in global-level eval code. Both are outside this delegate's narrow lowering scope; they are reported for separate ownership, and the variants remain unsupported in the denominator."
+}

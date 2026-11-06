@@ -1,0 +1,219 @@
+{
+  "kind": "native-fixture-validation",
+  "conformance": false,
+  "accepted": true,
+  "passed": 20,
+  "total": 20,
+  "sourceSnapshot": {
+    "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+    "files": 568
+  },
+  "imageSha256": "8e8c8bf3059e2fbcc9a22ac35634bac7a30d83d59e4b13ac587dfeee4a482046",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-arguments-scope-RaPdnu/arguments-scope",
+  "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-arguments-scope-RaPdnu/cases.json",
+  "fixtureSha256": "c3749b63d066da6cec274660c2bcfba6657338799dda7be7b79973313a343044",
+  "tool": "tools/verify-test262-native-arguments-scope.ts (TINT_BUILD_ONLY=1)",
+  "supersedesObservationOf": "/Users/stephenbelanger/.t3/worktrees/tint/t3-1197f513/docs/results/native-arguments-scope-case-16-v1.json",
+  "note": "The original case-16 failure (image 15211714…, source c1102df6…) is retained unchanged in the arguments delegate checkout; this is a new image built from the fixed source.",
+  "expected": {
+    "kind": "completed"
+  },
+  "initialStopPolicy": "executeNativeFile accepts an outcome only after LLDB records the stopped-at-entry state and a final exited state; launch failures and post-entry faults are reported distinctly. Each case runs alone; no retries.",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "name": "strict direct eval rejects assignment to arguments (10.5-1-s)",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-0-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 1,
+      "name": "strict eval code rejects arguments assignment in nested functions (10.5-7-b-1-s)",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-1-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 2,
+      "name": "sloppy eval cannot define non-definable global functions of any kind",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-2-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 3,
+      "name": "duplicate simple parameters map only the last occurrence",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-3-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 4,
+      "name": "mapping ends after delete, accessor or non-writable redefinition",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-4-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 5,
+      "name": "non-simple and strict parameter lists produce unmapped arguments",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-5-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 6,
+      "name": "strict callee and caller share the ThrowTypeError intrinsic",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-6-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 7,
+      "name": "parameter defaults observe left-to-right TDZ",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-7-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 8,
+      "name": "body vars start from same-named parameters in a separate environment",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-8-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 9,
+      "name": "body functions and lexicals named arguments shadow or suppress the object",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-9-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 10,
+      "name": "direct eval in parameters cannot redeclare a later parameter",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-10-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 11,
+      "name": "direct eval in parameters cannot redeclare the arguments binding",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-11-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 12,
+      "name": "direct eval in parameters declares vars outside parameter scope",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-12-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 13,
+      "name": "direct eval in methods with parameter expressions checks arguments conflicts",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-13-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 14,
+      "name": "catch parameters permit eval var redeclaration but body lexicals do not",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-14-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 15,
+      "name": "destructured catch parameters are also exempt from eval var conflicts",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-15-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 16,
+      "name": "eval Annex B block functions bypass catch parameters into the var scope",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-16-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 17,
+      "name": "with scopes are skipped by eval conflict checks and receive initializers",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-17-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 18,
+      "name": "parameter pattern abrupt completion closes the argument iterator once",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-18-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    },
+    {
+      "selectedCase": 19,
+      "name": "Annex B block functions named arguments replace the implicit arguments binding",
+      "report": "docs/results/annexb-eval-copy-arguments-scope-case-19-v2.json",
+      "outcome": {
+        "kind": "completed"
+      },
+      "initialStop": "confirmed"
+    }
+  ],
+  "compilerReuse": "docs/results/annexb-eval-copy-bootstrap-graph-node-v1.json",
+  "serialization": {
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "centralPause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+    "grant": {
+      "label": "annexb-eval-copy-arguments-scope",
+      "paused": true,
+      "ack": {
+        "pid": 21082,
+        "state": "between-variants"
+      },
+      "acknowledgedAt": "2026-11-06T03:44:00.648Z",
+      "releasedAt": "2026-11-06T03:51:53.828Z"
+    }
+  }
+}
