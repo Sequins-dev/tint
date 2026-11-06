@@ -1,0 +1,35 @@
+{
+  "kind": "frozen-native-experiment-continuation",
+  "conformance": false,
+  "selection": "built-ins/Promise",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-promise-keyed-heartbeat-v4.json",
+  "sourceSnapshot": {
+    "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+    "files": 568
+  },
+  "frozenToolchainSha256": "3c6542d9915427b74549f448f658a57f9957211b01c41edbf9f21e1027ece1e5",
+  "resume": {
+    "kind": "resume",
+    "startedAt": "2026-11-06T20:12:54.625Z",
+    "previousJournalSha256": "8973d45854585d424cba22be14df3a3e4a1c58b585300282dc00b779c9d68ceb",
+    "observedVariants": 960
+  },
+  "retainedInterruption": "docs/results/test262-promise-keyed-tool-interruption-v1.json",
+  "replayedVariants": 0,
+  "runnerPid": 5789,
+  "wrapperPid": 2284,
+  "observerPid": 2294,
+  "journal": "docs/results/test262-promise-keyed-native-v3.jsonl",
+  "stdout": ".tint-bootstrap/test262-promise-keyed-native-v5.stdout.json",
+  "stderr": ".tint-bootstrap/test262-promise-keyed-native-v5.stderr.log",
+  "exitStatusFile": ".tint-bootstrap/promise-resume-v5.exit",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "runnerMachineCap": 6,
+  "ownRunnerCount": 1,
+  "gateWrapperPid": 5658,
+  "gateLog": ".tint-bootstrap/promise-keyed-workspace-check-slotted-v13.log",
+  "gateExitStatusFile": ".tint-bootstrap/promise-check-v13.exit",
+  "gateMachineCap": 1,
+  "note": "Continuation of the existing captured experiment; no compiler/source replacement or observed-variant retries. Detached processes preserve progress through interaction cancellation. The live incomplete journal is locally excluded from Git status and will be force-added only after completion; bytes are unchanged except native append-only resume/observations."
+}
