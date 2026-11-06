@@ -1,0 +1,12 @@
+{
+  "kind": "focused-host-test-recheck",
+  "conformance": false,
+  "command": "node --test --test-concurrency=2 tools/test262-native-extract.test.ts tools/test262-native-heartbeat.test.ts tools/test262-node.test.ts",
+  "exitStatus": 0,
+  "tests": 13,
+  "passed": 13,
+  "failed": 0,
+  "prior": "docs/results/temporal-h-check-v9.json",
+  "output": "✔ native extraction verifies recorded fixture bytes and absent siblings (1496.272958ms)\n✔ heartbeat intervals are bounded integers and zero disables only the heartbeat (1.616625ms)\n✔ transitions, elapsed time, counts, repeated stalls, pause path and timer disposal (1.756042ms)\n✔ disabled heartbeat emits neither transitions nor periodic lines (0.119291ms)\n✔ worker emits stderr while the runner blocks and closes on success and error (994.295625ms)\n✔ reference adapter executes global Scripts in fresh realms (5.385ms)\n✔ reference adapter distinguishes parse, harness, runtime and timeout outcomes (114.80375ms)\n✔ reference adapter loads harness files in order and exposes realm host bindings (75.413375ms)\n✔ promise rejection tracking is distinct from a thrown test exception (429.176042ms)\n✔ host bindings preserve descriptors, coercions and realm-local detachment errors (1.756667ms)\n✔ late rejected jobs cannot turn a harness error into a runtime negative pass (97.779666ms)\n✔ asynchronous process jobs require exactly one successful completion (1236.656958ms)\n✔ reference adapter explicitly rejects an unavailable non-suspending agent policy (0.181916ms)\nℹ tests 13\nℹ suites 0\nℹ pass 13\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3382.224709\n",
+  "note": "This started while the docs-only main rebase was finishing. The tested host tooling files were unchanged. A complete stable full gate follows separately."
+}
