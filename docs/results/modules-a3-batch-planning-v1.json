@@ -1,0 +1,346 @@
+{
+  "kind": "batch-planning-model",
+  "conformance": false,
+  "nativeBenchmark": false,
+  "batchSize": 64,
+  "input": "modules-a3-preparation-v2.json",
+  "policy": "Replay existing flush boundaries over preparation routes; blocked variants retain their denominator and flush pending work. No estimated time or native pass claim.",
+  "selections": [
+    {
+      "selection": "language/module-code",
+      "variants": 602,
+      "lexicographic": {
+        "total": 40,
+        "execution": 23,
+        "syntax": 17,
+        "batches": [
+          {
+            "kind": "execution",
+            "variants": 7
+          },
+          {
+            "kind": "execution",
+            "variants": 2
+          },
+          {
+            "kind": "syntax",
+            "variants": 29
+          },
+          {
+            "kind": "execution",
+            "variants": 36
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 3
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 2
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 4
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "syntax",
+            "variants": 3
+          },
+          {
+            "kind": "execution",
+            "variants": 2
+          },
+          {
+            "kind": "syntax",
+            "variants": 3
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 21
+          },
+          {
+            "kind": "syntax",
+            "variants": 4
+          },
+          {
+            "kind": "execution",
+            "variants": 38
+          },
+          {
+            "kind": "syntax",
+            "variants": 64
+          },
+          {
+            "kind": "syntax",
+            "variants": 39
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "syntax",
+            "variants": 9
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 18
+          },
+          {
+            "kind": "syntax",
+            "variants": 1
+          },
+          {
+            "kind": "execution",
+            "variants": 14
+          },
+          {
+            "kind": "syntax",
+            "variants": 2
+          },
+          {
+            "kind": "execution",
+            "variants": 16
+          },
+          {
+            "kind": "syntax",
+            "variants": 5
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 6
+          }
+        ]
+      },
+      "syntaxFirst": {
+        "total": 11,
+        "execution": 8,
+        "syntax": 3,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 64
+          },
+          {
+            "kind": "syntax",
+            "variants": 64
+          },
+          {
+            "kind": "syntax",
+            "variants": 38
+          },
+          {
+            "kind": "execution",
+            "variants": 7
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 50
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 64
+          },
+          {
+            "kind": "execution",
+            "variants": 54
+          }
+        ]
+      }
+    },
+    {
+      "selection": "language/import",
+      "variants": 135,
+      "lexicographic": {
+        "total": 4,
+        "execution": 2,
+        "syntax": 2,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 4
+          },
+          {
+            "kind": "execution",
+            "variants": 12
+          },
+          {
+            "kind": "syntax",
+            "variants": 12
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          }
+        ]
+      },
+      "syntaxFirst": {
+        "total": 3,
+        "execution": 2,
+        "syntax": 1,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 16
+          },
+          {
+            "kind": "execution",
+            "variants": 12
+          },
+          {
+            "kind": "execution",
+            "variants": 1
+          }
+        ]
+      }
+    },
+    {
+      "selection": "language/export",
+      "variants": 3,
+      "lexicographic": {
+        "total": 1,
+        "execution": 0,
+        "syntax": 1,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 3
+          }
+        ]
+      },
+      "syntaxFirst": {
+        "total": 1,
+        "execution": 0,
+        "syntax": 1,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 3
+          }
+        ]
+      }
+    },
+    {
+      "selection": "language/expressions/import.meta",
+      "variants": 27,
+      "lexicographic": {
+        "total": 4,
+        "execution": 2,
+        "syntax": 2,
+        "batches": [
+          {
+            "kind": "execution",
+            "variants": 4
+          },
+          {
+            "kind": "syntax",
+            "variants": 2
+          },
+          {
+            "kind": "execution",
+            "variants": 10
+          },
+          {
+            "kind": "syntax",
+            "variants": 11
+          }
+        ]
+      },
+      "syntaxFirst": {
+        "total": 2,
+        "execution": 1,
+        "syntax": 1,
+        "batches": [
+          {
+            "kind": "syntax",
+            "variants": 13
+          },
+          {
+            "kind": "execution",
+            "variants": 14
+          }
+        ]
+      }
+    }
+  ]
+}

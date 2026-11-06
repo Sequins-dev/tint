@@ -1,4 +1,5 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
+import { nativeSelectionOrder } from "./native-selection-order.ts";
 import {
   frozenNativeRunIdentity,
   sameNativeObservationInput,
@@ -72,10 +73,14 @@ const heartbeat = startNativeHeartbeat(selection);
 try {
   const suite = test262Checkout(checkout, selection),
     harnessRoot = resolve(suite.root, "harness");
-  const totalVariants = suite.files.reduce(
-    (total, file) =>
-      total +
-      syntaxVariants(testMetadata(test262Source(file.filename).source)).length,
+  const files = nativeSelectionOrder(
+    suite.files.map((file) => ({
+      ...file,
+      metadata: testMetadata(test262Source(file.filename).source),
+    })),
+  );
+  const totalVariants = files.reduce(
+    (total, file) => total + syntaxVariants(file.metadata).length,
     0,
   );
   const batchSize = Number(batchArgument);
@@ -263,10 +268,9 @@ try {
     }
     pending = [];
   }
-  for (const { filename, path } of suite.files) {
+  for (const { filename, path, metadata } of files) {
     heartbeat.phase("preparing " + path);
-    const { source, sha256 } = test262Source(filename),
-      metadata = testMetadata(source);
+    const { source, sha256 } = test262Source(filename);
     for (const variant of syntaxVariants(metadata)) {
       const started = performance.now(),
         plan = executionPlan(source, variant, metadata);
@@ -478,7 +482,7 @@ try {
                     ? " Module variants load sibling fixtures through a synchronous table loader; fixtures that bootstrap cannot parse are judged only by the native syntax verdict at load, and native acceptance stays unsupported; JSON, attributes, top-level await, import() and import.meta are unsupported."
                     : ""),
         variantPolicy:
-          "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+          "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
         sourceSnapshot,
         sourceSnapshotFile,
         frozenToolchainSha256,
