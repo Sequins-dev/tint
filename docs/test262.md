@@ -300,7 +300,7 @@ The BigInt family report predates the `toString.length` correction. Its [focused
 
 ## Recent selections within larger families
 
-The [178 complete object standalone-file selections](results/cluster-a2-object-direct-complete-files-v1.json) pass **351/351**, with no non-passes. They cover part of the 573-variant standalone directory; 222 variants remain unobserved in that preserved prefix. The fresh full object selection is running separately.
+The [178 complete object standalone-file selections](results/cluster-a2-object-direct-complete-files-v1.json) pass **351/351**, with no non-passes. They cover part of the 573-variant standalone directory; 222 variants remain unobserved in that preserved prefix. The fresh full object selection is running separately. The direct-launch run also supplies [101 complete method-definition syntax file selections](results/cluster-a2-object-method-syntax-complete-files-v1.json), passing **194/194**. The 363 method-definition runtime variants remain in progress; these file selections are not a complete method-definition or object result.
 
 These selections overlap other reports and cannot be added into an overall coverage percentage. The group inventory retains the other complete selections.
 
