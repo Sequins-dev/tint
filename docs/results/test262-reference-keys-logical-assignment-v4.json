@@ -1,0 +1,4263 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "0cdd910dd27c6efe0b43f01cd8c9989a297ecad24d2f541040fbaf89909aba2d",
+    "files": 568
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-d6e70eb2/.tint-bootstrap/node-toolchain-reference-keys-v1/source-snapshot.json",
+  "frozenToolchainSha256": "b465a65e2417121f441d8cb48ea006b3a28dfdad0b3e8e33504cd43cefbbdf6c",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 180222.66895799997
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 111.56879200000549
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 109.7381250000326
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 326.98816700000316
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 106.30141600000206
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 218.10033300006762
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 325388.26754200005
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 217.13858300005086
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 112.73700000019744
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 214.78745800000615
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 214.10779100004584
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 110.24020799994469
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 206.1627920002211
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 107.32179199997336
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 108.88866699999198
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 217.44258300005458
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 318.6296250000596
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 318.7917090000119
+    },
+    {
+      "kind": "diagnostic-pause",
+      "elapsedMs": 325.80000000004657
+    }
+  ],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 42,
+        "kind": "execution",
+        "compileMs": 135930.87779199998,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 1,
+        "kind": "syntax",
+        "compileMs": 5232.307624999958,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 13,
+        "kind": "execution",
+        "compileMs": 145774.36091599998,
+        "outcome": "compiled"
+      },
+      {
+        "id": 3,
+        "variants": 2,
+        "kind": "syntax",
+        "compileMs": 2436.602708999999,
+        "outcome": "compiled"
+      },
+      {
+        "id": 4,
+        "variants": 9,
+        "kind": "execution",
+        "compileMs": 114124.26429199998,
+        "outcome": "compiled"
+      },
+      {
+        "id": 5,
+        "variants": 3,
+        "kind": "syntax",
+        "compileMs": 2408.9612080000807,
+        "outcome": "compiled"
+      },
+      {
+        "id": 6,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 114985.28895800002,
+        "outcome": "compiled"
+      },
+      {
+        "id": 7,
+        "variants": 1,
+        "kind": "syntax",
+        "compileMs": 2833.9164579999633,
+        "outcome": "compiled"
+      },
+      {
+        "id": 8,
+        "variants": 13,
+        "kind": "execution",
+        "compileMs": 123361.73054099991,
+        "outcome": "compiled"
+      },
+      {
+        "id": 9,
+        "variants": 2,
+        "kind": "syntax",
+        "compileMs": 2373.199332999997,
+        "outcome": "compiled"
+      },
+      {
+        "id": 10,
+        "variants": 9,
+        "kind": "execution",
+        "compileMs": 114504.79391700006,
+        "outcome": "compiled"
+      },
+      {
+        "id": 11,
+        "variants": 3,
+        "kind": "syntax",
+        "compileMs": 2326.685500000138,
+        "outcome": "compiled"
+      },
+      {
+        "id": 12,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 115026.45741700009,
+        "outcome": "compiled"
+      },
+      {
+        "id": 13,
+        "variants": 1,
+        "kind": "syntax",
+        "compileMs": 2394.9111669999547,
+        "outcome": "compiled"
+      },
+      {
+        "id": 14,
+        "variants": 13,
+        "kind": "execution",
+        "compileMs": 114346.59112500004,
+        "outcome": "compiled"
+      },
+      {
+        "id": 15,
+        "variants": 2,
+        "kind": "syntax",
+        "compileMs": 2340.1169590000063,
+        "outcome": "compiled"
+      },
+      {
+        "id": 16,
+        "variants": 9,
+        "kind": "execution",
+        "compileMs": 112891.13849999988,
+        "outcome": "compiled"
+      },
+      {
+        "id": 17,
+        "variants": 3,
+        "kind": "syntax",
+        "compileMs": 2393.577333000023,
+        "outcome": "compiled"
+      },
+      {
+        "id": 18,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 120768.55774999992,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/logical-assignment",
+  "totals": {
+    "total": 132,
+    "passed": 132,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-and.js",
+      "sha256": "5879c76447249abfebdd4e27aeafa2d75d82bba1264ae4c1bec28f0da159928a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 318117.050917,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-and.js",
+      "sha256": "5879c76447249abfebdd4e27aeafa2d75d82bba1264ae4c1bec28f0da159928a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 318438.3,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-nullish.js",
+      "sha256": "a3908e65c3cf3b7b223b80f2ec64e2e7d143d0d3136f3b64ec1f8a790f25b727",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 318771.633833,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-nullish.js",
+      "sha256": "a3908e65c3cf3b7b223b80f2ec64e2e7d143d0d3136f3b64ec1f8a790f25b727",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 319102.63258399995,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-or.js",
+      "sha256": "90555cb84e7be833423653e590319556d80ff12ddbdc2d2eb25de85e090112de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 319431.6235,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-or.js",
+      "sha256": "90555cb84e7be833423653e590319556d80ff12ddbdc2d2eb25de85e090112de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 319763.17920799996,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-and.js",
+      "sha256": "db20764ba99a75a32a87d9a8b8f0bf49d02d58fa612669546ece14f31962f99c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 320093.464916,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-and.js",
+      "sha256": "db20764ba99a75a32a87d9a8b8f0bf49d02d58fa612669546ece14f31962f99c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 320421.14195900003,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-nullish.js",
+      "sha256": "8a6acd316b7cdfa889930aed88c99c81e234870e150a42c1fd0508b79d3ff09a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 320769.194167,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-nullish.js",
+      "sha256": "8a6acd316b7cdfa889930aed88c99c81e234870e150a42c1fd0508b79d3ff09a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 321106.867041,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-or.js",
+      "sha256": "015b3f250d82ffd79219c04324774a34fa599bc3653b80ae21c05ebe52e000ac",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 321469.2575,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-accessor-property-short-circuit-or.js",
+      "sha256": "015b3f250d82ffd79219c04324774a34fa599bc3653b80ae21c05ebe52e000ac",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 321887.75824999996,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-and.js",
+      "sha256": "a9e49b518ad38d76af16395fe93e1ca794783584d6e9b43c077c21ed068fe9db",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 322234.030375,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-and.js",
+      "sha256": "a9e49b518ad38d76af16395fe93e1ca794783584d6e9b43c077c21ed068fe9db",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 322567.32095799997,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-nullish.js",
+      "sha256": "5fab7280d14d6c8dcac451d3b302746ff58c9726144c70dce0b1ba3c94fc83a0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 322896.636833,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-nullish.js",
+      "sha256": "5fab7280d14d6c8dcac451d3b302746ff58c9726144c70dce0b1ba3c94fc83a0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 323223.605833,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-or.js",
+      "sha256": "89ef942907d79ebd02de2464e6704c48ed0bf12ddd21a63b468481a5a3c10333",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 323548.85295800003,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-or.js",
+      "sha256": "89ef942907d79ebd02de2464e6704c48ed0bf12ddd21a63b468481a5a3c10333",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 323874.00675,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-and.js",
+      "sha256": "36255391d5fdd5976b3995c39703bbb27fcc95b8d2d1fc1b621cf0c3035a9a9c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 324203.071667,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-and.js",
+      "sha256": "36255391d5fdd5976b3995c39703bbb27fcc95b8d2d1fc1b621cf0c3035a9a9c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 324536.69095799996,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-nullish.js",
+      "sha256": "018140e602014eac4752219ceb601723bd9ae7081aa51e79cdf389ae161f2d9e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 324869.057541,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-nullish.js",
+      "sha256": "018140e602014eac4752219ceb601723bd9ae7081aa51e79cdf389ae161f2d9e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 325211.451916,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-or.js",
+      "sha256": "c354b884b020aedd6fbae76b44c2491aa8a71b288ee72d023902eb3f13fb5d78",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 325562.397,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-data-property-short-circuit-or.js",
+      "sha256": "c354b884b020aedd6fbae76b44c2491aa8a71b288ee72d023902eb3f13fb5d78",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 325922.549,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-and.js",
+      "sha256": "91acc5f39907aaabb2c95e140a129b071dbb0d8c5651144e9c4a9ddb65caec27",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 326307.884792,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-and.js",
+      "sha256": "91acc5f39907aaabb2c95e140a129b071dbb0d8c5651144e9c4a9ddb65caec27",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 326686.278708,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-short-circuit-nullish.js",
+      "sha256": "e64ae28e4768ba3a9c7cd366c4fe9e75626ae60f1be2101017ec824ad98b837a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 327048.913459,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-short-circuit-nullish.js",
+      "sha256": "e64ae28e4768ba3a9c7cd366c4fe9e75626ae60f1be2101017ec824ad98b837a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 327418.233125,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-short-circuit-or.js",
+      "sha256": "e6ea19fa71d1e142d667706a0fe7e933c6773cbeb131dc8601c712d874b485f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 327770.74695899995,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-method-short-circuit-or.js",
+      "sha256": "e6ea19fa71d1e142d667706a0fe7e933c6773cbeb131dc8601c712d874b485f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 328159.5645,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-and.js",
+      "sha256": "092483e50b61dd3be8b95b947e443e8d82d3973cda19fd7a0b93d752a50c7d8b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 328558.41804200003,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-and.js",
+      "sha256": "092483e50b61dd3be8b95b947e443e8d82d3973cda19fd7a0b93d752a50c7d8b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 328969.216334,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-nullish.js",
+      "sha256": "be561eca1b96dcc5d94a4b9a7f191c204750872e2c93a444abed29db7241f5be",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 329364.452458,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-nullish.js",
+      "sha256": "be561eca1b96dcc5d94a4b9a7f191c204750872e2c93a444abed29db7241f5be",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 329792.975667,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-or.js",
+      "sha256": "190951aa513496e6e553ef564814c3ed8caaeaf9f1deb9031b1d27b5ebc7c1e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 330208.268417,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-or.js",
+      "sha256": "190951aa513496e6e553ef564814c3ed8caaeaf9f1deb9031b1d27b5ebc7c1e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 330640.68366599997,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-and.js",
+      "sha256": "be42639b02cc2ecbf1bc8e4970f1ecd7ce6951be2ccd5aa1d38c1cfb161e4500",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 331047.68224999995,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-and.js",
+      "sha256": "be42639b02cc2ecbf1bc8e4970f1ecd7ce6951be2ccd5aa1d38c1cfb161e4500",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 331459.865208,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-nullish.js",
+      "sha256": "a17f45fdcf1e89e9d1b33da095c9844a1f3346a948dde3237b18b192374882cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 331877.07775,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-nullish.js",
+      "sha256": "a17f45fdcf1e89e9d1b33da095c9844a1f3346a948dde3237b18b192374882cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 332297.111625,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-or.js",
+      "sha256": "159b7a57169b8361217d208073e95aa24f0639c4f9c9de71a174afff2f7f468c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 332709.28125,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/left-hand-side-private-reference-readonly-accessor-property-short-circuit-or.js",
+      "sha256": "159b7a57169b8361217d208073e95aa24f0639c4f9c9de71a174afff2f7f468c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 333150.146166,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-arguments-strict.js",
+      "sha256": "0712a159980488b194fe15497164fb329cc1192b3f0b7ea0b543847765ae0b34",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 342926.865833,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-bigint.js",
+      "sha256": "fdce5667d06805d3834081afb41804854e913b2566fdf95dd5f4e8ec37197761",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160528.960708,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-bigint.js",
+      "sha256": "fdce5667d06805d3834081afb41804854e913b2566fdf95dd5f4e8ec37197761",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151002.678333,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-lhs-before-rhs.js",
+      "sha256": "39a0a3482cca7b4605e8f691044c1e3fc6d1a87c430fc345d05025c6651ffee0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151241.06291699997,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-lhs-before-rhs.js",
+      "sha256": "39a0a3482cca7b4605e8f691044c1e3fc6d1a87c430fc345d05025c6651ffee0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151480.704875,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "59f7b917a6c3e241e248d1370b79a1e697cbb34352c0e285e565b74e0299eabd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151719.01066700002,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "59f7b917a6c3e241e248d1370b79a1e697cbb34352c0e285e565b74e0299eabd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151961.42708300002,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "ccf9276e4c91f4a0b5365f15b66fde5499b952f7b2ae5df937a33cac03c39ea2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152207.79516600003,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "ccf9276e4c91f4a0b5365f15b66fde5499b952f7b2ae5df937a33cac03c39ea2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152443.596625,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-function.js",
+      "sha256": "b4b03e2df453a0bf7b0e6df00edbda4b8608d044f966a6ca566b66c60f8ec9c1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152680.98162499996,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-namedevaluation-function.js",
+      "sha256": "b4b03e2df453a0bf7b0e6df00edbda4b8608d044f966a6ca566b66c60f8ec9c1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152917.70200000005,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-no-set-put.js",
+      "sha256": "82ae8ebaaf6a2ddf4764ee2f96a9de7de22b5855d49e12e1ea8d2083cfcecde7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153152.519209,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-no-set.js",
+      "sha256": "62bf3602965e204ce2dba9a01c5b9826c25361b13f3ed41f6d304ba118a23f32",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153389.396459,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-non-extensible.js",
+      "sha256": "525af6499a69e8b8b4540bd1e354078c5f21229ee9ef1c590d27121d57e62857",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153630.321667,
+      "batch": 2
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-non-simple-lhs.js",
+      "sha256": "b6a20fe597fbe47e61efbb1d5e42ee9efdeb326f6ba322cbf8f4bc7571d29b12",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 157067.63674999995,
+      "batch": 3
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-non-simple-lhs.js",
+      "sha256": "b6a20fe597fbe47e61efbb1d5e42ee9efdeb326f6ba322cbf8f4bc7571d29b12",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3663.097375000012,
+      "batch": 3
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-non-writeable-put.js",
+      "sha256": "11a8fb2f5ba2ac9470802759709856fc19f5b58a2aa8eb55db628d843e27080c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 123802.06670799997,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-non-writeable.js",
+      "sha256": "cdfcb82923ea4f0598f099fb0f01d2eda29024fe853b2443b342e16305c2e8a7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124811.70175000007,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-unresolved-lhs.js",
+      "sha256": "1ce909d81c07760ffb4933f2dc6429f3c21608a1bb3e02f222c5fedec4ddd998",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126390.58375000005,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "bc06236e433fb71012dfab4c49209d79ee0dca4c2592aa0bbc0eb8975943e998",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126627.26716700004,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "bc06236e433fb71012dfab4c49209d79ee0dca4c2592aa0bbc0eb8975943e998",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126871.12404200004,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-unresolved-rhs.js",
+      "sha256": "b214f248c94b56d0b3c526c755c58f22fd751e67228eaed14c1488b8ea69b88f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127111.712458,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator-unresolved-rhs.js",
+      "sha256": "b214f248c94b56d0b3c526c755c58f22fd751e67228eaed14c1488b8ea69b88f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127354.30883400002,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator.js",
+      "sha256": "16d6f54b4ae2cb636dff5e5c6557d76d5f68428c8c2b2e51c773412afaddc02f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127598.01816700003,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-assignment-operator.js",
+      "sha256": "16d6f54b4ae2cb636dff5e5c6557d76d5f68428c8c2b2e51c773412afaddc02f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127843.14583300002,
+      "batch": 4
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-eval-strict.js",
+      "sha256": "9e8c31320c64c8ee8b21a2e014fa1d24889b3f962e8ef59e1af5eb6192f20cdd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 131170.92120799999,
+      "batch": 5
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-non-simple.js",
+      "sha256": "3606e938d83aaa19e5b4ba12b8025a4a014a6ecfe1a7bc3944d314153c7db048",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3552.258332999889,
+      "batch": 5
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-non-simple.js",
+      "sha256": "3606e938d83aaa19e5b4ba12b8025a4a014a6ecfe1a7bc3944d314153c7db048",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3776.1216669999994,
+      "batch": 5
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-whitespace.js",
+      "sha256": "7c44802574c033c2da495afb9e5df01c8c23e6ec74d8c887ea9d20146633c6eb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 445718.57850000006,
+      "batch": 6
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-and-whitespace.js",
+      "sha256": "7c44802574c033c2da495afb9e5df01c8c23e6ec74d8c887ea9d20146633c6eb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 442231.80116599996,
+      "batch": 6
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-arguments-strict.js",
+      "sha256": "ece5b9f0ced5cfe429177f620188b664036705f3bbbbd013fb1c9232e98ddd6c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 445964.4196250001,
+      "batch": 7
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-bigint.js",
+      "sha256": "4257850019488510b1f9cb6b82bb3dbf663705d900864f750557c7d24f9455be",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 139385.39479100006,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-bigint.js",
+      "sha256": "4257850019488510b1f9cb6b82bb3dbf663705d900864f750557c7d24f9455be",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 135929.199792,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-lhs-before-rhs.js",
+      "sha256": "08417d9b67db9872ce99247068a46f732e6f11043f3640e55afeb3533bdc17c0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136176.204042,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-lhs-before-rhs.js",
+      "sha256": "08417d9b67db9872ce99247068a46f732e6f11043f3640e55afeb3533bdc17c0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136438.32470800006,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "79f32d4d64391b94f1f8d73d0a8bfee3268376c86dece2c322c3ce06393ff56a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136683.22924999986,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "79f32d4d64391b94f1f8d73d0a8bfee3268376c86dece2c322c3ce06393ff56a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136928.03137500002,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "25fa9d89e7cc252206c88349e5a3766e90a66c427fdb3d0b23f4f23e67479f27",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137174.24083300005,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "25fa9d89e7cc252206c88349e5a3766e90a66c427fdb3d0b23f4f23e67479f27",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137420.76341600018,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-function.js",
+      "sha256": "526549c8cd3d6c698dd4996e4a016bf6717344aa47f77747ef58c7bf5a0bed6e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137668.85729099996,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-namedevaluation-function.js",
+      "sha256": "526549c8cd3d6c698dd4996e4a016bf6717344aa47f77747ef58c7bf5a0bed6e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137916.3326659999,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-no-set-put.js",
+      "sha256": "353301b442a5fc7778f0d55923fe66c6198389f29293df3b9a55e4190fc281b8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 138162.53720799997,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-no-set.js",
+      "sha256": "e72f78e7e2e1f6fe9dfe34f43aa24184faa8f5cd9fe3a18fc6fdd5c248889df8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 138411.31200000015,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-non-extensible.js",
+      "sha256": "64f73041bc404ffef2f94e9670d3579a40704abdcfe16cadc1121768c281d8b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 138658.89570899983,
+      "batch": 8
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-non-simple-lhs.js",
+      "sha256": "e75e20378061dfce84512242dbe2ff8b0fcb4e9967257b94e3389104f8f61400",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 182820.80166699993,
+      "batch": 9
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-non-simple-lhs.js",
+      "sha256": "e75e20378061dfce84512242dbe2ff8b0fcb4e9967257b94e3389104f8f61400",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 47627.398125000065,
+      "batch": 9
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-non-writeable-put.js",
+      "sha256": "c3867a65448c15402c9d770c411a3cc6c0b9fce8c290d2fd5736413e8cf0a5c8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163881.07045800006,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-non-writeable.js",
+      "sha256": "717a356749931264d40ed192fe446069b65bd3d546a2a7ee124a75a42c12637c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116500.67845900008,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-unresolved-lhs.js",
+      "sha256": "0a98218b485ec248039051435cec2dc72adc4a87b4ec2f47c89fc02e81c958b5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116734.54029100016,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "f5b43bd230484d3afbf131cfeb97b91e55b460d265e0547ad68b407e92cad87e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116975.14387499983,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "f5b43bd230484d3afbf131cfeb97b91e55b460d265e0547ad68b407e92cad87e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117215.32345800009,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-unresolved-rhs.js",
+      "sha256": "8750aafaa21c50c4e00f1de3f1944b0bb1f29d0d8c4ffe2420a6d72188e8b60e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117455.94741699984,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator-unresolved-rhs.js",
+      "sha256": "8750aafaa21c50c4e00f1de3f1944b0bb1f29d0d8c4ffe2420a6d72188e8b60e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117695.61462499993,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator.js",
+      "sha256": "a75ca7efb0a81895c9823c391c98921fef3b5e381ff887bcae11fa34910071af",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117935.1796670002,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-assignment-operator.js",
+      "sha256": "a75ca7efb0a81895c9823c391c98921fef3b5e381ff887bcae11fa34910071af",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118175.83887500013,
+      "batch": 10
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-eval-strict.js",
+      "sha256": "bd99861bb7728af416d69a50a914d21b4cc11a8c82a68e0ffbed238885134249",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 121296.17804200016,
+      "batch": 11
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-non-simple.js",
+      "sha256": "a871111b6b7a0d1289a4a8cf39b2f36b23ccacc3171419ff2b6480a216f6e0ee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3342.0767500000075,
+      "batch": 11
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-non-simple.js",
+      "sha256": "a871111b6b7a0d1289a4a8cf39b2f36b23ccacc3171419ff2b6480a216f6e0ee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3559.611124999821,
+      "batch": 11
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-whitespace.js",
+      "sha256": "5d2524e1b1a4dd2c40f7b5743395c734de32cfde33879f9514163497ec35e52d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121980.37575000012,
+      "batch": 12
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-nullish-whitespace.js",
+      "sha256": "5d2524e1b1a4dd2c40f7b5743395c734de32cfde33879f9514163497ec35e52d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118669.93116599997,
+      "batch": 12
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-arguments-strict.js",
+      "sha256": "6d96e79fb35c826ce3ed0cc326297ebe3fdd382c2d8bd634dda75bfdd3292657",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 121823.19058299996,
+      "batch": 13
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-bigint.js",
+      "sha256": "e894232393b45f4f11da6a94c569312650b4ab0ee34978ba215898e0ee0e9233",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119114.85966599989,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-bigint.js",
+      "sha256": "e894232393b45f4f11da6a94c569312650b4ab0ee34978ba215898e0ee0e9233",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116206.68395800004,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-lhs-before-rhs.js",
+      "sha256": "3aedfa4fb22a5aca46fee0a691e7730b5c5d4039cf199e2769bac2e09ee74e8a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116446.46245900006,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-lhs-before-rhs.js",
+      "sha256": "3aedfa4fb22a5aca46fee0a691e7730b5c5d4039cf199e2769bac2e09ee74e8a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116688.93941699993,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "4376c7566d0457ff2142fa009c13c4d3fd20881b1fa717481a07605fa3230cdf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116930.24437500001,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-arrow-function.js",
+      "sha256": "4376c7566d0457ff2142fa009c13c4d3fd20881b1fa717481a07605fa3230cdf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117172.841916,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "04516a0e07bea663c1ed326c855b082043da0520269154152b0cdd1d0c3c10ff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117416.223459,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-class-expression.js",
+      "sha256": "04516a0e07bea663c1ed326c855b082043da0520269154152b0cdd1d0c3c10ff",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117658.11395799997,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-function.js",
+      "sha256": "859e484be17956043eeeb3bfd3b2e23bad5d3fa0b9de8b9296df82e6f8bab279",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 117898.6796250001,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-namedevaluation-function.js",
+      "sha256": "859e484be17956043eeeb3bfd3b2e23bad5d3fa0b9de8b9296df82e6f8bab279",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118142.16912500001,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-no-set-put.js",
+      "sha256": "d4336006e749a6d3137460546f6f5ff74224c9fc554f85d0bcff580125382384",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118382.0954580002,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-no-set.js",
+      "sha256": "9aa10698aa1460791e8608250a2442311407d722576e0b0bf662bfe5ae3b0fd8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118622.34516599984,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-non-extensible.js",
+      "sha256": "532670a68e6ced60e62ed891f12b020a58ba43dc26a7fa642ef6300b571e65a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118865.9627080001,
+      "batch": 14
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-non-simple-lhs.js",
+      "sha256": "bb283e8996f2c05abea8d14a806328e624d98f853035fbfb2be8fd7d4c215c0f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 122136.38266699994,
+      "batch": 15
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-non-simple-lhs.js",
+      "sha256": "bb283e8996f2c05abea8d14a806328e624d98f853035fbfb2be8fd7d4c215c0f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3494.959959000116,
+      "batch": 15
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-non-writeable-put.js",
+      "sha256": "f0ba8734fee11c2e48e128b155c4906da39d05aa280863802285cf51176d80f5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 118206.02449999982,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-non-writeable.js",
+      "sha256": "c46800f37b81f2bfd1d3e3c94470a1980b96bdb4dbbf8b8211626b12dd1eabdf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114957.63749999995,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-unresolved-lhs.js",
+      "sha256": "27e10f40ee86e0ab252e62bd102c5bdb61b885f06f9dd211e5546404cc17336f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115196.89545800001,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "20253b1ba3ec6ea6518189aed2c89d0640b151009e0a414ca81f66a4fdb3c50c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115435.64783299994,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-unresolved-rhs-put.js",
+      "sha256": "20253b1ba3ec6ea6518189aed2c89d0640b151009e0a414ca81f66a4fdb3c50c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115676.28908300004,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-unresolved-rhs.js",
+      "sha256": "5e04af66fb6ecd70bdce8f8ce61d8a742879095b586033aad635ee7cafae756b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 115913.905333,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator-unresolved-rhs.js",
+      "sha256": "5e04af66fb6ecd70bdce8f8ce61d8a742879095b586033aad635ee7cafae756b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116158.57041700021,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator.js",
+      "sha256": "d77746c5562967ea73b950e21359f0bb0839ff484f7eb55d12cc04e043f8ad01",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116403.4472500002,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-assignment-operator.js",
+      "sha256": "d77746c5562967ea73b950e21359f0bb0839ff484f7eb55d12cc04e043f8ad01",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 116648.04741699994,
+      "batch": 16
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-eval-strict.js",
+      "sha256": "8f8802e0fff03b80b4e79575062a4d481f8f1a0cccee4660feffba290fce5ac1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 120018.3174579998,
+      "batch": 17
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-non-simple.js",
+      "sha256": "ece92bda136f6ece4b5dab482476da893b4c589cba836c809656a5e8767ac920",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3596.054167000111,
+      "batch": 17
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-non-simple.js",
+      "sha256": "ece92bda136f6ece4b5dab482476da893b4c589cba836c809656a5e8767ac920",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 3821.316749999998,
+      "batch": 17
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-whitespace.js",
+      "sha256": "625f56099e74e2ee8ad3cccef74f4237340b4edc852b7bea95d76de097a0d87f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126437.42033300013,
+      "batch": 18
+    },
+    {
+      "path": "language/expressions/logical-assignment/lgcl-or-whitespace.js",
+      "sha256": "625f56099e74e2ee8ad3cccef74f4237340b4edc852b7bea95d76de097a0d87f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "logical-assignment-operators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 122866.0292499999,
+      "batch": 18
+    }
+  ]
+}

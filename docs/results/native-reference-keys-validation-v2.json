@@ -1,0 +1,82 @@
+{
+  "kind": "native-reference-keys-validation",
+  "conformance": false,
+  "accepted": true,
+  "sourceSnapshot": {
+    "sha256": "0cdd910dd27c6efe0b43f01cd8c9989a297ecad24d2f541040fbaf89909aba2d",
+    "files": 568
+  },
+  "imageSha256": "b2f0b93f353f646782b2e47afbf4b365d17f2cb134ec2c44eb04822a7a0682f1",
+  "fixture": "docs/results/native-reference-keys-fixture-v1.json",
+  "tool": "tools/verify-test262-native-reference-keys.ts (TINT_BUILD_ONLY=1)",
+  "expected": {
+    "kind": "completed",
+    "exitStatus": 42
+  },
+  "initialStopPolicy": "executeNativeFile accepts an outcome only after LLDB records the stopped-at-entry state and a final exited state; launch failures and post-entry faults are reported distinctly",
+  "cases": [
+    {
+      "selectedCase": 0,
+      "sha256": "15ec656e07eb6550905282fe8c6201f0d04fa1d80a5978da139f3c8530ceac40",
+      "report": "docs/results/native-reference-keys-case-0-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "selectedCase": 1,
+      "sha256": "553390dd3111255fcfd37dce27850b523ce898f9f5a842e3a1c87ca2772e2e16",
+      "report": "docs/results/native-reference-keys-case-1-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "selectedCase": 2,
+      "sha256": "b0777425c547e5a4da1862c53b02e6825070877842ca8db534ea4f4e2dd40b0a",
+      "report": "docs/results/native-reference-keys-case-2-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "selectedCase": 3,
+      "sha256": "6498ae619c1180606e3c8426a0dad89369651a137d58fc06b48a5ab01d5734ab",
+      "report": "docs/results/native-reference-keys-case-3-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "selectedCase": 4,
+      "sha256": "4f1e58d620c86b49724e1bb382fd91459354d8f1e74dad205d709f8e3fb9b416",
+      "report": "docs/results/native-reference-keys-case-4-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "selectedCase": 5,
+      "sha256": "17806f54cfa1c0150c22faf2e6f9e16f12ae5965afc18a440d864c6fc3a57297",
+      "report": "docs/results/native-reference-keys-case-5-v2.json",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "compilerReuse": "docs/results/reference-key-bootstrap-graph-node-v1.json",
+  "serialization": {
+    "lease": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/parallel-coverage-native.lease",
+    "centralPause": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/direct-eval-current-conformance.pause",
+    "grant": {
+      "label": "bespoke reference-key fixture",
+      "paused": true,
+      "ack": {
+        "pid": 21082,
+        "state": "between-variants"
+      },
+      "acknowledgedAt": "2026-11-06T03:32:37.101Z",
+      "releasedAt": "2026-11-06T03:32:40.631Z"
+    }
+  }
+}

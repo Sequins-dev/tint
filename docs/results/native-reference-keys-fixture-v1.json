@@ -1,0 +1,73 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "0cdd910dd27c6efe0b43f01cd8c9989a297ecad24d2f541040fbaf89909aba2d",
+    "files": 568
+  },
+  "imageSha256": "b2f0b93f353f646782b2e47afbf4b365d17f2cb134ec2c44eb04822a7a0682f1",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var o=traced(6);o[key(\"x\")]+=rhs(2);order(\"key,get,rhs,set\");o[key(\"x\")]^=rhs(1);order(\"key,get,rhs,set\");o[key(\"x\")]**=rhs(2);order(\"key,get,rhs,set\");if(o.x!==81)throw 2;",
+      "sha256": "15ec656e07eb6550905282fe8c6201f0d04fa1d80a5978da139f3c8530ceac40"
+    },
+    {
+      "index": 1,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var o=traced(1);if(o[key(\"x\")]++!==1)throw 1;order(\"key,get,set\");if(--o[key(\"x\")]!==1)throw 2;order(\"key,get,set\");",
+      "sha256": "553390dd3111255fcfd37dce27850b523ce898f9f5a842e3a1c87ca2772e2e16"
+    },
+    {
+      "index": 2,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var o=traced(0);o[key(\"x\")]||=rhs(4);order(\"key,get,rhs,set\");o[key(\"x\")]||=rhs(5);order(\"key,get\");o[key(\"x\")]&&=rhs(0);order(\"key,get,rhs,set\");var n=traced(undefined);n[key(\"x\")]??=rhs(7);order(\"key,get,rhs,set\");",
+      "sha256": "b0777425c547e5a4da1862c53b02e6825070877842ca8db534ea4f4e2dd40b0a"
+    },
+    {
+      "index": 3,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var v=1;var proto={get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};var home={__proto__:proto,m(){super[key(\"x\")]+=rhs(2);return super[key(\"x\")]++;}};if(home.m()!==3)throw 1;order(\"key,get,rhs,set,key,get,set\");",
+      "sha256": "6498ae619c1180606e3c8426a0dad89369651a137d58fc06b48a5ab01d5734ab"
+    },
+    {
+      "index": 4,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var o=traced(1);var bad={toString(){log.push(\"key\");throw new RangeError(\"k\");}};try{o[bad]+=rhs(1);throw 1;}catch(e){if(!(e instanceof RangeError))throw e;}order(\"key\");var b=null;try{b[key(\"x\")]++;throw 2;}catch(e){if(!(e instanceof TypeError))throw e;}order(\"\");try{b[key(\"x\")]=rhs(1);throw 3;}catch(e){if(!(e instanceof TypeError))throw e;}order(\"rhs\");o[key(\"x\")]=rhs(2);order(\"rhs,key,set\");",
+      "sha256": "4f1e58d620c86b49724e1bb382fd91459354d8f1e74dad205d709f8e3fb9b416"
+    },
+    {
+      "index": 5,
+      "source": "var log=[];function key(n){return {toString(){log.push(\"key\");return n;}};}function traced(v){return {get x(){log.push(\"get\");return v;},set x(n){log.push(\"set\");v=n;}};}function rhs(v){log.push(\"rhs\");return v;}function order(e){if(log.join()!==e)throw new Error(log.join()+\" !== \"+e);log=[];}var o=traced(1);function* g(){o[key(\"x\")]+=yield 0;}var it=g();it.next();order(\"key,get\");it.next(41);order(\"set\");var s=Symbol();var t={};t[s]=1;t[{toString(){log.push(\"key\");return s;}}]+=41;if(t[s]!==42)throw 1;order(\"key\");",
+      "sha256": "17806f54cfa1c0150c22faf2e6f9e16f12ae5965afc18a440d864c6fc3a57297"
+    }
+  ]
+}
