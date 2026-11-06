@@ -1,0 +1,111 @@
+{
+  "kind": "cluster-e-phase2-pause-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-06T23:02:40.468096+00:00",
+  "branch": "fix/computed-reference-keys",
+  "evidenceHeadBeforeValidationCommit": "c9757b21d301bd437f6877917000ae53ed6db995",
+  "rebasedMain": "ac809570f1f93a4d1c3fbed84ee55cb62873df02",
+  "workspaceGate": {
+    "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "validatedHead": "5f93ff07144db2bf0ffbf3cad6dacc074684e659",
+    "validatedBase": "dbaee0937c7f842b63ba20b3ec097a53f3a5e1b7",
+    "gates": {
+      "typecheck": 0,
+      "tests": 0,
+      "boundaries": 0,
+      "formatCheck": 0
+    },
+    "testConcurrency": 4,
+    "machineWideCheckCap": 1,
+    "tests": {
+      "passed": 4556,
+      "failed": 0,
+      "skipped": 0
+    },
+    "log": {
+      "path": "docs/results/assignment-phase2-final-check-v1.log.gz",
+      "uncompressedSha256": "8006a70c4117929a1e5a7f37b5a16b22e521ce43d83b995df5efe73446f004b6"
+    }
+  },
+  "postRebaseValidation": {
+    "rule": "00-shared.md READY FILE permits docs-only slices to reuse current main gate",
+    "docsOnly": true,
+    "gateReusedFromMain": "ac809570f1f93a4d1c3fbed84ee55cb62873df02",
+    "referenceGate": "docs/results/native-codegen-inline-merge-gate-v1.json",
+    "referenceGateLogSha256Verified": true,
+    "referenceGateTestsPassed": 4578,
+    "note": "Main integrated the P portable codegen gate and self-build. Since d2be77b, only two non-docs paths differ: tools/test262-native-process.ts and tools/test262-native.test.ts for the default Darwin launch protocol. Focused current-main host tests pass. E adds no implementation changes.",
+    "focusedCurrentMainTests": {
+      "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH node --test --test-concurrency=2 tools/test262-native.test.ts",
+      "exitStatus": 0,
+      "passed": 21,
+      "failed": 0,
+      "log": {
+        "path": "docs/results/assignment-phase2-current-main-launch-tests-v1.log.gz",
+        "uncompressedSha256": "d785c5e8da7f70358489c075a495f308862835139f347e6033db2026414707b1"
+      }
+    }
+  },
+  "nativeSelections": [
+    {
+      "selection": "language/expressions/assignment",
+      "totals": {
+        "total": 850,
+        "passed": 850,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-assignment-phase2-v1.json",
+      "sha256": "a2887d9c7488b6eb6bca82a84f484f9d807c6ca8e5b6eaaaa5d5ab54cb265496"
+    },
+    {
+      "selection": "language/expressions/compound-assignment",
+      "totals": {
+        "total": 786,
+        "passed": 786,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-compound-assignment-phase2-v1.json",
+      "sha256": "0d8a6ac919c835aca818c5beae051aaacd4839f53cccdfef2fff114b3ac0831f"
+    },
+    {
+      "selection": "language/expressions/logical-assignment",
+      "totals": {
+        "total": 132,
+        "passed": 132,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-reference-keys-logical-assignment-v4.json",
+      "sha256": "4b4ca21daf61d79b1318293ed9dbe43a0ac01ccbac75ea27575924ac89d7964a"
+    }
+  ],
+  "assignmentResume": {
+    "restored": 702,
+    "executed": 148,
+    "runnerExitStatus": 0,
+    "acceptance": "docs/results/assignment-phase2-complete-acceptance-v1.json",
+    "preEntryInfraOrTimeoutRechecksNeeded": [],
+    "note": "The sampled delayed pre-entry launch recovered within the original 300-second budget and its original variant passed. No retry or focused native recheck was needed."
+  },
+  "selfBuild": "Not required for this evidence-only slice; no compiler/runtime changes.",
+  "remainingFailures": [],
+  "heldJournals": [],
+  "activeNativeRunners": [],
+  "activeChecks": [],
+  "pauseStatus": "E pauses after publishing this complete assignment report and handoff."
+}
