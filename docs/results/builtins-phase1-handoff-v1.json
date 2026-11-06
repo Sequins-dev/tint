@@ -1,0 +1,148 @@
+{
+  "kind": "builtins-phase1-handoff",
+  "scope": "Inherited work only; no new selections or compiler/runtime changes.",
+  "branch": "test/builtins-native-coverage",
+  "baseMain": "875de5633b2a57ca8a05bd05dbf79b5e5888675f",
+  "completeReports": [
+    {
+      "selection": "built-ins/Proxy",
+      "pass": 607,
+      "total": 607,
+      "failed": 0,
+      "unsupported": 0,
+      "infrastructureErrors": 0,
+      "report": "docs/results/test262-proxy-reflect-built-ins-proxy-v2.json",
+      "disposition": "Already committed and integrated into main; retained unchanged."
+    }
+  ],
+  "interruptionReports": [
+    "docs/results/test262-builtins-reflect-phase1-interruption-v1.json",
+    "docs/results/test262-builtins-promise-phase1-interruption-v1.json"
+  ],
+  "dirtyFileDecisions": [
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-2f88e489",
+      "path": "pnpm-lock.yaml",
+      "decision": "Discarded inherited diff with git restore. The only change adds @tint/foundation to the packages/js-engine importer; identical dependency entry is already committed on main. No unique implementation was discarded."
+    },
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ada4b631",
+      "path": "pnpm-lock.yaml",
+      "decision": "Discarded inherited diff with git restore. The only change adds @tint/foundation to the packages/js-engine importer; identical dependency entry is already committed on main. No unique implementation was discarded."
+    }
+  ],
+  "supersededBranches": [
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-25b60464",
+      "branch": "feat/promise-try-native-validation",
+      "head": "9529c3aa6992effb95afbb396c5e8e29ec296963",
+      "patchEquivalentCommits": [
+        "- 858683de5c359f8bebe9cc2c06f23c4b2fb5a7ee",
+        "- f9e8100a1ad7ac5235b030c27e5224508b6d4648",
+        "- 071c79ea4266a779636f3e2373b15c4aa6db9c4b",
+        "- 9529c3aa6992effb95afbb396c5e8e29ec296963"
+      ],
+      "trackedAndUntrackedStatus": [],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; clean and patch-equivalent, safe for coordinator to remove. Nonempty inherited .tint-bootstrap directories preserved and hash-verified in active worktree."
+    },
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-2f88e489",
+      "branch": "fix/proxy-reflect-semantics",
+      "head": "1fea08d88a837477485844a54183239f66c12ee4",
+      "patchEquivalentCommits": [
+        "- 1fea08d88a837477485844a54183239f66c12ee4"
+      ],
+      "trackedAndUntrackedStatus": [],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; clean and patch-equivalent, safe for coordinator to remove. Nonempty inherited .tint-bootstrap directories preserved and hash-verified in active worktree."
+    },
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ada4b631",
+      "branch": "fix/promise-job-semantics",
+      "head": "001ed06a2ea928743cd36f30f8f5fa2518633b9a",
+      "patchEquivalentCommits": [
+        "- 001ed06a2ea928743cd36f30f8f5fa2518633b9a"
+      ],
+      "trackedAndUntrackedStatus": [],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; clean and patch-equivalent, safe for coordinator to remove. Nonempty inherited .tint-bootstrap directories preserved and hash-verified in active worktree."
+    },
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-5e969c1b",
+      "branch": "fix/promise-realm-integration",
+      "head": "7a0bd001f4e0a8b7533bdb9c57f4736a0eef552a",
+      "patchEquivalentCommits": [
+        "- 1e20b4a493df1bf8a2eeed6088fdad0faa0187a2",
+        "- ad22f32faa0509c32717a3f259e5b2a239d8cd1e",
+        "- b319e3654da1c45d435010b28082621744e7bebe",
+        "- cc85811e014bda7b54ef3f92996675f1621b708b",
+        "- 7a0bd001f4e0a8b7533bdb9c57f4736a0eef552a"
+      ],
+      "trackedAndUntrackedStatus": [],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; clean and patch-equivalent, safe for coordinator to remove. Nonempty inherited .tint-bootstrap directories preserved and hash-verified in active worktree."
+    },
+    {
+      "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-b1e93826",
+      "branch": "test/proxy-conformance-integration",
+      "head": "0a211662687d51ad4c0a5742e7ca7abc54169100",
+      "patchEquivalentCommits": [],
+      "trackedAndUntrackedStatus": [],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; clean and patch-equivalent, safe for coordinator to remove. Nonempty inherited .tint-bootstrap directories preserved and hash-verified in active worktree."
+    },
+    {
+      "branch": "test/proxy-reflect-native-conformance",
+      "worktree": null,
+      "head": "1bcd94383f92bb271d0252dd55c416d7c840cf80",
+      "patchEquivalentCommits": [
+        "- 34b760a249ec56c74d4d659fd5f980d2cc70dbe3",
+        "- 8b3946a2dc517061826762f9e5dd36f4641e9006",
+        "- e88beca6b2bbba7b4dadd60cb9551747f421e3cc",
+        "- 1bcd94383f92bb271d0252dd55c416d7c840cf80"
+      ],
+      "uniquePatches": 0,
+      "disposition": "Superseded by main; active assigned worktree now holds test/builtins-native-coverage. Old branch can be removed."
+    }
+  ],
+  "processes": {
+    "inheritedPids": [
+      694,
+      46832,
+      67042
+    ],
+    "remaining": [],
+    "checkedBy": "ps -p after termination, exit 1 and no rows",
+    "mainCheckoutUntouched": true,
+    "note": "Obsolete pause/ack markers under the main checkout were deliberately left untouched. Their PIDs are dead; no run should be resumed with that old controller. No inherited inferior was killed."
+  },
+  "phase2NextSteps": [
+    "Resume original frozen Reflect and Promise schema-2 journals without obsolete pause controllers; retain original failures.",
+    "Implement Promise.allKeyed and Promise.allSettledKeyed completely, then perform semantic/native/self-build checks and a new complete family rerun.",
+    "The original Promise frozen toolchain is copied and fully hash-verified under the active worktree .tint-bootstrap/inherited-promise-toolchain-v1; use that retained copy for Phase 2."
+  ],
+  "validation": [],
+  "preservedPromiseToolchain": {
+    "original": "/Users/stephenbelanger/.t3/worktrees/tint/t3-25b60464/.tint-bootstrap/node-toolchain-promise-jobs-v1",
+    "copy": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/inherited-promise-toolchain-v1",
+    "manifestSha256": "97474f5e4ac2c0498964f8a53bad56e1543aa9e06bdf479d4f53595ad2b130e6",
+    "verifiedFiles": 2400,
+    "verifiedLinks": 14,
+    "purpose": "Preserve original frozen compiler/runner before coordinator removes superseded Promise worktree. No native selection executed."
+  },
+  "ignoredArtifactArchives": [
+    {
+      "worktree": "t3-25b60464",
+      "copy": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/inherited-worktree-artifacts/t3-25b60464",
+      "verifiedFiles": 2438,
+      "bytes": 397864302
+    },
+    {
+      "worktree": "t3-ada4b631",
+      "copy": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/inherited-worktree-artifacts/t3-ada4b631",
+      "verifiedFiles": 3,
+      "bytes": 183631159
+    }
+  ]
+}

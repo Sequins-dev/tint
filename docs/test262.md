@@ -58,7 +58,9 @@ The complete joint-iteration reruns pass [74/76 zip](results/test262-iterator-zi
 
 The consolidated toolchain passes **99/101 (98.02%) Boolean** in its [complete native selection](results/test262-boolean-framework-native-v1.json). Two eval-dependent variants remain unsupported; there are no semantic failures or infrastructure errors.
 
-The complete [Reflect selection](results/test262-reflect-framework-native-v1.json) passes **305/306 (99.67%)** with no semantic failures or unsupported variants. One pre-entry debugger failure remains in the denominator.
+The complete [Reflect selection](results/test262-reflect-framework-native-v1.json) passes **305/306 (99.67%)** with no semantic failures or unsupported variants. One pre-entry debugger failure remains in the denominator. The [inherited v2 rerun](results/test262-builtins-reflect-phase1-interruption-v1.json) was stopped at a confirmed between-variant pause after over five hours without progress; it recorded 0/306 variants and does not replace that complete result.
+
+The [inherited Promise rerun](results/test262-builtins-promise-phase1-interruption-v1.json) was stopped at a confirmed between-variant pause after over five hours without progress: **576/1,458 observed**, with 418 passes, 158 failures and 882 unobserved variants. All observed failures concern missing `allKeyed` (88) or `allSettledKeyed` (70) APIs; zero observed unsupported or infrastructure outcomes. This interrupted prefix is not a complete family result.
 
 The complete [`Intl.Locale.getCalendars` selection](results/test262-locale-calendars-native-v1.json) passes **16/16**, with no failures or infrastructure errors. [Six native boundary fixtures](results/native-locale-calendars-validation-v1.json) also pass. The full Locale family still needs a rerun after the remaining collation work.
 
