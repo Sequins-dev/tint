@@ -1,0 +1,139 @@
+{
+  "kind": "native-proxy-reflect-status",
+  "conformance": true,
+  "wholeSuite": false,
+  "recordedAt": "2026-11-06T10:05:00Z",
+  "sourceSnapshot": {
+    "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+    "files": 568
+  },
+  "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+  "frozenToolchainRecord": "/Users/stephenbelanger/Code/nodejs/tint/docs/results/frozen-node-toolchain-managed-templates-v1.json",
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "adapter": "native-script-v19-managed-templates",
+  "compilerReuse": "No compiler or runtime source changed in this task (source c1102df6\u2026/568 files equals the accepted managed-templates-v1 host); the accepted stage2-json-await-chains-v1 compiler and unchanged 220-module bootstrap graph are reused without a self-build.",
+  "results": {
+    "proxyRealmsFixture": {
+      "report": "docs/results/native-proxy-realms-validation-v1.json",
+      "accepted": true,
+      "cases": 8,
+      "completed": 8,
+      "imageSha256": "939d5accf2ca55ee4c22a878c270827b3584f47638dfe9575f47daad4c25b909",
+      "conformance": false
+    },
+    "focusedUnchanged": {
+      "report": "docs/results/proxy-reflect-native-focused-v1.json",
+      "files": 15,
+      "total": 27,
+      "passed": 27,
+      "scope": "14 built-ins/Proxy files with nonpassing variants in test262-proxy-native-v2 plus language/statements/with/set-mutable-binding-idref-compound-assign-with-proxy-env.js; overlaps the complete Proxy report and is not added to it."
+    },
+    "builtInsProxy": {
+      "report": "docs/results/test262-proxy-reflect-built-ins-proxy-v2.json",
+      "complete": true,
+      "totals": {
+        "total": 607,
+        "passed": 607,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPasses": [],
+      "grants": [
+        {
+          "batch": 0,
+          "variants": 64,
+          "grantedAt": "2026-11-06T03:39:36.392Z",
+          "releasedAt": "2026-11-06T03:42:11.341Z"
+        },
+        {
+          "batch": 1,
+          "variants": 64,
+          "grantedAt": "2026-11-06T04:07:44.197Z",
+          "releasedAt": "2026-11-06T04:08:13.418Z"
+        },
+        {
+          "batch": 2,
+          "variants": 64,
+          "grantedAt": "2026-11-06T04:39:02.379Z",
+          "releasedAt": "2026-11-06T04:40:36.049Z"
+        },
+        {
+          "batch": 3,
+          "variants": 64,
+          "grantedAt": "2026-11-06T05:32:03.502Z",
+          "releasedAt": "2026-11-06T05:32:28.722Z"
+        },
+        {
+          "batch": 4,
+          "variants": 64,
+          "grantedAt": "2026-11-06T06:19:26.000Z",
+          "releasedAt": "2026-11-06T06:19:53.228Z"
+        },
+        {
+          "batch": 5,
+          "variants": 64,
+          "grantedAt": "2026-11-06T07:35:18.094Z",
+          "releasedAt": "2026-11-06T07:35:39.270Z"
+        },
+        {
+          "batch": 6,
+          "variants": 64,
+          "grantedAt": "2026-11-06T08:25:57.629Z",
+          "releasedAt": "2026-11-06T08:26:21.818Z"
+        },
+        {
+          "batch": 7,
+          "variants": 64,
+          "grantedAt": "2026-11-06T09:16:22.208Z",
+          "releasedAt": "2026-11-06T09:16:43.373Z"
+        },
+        {
+          "batch": 8,
+          "variants": 64,
+          "grantedAt": "2026-11-06T09:28:47.009Z",
+          "releasedAt": "2026-11-06T09:29:46.429Z"
+        },
+        {
+          "batch": 9,
+          "variants": 31,
+          "grantedAt": "2026-11-06T09:47:38.107Z",
+          "releasedAt": "2026-11-06T09:47:52.234Z"
+        }
+      ],
+      "supersedes": "docs/results/test262-proxy-native-v2.json (582/607; retained unmodified)"
+    },
+    "builtInsReflect": {
+      "complete": false,
+      "observedVariants": 0,
+      "selectionTotal": 306,
+      "state": "Deferred by parent priority (finish language/* first) before any Reflect inferior ran. Batch 0 (64 execution variants) is compiled and held by the runner pause; controller PID 694 is SIGSTOPped holding no lease or central pause; rotation entry 40-proxy has pids [] with a deferral record. Resume: restore pids [694], kill -CONT 694. The journal continues in place; no result is claimed until the complete selection report exists.",
+      "liveJournal": ".tint-bootstrap/proxy-reflect/test262-built-ins-reflect-v2.jsonl (worktree t3-e44c7d58)",
+      "currentEvidence": "docs/results/test262-reflect-framework-native-v1.json (305/306, one pre-entry debugger failure) remains the dashboard result"
+    }
+  },
+  "protocolLineage": [
+    {
+      "version": "proxy-reflect-native-v1",
+      "scope": "fixture and focused phases",
+      "serialization": "parallel-coverage lease (atomic mkdir + owner.json), then the central cooperative pause on the verified unpaused runner (21082 under 21898); one lease per phase"
+    },
+    {
+      "version": "proxy-reflect-native-v2",
+      "scope": "complete selections",
+      "serialization": "fair turn/rotation files, then lease, then central pause; exactly one frozen-runner batch (at most 64 variants) per grant; the runner is held by its own TINT_TEST262_PAUSE between grants so compilation occurs without the lane. Stricter than the coordinator option-1 caps (at most 64 execution or 64 syntax-only variants per grant)."
+    }
+  ],
+  "semanticTests": "packages/js-runtime/test/ordinary-object-proxy-realms.test.ts (5/5)",
+  "workspaceGates": {
+    "typecheck": "pass",
+    "tests": "4398/4399; the one failure was environmental (missing worktree-local pinned suite link) and passes 10/10 after linking",
+    "boundaries": "pass",
+    "format": "pass",
+    "logs": ".tint-bootstrap/proxy-reflect/workspace-check-v1*.log (worktree)"
+  },
+  "runtimeDefects": "None found; no runtime source changes. The historical nonpassing variants pass on the current host."
+}
