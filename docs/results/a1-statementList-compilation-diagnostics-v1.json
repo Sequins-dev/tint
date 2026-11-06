@@ -1,0 +1,26 @@
+{
+  "kind": "compilation-stall-diagnostics",
+  "conformance": false,
+  "selection": "language/statementList",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-language-statementList-heartbeat-v1.json",
+  "workspaceBuild": {
+    "command": "Node24 PATH pnpm build",
+    "exitStatus": 0,
+    "log": "docs/results/a1-statementList-initial-build-v1.log"
+  },
+  "batch": {
+    "id": 0,
+    "variants": 64,
+    "compileMs": 606048.012333,
+    "outcome": "compiled"
+  },
+  "samples": [
+    "docs/results/a1-statementList-batch0-sample-v1.txt",
+    "docs/results/a1-statementList-batch0-stall-sample-v1.txt"
+  ],
+  "finding": "Node process3322 remained CPU-active with JavaScript execution and garbage collection; CPU time grew from1:30 to6:29 during the observed initialization/compile interval. No pause file; stdin /dev/null. 30s heartbeat and 150s STALL threshold remained enabled.",
+  "hostSaturation": "docs/results/a1-host-extreme-saturation-observation-v1.json",
+  "image": "docs/results/a1-statementList-retained-batch0-v1.json",
+  "nativeCompletion": "Not complete: subsequent supervisor replacement interrupted at62 observations. See interruption report; no complete-selection pass claim.",
+  "interruption": "docs/results/a1-statementList-interruption-v1.json"
+}
