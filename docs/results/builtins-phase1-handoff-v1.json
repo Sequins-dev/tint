@@ -122,7 +122,54 @@
     "Implement Promise.allKeyed and Promise.allSettledKeyed completely, then perform semantic/native/self-build checks and a new complete family rerun.",
     "The original Promise frozen toolchain is copied and fully hash-verified under the active worktree .tint-bootstrap/inherited-promise-toolchain-v1; use that retained copy for Phase 2."
   ],
-  "validation": [],
+  "validation": [
+    {
+      "command": "pnpm check (initial shell default Node v26.0.0)",
+      "exitStatus": 143,
+      "disposition": "Deliberately terminated own type-check process after detecting unsupported Node version; not a passing validation. No test failures observed.",
+      "log": "docs/results/builtins-phase1-check-node26-interrupted-v1.log"
+    },
+    {
+      "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH pnpm check",
+      "exitStatus": 0,
+      "nodeVersion": "v24.12.0",
+      "constituents": {
+        "build": 0,
+        "typecheck": 0,
+        "test": 0,
+        "boundaries": 0,
+        "format:check": 0
+      },
+      "tests": {
+        "pass": 4446,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "log": "docs/results/builtins-phase1-check-node24-v1.log"
+    },
+    {
+      "command": "Verify archived journal hashes, unique outcomes and all observed pinned Test262 source/harness hashes",
+      "exitStatus": 0,
+      "verifiedObservedVariants": 576
+    },
+    {
+      "command": "Verify copied frozen Promise toolchain and bootstrap artifact file hashes",
+      "exitStatus": 0,
+      "toolchainFiles": 2400,
+      "toolchainLinks": 14
+    },
+    {
+      "command": "git diff --check",
+      "exitStatus": 0
+    },
+    {
+      "command": "git rebase main",
+      "exitStatus": 0,
+      "main": "875de5633b2a57ca8a05bd05dbf79b5e5888675f",
+      "result": "Already current; no code changes since validation."
+    }
+  ],
   "preservedPromiseToolchain": {
     "original": "/Users/stephenbelanger/.t3/worktrees/tint/t3-25b60464/.tint-bootstrap/node-toolchain-promise-jobs-v1",
     "copy": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/inherited-promise-toolchain-v1",
@@ -144,5 +191,7 @@
       "verifiedFiles": 3,
       "bytes": 183631159
     }
-  ]
+  ],
+  "nativeSelfBuild": "Not required: this Phase 1 change only records existing native evidence and documentation. Compiler/runtime unchanged.",
+  "mergeReadyCommitBase": "875de5633b2a57ca8a05bd05dbf79b5e5888675f"
 }
