@@ -119,6 +119,7 @@ Current C1 class reruns use complete disjoint selections; the 2,081-variant foun
 | [`language/statements/class/name-binding`](results/test262-c1-foundation-language-statements-class-name-binding-v2.json) | 12 / 12 | 0 / 0 / 0 |
 | [`language/statements/class/arguments`](results/test262-c1-foundation-language-statements-class-arguments-v2.json) | 4 / 4 | 0 / 0 / 0 |
 | [`language/statements/class/strict-mode`](results/test262-c1-foundation-language-statements-class-strict-mode-v2.json) | 4 / 4 | 0 / 0 / 0 |
+| [`language/statements/class/super`](results/test262-c1-foundation-language-statements-class-super-v2.json) | 16 / 16 | 0 / 0 / 0 |
 
 The arguments selection also retains a [post-completion launcher failure](results/c1-slot-launcher-reexecution-v1.json): its four original native variants passed, and journal exclusivity rejected an unintended second runner invocation before any further native execution. The [immutable-source launcher correction](results/c1-slot-snapshot-launch-validation-v1.json) completed the next selection with a single invocation and exit 0.
 

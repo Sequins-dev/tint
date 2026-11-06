@@ -1,0 +1,16 @@
+{
+  "kind": "native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/super",
+  "phase": "compiling batch 0 (16 variants)",
+  "runner": 36669,
+  "sample": "docs/results/c1-super-batch0-stall-v1.txt",
+  "cpuObservations": [
+    "03:13.25",
+    "03:22.67"
+  ],
+  "children": [],
+  "stdin": "/dev/null",
+  "pauseMarkerConfigured": false,
+  "interpretation": "CPU-active synchronous bootstrap compilation; sampled at first observed STALL and continued without interruption or retry. Pending-launch boundary check resumed the launcher when its runner was already active; no native runner or inferior was paused."
+}
