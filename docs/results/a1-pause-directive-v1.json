@@ -1,0 +1,19 @@
+{
+  "kind": "coordinator-directed-cluster-pause",
+  "conformance": false,
+  "selection": "language/statements/for",
+  "expected": 758,
+  "nativeExecutions": 0,
+  "journalCreated": false,
+  "stopped": "Queued supervisor84248 and wrapper88023; entire group stopped and inspected before termination. Only supervisor, limiter and sleep existed; no native runner/debugger/inferior.",
+  "monitorStopped": 84254,
+  "log": "docs/results/a1-for-breadth-v2-paused-queue.log",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-language-statements-for-breadth-v2-heartbeat-v1.json",
+  "heldJournal": "docs/results/test262-a1-phase1-language-statementList-heartbeat-v1.jsonl",
+  "heldObservations": {
+    "passed": 62,
+    "total": 160,
+    "remaining": 98
+  },
+  "policy": "No new heavy measurement jobs. Preserve original frozen identity for held journal. New selections only after explicit resume directive."
+}
