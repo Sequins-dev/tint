@@ -1,0 +1,17 @@
+{
+  "kind": "host-tooling-consolidation",
+  "conformance": false,
+  "retiredCommit": "05ab39a6cec3732f6242e85df998e911f54d91ef",
+  "replacementCommit": "3d86b82211c1f91a856725256234244ea6c6c7d6",
+  "reason": "Both changes stably group parse/early-negative files before native execution files. Retain the upstream reusable helper and remove the duplicate F API, implementation and tests.",
+  "staticProof": "docs/results/cluster-f-native-batch-order-inventory-v2.json",
+  "previousGate": {
+    "exitStatus": 0,
+    "tests": 4522,
+    "pass": 4522,
+    "fail": 0,
+    "log": "docs/results/cluster-f-phase2-slotted-check-v5.log",
+    "scope": "Gate ran before the rebase and retirement, on the former F implementation; it is not a gate for the newly integrated upstream code."
+  },
+  "nativeRun": "Original generator measurement remains on its original frozen toolchain; no source, variant policy or result is replaced."
+}
