@@ -1,0 +1,21 @@
+{
+  "kind": "slot-wrapper-regression",
+  "conformance": false,
+  "cause": "In-place edit of shared zsh source while child runs shifts resumed source cursor and dispatches command twice.",
+  "red": {
+    "exitStatus": 1,
+    "actualDispatches": 2,
+    "expectedDispatches": 1,
+    "log": "docs/results/a1-slot-source-red-v1.log"
+  },
+  "green": {
+    "exitStatus": 0,
+    "actualDispatches": 1,
+    "log": "docs/results/a1-slot-source-green-confirmed-v1.log"
+  },
+  "fix": "Snapshot exact current official wrapper bytes once per launch, syntax-check with zsh -n, execute immutable snapshot. Shared resource directories and coordinator caps remain active.",
+  "helper": "docs/results/a1-slot-invocation-v1.mjs",
+  "test": "docs/results/a1-slot-source.test-v1.mjs",
+  "affectedNativeRun": "docs/results/a1-white-space-post-completion-wrapper-error-v1.json",
+  "sharedWrapperEditedByA1": false
+}
