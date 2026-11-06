@@ -1,0 +1,30 @@
+{
+  "kind": "native-debugger-integration",
+  "conformance": false,
+  "debuggerLaunch": "debugserver-connected",
+  "driverSha256": "45257301c666ad98382034213fd7bd7de295c970f47fb809b6a22ea3c55c89be",
+  "fixtureManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "449314e5e5fa186f989c4f0da8e41587594a222de7113b0d7b8b1db9b77e62ab",
+      "files": 568
+    },
+    "imageSha256": "30c56794399656b8104fab689a4adef2aa9801cb12ade4ddeeea769431f02391",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-a3-connection-events-Gdm9lF/a3-connection-events.source.ts",
+    "fixtureSha256": "dbfa0f12975d2245b38fbd1fb4a977991eac7efe69cd44e25781f68819260f32",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/build-connection-smoke.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": false
+  },
+  "outcome": {
+    "kind": "completed"
+  },
+  "assertions": "executeNativeFile accepts completed only after a stopped initial state with a positive PID, then a final exited state mapped from native exit 42."
+}

@@ -1,0 +1,64 @@
+{
+  "kind": "merge-ready-validation",
+  "branch": "feat/modules-native-coverage",
+  "base": "20810b1d3734d762727fd4069a9df6977d85c3a8",
+  "scope": "Node-only extraction, scheduling and LLDB connection-state fixes; no portable compiler/runtime source changed by A3.",
+  "commands": [
+    {
+      "command": "pnpm build",
+      "exitStatus": 0
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check",
+      "exitStatus": 0,
+      "tests": 4517,
+      "passed": 4517,
+      "failed": 0,
+      "logSha256": "e277994d7b457e7efa54136f59588d7ad3503e030b4272fd619e18e2aa4947bb",
+      "tail": "ℹ tests 4517\nℹ suites 0\nℹ pass 4517\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 211268.786542\n[tint-check] boundaries\n\n> tint-workspace@ boundaries /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322\n> node tools/check-boundaries.ts\n\nVerified public imports, dependency contracts and acyclic graph for 14 portable packages.\n[tint-check] format:check\n\n> tint-workspace@ format:check /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322\n> prettier --check packages tools types *.json pnpm-workspace.yaml\n\nChecking formatting...\nAll matched files use Prettier code style!\n[tint-check] all gates passed\n"
+    },
+    {
+      "command": "node --test --test-concurrency=2 tools/test262-coverage-ledger.test.ts",
+      "exitStatus": 0,
+      "tests": 7,
+      "passed": 7,
+      "reason": "Latest main added ledger tools after full test file enumeration; focused checks cover the addition."
+    },
+    {
+      "command": "pnpm exec tsc -p tsconfig.tests.json",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm exec tsc -p tsconfig.host.json",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm boundaries",
+      "exitStatus": 0
+    },
+    {
+      "command": "pnpm exec prettier --check tools/test262-coverage-ledger.ts tools/test262-coverage-ledger.test.ts",
+      "exitStatus": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitStatus": 0
+    }
+  ],
+  "nativeEvidence": "modules-a3-connection-native-validation-v1.json",
+  "ledgerInputEvidence": "modules-a3-ledger-input-validation-v1.json",
+  "retainedFailedGates": [
+    "modules-a3-extraction-validation-v1.json",
+    "modules-a3-load-recheck-v1.json"
+  ],
+  "selfBuild": "Not applicable to these Node-only changes. Parent main contains its own codegen acceptance.",
+  "pause": {
+    "userDirected": true,
+    "activeProcesses": [],
+    "moduleCodeV5JournalCreated": false,
+    "moduleCodeV5Status": "Queued request is no longer live; no observations or journal were created. Start a fresh report when A3 is unpaused.",
+    "retainedModuleCodePrefix": "modules-a3-module-code-interrupted-v1.jsonl",
+    "dynamicImportPrefix": "cluster-a2-dynamic-import-memory-emergency-prefix-v1.jsonl",
+    "dynamicImportResumed": false
+  }
+}

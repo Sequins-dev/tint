@@ -1,0 +1,30 @@
+{
+  "kind": "load-window-validation-recheck",
+  "conformance": false,
+  "failedWorkspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 1,
+    "tests": 4517,
+    "passed": 4516,
+    "failed": 1,
+    "failure": "worker emits stderr while the runner blocks and closes on success and error",
+    "cause": "A fixed 300ms blocking window did not allow the worker to initialize and emit periodic output during a recorded memory-thrashing window. No A3 test or portable algorithm failed.",
+    "observedLoadPeak": 629.9,
+    "logSha256": "7a85137943b308a70e486fc8c5c3f000373b52b43eca6ad9df1b4f1ea25533e1"
+  },
+  "focusedRecheck": {
+    "command": "node --test --test-concurrency=2 tools/test262-native-heartbeat.test.ts",
+    "exitStatus": 0,
+    "tests": 4,
+    "passed": 4,
+    "previouslyObservedLoad": 23.02,
+    "log": "\u2714 heartbeat intervals are bounded integers and zero disables only the heartbeat (1.471166ms)\n\u2714 transitions, elapsed time, counts, repeated stalls, pause path and timer disposal (1.513208ms)\n\u2714 disabled heartbeat emits neither transitions nor periodic lines (0.142416ms)\n\u2714 worker emits stderr while the runner blocks and closes on success and error (843.000875ms)\n\u2139 tests 4\n\u2139 suites 0\n\u2139 pass 4\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 939.270917\n"
+  },
+  "nativeFixture": {
+    "report": "modules-a3-connection-native-validation-v1.json",
+    "exitStatus": 0,
+    "fixtureSource": "export function run():number{return 42;}",
+    "scope": "Tiny Tint image validates debugger entry/exit and current driver APIs. Adds no Test262 conformance outcomes."
+  },
+  "nextGate": "check-v5 queued; not yet claiming whole-branch merge readiness."
+}
