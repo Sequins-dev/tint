@@ -1,0 +1,64 @@
+{
+  "kind": "workspace-gate-observation",
+  "conformance": false,
+  "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "sourceSnapshot": {
+    "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+    "files": 568
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "stages": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "format": 0
+  },
+  "tests": {
+    "total": 4587,
+    "passed": 4587,
+    "failed": 0
+  },
+  "input": {
+    "base": "ac809570f1f93a4d1c3fbed84ee55cb62873df02",
+    "head": "9f0da3b4856b3d9df6deacce480ab865c161fb97",
+    "at": "2026-11-06T23:02:05.127Z"
+  },
+  "queueRebases": [
+    {
+      "at": "2026-11-06T23:05:10.896Z",
+      "base": "df1d44167b1747de49cdcf186a0d10d7afb4c37d",
+      "head": "300f68887c8e5f483242e2b02c61d24c122ec720",
+      "sourceSnapshot": {
+        "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+        "files": 568
+      },
+      "reason": "Docs-only main updates; queued gate group stopped and inspected as shells/sleep only, rebased, source identity verified before resuming."
+    },
+    {
+      "at": "2026-11-06T23:07:38.951Z",
+      "base": "c24cb9b7aae9ff8ba6d0da859f4413a4f133ca1a",
+      "head": "e825ceb4826a3122b5d953f02bbe1b38b54e5234",
+      "sourceSnapshot": {
+        "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+        "files": 568
+      },
+      "reason": "Docs-only C1 main updates while gate remained queued; shells/sleep inspected before rebase."
+    },
+    {
+      "at": "2026-11-06T23:12:47.003Z",
+      "base": "11cc7e6375c45e8092f1b8847a9ed6ffb798d04c",
+      "head": "9ed0e43392d2e5d5f92e1f79cf07044dc1891c70",
+      "sourceSnapshot": {
+        "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+        "files": 568
+      },
+      "reason": "Docs-only direct-mode coverage updates; queued shells and sleep inspected before rebase."
+    }
+  ],
+  "priorFailure": "docs/results/temporal-h-check-v9.json",
+  "log": {
+    "path": "docs/results/temporal-h-check-v11.log",
+    "sha256": "e09245b95e58a5b80e0f85515754d6d53f9ae44af88938a44e44cf083769fd6e"
+  }
+}
