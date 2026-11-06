@@ -1,0 +1,146 @@
+{
+  "kind": "c2-native-evidence-index",
+  "scope": "Each linked report retains its own complete selection, source snapshot and all outcomes. Focused selections overlap broader scope and are not summed.",
+  "currentCompleteFileHarvest": "docs/results/c2-elements-complete-file-harvest-v1.json",
+  "earlierCompleteSelections": [
+    {
+      "report": "docs/results/test262-c2-async-gen-private-method-native-v1.json",
+      "selection": "language/statements/class/elements/async-gen-private-method",
+      "totals": {
+        "total": 156,
+        "passed": 156,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-async-gen-private-method-static-native-v1.json",
+      "selection": "language/statements/class/elements/async-gen-private-method-static",
+      "totals": {
+        "total": 156,
+        "passed": 156,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-async-private-method-native-v1.json",
+      "selection": "language/statements/class/elements/async-private-method",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-async-private-method-static-native-v1.json",
+      "selection": "language/statements/class/elements/async-private-method-static",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-private-methods-direct-native-v4.json",
+      "selection": "language/statements/class/elements/private-methods",
+      "totals": {
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-dstr-canary-native-v2.json",
+      "selection": "language/statements/class/dstr/meth-ary-init-iter-close.js",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "2e899ef5cedd34b7cb2efd8f0f45c38f28f2a8b220b0f0b999e8571833fa0c4f",
+        "files": 568
+      }
+    },
+    {
+      "report": "docs/results/test262-c2-private-methods-native-v3.json",
+      "selection": "language/statements/class/elements/private-methods",
+      "totals": {
+        "total": 10,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.9
+      },
+      "sourceSnapshot": {
+        "sha256": "a449de7f4b1d5b4fec9abd50ace751823a67aab9f61156d1f37649024817a4c9",
+        "files": 568
+      }
+    }
+  ],
+  "plannedPopulation": "docs/results/c2-scope-census-v1.json",
+  "incompleteSurveys": [
+    {
+      "journal": ".tint-bootstrap/c2/test262-c2-statements-elements-native-v2.jsonl",
+      "selection": "language/statements/class/elements",
+      "plannedVariants": 3156,
+      "status": "Running; canonical complete directory report pending."
+    },
+    {
+      "report": "docs/results/c2-statements-elements-main-restart-interruption-v2.json",
+      "status": "Retained1023-pass interrupted prefix; no complete directory result."
+    }
+  ]
+}
