@@ -1,0 +1,31 @@
+{
+  "kind": "a1-breadth-priority-decision",
+  "conformance": false,
+  "at": "2026-11-06T19:45:42.696Z",
+  "directive": "Prioritize ledger-countable complete reports for largest unmeasured A1 groups; preserve active run and finish Phase1.",
+  "authoritativePlan": "docs/results/a1-coverage-priority-plan-v2.json",
+  "diagnosticPlan": "docs/results/a1-coverage-priority-plan-v1.json",
+  "distinction": "v1 only recognized identical whole-directory reports; v2 also counts pinned variant hashes from complete subgroup reports and orders by deduplicated unmeasured population. No pass rates combined.",
+  "firstNewSelection": {
+    "selection": "language/statements/for",
+    "total": 758,
+    "unmeasured": 758
+  },
+  "activeRun": {
+    "selection": "language/statementList",
+    "runnerPid": 3322,
+    "wrapperPid": 59832,
+    "journal": "docs/results/test262-a1-phase1-language-statementList-heartbeat-v1.jsonl",
+    "nativeRunInterrupted": false
+  },
+  "supervisorReplacement": {
+    "oldPid": 59338,
+    "signal": "SIGTERM",
+    "exitStatus": 143,
+    "purpose": "Replace original fixed small-first queue with latest breadth priority; wrapper and native runner remained alive and continued, verified PPID and journal growth.",
+    "wrapperExitStatusPolicy": "Original parent cannot reap final wrapper exit; retain completed canonical report and journal, stderr, and explicitly record this status limitation. Do not infer an exit status."
+  },
+  "newSupervisor": ".tint-bootstrap/a1-phase1-breadth-heartbeat.mjs",
+  "order": "Wait for existing statementList wrapper; new A1 breadth priority descending unmeasured variants; then remaining original v2/v3 selections, deduplicated by selection. No module work scheduled.",
+  "nativeConcurrency": 1
+}

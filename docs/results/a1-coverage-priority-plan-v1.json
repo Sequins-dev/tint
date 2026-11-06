@@ -1,0 +1,886 @@
+{
+  "kind": "a1-coverage-priority-plan",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "at": "2026-11-06T19:42:46.953Z",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "policy": "Exact complete selection reports matched against all pinned source hashes and variants; breadth-only classification, no merged pass rate or chronology claim. Module directories assigned to A3 excluded.",
+  "groups": [
+    {
+      "selection": "language/arguments-object",
+      "expected": 460,
+      "reports": [
+        {
+          "report": "docs/results/test262-arguments-native-v1.json",
+          "totals": {
+            "total": 460,
+            "passed": 86,
+            "failed": 42,
+            "unsupported": 318,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 14,
+            "passFraction": 0.18695652173913044
+          }
+        },
+        {
+          "report": "docs/results/test262-arguments-native-v2.json",
+          "totals": {
+            "total": 460,
+            "passed": 456,
+            "failed": 2,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.991304347826087
+          },
+          "sourceSnapshot": {
+            "sha256": "432b83614bf4868995c0f3eeab96b18155c8f28f66f3d86fac7a0aee1634361a",
+            "files": 456
+          }
+        },
+        {
+          "report": "docs/results/test262-language-arguments-object-current-v1.json",
+          "totals": {
+            "total": 460,
+            "passed": 458,
+            "failed": 2,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9956521739130435
+          },
+          "sourceSnapshot": {
+            "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/asi",
+      "expected": 204,
+      "reports": []
+    },
+    {
+      "selection": "language/block-scope",
+      "expected": 287,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-block-scope-core-v1.json",
+          "totals": {
+            "total": 287,
+            "passed": 287,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+            "files": 565
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/comments",
+      "expected": 81,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-comments-v2.json",
+          "totals": {
+            "total": 81,
+            "passed": 81,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/computed-property-names",
+      "expected": 96,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-computed-property-names-direct-v3.json",
+          "totals": {
+            "total": 96,
+            "passed": 96,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/destructuring",
+      "expected": 37,
+      "reports": [
+        {
+          "report": "docs/results/test262-destructuring-native-v1.json",
+          "totals": {
+            "total": 37,
+            "passed": 34,
+            "failed": 1,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.918918918918919
+          }
+        },
+        {
+          "report": "docs/results/test262-destructuring-native-v2.json",
+          "totals": {
+            "total": 37,
+            "passed": 34,
+            "failed": 0,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 1,
+            "passFraction": 0.918918918918919
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/directive-prologue",
+      "expected": 62,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-directive-prologue-v2.json",
+          "totals": {
+            "total": 62,
+            "passed": 62,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/function-code",
+      "expected": 281,
+      "reports": []
+    },
+    {
+      "selection": "language/future-reserved-words",
+      "expected": 85,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-future-reserved-words-direct-v3.json",
+          "totals": {
+            "total": 85,
+            "passed": 85,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/global-code",
+      "expected": 75,
+      "reports": [
+        {
+          "report": "docs/results/test262-global-code-admission-native-v1.json",
+          "totals": {
+            "total": 75,
+            "passed": 73,
+            "failed": 0,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9733333333333334
+          },
+          "sourceSnapshot": {
+            "sha256": "dc02ba996a88397297be0b7b1d0f8f6e9005cb2ea704f2bf7924818267341291",
+            "files": 550
+          }
+        },
+        {
+          "report": "docs/results/test262-global-code-direct-eval-native-v1.json",
+          "totals": {
+            "total": 75,
+            "passed": 74,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 1,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9866666666666667
+          },
+          "sourceSnapshot": {
+            "sha256": "5d1967574760292ac65d6c7ef1cd8ae1a1d5266b2b3193cc0fd694825066cef8",
+            "files": 552
+          }
+        },
+        {
+          "report": "docs/results/test262-global-code-evalscript-baseline-native-v1.json",
+          "totals": {
+            "total": 75,
+            "passed": 50,
+            "failed": 0,
+            "unsupported": 25,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.6666666666666666
+          },
+          "sourceSnapshot": {
+            "sha256": "55e4007cec59e63ba7763705d27afce4f0b42f6ae562ff53d78165485597713c",
+            "files": 549
+          }
+        },
+        {
+          "report": "docs/results/test262-global-code-evalscript-host-native-v1.json",
+          "totals": {
+            "total": 75,
+            "passed": 72,
+            "failed": 0,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 1,
+            "passFraction": 0.96
+          },
+          "sourceSnapshot": {
+            "sha256": "55e4007cec59e63ba7763705d27afce4f0b42f6ae562ff53d78165485597713c",
+            "files": 549
+          }
+        },
+        {
+          "report": "docs/results/test262-language-core-global-code-v3-direct-v1.json",
+          "totals": {
+            "total": 75,
+            "passed": 70,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 5,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9333333333333333
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/identifier-resolution",
+      "expected": 22,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-identifier-resolution-v2.json",
+          "totals": {
+            "total": 22,
+            "passed": 22,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/identifiers",
+      "expected": 535,
+      "reports": []
+    },
+    {
+      "selection": "language/keywords",
+      "expected": 50,
+      "reports": []
+    },
+    {
+      "selection": "language/line-terminators",
+      "expected": 82,
+      "reports": [
+        {
+          "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.json",
+          "totals": {
+            "total": 82,
+            "passed": 82,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "5dd97f5fd5f46759faf13f9637efdb89cbb47a0df52d2e932f4dddcbb76ac26c",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/literals",
+      "expected": 1041,
+      "reports": []
+    },
+    {
+      "selection": "language/punctuators",
+      "expected": 22,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-punctuators-v2.json",
+          "totals": {
+            "total": 22,
+            "passed": 22,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/reserved-words",
+      "expected": 53,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-reserved-words-v2.json",
+          "totals": {
+            "total": 53,
+            "passed": 53,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/rest-parameters",
+      "expected": 22,
+      "reports": [
+        {
+          "report": "docs/results/test262-rest-parameters-native-v1.json",
+          "totals": {
+            "total": 22,
+            "passed": 14,
+            "failed": 2,
+            "unsupported": 6,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.6363636363636364
+          }
+        },
+        {
+          "report": "docs/results/test262-rest-parameters-native-v2.json",
+          "totals": {
+            "total": 22,
+            "passed": 21,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 1,
+            "passFraction": 0.9545454545454546
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/source-text",
+      "expected": 2,
+      "reports": [
+        {
+          "report": "docs/results/test262-language-core-source-text-v2.json",
+          "totals": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "8676847d441724b4ecc1583774b3a3706e86c0aa59798fd6f3df0710e409dc4f",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statementList",
+      "expected": 160,
+      "reports": []
+    },
+    {
+      "selection": "language/white-space",
+      "expected": 134,
+      "reports": [
+        {
+          "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.json",
+          "totals": {
+            "total": 134,
+            "passed": 134,
+            "failed": 0,
+            "unsupported": 0,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 1
+          },
+          "sourceSnapshot": {
+            "sha256": "ff22a2a00585e4059e1d7dfc39a844d04d976607f170890253aa76f135e55bca",
+            "files": 568
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/await-using",
+      "expected": 188,
+      "reports": [
+        {
+          "report": "docs/results/test262-await-using-annex-native-v3.json",
+          "totals": {
+            "total": 188,
+            "passed": 180,
+            "failed": 0,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9574468085106383
+          },
+          "sourceSnapshot": {
+            "sha256": "290c4a3cb74772e1e6e211b899f5891419e4155e180d1a5593221128a23cce9e",
+            "files": 444
+          }
+        },
+        {
+          "report": "docs/results/test262-await-using-handoff-native-v4.json",
+          "totals": {
+            "total": 188,
+            "passed": 180,
+            "failed": 0,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9574468085106383
+          },
+          "sourceSnapshot": {
+            "sha256": "020307fc44d8e4dcfd5da3e79be9f4612610f2fb16efb368dd1bf9cee6da7b0d",
+            "files": 444
+          }
+        },
+        {
+          "report": "docs/results/test262-await-using-native-v1.json",
+          "totals": {
+            "total": 188,
+            "passed": 178,
+            "failed": 2,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9468085106382979
+          },
+          "sourceSnapshot": {
+            "sha256": "247848da47c131ec97cc2eab65ce2c21dd1390b04bbe915353f7d82de6d0c8d7",
+            "files": 444
+          }
+        },
+        {
+          "report": "docs/results/test262-await-using-native-v2.json",
+          "totals": {
+            "total": 188,
+            "passed": 180,
+            "failed": 0,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.9574468085106383
+          },
+          "sourceSnapshot": {
+            "sha256": "dc186ba0695b3baf242ca1c25a89f2ea8d24f514be843ffb9c277cd2d3c3226c",
+            "files": 444
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/block",
+      "expected": 40,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/break",
+      "expected": 40,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/const",
+      "expected": 271,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/continue",
+      "expected": 48,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/debugger",
+      "expected": 4,
+      "reports": [
+        {
+          "report": "docs/results/test262-debugger-native-v1.json",
+          "totals": {
+            "total": 4,
+            "passed": 2,
+            "failed": 0,
+            "unsupported": 2,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/do-while",
+      "expected": 70,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/empty",
+      "expected": 4,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/expression",
+      "expected": 6,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/for",
+      "expected": 758,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/function",
+      "expected": 783,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/if",
+      "expected": 125,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/labeled",
+      "expected": 37,
+      "reports": [
+        {
+          "report": "docs/results/test262-labelled-statements-native-v1.json",
+          "totals": {
+            "total": 37,
+            "passed": 8,
+            "failed": 4,
+            "unsupported": 24,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 1,
+            "passFraction": 0.21621621621621623
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/let",
+      "expected": 287,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/return",
+      "expected": 31,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/switch",
+      "expected": 216,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/throw",
+      "expected": 28,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/try",
+      "expected": 388,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/using",
+      "expected": 154,
+      "reports": [
+        {
+          "report": "docs/results/test262-using-annex-native-v3.json",
+          "totals": {
+            "total": 154,
+            "passed": 146,
+            "failed": 0,
+            "unsupported": 8,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.948051948051948
+          },
+          "sourceSnapshot": {
+            "sha256": "290c4a3cb74772e1e6e211b899f5891419e4155e180d1a5593221128a23cce9e",
+            "files": 444
+          }
+        },
+        {
+          "report": "docs/results/test262-using-lifetimes-native-v2.json",
+          "totals": {
+            "total": 154,
+            "passed": 143,
+            "failed": 0,
+            "unsupported": 10,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 1,
+            "passFraction": 0.9285714285714286
+          },
+          "sourceSnapshot": {
+            "sha256": "098f1c9b6f4a850a7d93c9f7dca3af82ff27cf96f2d58a2814472d728289682d",
+            "files": 444
+          }
+        },
+        {
+          "report": "docs/results/test262-using-native-v1.json",
+          "totals": {
+            "total": 154,
+            "passed": 128,
+            "failed": 0,
+            "unsupported": 26,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.8311688311688312
+          },
+          "sourceSnapshot": {
+            "sha256": "cd12ff48fc74fdd9735b70488ac3b1d323c514244f5381c281ac6a8ad17619d1",
+            "files": 444
+          }
+        }
+      ]
+    },
+    {
+      "selection": "language/statements/variable",
+      "expected": 309,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/while",
+      "expected": 72,
+      "reports": []
+    },
+    {
+      "selection": "language/statements/with",
+      "expected": 182,
+      "reports": [
+        {
+          "report": "docs/results/test262-with-native-v1.json",
+          "totals": {
+            "total": 182,
+            "passed": 120,
+            "failed": 59,
+            "unsupported": 3,
+            "timeouts": 0,
+            "harnessErrors": 0,
+            "crashes": 0,
+            "passFraction": 0.6593406593406593
+          }
+        }
+      ]
+    }
+  ],
+  "priority": [
+    {
+      "selection": "language/literals",
+      "expected": 1041,
+      "label": "a1-breadth-language-literals"
+    },
+    {
+      "selection": "language/statements/function",
+      "expected": 783,
+      "label": "a1-breadth-language-statements-function"
+    },
+    {
+      "selection": "language/statements/for",
+      "expected": 758,
+      "label": "a1-breadth-language-statements-for"
+    },
+    {
+      "selection": "language/identifiers",
+      "expected": 535,
+      "label": "a1-breadth-language-identifiers"
+    },
+    {
+      "selection": "language/statements/try",
+      "expected": 388,
+      "label": "a1-breadth-language-statements-try"
+    },
+    {
+      "selection": "language/statements/variable",
+      "expected": 309,
+      "label": "a1-breadth-language-statements-variable"
+    },
+    {
+      "selection": "language/statements/let",
+      "expected": 287,
+      "label": "a1-breadth-language-statements-let"
+    },
+    {
+      "selection": "language/function-code",
+      "expected": 281,
+      "label": "a1-breadth-language-function-code"
+    },
+    {
+      "selection": "language/statements/const",
+      "expected": 271,
+      "label": "a1-breadth-language-statements-const"
+    },
+    {
+      "selection": "language/statements/switch",
+      "expected": 216,
+      "label": "a1-breadth-language-statements-switch"
+    },
+    {
+      "selection": "language/asi",
+      "expected": 204,
+      "label": "a1-breadth-language-asi"
+    },
+    {
+      "selection": "language/statements/if",
+      "expected": 125,
+      "label": "a1-breadth-language-statements-if"
+    },
+    {
+      "selection": "language/statements/while",
+      "expected": 72,
+      "label": "a1-breadth-language-statements-while"
+    },
+    {
+      "selection": "language/statements/do-while",
+      "expected": 70,
+      "label": "a1-breadth-language-statements-do-while"
+    },
+    {
+      "selection": "language/keywords",
+      "expected": 50,
+      "label": "a1-breadth-language-keywords"
+    },
+    {
+      "selection": "language/statements/continue",
+      "expected": 48,
+      "label": "a1-breadth-language-statements-continue"
+    },
+    {
+      "selection": "language/statements/block",
+      "expected": 40,
+      "label": "a1-breadth-language-statements-block"
+    },
+    {
+      "selection": "language/statements/break",
+      "expected": 40,
+      "label": "a1-breadth-language-statements-break"
+    },
+    {
+      "selection": "language/statements/return",
+      "expected": 31,
+      "label": "a1-breadth-language-statements-return"
+    },
+    {
+      "selection": "language/statements/throw",
+      "expected": 28,
+      "label": "a1-breadth-language-statements-throw"
+    },
+    {
+      "selection": "language/statements/expression",
+      "expected": 6,
+      "label": "a1-breadth-language-statements-expression"
+    },
+    {
+      "selection": "language/statements/empty",
+      "expected": 4,
+      "label": "a1-breadth-language-statements-empty"
+    }
+  ]
+}
