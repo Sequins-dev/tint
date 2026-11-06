@@ -1,0 +1,52 @@
+{
+  "kind": "native-run-resource-observation",
+  "conformance": false,
+  "at": "2026-11-06T19:11:52.468281+00:00",
+  "runnerPid": 73521,
+  "selection": "built-ins/Promise",
+  "observedPasses": 640,
+  "observedNonPasses": 0,
+  "phase": "compiling batch 10; no inferior launched",
+  "cpuSamples": [
+    {
+      "at": "2026-11-06T19:01:01.513041Z",
+      "wallElapsed": "01:46:41",
+      "cpu": "59:38.10"
+    },
+    {
+      "at": "2026-11-06T19:10:58.819453Z",
+      "wallElapsed": "01:56:38",
+      "cpu": "60:37.07"
+    }
+  ],
+  "cpuSecondsGained": 58.97,
+  "wallSecondsBetweenSamples": 597.306412,
+  "hostLoadObservations": [
+    {
+      "at": "2026-11-06T19:08:14Z",
+      "averages": [
+        118.86,
+        106.42,
+        77.32
+      ]
+    },
+    {
+      "at": "2026-11-06T19:10:23Z",
+      "averages": [
+        99.92,
+        111.57,
+        84.64
+      ]
+    }
+  ],
+  "swapUsedMiB": 0,
+  "diagnosticJournal": ".tint-bootstrap/promise-run-progress-audit-v3.jsonl",
+  "latestSample": ".tint-bootstrap/promise-run-stall-samples-v3/sample-118.txt",
+  "interpretation": "Observed low CPU share during host load spike; ongoing compile slowness is not a native variant timeout or semantic failure. Heartbeats continued; all STALL diagnostics retained, including sample tools exceeding ten seconds under load. Fresh sample confirms CPU-active compile. No progressing job killed or restarted. Non-login shells restored prompt diagnostic command output.",
+  "policy": {
+    "ownNativeRunners": 1,
+    "newRunnerMachineLimit": 10,
+    "selfBuildMachineLimit": 2,
+    "smokeContinuation": "queued, resource limited; no extra native process started"
+  }
+}
