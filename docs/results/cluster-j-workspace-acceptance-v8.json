@@ -1,0 +1,25 @@
+{
+  "kind": "cluster-j-workspace-acceptance",
+  "timestamp": "2026-11-06T22:16:31.867947+00:00",
+  "base": "83dae393040ff18b573b7ec30b1ab428a8ebf266",
+  "head": "7241a95d6cc759f78acc65b083456756f3fd812c",
+  "sourceSnapshot": {
+    "sha256": "4e9cf9167b2a8355ce4425c455b9d3a18d746ac86e3ce791f7b65f11e88c6547",
+    "files": 569
+  },
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": 4563,
+  "passed": 4563,
+  "failed": 0,
+  "testConcurrency": 4,
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "log": "docs/results/cluster-j-workspace-check-v8.log",
+  "logSha256": "15b936d5c4f84ea0b7dd4aa73bb4f7c93a7180b773299add8e0333ee5af6896f",
+  "note": "Source remained stable from frozen v8 through gate completion. Main advanced only by debugger-output retention tooling during this run; a post-rebase gate will be recorded separately."
+}
