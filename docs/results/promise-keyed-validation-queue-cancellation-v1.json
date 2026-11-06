@@ -1,0 +1,31 @@
+{
+  "kind": "unstarted-validation-queue-cancellation",
+  "conformance": false,
+  "at": "2026-11-06T19:44:17.299899+00:00",
+  "reason": "Updated resource rule permits short single-process LLDB fixtures without a slot; load-events then records memory emergency and central caps runner6/selfbuild1/check1. Cancel old max2 entries before validation begins. Requeue full check under current central cap. Defer short smoke fixture until pressure eases.",
+  "queuePids": [
+    16611,
+    26775
+  ],
+  "processes": [
+    "4735 16611 00:02 0:00.00 0.0 S sleep 2",
+    "4868 26775 00:01 0:00.00 0.0 S sleep 2",
+    "16611 17919 54:50 0:06.23 0.0 Ss /bin/zsh /Users/stephenbelanger/.t3/tint-slots/slot selfbuild 2 -- node .tint-bootstrap/validate-promise-keyed-smoke-v4.mjs",
+    "26775 17919 10:43 0:01.21 0.0 Ss /bin/zsh /Users/stephenbelanger/.t3/tint-slots/slot check 2 -- zsh -c \\012  set -e\\012  echo \"[tint-check] typecheck\" >&2; pnpm typecheck\\012  echo \"[tint-check] tests (concurrency 4)\" >&2; node --test --test-concurrency=4 packages/*/test/*.test.ts tools/*.test.ts\\012  echo \"[tint-check] boundaries\" >&2; pnpm boundaries\\012  echo \"[tint-check] format:check\" >&2; pnpm format:check\\012  echo \"[tint-check] all gates passed\" >&2"
+  ],
+  "validationProcessesStarted": false,
+  "nativeInferiorsInterrupted": false,
+  "gateObservations": 0,
+  "logs": [
+    "docs/results/promise-keyed-smoke-v4-cancelled-queue.log",
+    "docs/results/promise-keyed-workspace-check-slotted-v8-cancelled-queue.log"
+  ],
+  "centralCaps": {
+    "runner": 6,
+    "selfbuild": 1,
+    "check": 1
+  },
+  "lastPassingGate": "docs/results/promise-keyed-rebased-workspace-validation-v7.json",
+  "successfulNativeSelfBuildStageComparison": "docs/results/bootstrap-promise-keyed-v3.json",
+  "promiseRunnerContinues": 73521
+}
