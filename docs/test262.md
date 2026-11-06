@@ -316,6 +316,10 @@ These selections overlap other reports and cannot be added into an overall cover
 | Temporal.Duration.toString   |   88 / 88 (100.00%) | None                                | [Report](results/test262-temporal-duration-string-native-v1.json)            |
 | Temporal.PlainDate.until     | 172 / 172 (100.00%) | None                                | [Report](results/test262-temporal-date-until-native-v2.json)                 |
 | Temporal.PlainDateTime.until | 196 / 196 (100.00%) | None                                | [Report](results/test262-temporal-date-time-until-native-v3.json)            |
+| Temporal.ZonedDateTime.from  | 176 / 182 (96.70%) | 6 pre-entry debugger failures        | [Report](results/test262-temporal-zoned-from-h-v1.json)                      |
+| Temporal.ZonedDateTime.compare | 100 / 100 (100.00%) | None                              | [Report](results/test262-temporal-zoned-compare-h-v1.json)                    |
+| Temporal.PlainTime.from | 85 / 102 (83.33%) | 17 initial-stop debugger failures; no semantic failures | [Report](results/test262-temporal-plain-time-from-h-v1.json) |
+| Temporal.PlainTime.compare | 57 / 64 (89.06%) | 7 initial-stop debugger failures; no semantic failures | [Report](results/test262-temporal-plain-time-compare-h-v1.json) |
 | Temporal.ZonedDateTime.from  | 182 / 182 (100.00%) | None                                | [Report](results/test262-temporal-zoned-from-named-native-v1.json)           |
 | Temporal.ZonedDateTime.until |  194 / 198 (97.98%) | 4 pre-entry debugger failures       | [Report](results/test262-temporal-zoned-until-duration-native-v3.json)       |
 | Temporal.ZonedDateTime.since |  193 / 202 (95.54%) | 9 pre-entry debugger failures       | [Report](results/test262-temporal-zoned-since-duration-native-v3.json)       |
