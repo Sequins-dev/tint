@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "head": "00af207c4a3fdafb3898d6985122fe73edddfda3",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v2",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v2/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v2/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v2/source-snapshot.json",
+    "sha256": "ced64bae7a0223273e89f0bd799fc8f2883f9d12094623e73dad97cf51516e02"
+  },
+  "runIdentity": "43258da74eaa5ab4faa2c4f6efdbd8467d757d672335645038aee97ca0e72308",
+  "main": "ee8713721aa453a6b04e8d33343d8172a303e194",
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "machineLimit": 10,
+    "clusterLimit": 1
+  },
+  "priorNativeFixture": "docs/results/native-promise-keyed-validation-v2.json",
+  "scope": "Rebased graph includes current main; the two keyed Promise implementation files match the native-validated bytes. Other upstream source differences retain their own provenance.",
+  "purpose": "Fresh complete Promise selection after native self-build acceptance. Slotted direct runner with heartbeat; no legacy controllers or pause markers."
+}
