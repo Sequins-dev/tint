@@ -4,7 +4,7 @@
 
 The complete saved-report inventory covers **139 families**: **32 all passing**, **29 with a complete run but remaining non-passes**, **29 with selection evidence but no coherent complete family report**, and **49 with no saved runtime outcomes**. Saved reports contain outcomes for **33,707 distinct variants**; **69,557 have no recorded outcome**. These are historical observation footprints across frozen versions, not a combined current pass rate.
 
-[Audited inventory and every linked report](test262-inventory.md) · [Machine-readable snapshot](results/test262-native-group-inventory-v89.json)
+[Audited inventory and every linked report](test262-inventory.md) · [Machine-readable snapshot](results/test262-native-group-inventory-v90.json)
 
 Of the pinned population, **8,699 variants are parse/early negatives**. Their required phase is covered by the native syntax gate. In particular, language/export (3) and language/keywords (50) are entirely syntax-only; their lack of a runtime-report row does not make them untested.
 
@@ -20,7 +20,7 @@ Of the pinned population, **8,699 variants are parse/early negatives**. Their re
 - Direct eval in progress: **141/336 recorded, 141 passing**, 0 non-passes so far. These are not complete-run results.
 - For-of in progress: **195/1442 recorded, 195 passing**, 0 non-passes so far. These are not complete-run results.
 
-Next: finish those already-started runs, then 23 function/control-flow selections (5,581 variants), followed by 29 initial class selections (2,081 variants). The full declaration/expression class population is 16,893 variants, so that initial class checkpoint is not classes complete. Broad Object/Array API work follows foundational language semantics. Full-suite measurement and compiler-performance work remain deferred.
+Next: finish those already-started runs, then 22 function/control-flow selections (5,121 variants; the complete arguments-object rerun is already recorded), followed by 29 initial class selections (2,081 variants). The full declaration/expression class population is 16,893 variants, so that initial class checkpoint is not classes complete. Broad Object/Array API work follows foundational language semantics. Full-suite measurement and compiler-performance work remain deferred.
 
 ## Every family
 
@@ -30,7 +30,7 @@ Next: finish those already-started runs, then 23 function/control-flow selection
 
 | Family | Variants | Syn | Recorded | Passes in complete run | F/U/T/H/C | Status |
 |---|---:|---:|---:|---:|---|:---:|
-| `language/arguments-object` | 460 | 1 | 460 | 456 | 2/2/0/0/0 | G |
+| `language/arguments-object` | 460 | 1 | 460 | 458 | 2/0/0/0/0 | G |
 | `language/asi` | 204 | 70 | 0 | — | — | N |
 | `language/block-scope` | 287 | 201 | 287 | 287 | 0/0/0/0/0 | A |
 | `language/comments` | 81 | 33 | 1 | — | — | P |

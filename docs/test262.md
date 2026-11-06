@@ -115,7 +115,7 @@ measure. Implementation of known gaps has resumed; the full baseline run is defe
 
 The complete [tagged-template directory passes **48/48 unchanged variants**](results/test262-language-tagged-template-current-v1.json), with no failures, unsupported cases or infrastructure errors. Runtime-compiled sites also pass [ten native semantic checks](results/managed-template-feature-acceptance-v1.json). The [12/12 cache subset](results/managed-template-cache-conformance-acceptance-v1.json) overlaps that full report and is not added to its totals. The 256 KiB entry cap is unchanged; the retained oversized async fixture remains an explicit budget limit.
 
-The [complete group inventory](test262-inventory.md) lists all **139 families**, including every measured, partially measured and unmeasured group. Its [v89 evidence snapshot](results/test262-native-group-inventory-v89.json) audits 710 completed native reports and verifies pinned source hashes.
+The [complete group inventory](test262-inventory.md) lists all **139 families**, including every measured, partially measured and unmeasured group. Its [v90 evidence snapshot](results/test262-native-group-inventory-v90.json) inherits the [v89](results/test262-native-group-inventory-v89.json) audit of 710 completed native reports and conservatively replaces only the re-verified complete arguments-object and Annex B function-code reports listed above; it is not a new full rescan.
 
 | Evidence status | Families |
 | --- | ---: |

@@ -1,0 +1,331 @@
+{
+  "kind": "native-queue-operational-handoff",
+  "createdAt": "2026-11-06T21:40:00Z",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "nativeLeaseUsed": false,
+  "summary": "Retired the idle function/control controller v5 (PID 13409) because its language/arguments-object group is already covered by an integrated complete report, and launched v6 with only that group removed. Retiring v5 caused the dependent class-foundation controller v3 to fail its prerequisite liveness check; it was replaced by class v4 with only the prerequisite reference repaired. No native inferior, runner, pause request or lane owner was touched.",
+  "duplicateCoverage": {
+    "selection": "language/arguments-object",
+    "report": "docs/results/test262-language-arguments-object-current-v1.json",
+    "journal": "docs/results/test262-language-arguments-object-current-v1.jsonl",
+    "integratedCommit": "38ff087",
+    "totals": {
+      "total": 460,
+      "passed": 458,
+      "failed": 2,
+      "unsupported": 0
+    },
+    "sourceSnapshot": {
+      "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+      "files": 568
+    },
+    "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+    "why": "Same frozen managed-templates toolchain identity and source snapshot that the v5 controller asserts for every group, same 460-variant population, zero restored variants, completed journal; re-verified by tools/test262-inventory-refresh.ts for inventory v90. The two failures are the optional legacy arguments.caller sloppy variants that v5 itself classifies as known."
+  },
+  "retired": {
+    "pid": 13409,
+    "ppid": 10913,
+    "ppidCommand": "codex app-server",
+    "command": "node .tint-bootstrap/run-language-function-control-checkpoints-v5.mjs",
+    "started": "2026-11-06T07:03:14-08:00",
+    "scriptSha256": "60c045a0e9e451315d37c96020dbad99ff5291b89a25dcb86d9f903ad29154c6",
+    "log": ".tint-bootstrap/language-function-control-controller-v5.log (empty)",
+    "stateAtRetirement": "Prerequisite wait for docs/results/language-direct-eval-current-checkpoint-v1.json and docs/results/test262-language-iterator-completion-core-v1.json (both absent; controllers 21898 and 19496 alive). No child processes, no pause request written (its request is written only after prerequisites), no open pause/report files (lsof), no -v3 group reports or v5 checkpoint present.",
+    "signal": "SIGTERM at 2026-11-06T13:34:54-08:00",
+    "observedExit": "The parent session's background command reported exit 143 (128+SIGTERM) for this controller; it is this intentional retirement, not a native failure."
+  },
+  "replacement": {
+    "pid": 97232,
+    "command": "node .tint-bootstrap/run-language-function-control-checkpoints-v6.mjs",
+    "started": "2026-11-06T13:34:55-08:00",
+    "scriptSha256": "3191a1a7ae374c1567a291ea94aebb417b9719005cfa86832d1d9c332e7ca051",
+    "log": ".tint-bootstrap/language-function-control-controller-v6.log",
+    "derivation": "Mechanical transform of v5: removed exactly the language/arguments-object line; group report suffix -v3 -> -v6, controller reports -controller-v3 -> -controller-v6, checkpoint language-function-control-checkpoints-v5.json -> -v6.json. Prerequisites, frozen host, owner table, environment, pause file, containment, batch size and the other 22 groups are byte-identical.",
+    "scriptDiff": "28d27\n<   ['language/arguments-object', 'language-foundation-arguments-object', 460],\n50c49\n<   checkOwner();const report='.tint-bootstrap/test262-'+label+'-v3.json',journal=report+'l',log=report+'.log',out=openSync(report,'wx'),err=openSync(log,'wx');\n---\n>   checkOwner();const report='.tint-bootstrap/test262-'+label+'-v6.json',journal=report+'l',log=report+'.log',out=openSync(report,'wx'),err=openSync(log,'wx');\n54,55c53,54\n<   writeFileSync('docs/results/test262-'+label+'-controller-v3.json',JSON.stringify({kind:'native-selection-controller',priority:'language semantics before Object/Array family work',selection,result,report,journal,log,sourceSnapshot:frozen.sourceSnapshot,serialization:{pausedRunner:borrowedRunner,request}},null,2)+'\\n',{flag:'wx'});assert.equal(result.code,0,'Failed observation retained; no retry');\n<   const data=JSON.parse(readFileSync(report,'utf8'));copyFileSync(report,'docs/results/test262-'+label+'-v3.json',constants.COPYFILE_EXCL);assert.equal(data.totals.total,expectedTotal);assert.equal(data.observations.length,expectedTotal);assert.deepEqual(data.sourceSnapshot,frozen.sourceSnapshot);assert.equal(data.frozenToolchainSha256,frozen.runIdentity);assert.equal(data.resumption.restoredVariants,0);assert.equal(data.dirty,false);\n---\n>   writeFileSync('docs/results/test262-'+label+'-controller-v6.json',JSON.stringify({kind:'native-selection-controller',priority:'language semantics before Object/Array family work',selection,result,report,journal,log,sourceSnapshot:frozen.sourceSnapshot,serialization:{pausedRunner:borrowedRunner,request}},null,2)+'\\n',{flag:'wx'});assert.equal(result.code,0,'Failed observation retained; no retry');\n>   const data=JSON.parse(readFileSync(report,'utf8'));copyFileSync(report,'docs/results/test262-'+label+'-v6.json',constants.COPYFILE_EXCL);assert.equal(data.totals.total,expectedTotal);assert.equal(data.observations.length,expectedTotal);assert.deepEqual(data.sourceSnapshot,frozen.sourceSnapshot);assert.equal(data.frozenToolchainSha256,frozen.runIdentity);assert.equal(data.resumption.restoredVariants,0);assert.equal(data.dirty,false);\n57c56\n<   const nonPasses=data.observations.filter(o=>o.status!=='pass');const legacyCallerPaths=new Set(['language/arguments-object/10.6-13-a-2.js','language/arguments-object/10.6-13-a-3.js']);const unexpected=nonPasses.filter(o=>!(legacyCallerPaths.has(o.path)&&o.variant==='sloppy'&&o.status==='fail'&&o.outcome?.kind==='error'&&o.outcome.phase==='runtime'&&o.outcome.type==='TypeError'));results.push({selection,report:'docs/results/test262-'+label+'-v3.json',totals:data.totals,nonPasses,unexpected,knownLegacyCaller:nonPasses.filter(o=>!unexpected.includes(o))});console.log(selection,JSON.stringify(data.totals));\n---\n>   const nonPasses=data.observations.filter(o=>o.status!=='pass');const legacyCallerPaths=new Set(['language/arguments-object/10.6-13-a-2.js','language/arguments-object/10.6-13-a-3.js']);const unexpected=nonPasses.filter(o=>!(legacyCallerPaths.has(o.path)&&o.variant==='sloppy'&&o.status==='fail'&&o.outcome?.kind==='error'&&o.outcome.phase==='runtime'&&o.outcome.type==='TypeError'));results.push({selection,report:'docs/results/test262-'+label+'-v6.json',totals:data.totals,nonPasses,unexpected,knownLegacyCaller:nonPasses.filter(o=>!unexpected.includes(o))});console.log(selection,JSON.stringify(data.totals));\n61c60\n<  writeFileSync('docs/results/language-function-control-checkpoints-v5.json',JSON.stringify({kind:'native-language-function-control-checkpoints',conformance:true,wholeSuite:false,sourceSnapshot:frozen.sourceSnapshot,needsTriage:results.some(r=>r.unexpected.length!==0),results},null,2)+'\\n',{flag:'wx'});\n---\n>  writeFileSync('docs/results/language-function-control-checkpoints-v6.json',JSON.stringify({kind:'native-language-function-control-checkpoints',conformance:true,wholeSuite:false,sourceSnapshot:frozen.sourceSnapshot,needsTriage:results.some(r=>r.unexpected.length!==0),results},null,2)+'\\n',{flag:'wx'});",
+    "outputPathsVerifiedAbsent": true,
+    "remainingGroups": [
+      {
+        "selection": "language/statements/return",
+        "label": "language-foundation-statements-return",
+        "expectedTotal": 31
+      },
+      {
+        "selection": "language/function-code",
+        "label": "language-foundation-function-code",
+        "expectedTotal": 281
+      },
+      {
+        "selection": "language/rest-parameters",
+        "label": "language-foundation-rest-parameters",
+        "expectedTotal": 22
+      },
+      {
+        "selection": "language/statements/function",
+        "label": "language-foundation-statements-function",
+        "expectedTotal": 783
+      },
+      {
+        "selection": "language/expressions/function",
+        "label": "language-foundation-expressions-function",
+        "expectedTotal": 484
+      },
+      {
+        "selection": "language/expressions/arrow-function",
+        "label": "language-foundation-expressions-arrow-function",
+        "expectedTotal": 643
+      },
+      {
+        "selection": "language/expressions/new",
+        "label": "language-foundation-expressions-new",
+        "expectedTotal": 118
+      },
+      {
+        "selection": "language/expressions/new.target",
+        "label": "language-foundation-expressions-new.target",
+        "expectedTotal": 28
+      },
+      {
+        "selection": "language/statements/try",
+        "label": "language-foundation-statements-try",
+        "expectedTotal": 388
+      },
+      {
+        "selection": "language/statements/const",
+        "label": "language-foundation-statements-const",
+        "expectedTotal": 271
+      },
+      {
+        "selection": "language/statements/let",
+        "label": "language-foundation-statements-let",
+        "expectedTotal": 287
+      },
+      {
+        "selection": "language/statements/for-in",
+        "label": "language-foundation-statements-for-in",
+        "expectedTotal": 206
+      },
+      {
+        "selection": "language/statements/for",
+        "label": "language-foundation-statements-for",
+        "expectedTotal": 758
+      },
+      {
+        "selection": "language/statements/while",
+        "label": "language-foundation-statements-while",
+        "expectedTotal": 72
+      },
+      {
+        "selection": "language/statements/do-while",
+        "label": "language-foundation-statements-do-while",
+        "expectedTotal": 70
+      },
+      {
+        "selection": "language/statements/if",
+        "label": "language-foundation-statements-if",
+        "expectedTotal": 125
+      },
+      {
+        "selection": "language/statements/switch",
+        "label": "language-foundation-statements-switch",
+        "expectedTotal": 216
+      },
+      {
+        "selection": "language/statements/break",
+        "label": "language-foundation-statements-break",
+        "expectedTotal": 40
+      },
+      {
+        "selection": "language/statements/continue",
+        "label": "language-foundation-statements-continue",
+        "expectedTotal": 48
+      },
+      {
+        "selection": "language/statements/throw",
+        "label": "language-foundation-statements-throw",
+        "expectedTotal": 28
+      },
+      {
+        "selection": "language/statements/block",
+        "label": "language-foundation-statements-block",
+        "expectedTotal": 40
+      },
+      {
+        "selection": "language/statements/with",
+        "label": "language-foundation-statements-with",
+        "expectedTotal": 182
+      }
+    ],
+    "remainingVariants": 5121
+  },
+  "dependentFailure": {
+    "pid": "not recorded (exited before inspection)",
+    "command": "node .tint-bootstrap/run-language-class-foundation-checkpoints-v3.mjs",
+    "scriptSha256": "1f63e2075260befc388e18c2cc77450812426b7c0e23cc1c721b784676e05665",
+    "log": ".tint-bootstrap/language-class-foundation-controller-v3.log",
+    "logSha256": "33187c145d79b1aa1d9f8c81323af60c0ce0ba0ca504cda0b4f2bf8fe62af78d",
+    "logText": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Function/control controller stopped before its checkpoint\n    at file:///Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/run-language-class-foundation-checkpoints-v3.mjs:6:121 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0",
+    "cause": "Queue prerequisite, not semantic: line 6 polls ps for 'run-language-function-control-checkpoints-v5.mjs' while docs/results/language-function-control-checkpoints-v5.json is absent, and asserts it is alive. Retiring v5 made the assertion fail on its next poll. It failed before writing its pause request; no children, no class native run, no class reports. The handoff did not check for this dependent before retiring v5; that omission is recorded here.",
+    "classNativeFailure": false
+  },
+  "dependentReplacement": {
+    "pid": 168,
+    "command": "node .tint-bootstrap/run-language-class-foundation-checkpoints-v4.mjs",
+    "started": "2026-11-06T13:35:43-08:00",
+    "scriptSha256": "8c05e1bc2ce3144e3133357c697a31758f295c99362f55d65b0eabe4e10a85b0",
+    "log": ".tint-bootstrap/language-class-foundation-controller-v4.log",
+    "derivation": "Mechanical transform of class v3: prerequisite checkpoint and controller name v5 -> v6, expected prior result count 23 -> 22 (all must still have no unexpected non-passes), group report suffix -v2 -> -v4, controller reports -controller-v2 -> -controller-v4, checkpoint -v3 -> -v4. The 29 class selections, expected totals, owners, environment and frozen host are unchanged.",
+    "scriptDiff": "6c6\n< const prerequisite='docs/results/language-function-control-checkpoints-v5.json';while(!existsSync(prerequisite)){assert.ok(execFileSync('ps',['-axo','command='],{encoding:'utf8'}).includes('run-language-function-control-checkpoints-v5.mjs'),'Function/control controller stopped before its checkpoint');await new Promise(r=>setTimeout(r,1000));}const prior=JSON.parse(readFileSync(prerequisite,'utf8'));assert.equal(prior.results.length,23);assert.equal(prior.needsTriage,false);for(const row of prior.results)assert.equal(row.unexpected.length,0);\n---\n> const prerequisite='docs/results/language-function-control-checkpoints-v6.json';while(!existsSync(prerequisite)){assert.ok(execFileSync('ps',['-axo','command='],{encoding:'utf8'}).includes('run-language-function-control-checkpoints-v6.mjs'),'Function/control controller stopped before its checkpoint');await new Promise(r=>setTimeout(r,1000));}const prior=JSON.parse(readFileSync(prerequisite,'utf8'));assert.equal(prior.results.length,22);assert.equal(prior.needsTriage,false);for(const row of prior.results)assert.equal(row.unexpected.length,0);\n52c52\n<   checkOwner();const report='.tint-bootstrap/test262-'+label+'-v2.json',journal=report+'l',log=report+'.log',out=openSync(report,'wx'),err=openSync(log,'wx');\n---\n>   checkOwner();const report='.tint-bootstrap/test262-'+label+'-v4.json',journal=report+'l',log=report+'.log',out=openSync(report,'wx'),err=openSync(log,'wx');\n56,57c56,57\n<   writeFileSync('docs/results/test262-'+label+'-controller-v2.json',JSON.stringify({kind:'native-selection-controller',priority:'language semantics before Object/Array family work',selection,result,report,journal,log,sourceSnapshot:frozen.sourceSnapshot,serialization:{pausedRunner:borrowedRunner,request}},null,2)+'\\n',{flag:'wx'});assert.equal(result.code,0,'Failed observation retained; no retry');\n<   const data=JSON.parse(readFileSync(report,'utf8'));copyFileSync(report,'docs/results/test262-'+label+'-v2.json',constants.COPYFILE_EXCL);assert.equal(data.totals.total,expectedTotal);assert.equal(data.observations.length,expectedTotal);assert.deepEqual(data.sourceSnapshot,frozen.sourceSnapshot);assert.equal(data.frozenToolchainSha256,frozen.runIdentity);assert.equal(data.resumption.restoredVariants,0);assert.equal(data.dirty,false);\n---\n>   writeFileSync('docs/results/test262-'+label+'-controller-v4.json',JSON.stringify({kind:'native-selection-controller',priority:'language semantics before Object/Array family work',selection,result,report,journal,log,sourceSnapshot:frozen.sourceSnapshot,serialization:{pausedRunner:borrowedRunner,request}},null,2)+'\\n',{flag:'wx'});assert.equal(result.code,0,'Failed observation retained; no retry');\n>   const data=JSON.parse(readFileSync(report,'utf8'));copyFileSync(report,'docs/results/test262-'+label+'-v4.json',constants.COPYFILE_EXCL);assert.equal(data.totals.total,expectedTotal);assert.equal(data.observations.length,expectedTotal);assert.deepEqual(data.sourceSnapshot,frozen.sourceSnapshot);assert.equal(data.frozenToolchainSha256,frozen.runIdentity);assert.equal(data.resumption.restoredVariants,0);assert.equal(data.dirty,false);\n59c59\n<   const nonPasses=data.observations.filter(o=>o.status!=='pass'),unexpected=nonPasses;results.push({selection,report:'docs/results/test262-'+label+'-v2.json',totals:data.totals,nonPasses,unexpected});console.log(selection,JSON.stringify(data.totals));\n---\n>   const nonPasses=data.observations.filter(o=>o.status!=='pass'),unexpected=nonPasses;results.push({selection,report:'docs/results/test262-'+label+'-v4.json',totals:data.totals,nonPasses,unexpected});console.log(selection,JSON.stringify(data.totals));\n63c63\n<  writeFileSync('docs/results/language-class-foundation-checkpoints-v3.json',JSON.stringify({kind:'native-language-class-foundation-checkpoints',conformance:true,wholeSuite:false,sourceSnapshot:frozen.sourceSnapshot,needsTriage:results.some(r=>r.nonPasses.length!==0),results},null,2)+'\\n',{flag:'wx'});\n---\n>  writeFileSync('docs/results/language-class-foundation-checkpoints-v4.json',JSON.stringify({kind:'native-language-class-foundation-checkpoints',conformance:true,wholeSuite:false,sourceSnapshot:frozen.sourceSnapshot,needsTriage:results.some(r=>r.nonPasses.length!==0),results},null,2)+'\\n',{flag:'wx'});",
+    "outputPathsVerifiedAbsent": true,
+    "remainingGroups": [
+      {
+        "selection": "language/statements/class/syntax",
+        "label": "language-class-statements-class-syntax",
+        "expectedTotal": 26
+      },
+      {
+        "selection": "language/statements/class/definition",
+        "label": "language-class-statements-class-definition",
+        "expectedTotal": 130
+      },
+      {
+        "selection": "language/statements/class/name-binding",
+        "label": "language-class-statements-class-name-binding",
+        "expectedTotal": 12
+      },
+      {
+        "selection": "language/statements/class/arguments",
+        "label": "language-class-statements-class-arguments",
+        "expectedTotal": 4
+      },
+      {
+        "selection": "language/statements/class/strict-mode",
+        "label": "language-class-statements-class-strict-mode",
+        "expectedTotal": 4
+      },
+      {
+        "selection": "language/statements/class/super",
+        "label": "language-class-statements-class-super",
+        "expectedTotal": 16
+      },
+      {
+        "selection": "language/statements/class/method",
+        "label": "language-class-statements-class-method",
+        "expectedTotal": 35
+      },
+      {
+        "selection": "language/statements/class/method-static",
+        "label": "language-class-statements-class-method-static",
+        "expectedTotal": 35
+      },
+      {
+        "selection": "language/expressions/class/method",
+        "label": "language-class-expressions-class-method",
+        "expectedTotal": 35
+      },
+      {
+        "selection": "language/expressions/class/method-static",
+        "label": "language-class-expressions-class-method-static",
+        "expectedTotal": 35
+      },
+      {
+        "selection": "language/statements/class/accessor-name-inst",
+        "label": "language-class-statements-class-accessor-name-inst",
+        "expectedTotal": 42
+      },
+      {
+        "selection": "language/statements/class/accessor-name-static",
+        "label": "language-class-statements-class-accessor-name-static",
+        "expectedTotal": 42
+      },
+      {
+        "selection": "language/expressions/class/accessor-name-inst",
+        "label": "language-class-expressions-class-accessor-name-inst",
+        "expectedTotal": 42
+      },
+      {
+        "selection": "language/expressions/class/accessor-name-static",
+        "label": "language-class-expressions-class-accessor-name-static",
+        "expectedTotal": 42
+      },
+      {
+        "selection": "language/statements/class/subclass",
+        "label": "language-class-statements-class-subclass",
+        "expectedTotal": 217
+      },
+      {
+        "selection": "language/statements/class/subclass-builtins",
+        "label": "language-class-statements-class-subclass-builtins",
+        "expectedTotal": 72
+      },
+      {
+        "selection": "language/expressions/class/subclass-builtins",
+        "label": "language-class-expressions-class-subclass-builtins",
+        "expectedTotal": 72
+      },
+      {
+        "selection": "language/statements/class/gen-method",
+        "label": "language-class-statements-class-gen-method",
+        "expectedTotal": 55
+      },
+      {
+        "selection": "language/statements/class/gen-method-static",
+        "label": "language-class-statements-class-gen-method-static",
+        "expectedTotal": 55
+      },
+      {
+        "selection": "language/expressions/class/gen-method",
+        "label": "language-class-expressions-class-gen-method",
+        "expectedTotal": 55
+      },
+      {
+        "selection": "language/expressions/class/gen-method-static",
+        "label": "language-class-expressions-class-gen-method-static",
+        "expectedTotal": 55
+      },
+      {
+        "selection": "language/statements/class/async-method",
+        "label": "language-class-statements-class-async-method",
+        "expectedTotal": 59
+      },
+      {
+        "selection": "language/statements/class/async-method-static",
+        "label": "language-class-statements-class-async-method-static",
+        "expectedTotal": 59
+      },
+      {
+        "selection": "language/expressions/class/async-method",
+        "label": "language-class-expressions-class-async-method",
+        "expectedTotal": 59
+      },
+      {
+        "selection": "language/expressions/class/async-method-static",
+        "label": "language-class-expressions-class-async-method-static",
+        "expectedTotal": 59
+      },
+      {
+        "selection": "language/statements/class/async-gen-method",
+        "label": "language-class-statements-class-async-gen-method",
+        "expectedTotal": 191
+      },
+      {
+        "selection": "language/statements/class/async-gen-method-static",
+        "label": "language-class-statements-class-async-gen-method-static",
+        "expectedTotal": 191
+      },
+      {
+        "selection": "language/expressions/class/async-gen-method",
+        "label": "language-class-expressions-class-async-gen-method",
+        "expectedTotal": 191
+      },
+      {
+        "selection": "language/expressions/class/async-gen-method-static",
+        "label": "language-class-expressions-class-async-gen-method-static",
+        "expectedTotal": 191
+      }
+    ],
+    "remainingVariants": 2081
+  },
+  "otherDependents": "No other .tint-bootstrap controller script references run-language-function-control-checkpoints-v5 or its checkpoint.",
+  "untouched": "Native runners and controllers 87092/19496, 21082/21898, 16494/18511, 26697/67383 and separate lanes 699, 55862, 13668, 67042, 93701, 98371 were alive before and after; existing pause/ack files were not modified."
+}

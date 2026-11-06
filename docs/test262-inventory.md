@@ -1,6 +1,6 @@
 # Test262 coverage: complete group inventory
 
-Updated 2026-11-06 from completed saved native runtime reports, with pinned source hashes verified. [Machine-readable evidence](results/test262-native-group-inventory-v89.json).
+Updated 2026-11-06 from completed saved native runtime reports, with pinned source hashes verified. [Machine-readable evidence](results/test262-native-group-inventory-v90.json) is a conservative refresh of v89 that replaces only two complete family reports after re-verifying them ([diff and limits](results/test262-native-group-inventory-v90-refresh-v1.json)); every other row is inherited from the v89 capture.
 
 **The current whole-suite native behavior pass rate is unknown.** The native syntax gate passed all **103,264 variants**; that is separate from runtime conformance. Completed native reports contain outcomes for **33,707 distinct variants**, including failures, unsupported cases and infrastructure outcomes. **69,557 variants have no outcome in those completed reports.** In-progress journals are excluded. Different frozen sources, resource budgets and historical reports are not combined into a current pass rate.
 
@@ -60,7 +60,7 @@ Complete-family ratios describe the linked saved snapshot, not necessarily curre
 | `annexB/language/comments` | 13 | 13 | All passing | 13/13 | 0 | 0 | 0 | [Report](results/test262-annex-comments-native-v3.json) |
 | `annexB/language/eval-code` | 470 | 470 | Selection evidence; no family report | — | — | — | — | — |
 | `annexB/language/expressions` | 43 | 43 | All passing | 43/43 | 0 | 0 | 0 | [Report](results/test262-annexb-expressions-native-v1.json) |
-| `annexB/language/function-code` | 159 | 159 | Complete report; gaps | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-native-v1.json) |
+| `annexB/language/function-code` | 159 | 159 | Complete report; gaps | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-current-v3.json) |
 | `annexB/language/global-code` | 153 | 153 | All passing | 153/153 | 0 | 0 | 0 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
 | `annexB/language/literals` | 16 | 16 | Selection evidence; no family report | — | — | — | — | — |
 | `annexB/language/statements` | 41 | 41 | All passing | 41/41 | 0 | 0 | 0 | [Report](results/test262-annexb-statements-native-v2.json) |
@@ -149,7 +149,7 @@ Complete-family ratios describe the linked saved snapshot, not necessarily curre
 | `intl402/String` | 38 | 0 | No recorded outcomes | — | — | — | — | — |
 | `intl402/Temporal` | 4,058 | 340 | Selection evidence; no family report | — | — | — | — | — |
 | `intl402/TypedArray` | 2 | 0 | No recorded outcomes | — | — | — | — | — |
-| `language/arguments-object` | 460 | 460 | Complete report; gaps | 456/460 | 2 | 2 | 0 | [Report](results/test262-arguments-native-v2.json) |
+| `language/arguments-object` | 460 | 460 | Complete report; gaps | 458/460 | 2 | 0 | 0 | [Report](results/test262-language-arguments-object-current-v1.json) |
 | `language/asi` | 204 | 0 | No recorded outcomes | — | — | — | — | — |
 | `language/block-scope` | 287 | 287 | All passing | 287/287 | 0 | 0 | 0 | [Report](results/test262-language-block-scope-core-v1.json) |
 | `language/comments` | 81 | 1 | Selection evidence; no family report | — | — | — | — | — |
@@ -208,7 +208,7 @@ These include narrower selections and overlap. Never sum this table. Older failu
 | `annexB/language/eval-code/direct/script-decl-lex-no-collision.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-direct-eval-annex-canary-native-v1.json) |
 | `annexB/language/expressions` | 43/43 | 0 | 0 | 0 | [Report](results/test262-annexb-expressions-native-v1.json) |
 | `annexB/language/expressions/assignmenttargettype` | 7/7 | 0 | 0 | 0 | [Report](results/test262-call-assignment-targets-native-v1.json) |
-| `annexB/language/function-code` | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-native-v1.json) |
+| `annexB/language/function-code` | 158/159 | 1 | 0 | 0 | [Report](results/test262-annexb-function-code-current-v3.json) |
 | `annexB/language/global-code` | 153/153 | 0 | 0 | 0 | [Report](results/test262-annexb-global-code-admission-native-v1.json) |
 | `annexB/language/global-code/block-decl-global-existing-global-init.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-annex-admission-first-native-v1.json) |
 | `annexB/language/global-code/block-decl-global-existing-non-enumerable-global-init.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-annex-admission-non-enumerable-native-v1.json) |
@@ -506,7 +506,7 @@ These include narrower selections and overlap. Never sum this table. Older failu
 | `intl402/Temporal/ZonedDateTime/prototype/since` | 0/134 | 0 | 134 | 0 | [Report](results/test262-intl-temporal-zoned-since-prefix-native-v2.json) |
 | `intl402/Temporal/ZonedDateTime/prototype/startOfDay` | 8/8 | 0 | 0 | 0 | [Report](results/test262-intl-temporal-zoned-start-model-native-v1.json) |
 | `intl402/Temporal/ZonedDateTime/prototype/until` | 0/132 | 0 | 132 | 0 | [Report](results/test262-intl-temporal-zoned-until-prefix-native-v2.json) |
-| `language/arguments-object` | 456/460 | 2 | 2 | 0 | [Report](results/test262-arguments-native-v2.json) |
+| `language/arguments-object` | 458/460 | 2 | 0 | 0 | [Report](results/test262-language-arguments-object-current-v1.json) |
 | `language/arguments-object/10.6-12-2.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-arguments-callee-descriptor-v1.json) |
 | `language/arguments-object/cls-expr-meth-args-trailing-comma-null.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-arguments-class-null-recheck-v1.json) |
 | `language/arguments-object/unmapped/via-params-rest.js` | 2/2 | 0 | 0 | 0 | [Report](results/test262-rest-arguments-native-v1.json) |
@@ -707,6 +707,8 @@ These include narrower selections and overlap. Never sum this table. Older failu
 | `staging/sm/expressions/optional-chain-first-expression-module.js` | 1/1 | 0 | 0 | 0 | [Report](results/test262-dynamic-import-module-23-v1.json) |
 
 ## Work in progress and reporting policy
+
+**Changes since v89:** `language/arguments-object` now uses the complete current rerun (458/460; the two optional legacy `arguments.caller` sloppy failures remain, and the two former unsupported strict-eval variants pass), and `annexB/language/function-code` uses the complete current rerun on the same frozen source (158/159; the pinned implicit-arguments expectation remains a failure). Category and footprint totals are unchanged because both replacements cover the identical family populations. v90 is not a full rescan: refreshed rows were selected explicitly, never by modification time, and re-verified against the pinned checkout and their completed journals. Not counted: the pending native arguments/environment fixture (19/20; the case 16 direct-eval Annex B copy failure stands until commit `2649e66` is accepted natively), the [journal footprint audit](results/test262-native-journal-footprint-audit-v1.json) outcomes, the older full Array journal candidate, and unfinished operator, Proxy, Promise, reference-key and other running selections.
 
 The completed dynamic-import directory and assignment reports are included. Completed focused module-eval and await-using checks are included; pending complete directory reruns are excluded. Full-suite measurement and compiler-performance work remain deferred by user direction. Work continues on known behavior gaps. Future status updates should include this full-domain summary, changes since the previous inventory, active runs, and implementation blockers—not just the latest feature slice.
 

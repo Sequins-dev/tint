@@ -1,0 +1,160 @@
+{
+  "kind": "native-test-group-inventory-refresh",
+  "createdAt": "2026-11-06T05:39:11.626Z",
+  "conformance": false,
+  "newNativeExecutions": 0,
+  "base": {
+    "inventory": "test262-native-group-inventory-v89.json",
+    "sha256": "67155553d5e0e64eb36702c863f19d46189dd659f3a6c6e99ec52837065924fe"
+  },
+  "result": {
+    "inventory": "test262-native-group-inventory-v90.json",
+    "sha256": "4207e3e0d11775a86ed880c79968a43b509b766ffb784fdf75fd7268ad27b369"
+  },
+  "tool": "node tools/refresh-test262-inventory.ts test262-native-group-inventory-v89.json test262-native-group-inventory-v90.json <pinned test262 checkout> language/arguments-object=test262-language-arguments-object-current-v1.json:test262-language-arguments-object-current-v1.jsonl annexB/language/function-code=test262-annexb-function-code-current-v3.json:test262-annexb-function-code-current-v3.jsonl",
+  "checkout": {
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "clean": true
+  },
+  "criteria": "Replace only explicitly named directory selections with a complete report for the identical family population, zero restored variants, a clean pinned revision, source and harness hashes matching the pinned checkout, and a completed journal matching the report. Modification times never select evidence; reportModified for refreshed rows is the recording commit's author time.",
+  "diff": [
+    {
+      "selection": "language/arguments-object",
+      "family": "language/arguments-object",
+      "from": {
+        "report": "test262-arguments-native-v2.json",
+        "passed": 456,
+        "failed": 2,
+        "unsupported": 2,
+        "sourceSnapshot": "432b8361… (456 files)"
+      },
+      "to": {
+        "report": "test262-language-arguments-object-current-v1.json",
+        "passed": 458,
+        "failed": 2,
+        "unsupported": 0,
+        "sourceSnapshot": "c1102df6… (568 files)",
+        "integratedCommit": "38ff087"
+      },
+      "category": "Complete report; gaps (unchanged)"
+    },
+    {
+      "selection": "annexB/language/function-code",
+      "family": "annexB/language/function-code",
+      "from": {
+        "report": "test262-annexb-function-code-native-v1.json",
+        "passed": 158,
+        "failed": 1,
+        "sourceSnapshot": "290c4a3c… (444 files)"
+      },
+      "to": {
+        "report": "test262-annexb-function-code-current-v3.json",
+        "passed": 158,
+        "failed": 1,
+        "sourceSnapshot": "c1102df6… (568 files)",
+        "integratedCommit": "88d029c"
+      },
+      "category": "Complete report; gaps (unchanged)"
+    }
+  ],
+  "unchanged": {
+    "families": 139,
+    "categories": {
+      "allPassing": 32,
+      "completeWithGaps": 29,
+      "selectionEvidenceOnly": 29,
+      "noRecordedOutcomes": 49
+    },
+    "recordedDistinctVariants": 33707,
+    "noRecordedOutcome": 69557,
+    "wholeSuiteNativePassFraction": null
+  },
+  "verifications": [
+    {
+      "selection": "language/arguments-object",
+      "previousReport": "test262-arguments-native-v2.json",
+      "report": "test262-language-arguments-object-current-v1.json",
+      "reportSha256": "54d0af55555c967fb4a2818ae7b1da584d7b44d3f58e999e3d61be5bc05167e7",
+      "journal": "test262-language-arguments-object-current-v1.jsonl",
+      "journalSha256": "60deff2a9622f36a4214fda36c82c7f77d0bafdb8332d77a513f7a8de81222ff",
+      "population": 460,
+      "sourceHashesVerified": 460,
+      "harnessHashesVerified": 1067,
+      "previousTotals": {
+        "total": 460,
+        "passed": 456,
+        "failed": 2,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.991304347826087
+      },
+      "totals": {
+        "total": 460,
+        "passed": 458,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9956521739130435
+      },
+      "sourceSnapshot": {
+        "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+        "files": 568
+      },
+      "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+      "adapter": "native-script-v19-managed-templates",
+      "executionResourcesSha256": "47c27c2bdc8cc081fd4f646f4aa4eccd255f49e0dc018888af1ed4a07dfa2aa9"
+    },
+    {
+      "selection": "annexB/language/function-code",
+      "previousReport": "test262-annexb-function-code-native-v1.json",
+      "report": "test262-annexb-function-code-current-v3.json",
+      "reportSha256": "a7ed409983037d874e558266ac6bdc3391795364ce3e7eefc64566fff329ecce",
+      "journal": "test262-annexb-function-code-current-v3.jsonl",
+      "journalSha256": "0f100afd23cca69e810234b67bd96e1d2f1fcb68d5db57e6ff807fd551e8cd30",
+      "population": 159,
+      "sourceHashesVerified": 159,
+      "harnessHashesVerified": 318,
+      "previousTotals": {
+        "total": 159,
+        "passed": 158,
+        "failed": 1,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9937106918238994
+      },
+      "totals": {
+        "total": 159,
+        "passed": 158,
+        "failed": 1,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9937106918238994
+      },
+      "sourceSnapshot": {
+        "sha256": "c1102df6be263d6e5be27e16800271a09760bbd71151e2bcc470327806e8436f",
+        "files": 568
+      },
+      "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712",
+      "adapter": "native-script-v19-managed-templates",
+      "executionResourcesSha256": "47c27c2bdc8cc081fd4f646f4aa4eccd255f49e0dc018888af1ed4a07dfa2aa9"
+    }
+  ],
+  "limits": [
+    "Not a full rescan: every row other than the two refreshed selections, and the reportAudit counts, are inherited from the v89 capture.",
+    "Refreshed rows were named explicitly; modification times were not used to select evidence. A newer focused or partial report cannot replace a complete family report under this policy because the population must equal the accepted family population.",
+    "The pending native arguments/environment fixture remains 19/20; case 16 (direct-eval Annex B copy) is a retained failure until commit 2649e66 is accepted natively. The fixture adds no conformance outcomes.",
+    "The 5,254 journal-only variants in test262-native-journal-footprint-audit-v1.json are not fixture/harness verified and are not promoted.",
+    "The older full Array journal candidate is out of scope pending stronger provenance.",
+    "Unfinished operator, Proxy, Promise, reference-key, direct-eval, for-of, import.meta and other running selections are not counted.",
+    "The two arguments-object failures are optional legacy arguments.caller sloppy variants and the Annex B failure is a pinned expectation that predates the current specification; all remain failures in the denominator.",
+    "Complete family reports from different frozen sources and resources remain separate; no current whole-suite pass rate is derived."
+  ]
+}
