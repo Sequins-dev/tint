@@ -520,3 +520,94 @@ test("finally preserves settlement unless its callback completes abruptly", () =
     6,
   ]);
 });
+
+const jobs = await import("../src/objects/jobs.ts");
+
+/** A second realm in the same agent plus a Proxy constructor in the first.
+ * Spec job realms come from GetFunctionRealm(handler), which follows callable
+ * Proxy targets; a revoked Proxy falls back to the enqueueing current realm. */
+function crossRealm() {
+  const h = harness();
+  runtime.installProxyIntrinsics(h.root, h.realm, h.hooks);
+  const otherRoot = runtime.createObject<Objects.ScriptPropertyKey, unknown>(
+    undefined,
+  );
+  const other = runtime.createErrorRealm(
+    otherRoot,
+    h.hooks,
+    h.realm.symbolRegistry,
+    h.realm.agent,
+  );
+  runtime.installErrorIntrinsics(otherRoot, other, h.hooks);
+  runtime.installFunctionIntrinsics(otherRoot, other, h.hooks);
+  runtime.installProxyIntrinsics(otherRoot, other, h.hooks);
+  /** A function owned by the other realm, entered through its own context. */
+  function otherFn(body: (...args: any[]) => unknown) {
+    return runtime.createCallableObject<Objects.ScriptPropertyKey, unknown>(
+      other.functionPrototype,
+      (_receiver, args) => body(...args),
+      jobs.createSourceExecutionContext(other),
+    );
+  }
+  function revocable(target: unknown, root: ScriptObject = h.root) {
+    const pair = h.method(
+      h.get(root, "Proxy"),
+      "revocable",
+      target,
+      runtime.createObject<Objects.ScriptPropertyKey, unknown>(h.root),
+    );
+    return { proxy: h.get(pair, "proxy"), revoke: h.get(pair, "revoke") };
+  }
+  const prototypeOf = (value: unknown) => (value as ScriptObject).prototype;
+  return { ...h, other, otherRoot, otherFn, revocable, prototypeOf };
+}
+
+test("thenable jobs create resolving functions in the realm behind a callable Proxy", () => {
+  const h = crossRealm();
+  const seen: unknown[] = [];
+  const { proxy } = h.revocable(
+    h.otherFn((resolve: unknown) => {
+      seen.push(h.prototypeOf(resolve));
+      h.call(resolve, undefined, 5);
+    }),
+  );
+  const thenable = runtime.createObject<Objects.ScriptPropertyKey, unknown>(
+    h.root,
+  );
+  runtime.createDataProperty(thenable, "then", proxy, h.hooks);
+  const log: unknown[] = [];
+  h.then(h.method(h.Promise, "resolve", thenable), (value) => log.push(value));
+  h.drain();
+  assert.deepEqual(seen, [h.other.functionPrototype]);
+  assert.deepEqual(log, [5]);
+});
+
+test("a reaction Proxy revoked after enqueue still runs in its target's realm", () => {
+  const h = crossRealm();
+  const { proxy, revoke } = h.revocable(h.otherFn(() => "unreachable"));
+  const derived = h.method(h.method(h.Promise, "resolve", 1), "then", proxy);
+  h.call(revoke, undefined);
+  const reasons: unknown[] = [];
+  h.then(derived, undefined, (reason) => reasons.push(reason));
+  h.drain();
+  assert.equal(reasons.length, 1);
+  assert.ok(h.prototypeOf(reasons[0]) === h.other.prototypes.get("type"));
+});
+
+test("an already revoked reaction Proxy uses the realm current at enqueue", () => {
+  const h = crossRealm();
+  // Created by the other realm's Proxy constructor: its creation realm is not
+  // the job realm. GetFunctionRealm throws, so the job uses the realm current
+  // inside this realm's Promise.prototype.then.
+  const { proxy, revoke } = h.revocable(
+    h.otherFn(() => "unreachable"),
+    h.otherRoot,
+  );
+  h.call(revoke, undefined);
+  const derived = h.method(h.method(h.Promise, "resolve", 1), "then", proxy);
+  const reasons: unknown[] = [];
+  h.then(derived, undefined, (reason) => reasons.push(reason));
+  h.drain();
+  assert.equal(reasons.length, 1);
+  assert.ok(h.prototypeOf(reasons[0]) === h.realm.prototypes.get("type"));
+});

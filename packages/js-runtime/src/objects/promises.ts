@@ -16,7 +16,8 @@ import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { builtinFunction } from "./intrinsics.ts";
 import { callObject, isCallableObject } from "./call.ts";
 import { viewObjectValue } from "./values.ts";
-import { enqueueScriptJob } from "./jobs.ts";
+import { createSourceExecutionContext, enqueueScriptJob } from "./jobs.ts";
+import { getFunctionRealm } from "./function-realms.ts";
 
 export interface ScriptResolvingFunctions {
   readonly resolve: OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -78,6 +79,19 @@ export function createScriptPromiseHooks(
   function currentRealm(): ErrorRealm {
     const active = realm.agent.activeContext;
     return active === undefined ? realm : active.realm;
+  }
+  /** NewPromiseReactionJob/NewPromiseResolveThenableJob: GetFunctionRealm
+   * follows bound and callable Proxy targets; a revoked Proxy falls back to the
+   * realm current at enqueue. Built-ins without a realm context also resolve
+   * to that current realm. */
+  function jobRealm(
+    callback: OrdinaryObject<ScriptPropertyKey, unknown>,
+  ): ErrorRealm {
+    try {
+      return getFunctionRealm(callback, realm);
+    } catch {
+      return currentRealm();
+    }
   }
   function typeError(): unknown {
     return createRuntimeError(currentRealm(), "type");
@@ -142,7 +156,9 @@ export function createScriptPromiseHooks(
       enqueueScriptJob(
         realm.agent,
         job,
-        object === undefined ? undefined : object.internalExecutionContext,
+        object === undefined
+          ? undefined
+          : createSourceExecutionContext(jobRealm(object)),
       );
     },
     rejectionTracker,

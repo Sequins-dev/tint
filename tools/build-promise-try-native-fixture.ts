@@ -1,7 +1,8 @@
-/** Build-only native batch for Promise.try and job-ordering evidence. Runs the
- * unchanged pinned `built-ins/Promise/try` sources in strict and sloppy variants
- * plus bespoke ordering cases. This tool never launches the image; the selected
- * case index is the image's first argument and every case must exit 42. */
+/** Build-only native batch for Promise.try, job-ordering and job-realm
+ * evidence. Runs the unchanged pinned `built-ins/Promise/try` sources in strict
+ * and sloppy variants plus bespoke cases. This tool never launches the image;
+ * the selected case index is the image's first argument and every case must
+ * exit 42. Bespoke cases are regressions, never Test262 conformance. */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -30,7 +31,11 @@ const sha = (bytes: string | Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
 
 /** Orders agree with the specification's job sequence (and Node). */
-const bespoke: readonly { name: string; source: string }[] = [
+const bespoke: readonly {
+  name: string;
+  source: string;
+  features?: readonly string[];
+}[] = [
   {
     name: "callback-before-constructor",
     source:
@@ -50,6 +55,26 @@ const bespoke: readonly { name: string; source: string }[] = [
     name: "job-ordering",
     source:
       "var log=[];var settled=Promise.resolve();new Promise(function(r){r(settled);}).then(function(){log.push('A');});Promise.resolve(1).finally(function(){}).then(function(v){log.push('f'+v);});Promise.resolve(3).finally(function(){throw 9;}).then(undefined,function(r){log.push('o'+r);});var p=Promise.resolve();[1,2,3,4,5].forEach(function(i){p=p.then(function(){log.push(i);});});p.then(function(){assert.sameValue(log.join(),'1,o9,2,A,3,f1,4,5');$DONE();},$DONE);",
+  },
+  // Job realms come from GetFunctionRealm(handler): callable Proxies resolve
+  // to their target's realm; a revoked Proxy falls back to the current realm.
+  {
+    name: "thenable-proxy-job-realm",
+    features: ["Proxy", "cross-realm"],
+    source:
+      "var other=$262.createRealm().global;var target=other.eval('(function(resolve){resolve(Object.getPrototypeOf(resolve)===Function.prototype);})');Promise.resolve({then:new Proxy(target,{})}).then(function(v){assert.sameValue(v,true);$DONE();},$DONE);",
+  },
+  {
+    name: "reaction-proxy-revoked-after-enqueue-realm",
+    features: ["Proxy", "cross-realm"],
+    source:
+      "var other=$262.createRealm().global;var r=Proxy.revocable(other.eval('(function(){})'),{});var p=Promise.resolve(1).then(r.proxy);r.revoke();p.then(function(){$DONE('unexpected');},function(e){assert.sameValue(e.constructor,other.TypeError);$DONE();});",
+  },
+  {
+    name: "reaction-proxy-revoked-before-enqueue-realm",
+    features: ["Proxy", "cross-realm"],
+    source:
+      "var other=$262.createRealm().global;var r=other.Proxy.revocable(other.eval('(function(){})'),{});r.revoke();Promise.resolve(1).then(r.proxy).then(function(){$DONE('unexpected');},function(e){assert.sameValue(e.constructor,TypeError);$DONE();});",
   },
 ];
 
@@ -109,12 +134,12 @@ for (const file of readdirSync(join(checkout, directory)).sort()) {
     });
   }
 }
-for (const { name, source } of bespoke)
+for (const { name, source, features = ["promise-try"] } of bespoke)
   addCase(
     name,
     source,
     "strict",
-    { flags: ["async"], features: ["promise-try"], includes: [] },
+    { flags: ["async"], features: [...features], includes: [] },
     { bespoke: true, sha256: sha(source) },
   );
 
