@@ -1,0 +1,74 @@
+{
+  "kind": "implementation-validation-checkpoint",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "336e8ed54f566c173af13a2cf8e420b36b549bd0644e4a86d0b444280bbccb9c",
+    "files": 568
+  },
+  "implemented": [
+    "Temporal.PlainYearMonth.compare",
+    "Temporal.PlainYearMonth.prototype.equals",
+    "Temporal.PlainMonthDay.prototype.equals"
+  ],
+  "checks": [
+    {
+      "command": "pnpm build",
+      "exitStatus": 0
+    },
+    {
+      "command": "node --test --test-concurrency=2 packages/js-runtime/test/ordinary-object-temporal-partial-date.test.ts",
+      "exitStatus": 0,
+      "passed": 2,
+      "total": 2
+    },
+    {
+      "command": "~/.t3/tint-slots/tint-check",
+      "exitStatus": 0,
+      "passed": 4505,
+      "total": 4505,
+      "otherGates": [
+        "typecheck",
+        "boundaries",
+        "format:check"
+      ],
+      "log": ".tint-bootstrap/temporal-h-check-v3.log"
+    },
+    {
+      "command": "corrected native fixture under NativeImageRunner/LLDB",
+      "exitStatus": 0,
+      "passed": 5,
+      "total": 5,
+      "report": "docs/results/native-temporal-partial-comparison-green-h-v2.json"
+    }
+  ],
+  "retainedPriorObservations": [
+    {
+      "run": "workspace check v1",
+      "exitStatus": 1,
+      "reason": "Missing worktree-local .tint-bootstrap/test262 link. Created a symlink to the unchanged pinned checkout; focused module graph test then passed."
+    },
+    {
+      "run": "workspace check v2",
+      "exitStatus": 1,
+      "reason": "Captured the red method-contract test and transient unsupported as-const comparator while editing. Replaced it with explicit field comparisons; final stable-source v3 passed."
+    },
+    {
+      "run": "native red fixture",
+      "report": "docs/results/native-temporal-partial-comparison-red-h-v1.json",
+      "errors": 5,
+      "total": 5
+    },
+    {
+      "run": "native green fixture v1",
+      "report": "docs/results/native-temporal-partial-comparison-green-h-v1.json",
+      "passed": 4,
+      "total": 5,
+      "reason": "Fixture case 4 supplied an invalid unsigned six-digit ISO year. Added the required plus sign, preserving the original observation."
+    }
+  ],
+  "pending": [
+    "Frozen native self-build, stage-image comparison and artifact validation (queued under selfbuild slot limiter)",
+    "Complete affected selections: PlainYearMonth/compare (78), PlainYearMonth/prototype/equals (80), PlainMonthDay/prototype/equals (72)"
+  ],
+  "mergeReady": false
+}

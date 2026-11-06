@@ -37,3 +37,43 @@ test("Temporal partial dates expose only their calendar fields", () => {
     assert.ok(objects.getOwnProperty(prototype, "toJSON"));
   }
 });
+
+test("partial-date equality and year-month comparison have intrinsic method contracts", () => {
+  const hooks: objects.ObjectHooks<unknown> = {
+    undefinedValue: undefined,
+    sameValue: Object.is,
+    call: () => undefined,
+  };
+  const root = objects.createObject<objects.ScriptPropertyKey, unknown>(
+    undefined,
+  );
+  const realm = objects.createErrorRealm(root, hooks);
+  objects.installTemporalIntrinsics(root, realm, hooks);
+  const temporal = objects.getOwnProperty(root, "Temporal")!
+    .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
+  for (const name of ["PlainYearMonth", "PlainMonthDay"]) {
+    const constructor = objects.getOwnProperty(temporal, name)!
+      .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
+    const prototype = objects.getOwnProperty(constructor, "prototype")!
+      .value as objects.OrdinaryObject<objects.ScriptPropertyKey, unknown>;
+    const targets = [{ object: prototype, name: "equals", length: 1 }];
+    if (name === "PlainYearMonth")
+      targets.push({ object: constructor, name: "compare", length: 2 });
+    else
+      assert.equal(objects.getOwnProperty(constructor, "compare"), undefined);
+    for (const target of targets) {
+      const descriptor = objects.getOwnProperty(target.object, target.name);
+      assert.ok(descriptor, name + "." + target.name);
+      assert.equal(descriptor.enumerable, false);
+      assert.equal(descriptor.writable, true);
+      assert.equal(descriptor.configurable, true);
+      const fn = descriptor.value as objects.OrdinaryObject<
+        objects.ScriptPropertyKey,
+        unknown
+      >;
+      assert.equal(objects.getOwnProperty(fn, "length")!.value, target.length);
+      assert.equal(objects.getOwnProperty(fn, "name")!.value, target.name);
+      assert.equal(fn.internalConstruct, undefined);
+    }
+  }
+});

@@ -1,0 +1,106 @@
+{
+  "kind": "native-script-fixture-observation",
+  "conformance": false,
+  "priorReport": "docs/results/native-temporal-partial-comparison-green-h-v1.json",
+  "correction": "Case 4 now uses the required plus sign on the six-digit positive ISO year. Runtime source is unchanged.",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "336e8ed54f566c173af13a2cf8e420b36b549bd0644e4a86d0b444280bbccb9c",
+      "files": 568
+    },
+    "imageSha256": "5ac8baab23d3df4180aa41bcec2eefbacf66cf5d21d627788bf42e6a3316e60c",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=new Temporal.PlainYearMonth(2000,1,\"iso8601\",1),b=new Temporal.PlainYearMonth(2000,1,\"iso8601\",2);if(Temporal.PlainYearMonth.compare(a,b)!==-1||Temporal.PlainYearMonth.compare(b,a)!==1||Temporal.PlainYearMonth.compare(a,a)!==0||a.equals(b)||!a.equals(\"2000-01\"))throw 1;",
+        "sha256": "9917b9eb2ff2d0a178f83f443ae64ea8413e8bf6d030edb9ce8db08911e8b736"
+      },
+      {
+        "index": 1,
+        "source": "const a=new Temporal.PlainMonthDay(2,29,\"iso8601\",1972),b=new Temporal.PlainMonthDay(2,29,\"iso8601\",1976);if(a.equals(b)||!a.equals(\"02-29\")||!a.equals(new Temporal.PlainMonthDay(2,29)))throw 1;",
+        "sha256": "be8dab826014fb3a6399469c2ec73e79eef6278aa1e6e4acf28d441966b0aa30"
+      },
+      {
+        "index": 2,
+        "source": "const a=new Temporal.PlainYearMonth(2000,1);for(const k of [\"calendar\",\"year\",\"month\",\"monthCode\",\"day\"])Object.defineProperty(a,k,{get(){throw 1;}});if(!a.equals(a)||Temporal.PlainYearMonth.compare(a,a)!==0)throw 2;const md=new Temporal.PlainMonthDay(1,1);for(const k of [\"calendar\",\"year\",\"month\",\"monthCode\",\"day\"])Object.defineProperty(md,k,{get(){throw 3;}});if(!md.equals(md))throw 4;",
+        "sha256": "6f79df2928f899edd922da7152314ea576f9e828ba760d06172cd95964d1a7b8"
+      },
+      {
+        "index": 3,
+        "source": "for(const C of [Temporal.PlainYearMonth,Temporal.PlainMonthDay]){let touched=false;try{C.prototype.equals.call({}, {get calendar(){touched=true;throw 1;}});throw 2;}catch(e){if(!(e instanceof TypeError)||touched)throw 3;}}const log=[];const one={get calendar(){log.push(\"one\");throw 42;}},two={get calendar(){log.push(\"two\");throw 43;}};try{Temporal.PlainYearMonth.compare(one,two);throw 1;}catch(e){if(e!==42||log.join()!==\"one\")throw 2;}",
+        "sha256": "e4949a685e435c469aebcfc70fd0b88661cf95535a8bbc963f495f78b717f479"
+      },
+      {
+        "index": 4,
+        "source": "for(const [a,b] of [[\"-271821-04\",\"+275760-09\"],[\"1999-12\",\"2000-01\"],[\"2000-01\",\"2000-02\"]]){if(Temporal.PlainYearMonth.compare(a,b)!==-1||Temporal.PlainYearMonth.compare(b,a)!==1)throw 1;}for(const C of [Temporal.PlainYearMonth,Temporal.PlainMonthDay]){const a=C===Temporal.PlainYearMonth?new C(2000,1):new C(1,1);for(const value of [undefined,null,1,true,{},new Proxy(a,{})]){let ok=false;try{a.equals(value);}catch(e){ok=e instanceof TypeError;}if(!ok)throw 2;}}",
+        "sha256": "8163e3e1d6a0c649a363ac14ccddaacf4fe94f5649593b58bcc609f09585b04b"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

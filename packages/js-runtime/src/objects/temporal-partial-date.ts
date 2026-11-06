@@ -124,6 +124,37 @@ export function installTemporalPartialDates(
       hooks,
     );
     builtinFunctionMetadata(constructor, name, 2, hooks);
+    if (yearMonth)
+      builtinProperty(
+        constructor,
+        "compare",
+        builtinFunction(
+          realm.functionPrototype,
+          "compare",
+          2,
+          (receiver, args): unknown => {
+            const first = partialDateFrom(
+              args[0],
+              undefined,
+              true,
+              realm,
+              hooks,
+            );
+            const second = partialDateFrom(
+              args[1],
+              undefined,
+              true,
+              realm,
+              hooks,
+            );
+            return comparePartialDates(first, second);
+          },
+          hooks,
+        ),
+        true,
+        true,
+        hooks,
+      );
     builtinProperty(constructor, "prototype", prototype, false, false, hooks);
     builtinProperty(prototype, "constructor", constructor, true, true, hooks);
     builtinProperty(
@@ -140,6 +171,32 @@ export function installTemporalPartialDates(
       hooks,
       extract,
       yearMonth ? "year-month" : "month-day",
+    );
+    builtinProperty(
+      prototype,
+      "equals",
+      builtinFunction(
+        realm.functionPrototype,
+        "equals",
+        1,
+        (receiver, args): unknown => {
+          const first = extract(receiver);
+          const second = partialDateFrom(
+            args[0],
+            undefined,
+            yearMonth,
+            realm,
+            hooks,
+          );
+          // Conversion currently admits only ISO calendars, so equality of the
+          // entire reference date also establishes calendar equality.
+          return comparePartialDates(first, second) === 0;
+        },
+        hooks,
+      ),
+      true,
+      true,
+      hooks,
     );
     for (const method of ["toString", "toJSON", "valueOf"]) {
       if (method === undefined) throw "TEMPORAL_PARTIAL_METHOD_INVARIANT";
@@ -183,4 +240,15 @@ export function installTemporalPartialDates(
     }
     builtinProperty(temporal, name, constructor, true, true, hooks);
   }
+}
+
+/** Reference components participate even when they are not exposed as fields. */
+function comparePartialDates(
+  first: GregorianDate,
+  second: GregorianDate,
+): number {
+  if (first.year !== second.year) return first.year < second.year ? -1 : 1;
+  if (first.month !== second.month) return first.month < second.month ? -1 : 1;
+  if (first.day !== second.day) return first.day < second.day ? -1 : 1;
+  return 0;
 }
