@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { test262Checkout, test262Source, within } from "./test262-checkout.ts";
 import { testMetadata, syntaxVariants } from "./test262.ts";
 import { executionPlan, executionTotals } from "./test262-execution.ts";
@@ -58,17 +58,52 @@ const parentPaths = new Set(
 if (!suite.files.every((file) => parentPaths.has(file.path)))
   throw Error("native journal selection does not cover the requested files");
 const harnessRoot = resolve(suite.root, "harness");
+const recorded: NativeObservation[] = rows
+  .filter((row) => row.kind === "observation")
+  .map(({ kind, ...row }) => row);
+const recordedInputs = new Map(
+  recorded.map((row) => [row.path + "\0" + row.variant, row]),
+);
 const expected = suite.files.flatMap(({ filename, path }) => {
   const { source, sha256 } = test262Source(filename),
     metadata = testMetadata(source);
   return syntaxVariants(metadata).map((variant) => {
     const plan = executionPlan(source, variant, metadata);
+    const prior = recordedInputs.get(path + "\0" + variant);
+    // Verify consumed fixture identities without re-running preparation with a
+    // potentially newer compiler. Unsupported roots may never discover fixtures.
+    const sibling = (name: string): string => {
+      if (
+        typeof name !== "string" ||
+        name.length === 0 ||
+        name === "." ||
+        name === ".." ||
+        /[\\/]/.test(name)
+      )
+        throw Error("invalid recorded fixture name");
+      return within(dirname(filename), name);
+    };
+    const fixtureNames = new Set<string>();
+    for (const fixture of prior?.fixtures ?? []) {
+      const bytes = readFileSync(sibling(fixture.name));
+      if (
+        fixtureNames.has(fixture.name) ||
+        createHash("sha256").update(bytes).digest("hex") !== fixture.sha256
+      )
+        throw Error("selected fixture identity differs");
+      fixtureNames.add(fixture.name);
+    }
+    for (const name of prior?.absent ?? [])
+      if (existsSync(sibling(name)))
+        throw Error("recorded absent fixture now exists");
     return {
       path,
       sha256,
       metadata,
       variant,
       canSuspend: plan.canSuspend,
+      ...(prior?.fixtures === undefined ? {} : { fixtures: prior.fixtures }),
+      ...(prior?.absent === undefined ? {} : { absent: prior.absent }),
       harness: plan.harness.map((name) => ({
         name,
         sha256: test262Source(within(harnessRoot, name)).sha256,
@@ -76,9 +111,6 @@ const expected = suite.files.flatMap(({ filename, path }) => {
     };
   });
 });
-const recorded: NativeObservation[] = rows
-  .filter((row) => row.kind === "observation")
-  .map(({ kind, ...row }) => row);
 const observations = nativeSelectionObservations(recorded, expected);
 const batches = new Set(observations.map((row) => row.batch));
 const report = {
@@ -96,7 +128,7 @@ const report = {
     executableWriteback: header.executableWriteback,
   },
   scope:
-    "Complete selected family extracted from a single native journal prefix; all expected variants and source/harness identities verified. No whole-suite coverage claim.",
+    "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
   variantPolicy:
     "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
   revision: suite.revision,
