@@ -1,0 +1,18 @@
+{
+  "kind": "native-debugger-startup-diagnostic",
+  "conformance": false,
+  "selection": "language/expressions/prefix-increment",
+  "variant": "whitespace.js sloppy",
+  "observation": "Debugserver direct launch waited before publishing its port; inferior was stopped, zero CPU, no initial.json or connection.log. LLDB sampled in Python socket poll; debugserver sampled in RNBRunLoopLaunchInferior/DNBProcessWaitForEvents. Wait cleared without intervention; initial stop and expected exit subsequently passed.",
+  "delayMsApproximate": 132000,
+  "limitChanged": false,
+  "result": "pass",
+  "report": "docs/results/test262-operator-prefix-increment-native-v1.json",
+  "samples": [
+    "docs/results/operator-prefix-increment-lldb-startup-sample-v1.txt",
+    "docs/results/operator-prefix-increment-debugserver-startup-sample-v1.txt"
+  ],
+  "debuggerPid": 72893,
+  "debugserverPid": 72930,
+  "inferiorPid": 72931
+}
