@@ -1,0 +1,110 @@
+{
+  "kind": "retained-iterator-timeout-reassessment",
+  "conformance": false,
+  "recordedAt": "2026-11-06T22:40:39.678809+00:00",
+  "originalReport": "docs/results/test262-iterator-family-current-native-v1.json",
+  "originalTotalsUnchanged": {
+    "total": 1368,
+    "passed": 1364,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 4,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9970760233918129
+  },
+  "sourceSnapshot": {
+    "sha256": "035a38c78e2f2a3cd3efb117ffd0b5e7b5623f5d89a9cd009e28868a0f1748ba",
+    "files": 568
+  },
+  "debugger": "debugserver-direct",
+  "observations": [
+    {
+      "path": "built-ins/Iterator/zip/result-is-iterator.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "initialStopRecorded": true,
+      "initialDyldPc": [
+        "0x0000000111e3c9c0"
+      ],
+      "retainedRspPc": [
+        "1878174ac"
+      ],
+      "rspE97Present": true,
+      "cpuSeconds": null,
+      "testEntryEstablished": false,
+      "includes": [
+        "assert.js",
+        "sta.js",
+        "wellKnownIntrinsicObjects.js"
+      ]
+    },
+    {
+      "path": "built-ins/Iterator/zip/result-is-iterator.js",
+      "variant": "strict",
+      "status": "timeout",
+      "initialStopRecorded": true,
+      "initialDyldPc": [
+        "0x000000010d91c9c0"
+      ],
+      "retainedRspPc": [
+        "1878174ac"
+      ],
+      "rspE97Present": true,
+      "cpuSeconds": null,
+      "testEntryEstablished": false,
+      "includes": [
+        "assert.js",
+        "sta.js",
+        "wellKnownIntrinsicObjects.js"
+      ]
+    },
+    {
+      "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "initialStopRecorded": true,
+      "initialDyldPc": [
+        "0x000000010bb7c9c0"
+      ],
+      "retainedRspPc": [
+        "1878174ac"
+      ],
+      "rspE97Present": true,
+      "cpuSeconds": null,
+      "testEntryEstablished": false,
+      "includes": [
+        "assert.js",
+        "sta.js",
+        "wellKnownIntrinsicObjects.js"
+      ]
+    },
+    {
+      "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+      "variant": "strict",
+      "status": "timeout",
+      "initialStopRecorded": true,
+      "initialDyldPc": [
+        "0x000000010efc49c0"
+      ],
+      "retainedRspPc": [
+        "1878174ac"
+      ],
+      "rspE97Present": true,
+      "cpuSeconds": null,
+      "testEntryEstablished": false,
+      "includes": [
+        "assert.js",
+        "sta.js",
+        "wellKnownIntrinsicObjects.js"
+      ]
+    }
+  ],
+  "classification": "Unresolved after-initial-stop timeouts. These retained logs do not establish CPU-bound native compilation or test-body entry.",
+  "hypotheses": [
+    "The old direct-launch debugger has since received connected RemoteLaunch and async connection-readiness fixes; launch/resume infrastructure must be ruled out.",
+    "wellKnownIntrinsicObjects.js eagerly constructs dynamic Function bodies, which may make runtime compilation expensive; no historical CPU sample locates such work."
+  ],
+  "nextStep": "Recheck all four variants singly with current-main frozen tools, connected launch, heartbeat and inferior CPU samples after the breadth measurements. Attribute a confirmed dynamic compilation hotspot to D/P only after observing it. Preserve original four timeouts and keep focused outcomes separate.",
+  "generatorControl": "The final generator-expression stopped-at-dyld case recovered; its complete546/546 report has zero infrastructure outcomes, so no generator infra variant was silently retried."
+}
