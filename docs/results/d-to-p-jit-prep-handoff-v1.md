@@ -55,3 +55,7 @@ Sample: `.tint-bootstrap/d-language-indirect-phase2-v1-stall-3539-phase-1.txt`.
 Binary: preserved batch-0 image described above. Journal and full CPU ledger are being appended under `docs/results/test262-d-language-indirect-phase2-v1.jsonl` and `docs/results/d-language-indirect-phase2-v1-process.jsonl`. The run continues; do not publish 21/22 as a complete selection.
 
 Rebase note: the focused evidence commit is now `1fa83ca` on main `4ef8ab8` (same report-only patch as original `9534cab`). The currently running indirect measurement still uses its immutable b7aa59a-derived toolchain/source `ff22a2a0…`; it does not pick up the register-copy change mid-run.
+
+## Paused checkpoint (supersedes earlier live-run status)
+
+D is paused under ACTIVE CLUSTER LIMIT. No D runner, observer, or inferior remains. The indirect journal is held at 84/118 observations: 76 passes, 8 low-CPU timeouts, 34 unobserved; no complete record. A queued resume was cancelled before it started Node. See `docs/results/d-phase2-paused-checkpoint-v1.json` for the exact CPU classifications and `~/.t3/tint-briefs/handoff-D.md` for the authorized-resume command and final rebased evidence SHAs. Do not resume until the coordinator authorizes D. Frozen source remains `ff22a2a0…`; preserved batch0 and batch1 binaries and their adjacent metadata remain available for symbolication. Neither symbolized diagnostics nor a timeout/cap increase has been performed. Earlier commit SHAs in this historical note were superseded by report-only rebases; use the final D handoff for current SHAs.
