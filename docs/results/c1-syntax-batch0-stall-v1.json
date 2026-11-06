@@ -1,0 +1,27 @@
+{
+  "kind": "native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/statements/class/syntax",
+  "journal": "docs/results/test262-c1-foundation-language-statements-class-syntax-v2.jsonl",
+  "stderr": "docs/results/test262-c1-foundation-language-statements-class-syntax-v2.json.stderr.txt",
+  "phase": "compiling batch 0 (20 variants)",
+  "runner": 46935,
+  "firstStallElapsedMs": 167961,
+  "observations": [
+    {
+      "elapsed": "03:26",
+      "cpu": "03:53.15",
+      "cpuPercent": 99.5
+    },
+    {
+      "elapsed": "03:45",
+      "cpu": "04:12.72",
+      "cpuPercent": 99.4
+    }
+  ],
+  "children": [],
+  "stdin": "/dev/null",
+  "pauseMarkerConfigured": false,
+  "sample": "docs/results/c1-syntax-batch0-stall-v1.txt",
+  "diagnosis": "Synchronous bootstrap compiler executing JavaScript in V8. CPU time continues advancing; no inferior, stdin wait or pause/hold wait. Phase elapsed threshold triggered the worker STALL; run retained without interruption or retry."
+}
