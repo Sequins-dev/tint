@@ -1991,6 +1991,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/native-runtime/src/agent-messages.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/allocators/linear/index.ts",
       packageId: "native-runtime",
     },
