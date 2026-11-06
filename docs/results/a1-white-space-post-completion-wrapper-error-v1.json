@@ -1,0 +1,33 @@
+{
+  "kind": "post-completion-wrapper-failure",
+  "conformance": false,
+  "nativeSelection": "language/white-space",
+  "nativeReport": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.json",
+  "nativeTotals": {
+    "total": 134,
+    "passed": 134,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "wrapperExitStatus": 1,
+  "stderr": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.json.stderr.log",
+  "observedSequence": [
+    "Runner recorded all134 passes, appended complete and wrote canonical JSON.",
+    "Slot wrapper emitted command not found: ne.",
+    "Slot wrapper dispatched same command a second time.",
+    "Second invocation rejected existing journal with EEXIST before any native variant."
+  ],
+  "journalStartRecords": 1,
+  "journalObservationRecords": 134,
+  "originalRunnerPid": 67564,
+  "wrapperPid": 67553,
+  "sharedWrapper": "/Users/stephenbelanger/.t3/tint-slots/slot",
+  "sharedWrapperModifiedAt": "2026-11-07T02:33:21+08:00",
+  "invocationStartedAt": "2026-11-06T17:51:37.221Z",
+  "hypothesis": "In-place shared shell-script edit while zsh awaited its child shifted the source cursor; resumed parsing dispatched trailing command again.",
+  "policy": "Retain error; do not rerun completed native outcomes. Verify wrapper behavior independently before next queue launch."
+}
