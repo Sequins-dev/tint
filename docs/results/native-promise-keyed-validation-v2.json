@@ -1,0 +1,189 @@
+{
+  "kind": "native-promise-keyed-bespoke-fixture",
+  "conformance": false,
+  "accepted": true,
+  "fixture": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "b6fff8123e9aa8f306e6f7bf7622df226e71ebc4d2ecb461425d9a43be21b2f8",
+      "files": 568
+    },
+    "imageSha256": "21211d1f76a662b3905cfb060ed3eb5a4dd5297216f2fef31e0ec98e858876ac",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var d=Object.getOwnPropertyDescriptor(Promise,n);check(d.writable,true);check(d.enumerable,false);check(d.configurable,true);check(d.value.length,1);check(d.value.name,n);check(Object.getPrototypeOf(d.value),Function.prototype);check(d.value.hasOwnProperty('prototype'),false);}\n$DONE();",
+        "sha256": "35209bf72cbe050a46d948e333d2052038172c39a7b41cd2c1e286a3c4064e3e"
+      },
+      {
+        "index": 1,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar s=Symbol();var input={a:Promise.resolve(3),[s]:4};Object.defineProperty(input,'__proto__',{value:5,enumerable:true});\nPromise.allKeyed(input).then(function(o){check(Object.getPrototypeOf(o),null);check(o.a,3);check(o[s],4);check(o.__proto__,5);check(Reflect.ownKeys(o).length,3);var d=Object.getOwnPropertyDescriptor(o,'a');check(d.writable&&d.enumerable&&d.configurable,true);$DONE();},$DONE);",
+        "sha256": "32cadd68d35358aae513ba6bb67caf5b1fc0b7dc74ac196dfc87160e22a14c23"
+      },
+      {
+        "index": 2,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar result;function C(e){e(function(v){result=v},function(e){throw e})}C.resolve=function(v){return {then:function(f,r){r(v);f(99);r(100)}}};\nPromise.allSettledKeyed.call(C,{x:7,y:8});check(Object.getPrototypeOf(result),null);check(result.x.status,'rejected');check(result.x.reason,7);check(result.y.reason,8);check(Object.getPrototypeOf(result.x),Object.prototype);check(Object.keys(result.x).join(),'status,reason');$DONE();",
+        "sha256": "66e967209660080cde85f5c9aa71a1af61d7f2fd77e2d60cbf675a93128a28dd"
+      },
+      {
+        "index": 3,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar log=[];var target={a:1,b:2,c:3};var input=new Proxy(target,{ownKeys:function(t){log.push('keys');return ['a','b','c'];},getOwnPropertyDescriptor:function(t,k){log.push('desc:'+k);return Reflect.getOwnPropertyDescriptor(t,k);},get:function(t,k){log.push('get:'+k);delete t.b;Object.defineProperty(t,'c',{enumerable:false});t.d=4;return t[k];}});\nPromise.allKeyed(input).then(function(o){check(log.join(),'keys,desc:a,get:a,desc:b,desc:c');check(Object.keys(o).join(),'a');check(o.a,1);$DONE();},$DONE);",
+        "sha256": "578677b06af6888d481dd9872f3e9774d5ef036e5bc4a29b3ed4f7f80ad7b173"
+      },
+      {
+        "index": 4,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var log=[];function C(e){log.push('construct');e(function(){log.push('done')},function(){log.push('reject')})}Object.defineProperty(C,'resolve',{get:function(){log.push('resolve');return function(v){log.push('call');return {then:function(f){f(v)}}}}});var o=new Proxy({x:1},{ownKeys:function(t){log.push('keys');return ['x']}});Promise[n].call(C,o);check(log.join(),'construct,resolve,keys,call,done');log=[];Promise[n].call(C,1);check(log.join(),'construct,resolve,reject');}\n$DONE();",
+        "sha256": "7310d4fe5370b62f531d857b4d4bd3db1e3f9b35a6d66fa46d311236cb7b61c7"
+      },
+      {
+        "index": 5,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar a=Object.create({get bad(){throw 1}});Object.defineProperty(a,'x',{get:function(){throw 9}});Promise.allKeyed(a).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);return Promise.allSettledKeyed({})}).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);$DONE();},$DONE);",
+        "sha256": "8366dd374b42f4db4584844a23eaf7649f87ed4c8de3e3b813cbc3fa0e28848c"
+      },
+      {
+        "index": 6,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar log=[],result,first;function C(e){e(function(o){log.push('done');result=o},function(e){throw e})}C.resolve=function(v){return v};Promise.allKeyed.call(C,{a:{then:function(f){first=f}},b:{then:function(f){first(1);first(99);f(2);log.push('b')}},c:{then:function(f){f(3);log.push('c')}}});check(log.join(),'b,c,done');check(Object.keys(result).join(),'a,b,c');check(result.a,1);check(result.b,2);check(result.c,3);$DONE();",
+        "sha256": "9cd9fbe46df5203a7c8ec1a154248f504e11c30e8919a72c5e42642073e55176"
+      },
+      {
+        "index": 7,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var callback;function C(e){e(function(){return 42},function(e){throw e})}C.resolve=function(v){return {then:function(f){callback=f}}};Promise[n].call(C,{a:1});check(callback(7),42);check(callback(8),undefined);check(callback.length,1);check(callback.name,'');}\n$DONE();",
+        "sha256": "f2b12dd69c536e155883437bc133ef0fdd7368115d5660c16f0292956f5c2c9f"
+      },
+      {
+        "index": 8,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reason;function C(e){e(function(){throw 17},function(e){reason=e})}C.resolve=function(v){return {then:function(f){f(v)}}};Promise[n].call(C,{a:1});check(reason,17);}\n$DONE();",
+        "sha256": "8e77c98ba459914d48f7131f323809f84ee9f871a68b700a6bcf3b4f20375621"
+      },
+      {
+        "index": 9,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reasons=[];function C(e){e(function(){throw 'unexpected'},function(e){reasons.push(e)})}C.resolve=function(v){return v};var inputs=[new Proxy({},{ownKeys:function(){throw 1}}),new Proxy({x:1},{getOwnPropertyDescriptor:function(){throw 2}}),{get x(){throw 3}},{x:{get then(){throw 4}}},{x:{then:function(){throw 5}}},{x:{then:1}}];for(var input of inputs)Promise[n].call(C,input);check(reasons.slice(0,5).join(),'1,2,3,4,5');check(reasons[5] instanceof TypeError,true);}\n$DONE();",
+        "sha256": "48cf5ea6c6788ea0292e4ac952058ea45800730a8b9e328406ef92e4f148c49e"
+      },
+      {
+        "index": 10,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar resolve;var slow=new Promise(function(r){resolve=r});Promise.allSettledKeyed({a:slow,b:Promise.reject(8),c:3}).then(function(o){check(Object.keys(o).join(),'a,b,c');check(o.a.value,7);check(o.b.reason,8);check(o.c.status,'fulfilled');$DONE();},$DONE);resolve(7);",
+        "sha256": "eceeb69dd2acd041824f0d5cbd9f3abf1a6ba04b0dd8569e400ff05ef32e936e"
+      },
+      {
+        "index": 11,
+        "source": "function $DONE(error){if(error!==undefined)print(\"Test262:AsyncTestFailure:Error:\"+String(error));else print(\"Test262:AsyncTestComplete\");}function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){check(typeof Promise[n],'function');for(var c of [undefined,null,1,{},()=>{}]){var thrown=false;try{Promise[n].call(c,{})}catch(e){check(e instanceof TypeError,true);thrown=true}check(thrown,true)}}$DONE();",
+        "sha256": "55b0ece1d6bdd73493b0d6d71c3e07bedd9f342873cf408e227b89ab38ea7afc"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "passed": 12,
+  "total": 12,
+  "buildExitStatus": 0,
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerTracing": true,
+  "timeoutMs": 300000,
+  "policy": "Each case executes under LLDB in a fresh process; helper verifies initial stopped state and final expected exit 42; no retries."
+}

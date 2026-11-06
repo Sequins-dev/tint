@@ -1,0 +1,225 @@
+{
+  "kind": "native-promise-keyed-bespoke-fixture",
+  "conformance": false,
+  "accepted": false,
+  "fixture": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "b6fff8123e9aa8f306e6f7bf7622df226e71ebc4d2ecb461425d9a43be21b2f8",
+      "files": 568
+    },
+    "imageSha256": "b4c746caaa4bb50972bd8717ce1daf84b8310e8a171e88dc831c5b8552eace6a",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var d=Object.getOwnPropertyDescriptor(Promise,n);check(d.writable,true);check(d.enumerable,false);check(d.configurable,true);check(d.value.length,1);check(d.value.name,n);check(Object.getPrototypeOf(d.value),Function.prototype);check(d.value.hasOwnProperty('prototype'),false);}\n$DONE();",
+        "sha256": "5ce0172a473424c36737d7aff9d710b6ac7a87a6e6da3d16298ab9147aaaafca"
+      },
+      {
+        "index": 1,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar s=Symbol();var input={a:Promise.resolve(3),[s]:4};Object.defineProperty(input,'__proto__',{value:5,enumerable:true});\nPromise.allKeyed(input).then(function(o){check(Object.getPrototypeOf(o),null);check(o.a,3);check(o[s],4);check(o.__proto__,5);check(Reflect.ownKeys(o).length,3);var d=Object.getOwnPropertyDescriptor(o,'a');check(d.writable&&d.enumerable&&d.configurable,true);$DONE();},$DONE);",
+        "sha256": "dd7433144847542522a451e32758a821bc16f50daac1515584b414546c5412ba"
+      },
+      {
+        "index": 2,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar result;function C(e){e(function(v){result=v},function(e){throw e})}C.resolve=function(v){return {then:function(f,r){r(v);f(99);r(100)}}};\nPromise.allSettledKeyed.call(C,{x:7,y:8});check(Object.getPrototypeOf(result),null);check(result.x.status,'rejected');check(result.x.reason,7);check(result.y.reason,8);check(Object.getPrototypeOf(result.x),Object.prototype);check(Object.keys(result.x).join(),'status,reason');$DONE();",
+        "sha256": "d4f9d59ac743a53258a8fff74d281a3a453820b1757b2348034695ed251446da"
+      },
+      {
+        "index": 3,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar log=[];var target={a:1,b:2,c:3};var input=new Proxy(target,{ownKeys:function(t){log.push('keys');return ['a','b','c'];},getOwnPropertyDescriptor:function(t,k){log.push('desc:'+k);return Reflect.getOwnPropertyDescriptor(t,k);},get:function(t,k){log.push('get:'+k);delete t.b;Object.defineProperty(t,'c',{enumerable:false});t.d=4;return t[k];}});\nPromise.allKeyed(input).then(function(o){check(log.join(),'keys,desc:a,get:a,desc:b,desc:c');check(Object.keys(o).join(),'a');check(o.a,1);$DONE();},$DONE);",
+        "sha256": "37162df4011faf109ff7ebe088370a618f2c8d81cd81009dbb46ad16a3a683f9"
+      },
+      {
+        "index": 4,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var log=[];function C(e){log.push('construct');e(function(){log.push('done')},function(){log.push('reject')})}Object.defineProperty(C,'resolve',{get:function(){log.push('resolve');return function(v){log.push('call');return {then:function(f){f(v)}}}}});var o=new Proxy({x:1},{ownKeys:function(t){log.push('keys');return ['x']}});Promise[n].call(C,o);check(log.join(),'construct,resolve,keys,call,done');log=[];Promise[n].call(C,1);check(log.join(),'construct,resolve,reject');}\n$DONE();",
+        "sha256": "eca2ea2563c974589a4dae704b50fa1517e0168de994f81f5da515c7436b87ef"
+      },
+      {
+        "index": 5,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar a=Object.create({get bad(){throw 1}});Object.defineProperty(a,'x',{get:function(){throw 9}});Promise.allKeyed(a).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);return Promise.allSettledKeyed({})}).then(function(o){check(Object.getPrototypeOf(o),null);check(Reflect.ownKeys(o).length,0);$DONE();},$DONE);",
+        "sha256": "3caa3719e554af6ca3a2bf10677d10706419379c1343a0d1bea9ac2757d34975"
+      },
+      {
+        "index": 6,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar log=[],result,first;function C(e){e(function(o){log.push('done');result=o},function(e){throw e})}C.resolve=function(v){return v};Promise.allKeyed.call(C,{a:{then:function(f){first=f}},b:{then:function(f){first(1);first(99);f(2);log.push('b')}},c:{then:function(f){f(3);log.push('c')}}});check(log.join(),'b,c,done');check(Object.keys(result).join(),'a,b,c');check(result.a,1);check(result.b,2);check(result.c,3);$DONE();",
+        "sha256": "f743532dd4879720b8dfbd3c6b4ed01a05adb06f3fcbdc4a27a97f4985f0f430"
+      },
+      {
+        "index": 7,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var callback;function C(e){e(function(){return 42},function(e){throw e})}C.resolve=function(v){return {then:function(f){callback=f}}};Promise[n].call(C,{a:1});check(callback(7),42);check(callback(8),undefined);check(callback.length,1);check(callback.name,'');}\n$DONE();",
+        "sha256": "ebce4254116cf0733a30f75ed94714ef5ae96d8c61215711be79d339921d3a3e"
+      },
+      {
+        "index": 8,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reason;function C(e){e(function(){throw 17},function(e){reason=e})}C.resolve=function(v){return {then:function(f){f(v)}}};Promise[n].call(C,{a:1});check(reason,17);}\n$DONE();",
+        "sha256": "7cc591b62a45c8023750ae6815bd7f0d8a8c8bb969e6e8ced28a3ae95ae3507f"
+      },
+      {
+        "index": 9,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){var reasons=[];function C(e){e(function(){throw 'unexpected'},function(e){reasons.push(e)})}C.resolve=function(v){return v};var inputs=[new Proxy({},{ownKeys:function(){throw 1}}),new Proxy({x:1},{getOwnPropertyDescriptor:function(){throw 2}}),{get x(){throw 3}},{x:{get then(){throw 4}}},{x:{then:function(){throw 5}}},{x:{then:1}}];for(var input of inputs)Promise[n].call(C,input);check(reasons.slice(0,5).join(),'1,2,3,4,5');check(reasons[5] instanceof TypeError,true);}\n$DONE();",
+        "sha256": "2a71c9e8aae667e124e508e81d6e933a39184f88b616e6cad7c8bde0808164f1"
+      },
+      {
+        "index": 10,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nvar resolve;var slow=new Promise(function(r){resolve=r});Promise.allSettledKeyed({a:slow,b:Promise.reject(8),c:3}).then(function(o){check(Object.keys(o).join(),'a,b,c');check(o.a.value,7);check(o.b.reason,8);check(o.c.status,'fulfilled');$DONE();},$DONE);resolve(7);",
+        "sha256": "715ebe2e1d56b5577b7fe52d780ac8c3438bcf9ba314e004dd3492b1c0a388b2"
+      },
+      {
+        "index": 11,
+        "source": "function check(a,b){if(a!==b)throw new Error(String(a)+\" !== \"+String(b));}\nfor(var n of ['allKeyed','allSettledKeyed']){check(typeof Promise[n],'function');for(var c of [undefined,null,1,{},()=>{}]){var thrown=false;try{Promise[n].call(c,{})}catch(e){check(e instanceof TypeError,true);thrown=true}check(thrown,true)}}$DONE();",
+        "sha256": "e4acaebe59dfb63cd08716a7361bb0d7a15d4685f4346ef25ead4373b49ff766"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 12,
+  "buildExitStatus": 0,
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerTracing": true,
+  "timeoutMs": 300000,
+  "policy": "Each case executes under LLDB in a fresh process; helper verifies initial stopped state and final expected exit 42; no retries."
+}

@@ -17,13 +17,17 @@ import {
 import {
   createObject,
   createDataProperty,
+  getOwnProperty,
+  getProperty,
+  ownKeys,
   type ObjectHooks,
 } from "./operations.ts";
-import type { ScriptPropertyKey } from "./symbols.ts";
+import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
 
-/** GetPromiseResolve precedes GetIterator and is observed only once. */
+/** GetPromiseResolve precedes input enumeration and is observed only once.
+ * Keyed variants follow https://tc39.es/proposal-await-dictionary/. */
 export function combinePromises(
-  mode: "all" | "race" | "allSettled" | "any",
+  mode: "all" | "race" | "allSettled" | "any" | "allKeyed" | "allSettledKeyed",
   constructor: unknown,
   iterable: unknown,
   realm: ErrorRealm,
@@ -32,10 +36,30 @@ export function combinePromises(
   const capability = newPromiseCapability(constructor, realm, hooks);
   let iterator: ScriptIterator | undefined = undefined;
   const values: unknown[] = [];
+  const keyed = mode === "allKeyed" || mode === "allSettledKeyed";
+  const settled = mode === "allSettled" || mode === "allSettledKeyed";
+  const keys: ScriptPropertyKey[] = [];
   let remaining = 1;
-  function completeElement(): void {
+  function completeElement(): unknown {
     remaining--;
     if (remaining !== 0) return;
+    if (keyed) {
+      const result = createObject<ScriptPropertyKey, unknown>(undefined);
+      for (let index = 0; index < keys.length; index++) {
+        const key = keys[index];
+        if (key === undefined) throw "PROMISE_KEY_INVARIANT";
+        if (
+          !createDataProperty<ScriptPropertyKey, unknown>(
+            result,
+            key,
+            values[index],
+            hooks,
+          )
+        )
+          throw "PROMISE_RESULT_INVARIANT";
+      }
+      return invoke(capability.resolveFunction, undefined, [result]);
+    }
     const results = createArrayFromList(
       values,
       0,
@@ -57,7 +81,7 @@ export function combinePromises(
     function settle(value: unknown, rejected: boolean): unknown {
       if (called) return undefined;
       called = true;
-      if (mode === "allSettled") {
+      if (settled) {
         const result = createObject<ScriptPropertyKey, unknown>(
           realm.objectPrototype,
         );
@@ -78,8 +102,7 @@ export function combinePromises(
           throw "PROMISE_RESULT_INVARIANT";
         values[index] = result;
       } else values[index] = value;
-      completeElement();
-      return undefined;
+      return completeElement();
     }
     const fulfill =
       mode === "any"
@@ -92,7 +115,7 @@ export function combinePromises(
             hooks,
           );
     const reject =
-      mode === "allSettled" || mode === "any"
+      settled || mode === "any"
         ? builtinFunction(
             realm.functionPrototype,
             "",
@@ -123,6 +146,24 @@ export function combinePromises(
     if (result.error !== "none") throw createRuntimeError(realm, "type");
     return result.value;
   }
+  function addElement(value: unknown, resolve: unknown): void {
+    const index = values.length;
+    if (mode !== "race") {
+      if (!keyed && index >= 9007199254740991)
+        throw createRuntimeError(realm, "range");
+      values.push(undefined);
+    }
+    const promise = invoke(resolve, constructor, [value]);
+    let onFulfilled = capability.resolveFunction;
+    let onRejected = capability.rejectFunction;
+    if (mode !== "race") {
+      const callbacks = elementCallbacks(index);
+      onFulfilled = callbacks.fulfill;
+      onRejected = callbacks.reject;
+      remaining++;
+    }
+    invoke(property(promise, "then"), promise, [onFulfilled, onRejected]);
+  }
   try {
     const resolve = property(constructor, "resolve");
     if (
@@ -131,6 +172,34 @@ export function combinePromises(
       )
     )
       throw createRuntimeError(realm, "type");
+    if (keyed) {
+      const object = viewObjectValue(iterable, realm.objectPrototype);
+      if (object === undefined) throw createRuntimeError(realm, "type");
+      // Snapshot keys once, but check each descriptor immediately before Get.
+      // Get/resolve/then can mutate later properties without changing the snapshot.
+      const allKeys = ownKeys<ScriptPropertyKey, unknown>(
+        object,
+        (key): number => scriptPropertyKeyOrder(key),
+      );
+      for (const key of allKeys) {
+        if (key === undefined) throw "PROMISE_KEY_INVARIANT";
+        const descriptor = getOwnProperty<ScriptPropertyKey, unknown>(
+          object,
+          key,
+        );
+        if (descriptor === undefined || !descriptor.enumerable) continue;
+        const value = getProperty<ScriptPropertyKey, unknown>(
+          object,
+          key,
+          iterable,
+          hooks,
+        );
+        keys.push(key);
+        addElement(value, resolve);
+      }
+      completeElement();
+      return capability.promise;
+    }
     const acquired = getScriptIterator(iterable, realm, hooks);
     iterator = acquired;
     while (true) {
@@ -139,21 +208,7 @@ export function combinePromises(
         if (mode !== "race") completeElement();
         return capability.promise;
       }
-      const index = values.length;
-      if (mode !== "race") {
-        if (index >= 9007199254740991) throw createRuntimeError(realm, "range");
-        values.push(undefined);
-      }
-      const promise = invoke(resolve, constructor, [next.value]);
-      let onFulfilled = capability.resolveFunction;
-      let onRejected = capability.rejectFunction;
-      if (mode !== "race") {
-        const callbacks = elementCallbacks(index);
-        onFulfilled = callbacks.fulfill;
-        onRejected = callbacks.reject;
-        remaining++;
-      }
-      invoke(property(promise, "then"), promise, [onFulfilled, onRejected]);
+      addElement(next.value, resolve);
     }
   } catch (error) {
     if (iterator !== undefined) closeScriptIterator(iterator, true);

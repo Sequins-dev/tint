@@ -1,0 +1,47 @@
+{
+  "kind": "promise-keyed-implementation-checkpoint",
+  "conformance": false,
+  "mergeReady": false,
+  "sourceSnapshot": {
+    "sha256": "b6fff8123e9aa8f306e6f7bf7622df226e71ebc4d2ecb461425d9a43be21b2f8",
+    "files": 568
+  },
+  "specification": "https://tc39.es/proposal-await-dictionary/",
+  "implementation": [
+    "Promise.allKeyed",
+    "Promise.allSettledKeyed"
+  ],
+  "semantic": {
+    "red": "docs/results/promise-keyed-semantic-red-v2.log",
+    "redFailures": 12,
+    "workspaceTests": 4458,
+    "workspaceFailures": 0,
+    "workspaceCheckExitStatus": 0,
+    "workspaceCheckLog": "docs/results/promise-keyed-workspace-check-v2.log"
+  },
+  "portableOracle": {
+    "kind": "bootstrap-host-only",
+    "native": false,
+    "variants": 178,
+    "passed": 178,
+    "observations": "docs/results/promise-keyed-pinned-portable-oracle-v2.json",
+    "asyncPolicy": "Each asynchronous case must print exactly one successful completion; job errors retained."
+  },
+  "nativeFixture": "docs/results/native-promise-keyed-validation-v2.json",
+  "retainedFailures": [
+    {
+      "report": "docs/results/native-promise-keyed-validation-v1.json",
+      "reason": "Raw fixture Scripts lacked a $DONE shim; all 12 reported ReferenceError. Corrected adapter in v2; no runtime change for this failure."
+    },
+    {
+      "report": "docs/results/promise-keyed-workspace-check-failed-v1.log",
+      "reason": "Native checker requires explicit generic arguments on property operations."
+    },
+    {
+      "report": "docs/results/promise-keyed-selfhost-source-failed-v2.log",
+      "reason": "Native checker requires explicit key validity narrowing, matching existing object enumeration."
+    }
+  ],
+  "selfBuildStatus": "Running under LLDB; stage 2 has exceeded ten minutes. Baseline control with the two Promise runtime files reverted to main is running. Neither is claimed accepted.",
+  "completeSelectionsStatus": "Not started; waiting for self-build validation, per coordinator order."
+}

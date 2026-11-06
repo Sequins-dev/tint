@@ -1,0 +1,296 @@
+✖ static method descriptors (19.725833ms)
+✖ null prototype, symbols and safe proto key (4.564458ms)
+✖ settled records and opposite callbacks share guard (3.987792ms)
+✖ snapshot keys but recheck descriptors before values (4.307292ms)
+✖ get resolve once before own keys and validate input (3.774417ms)
+✖ empty inputs skip inherited and non-enumerable getters (2.900875ms)
+✖ synchronous callbacks cannot complete before enumeration ends (3.227875ms)
+✖ callbacks return custom resolve value and ignore repeats (3.04675ms)
+✖ resolve throw at loop exit rejects capability (4.412959ms)
+✖ abrupt own keys descriptor value resolve and then reject (3.78075ms)
+✖ ordinary promises settle in input order (2.795875ms)
+✖ invalid constructors throw before reading resolve (2.845417ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 0
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 295.635833
+
+✖ failing tests:
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ static method descriptors (19.725833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ null prototype, symbols and safe proto key (4.564458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ settled records and opposite callbacks share guard (3.987792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ snapshot keys but recheck descriptors before values (4.307292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ get resolve once before own keys and validate input (3.774417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ empty inputs skip inherited and non-enumerable getters (2.900875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ synchronous callbacks cannot complete before enumeration ends (3.227875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ callbacks return custom resolve value and ignore repeats (3.04675ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ resolve throw at loop exit rejects capability (4.412959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ abrupt own keys descriptor value resolve and then reject (3.78075ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ ordinary promises settle in input order (2.795875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TypeError'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TypeError',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/promise-keyed-lowering.test.ts:6:3
+✖ invalid constructors throw before reading resolve (2.845417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Error: undefined !== function'
+  - 'none'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/packages/js-engine/test/promise-keyed-lowering.test.ts:8:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Error: undefined !== function',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

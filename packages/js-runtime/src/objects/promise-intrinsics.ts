@@ -360,6 +360,36 @@ export function installPromiseIntrinsics(
   );
   builtinProperty(
     constructor,
+    "allKeyed",
+    builtinFunction(
+      realm.functionPrototype,
+      "allKeyed",
+      1,
+      (receiver, args): unknown =>
+        combinePromises("allKeyed", receiver, args[0], realm, hooks),
+      hooks,
+    ),
+    true,
+    true,
+    hooks,
+  );
+  builtinProperty(
+    constructor,
+    "allSettledKeyed",
+    builtinFunction(
+      realm.functionPrototype,
+      "allSettledKeyed",
+      1,
+      (receiver, args): unknown =>
+        combinePromises("allSettledKeyed", receiver, args[0], realm, hooks),
+      hooks,
+    ),
+    true,
+    true,
+    hooks,
+  );
+  builtinProperty(
+    constructor,
     "any",
     builtinFunction(
       realm.functionPrototype,
