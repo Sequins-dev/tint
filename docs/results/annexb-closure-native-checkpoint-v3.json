@@ -1,0 +1,70 @@
+{
+  "kind": "native-annexb-closure-checkpoint",
+  "conformance": true,
+  "wholeSuite": false,
+  "sourceSnapshot": {
+    "sha256": "da3801b4ef587f71b83e44cf92c994be989f7ec82bca425e816d2c6ccc582c60",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-annexb-closure-v1.json",
+  "runIdentity": "043aaa0a56732dbd5ceacf0264e74036e786a35da867943d37860098ae1e5044",
+  "scope": "Bespoke fixtures (not conformance) plus complete unchanged selected Test262 selections through a frozen host containing this checkout's source. Earlier reports are retained and not merged.",
+  "plan": {
+    "tag": "v3",
+    "frozen": "docs/results/frozen-node-toolchain-annexb-closure-v1.json",
+    "fixtures": [
+      {
+        "name": "closure",
+        "purpose": "Functions created by direct eval code, result completion and identifier-read ordering in runtime-compiled entries (compact completion fix)",
+        "tool": "tools/verify-test262-native-direct-eval-closure.ts",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-0VMrxx/test",
+        "count": 18,
+        "prefix": "annexb-closure-direct-eval-closure"
+      },
+      {
+        "name": "annex",
+        "purpose": "Regression: direct-eval Annex B copy cases on the changed runtime",
+        "tool": "tools/verify-test262-native-direct-eval-annex.ts",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-tn27Nk/test",
+        "count": 15,
+        "prefix": "annexb-closure-direct-eval-annex",
+        "supersedes": "docs/results/annexb-eval-copy-direct-eval-annex-validation-v2.json (source 8676847d…; retained unchanged)"
+      },
+      {
+        "name": "arguments",
+        "purpose": "Regression: arguments/parameter/eval-scope cases on the changed runtime",
+        "tool": "tools/verify-test262-native-arguments-scope.ts",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-arguments-scope-aPS1sM/arguments-scope",
+        "count": 20,
+        "prefix": "annexb-closure-arguments-scope",
+        "supersedes": "docs/results/annexb-eval-copy-arguments-scope-validation-v2.json (source 8676847d…; retained unchanged)"
+      }
+    ],
+    "selections": [
+      "annexB/language/eval-code/direct"
+    ]
+  },
+  "results": {
+    "fixtures": {
+      "closure": {
+        "accepted": true,
+        "passed": 18,
+        "total": 18,
+        "summary": "docs/results/annexb-closure-direct-eval-closure-validation-v3.json"
+      },
+      "annex": {
+        "accepted": true,
+        "passed": 15,
+        "total": 15,
+        "summary": "docs/results/annexb-closure-direct-eval-annex-validation-v3.json"
+      },
+      "arguments": {
+        "accepted": true,
+        "passed": 20,
+        "total": 20,
+        "summary": "docs/results/annexb-closure-arguments-scope-validation-v3.json"
+      }
+    },
+    "selections": []
+  }
+}
