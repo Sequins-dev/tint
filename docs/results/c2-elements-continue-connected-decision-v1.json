@@ -1,0 +1,67 @@
+{
+  "kind": "c2-native-survey-continue-decision",
+  "generatedAt": "2026-11-06T23:10:01.938064+00:00",
+  "decision": "a: continue existing frozen-v11 connected survey; recheck remaining infra outcomes separately in direct mode after family completes",
+  "reason": "914 observed variants are retained and next64-variant runtime image is already compiled. No matched v14 runtime-batch measurement establishes a full direct restart would finish sooner. The completed37-syntax-negative direct recheck released the diagnostic pause and parent resumed.",
+  "observedAtDecision": {
+    "total": 3156,
+    "completed": 914,
+    "passed": 867,
+    "preEntryInfra": 47,
+    "alreadyCompiledPending": 64
+  },
+  "recentRuntimeBatches": [
+    {
+      "id": 12,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 388209.9935419997,
+      "outcome": "compiled"
+    },
+    {
+      "id": 13,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 349620.31137500005,
+      "outcome": "compiled"
+    },
+    {
+      "id": 14,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 1020245.0404579998,
+      "outcome": "compiled"
+    },
+    {
+      "id": 15,
+      "variants": 64,
+      "kind": "execution",
+      "compileMs": 918761.5528330002,
+      "outcome": "compiled"
+    }
+  ],
+  "syntaxCompileMsAlreadySpent": 225187.78854200098,
+  "forecast": {
+    "kind": "rough throughput proxy under changing contention; not matched toolchain benchmark",
+    "remainingVariants": 2242,
+    "remainingNewRuntimeCompiles": 34,
+    "meanRecentCompileMs": 669209.2245519999,
+    "remainingCompileHoursProxy": 6.32030934299111,
+    "directSyntaxMedianLaunchMsProxy": 6015.498332999996,
+    "remainingLaunchHoursProxy": 3.746318684051664,
+    "remainingHoursProxy": 10.066628027042775,
+    "fullRestartAdditionalRuntimeCompiles": 4,
+    "fullRestartAdditionalCompileHoursAtSameBootstrapCost": 0.7435658050577777,
+    "fullRestartAlsoRepeatsObservedVariants": 914,
+    "limits": "Launch proxy is direct syntax recheck, not matched connected runtime. Native codegen store benchmark does not establish Node-hosted compiler throughput. Full restart also repeats syntax compiles and all914 launches; no measured reduction is available to offset that work. Future infra recheck cost excluded."
+  },
+  "diagnosticPause": {
+    "pid": 47042,
+    "ack": "between-variants",
+    "releaseAt": "2026-11-06T23:09:07.401Z",
+    "report": "docs/results/test262-c2-syntax-negative-direct-recheck-v1.json",
+    "result": "37/37 pass,0infra",
+    "parentResumeVerified": "915/3156 with868pass47infra;markerabsent"
+  },
+  "futureRuns": "debugserver-direct on newly frozen current main, including P d2be77b"
+}
