@@ -1,0 +1,162 @@
+{
+  "kind": "cluster-measurement-footprint-audit",
+  "conformance": false,
+  "executed": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selections": [
+    {
+      "selection": "language/eval-code/direct",
+      "expected": 336,
+      "observed": 336,
+      "missing": [],
+      "canonicalReport": "docs/results/test262-language-direct-eval-current-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v17-import-resolution",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "totals": {
+        "total": 336,
+        "passed": 336,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "note": "Historical complete native evidence; this footprint does not establish current-code passes."
+    },
+    {
+      "selection": "language/eval-code/indirect",
+      "expected": 118,
+      "observed": 118,
+      "missing": [],
+      "canonicalReport": "docs/results/test262-indirect-eval-baseline-native-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v6-eval-script",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "totals": {
+        "total": 118,
+        "passed": 4,
+        "failed": 0,
+        "unsupported": 114,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.03389830508474576
+      },
+      "note": "Historical complete native evidence; this footprint does not establish current-code passes."
+    },
+    {
+      "selection": "annexB",
+      "expected": 1377,
+      "observed": 1377,
+      "missing": [],
+      "canonicalReport": "docs/results/test262-annexb-v9-prefix-native-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v4-shared-image",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "debugger-managed",
+        "debuggerLaunch": "lldb-local-stdio",
+        "debuggerTracing": true
+      },
+      "totals": {
+        "total": 1377,
+        "passed": 875,
+        "failed": 1,
+        "unsupported": 489,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 12,
+        "passFraction": 0.635439360929557
+      },
+      "note": "Historical complete native evidence; this footprint does not establish current-code passes."
+    },
+    {
+      "selection": "built-ins/eval",
+      "expected": 20,
+      "observed": 20,
+      "missing": [],
+      "canonicalReport": "docs/results/test262-eval-family-native-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v4-shared-image",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 60000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "totals": {
+        "total": 20,
+        "passed": 18,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9
+      },
+      "note": "Historical complete native evidence; this footprint does not establish current-code passes."
+    },
+    {
+      "selection": "built-ins/Function",
+      "expected": 893,
+      "observed": 893,
+      "missing": [],
+      "canonicalReport": "docs/results/test262-function-managed-access-native-v1.json",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v4-shared-image",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-connected",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 60000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "totals": {
+        "total": 893,
+        "passed": 703,
+        "failed": 16,
+        "unsupported": 147,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 27,
+        "passFraction": 0.7872340425531915
+      },
+      "note": "Historical complete native evidence; this footprint does not establish current-code passes."
+    }
+  ],
+  "unmeasured": 0,
+  "expected": 2744,
+  "scope": "Disjoint D primary selections. Source hashes, variant sets and report completeness verified. Historical unsupported, failures and infrastructure outcomes count as measured, never as passes. Independent audit; not the coordinator full-suite ledger."
+}
