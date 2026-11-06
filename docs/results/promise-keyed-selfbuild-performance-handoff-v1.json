@@ -1,0 +1,38 @@
+{
+  "kind": "native-self-build-performance-observation",
+  "conformance": false,
+  "acceptedSelfBuild": false,
+  "at": "2026-11-06T18:31:24.713821+00:00",
+  "nativePid": 18795,
+  "nativeProcess": "55:51  38:38.94  41.2 RX",
+  "frozenSourceSnapshot": "0594e4b9a92168448f68e40fd16413c19fefd095c59ac59afafdb1b5ca5f2096",
+  "observation": "Representative active stage2 build samples spend at least 90 percent of their sampled thread time in generational collection, called while codegen writes bytes. This is a shared native compiler/runtime performance observation, not evidence of a keyed-Promise semantic failure or deadlock. Existing baseline and changed-code self-build timeouts remain retained. Current two-hour attempt continues.",
+  "handoff": "Cluster P: profile collection and allocation during emitModule -> writeUnsigned/check -> generational collect -> nursery preparePlan; no performance source change made by G.",
+  "representativeSamples": [
+    {
+      "sample": ".tint-bootstrap/promise-keyed-selfbuild-v3/progress-cycle-144.txt",
+      "samples": 736,
+      "inGenerationalCollect": 736,
+      "evidence": "docs/results/promise-keyed-selfbuild-v3-progress-cycle-144.txt",
+      "sha256": "5fe7534e6793afff96eac1c888c448c4a859808741d694890430941fd2e4fa55"
+    },
+    {
+      "sample": ".tint-bootstrap/promise-keyed-selfbuild-v3/progress-cycle-145.txt",
+      "samples": 745,
+      "inGenerationalCollect": 745,
+      "evidence": "docs/results/promise-keyed-selfbuild-v3-progress-cycle-145.txt",
+      "sha256": "b600a9d4ee03eb286bc03486a4244b2e8bd29d488653b88764ebbb2121cadaf6"
+    },
+    {
+      "sample": ".tint-bootstrap/promise-keyed-selfbuild-v3/progress-cycle-146.txt",
+      "samples": 743,
+      "inGenerationalCollect": 743,
+      "evidence": "docs/results/promise-keyed-selfbuild-v3-progress-cycle-146.txt",
+      "sha256": "5e92d3010b59ed11524c69194aa789fb0e12dab743118600183cd86d5734f051"
+    }
+  ],
+  "survey": {
+    "samplesTaken": 105,
+    "samplesWithAtLeast90PercentGenerationalCollection": 52
+  }
+}
