@@ -53,12 +53,13 @@ function fixture(): ModuleIR {
     ],
   };
 }
-test("emission options preserve the previous default and configured byte images", () => {
+test("emission options preserve default and configured byte images", () => {
+  // Both images omit the two redundant jumps to adjacent function entry blocks.
   for (const [options, length, hash] of [
     [
       {},
-      824,
-      "cff25a95c308cfdf360dfe3df95154ea06d6339f1584394a2c5a23f89402a09f",
+      816,
+      "587ead8db6e28de774e947f1e1da700445f509fbf9299060a7cee75e0c2464a5",
     ],
     [
       {
@@ -69,8 +70,8 @@ test("emission options preserve the previous default and configured byte images"
         generationalBarriers: false,
         closedRoots: [0],
       },
-      928,
-      "5d2d1836b2f25054795ccdff361793586231cae61a49d16b188f8532b6c9b244",
+      920,
+      "269ccc87e6b47161ecb3b7bb5a05ed9b403fb2e2a93ffb1e85f16495401ac4fe",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);
