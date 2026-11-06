@@ -1,0 +1,35 @@
+{
+  "kind": "shared-slot-launcher-infrastructure-failure",
+  "conformance": false,
+  "selection": "language/statements/class/arguments",
+  "nativeReport": "docs/results/test262-c1-foundation-language-statements-class-arguments-v2.json",
+  "journal": "docs/results/test262-c1-foundation-language-statements-class-arguments-v2.jsonl",
+  "stderr": "docs/results/test262-c1-foundation-language-statements-class-arguments-v2.json.stderr.txt",
+  "nativeVariantTotals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "journalComplete": true,
+  "launcherExitStatus": 1,
+  "observations": [
+    "Original runner acquired a slot after 147s, ran all four variants and wrote its complete journal and canonical report.",
+    "Launcher then emitted command not found: ne and acquired again after 833s.",
+    "The unintended second runner invocation failed immediately with EEXIST on the existing journal; it executed no native variants."
+  ],
+  "helper": {
+    "path": "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "mtime": "2026-11-06T18:33:21.522Z",
+    "sha256": "171551603ecb7d58f9db18279d17275f34a2ef7fbeede2321904dafab54ab858",
+    "capturedSource": "docs/results/c1-slot-source-after-edit-v1.txt"
+  },
+  "cause": "Shared Zsh helper was extended in place during the child run. Its modified tail was reread after the original child returned. Minimal reproduction confirms tail reexecution for file-based launch and single execution for captured-text launch.",
+  "reproduction": "docs/results/c1-slot-edit-reproduction-v1.json",
+  "mitigation": "Future launches evaluate an immutable text snapshot of the coordinator-provided helper with zsh -c. The same shared slot directories, cap-file logic and command arguments are preserved; no coordinator file changed.",
+  "followup": "Validate the launcher correction on the next ordinary selection; do not repeat or overwrite the completed arguments observations."
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "zsh-live-script-edit-reproduction",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "body": "#!/bin/zsh\nprintf 'FIRST\\n'\nsleep 0.4\nprintf 'LAST\\n'\n",
+  "prefix": "#xxxxxxxxxxxxxx\n",
+  "observations": [
+    {
+      "mode": "file",
+      "stdout": "FIRST\nLAST\nLAST\n",
+      "stderr": "",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "mode": "snapshot",
+      "stdout": "FIRST\nLAST\n",
+      "stderr": "",
+      "code": 0,
+      "signal": null
+    }
+  ],
+  "conclusion": "An in-place extension of a running script can execute its tail twice. Executing the same captured text with zsh -c is unaffected by later file edits."
+}
