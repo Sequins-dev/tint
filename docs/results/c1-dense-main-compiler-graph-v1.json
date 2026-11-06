@@ -1,0 +1,24 @@
+{
+  "kind": "c1-dense-main-compiler-graph-agreement",
+  "conformance": false,
+  "compilerGraphEqual": false,
+  "beforeModules": 220,
+  "afterModules": 220,
+  "differingModules": [
+    "packages/ir/src/optimization/reference-lists.ts"
+  ],
+  "acceptedSelfBuild": "docs/results/native-codegen-dense-inline-selfbuild-v1.json",
+  "acceptedSourceSnapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/source-snapshot.json",
+  "portableByteDifferences": [
+    "packages/ir/src/optimization/reference-lists.ts"
+  ],
+  "portableDifference": "Comment-only clarification of authorized inline element encodings; no implementation difference.",
+  "acceptedStages": {
+    "bytes": 60838434,
+    "sha256": "1dab38f754be7255d3579175932d16fceafc560640d9cabda4f8abc760b3944d",
+    "identical": true,
+    "signatureExit": 0,
+    "dwarfExit": 0
+  },
+  "scope": "Read-only comparison against accepted P production self-build. No new native run or compiler-performance investigation. The byte-level source comment difference is preserved explicitly."
+}
