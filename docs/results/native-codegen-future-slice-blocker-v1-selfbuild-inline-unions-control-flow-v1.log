@@ -1,0 +1,50 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild-perf/slot-1 after 0s
+2026-11-06T18:46:53.704Z [Test262] selection="native inline union and control flow selfbuild" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:46:53.707Z [Test262] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+[0.0s] sources
+[0.1s] parse
+[1.2s] allocator
+[1.6s] runtime
+[3.0s] program
+2026-11-06T18:47:23.747Z [Test262] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=30040ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:47:53.750Z [Test262] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=60043ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:48:23.750Z [Test262] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=90043ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:48:53.751Z [Test262] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=120044ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+[149.4s] startup
+[149.5s] image
+2026-11-06T18:49:23.752Z [Test262 STALL] selection="native inline union and control flow selfbuild" phase="building frozen stage1" elapsed=150045ms done=0/0 pass=0 fail=0 unsupported=0 infra=0 waiting runner=1384 child/inferior=1385
+[151.7s] wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1 (69932802 bytes)
+2026-11-06T18:49:25.766Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+debugger session=/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/source\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage2\",\"--debug-symbols\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-TPE1Cw/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+34
+(lldb) continue
+{"utc": "2026-11-06T18:49:29Z", "cpuSecondsLowerBound": 0.006583666666666667}
+2026-11-06T18:49:53.754Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=27988ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T18:50:00Z", "cpuSecondsLowerBound": 22.096247666666667}
+2026-11-06T18:50:23.754Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=57988ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T18:50:31Z", "cpuSecondsLowerBound": 42.56146104166666}
+2026-11-06T18:50:53.756Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=87990ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T18:51:02Z", "cpuSecondsLowerBound": 64.21227554166667}
+2026-11-06T18:51:23.757Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=117991ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T18:51:33Z", "cpuSecondsLowerBound": 83.74001120833333}
+2026-11-06T18:51:53.758Z [Test262] selection="native inline union and control flow selfbuild" phase="native stage2 under LLDB" elapsed=147992ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"utc": "2026-11-06T18:52:04Z", "cpuSecondsLowerBound": 102.27285129166667}
+Process 16681 resuming
+Process 16681 exited with status = 1 (0x00000001)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/final.json",'w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); p.Kill() if p.GetState()!=lldb.eStateExited else None
+36
+{"pid": 16681, "timebase": {"numer": 125, "denom": 3}, "lastCPU": {"userTicks": 2551548220, "systemTicks": 14376521}, "cpuMsLowerBound": 106913.530875, "finalUnobservedWallBoundMs": 101.194416, "probes": 1568, "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."}
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1.ts:34
+  if(second.status!==0||start.state!=='stopped'||end.state!=='exited'||end.exitStatus!==0)throw Error('native stage2 failed: '+JSON.stringify(end));
+                                                                                                ^
+
+Error: native stage2 failed: {"state":"exited","exitStatus":1}
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1.ts:34:97
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+Node.js v24.12.0

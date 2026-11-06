@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "retained-draft-compiler-validation-failure",
+  "mergeReady": false,
+  "productionChanges": "Not committed; retained in git stash P future inline-union and control-flow slices pending native self-build. The merge-ready branch contains only the earlier storage-copy codegen change.",
+  "frozenToolchain": "6fe100d24d58fadbb314aeddb8e322d9534fb1fb375c76282530e2763f58f768",
+  "stage1Bytes": 69932802,
+  "native": {
+    "initial": {
+      "state": "stopped",
+      "pid": 16681
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 1
+    },
+    "cpu": {
+      "pid": 16681,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 2551548220,
+        "systemTicks": 14376521
+      },
+      "cpuMsLowerBound": 106913.530875,
+      "finalUnobservedWallBoundMs": 101.194416,
+      "probes": 1568,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    },
+    "stage2Produced": false
+  },
+  "diagnostic": "A separate fresh process of the same frozen binary, under LLDB report-entry breakpoints, captured runtime: generic specialization limit exceeded. No limit was raised.",
+  "nextStep": "Isolate union encoding from control-flow emission, then reduce the native/reference difference in specialization identity to a semantic fixture. Do not merge the draft before native self-hosting equivalence passes.",
+  "supportingNativeFixtures": "Boolean/control-flow fixture completed three fresh processes directly under LLDB, without a runner slot. Inline-union fixtures passed their focused value, readonly-view and allocation-pressure checks, but do not replace full native compiler validation.",
+  "controlFlowBenchmark": "Static fixture.find body shrinks from 99 to 86 instructions. CPU observations include extreme load (up to 144) and final unobserved intervals as large as 496 ms; no CPU speedup is claimed from this run. Wall time is diagnostic only.",
+  "resourceRules": "Only Test262 suite runners require runner slots. All later short measurements ran directly, sequentially under LLDB. No P self-build or Test262 runner remains active."
+}

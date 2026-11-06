@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-codegen-load-recorded-cpu-measurement",
+  "changeCommit": "4f7893d",
+  "sameSource": true,
+  "before": {
+    "runs": 4,
+    "medianCPUms": 1246.4069583333333,
+    "minimumCPUms": 1197.4125,
+    "maximumCPUms": 1338.280875,
+    "maximumUnobservedCPUWallBoundMs": 0.032542
+  },
+  "after": {
+    "runs": 4,
+    "medianCPUms": 614.1658958333334,
+    "minimumCPUms": 608.3827083333334,
+    "maximumCPUms": 622.466875,
+    "maximumUnobservedCPUWallBoundMs": 1.569917
+  },
+  "cpuSpeedup": 2.0294304304248953,
+  "completed": 8,
+  "loadAverage1m": {
+    "minimum": 48.1240234375,
+    "maximum": 51.14599609375
+  },
+  "wallTime": "Diagnostic only; not used to infer speedup on the saturated host.",
+  "emittedHotFunction": {
+    "name": "fixture.find",
+    "instructionsBefore": 108,
+    "instructionsAfter": 99,
+    "FPmovesBefore": 53,
+    "FPmovesAfter": 44,
+    "scope": "Static body counts, not dynamic retired instructions or cycles."
+  },
+  "rawData": "native-codegen-register-copies-load-v6-register-copies-cpu-load-v6.json",
+  "measurementMethod": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "selfbuild": "native-codegen-register-copies-selfbuild-v4.json",
+  "workspace": "native-codegen-register-copies-ready-v5.json",
+  "wholeSuite": "No whole-suite rate is extrapolated from this isolated operation benchmark. Copy-only Test262 addition A1 remains two retained 300 s post-entry timeouts."
+}

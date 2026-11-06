@@ -1,0 +1,41 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild-perf/slot-1 after 0s
+2026-11-06T18:55:05.540Z [Test262] selection="native register-copy codegen selfbuild" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:55:05.542Z [Test262] selection="native register-copy codegen selfbuild" phase="resuming existing frozen stage1; prior debugger handoff failed before execution" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+stage1 sha256=db7de146a063503f9172f831d4616032d6df7c19e6fc716e7183cda904f7f265
+2026-11-06T18:55:05.593Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+debugger session=/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm
+(lldb) target create "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) command script import /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/p_capture_report_v1.py
+(lldb) script bp=lldb.debugger.GetSelectedTarget().BreakpointCreateByName("program:packages/compiler/src/cli.ts:report [@1:value:19$14430]"); assert bp.GetNumLocations()>0; bp.SetScriptCallbackFunction("p_capture_report_v1.capture")
+(lldb) script exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm/port\",\"--\",\"127.0.0.1:0\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/stage1\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-v1/source\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-diagnostic-v2/stage2\",\"--debug-symbols\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-p-self-qrtXQm/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-diagnostic-v2/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+34
+(lldb) continue
+native report: {"utc": "2026-11-06T18:55:10Z", "address": 4423102224, "message": "sources"}
+native report: {"utc": "2026-11-06T18:55:10Z", "address": 4423017552, "message": "parse"}
+native report: {"utc": "2026-11-06T18:55:19Z", "address": 4423013056, "message": "allocator"}
+native report: {"utc": "2026-11-06T18:55:20Z", "address": 4422959904, "message": "runtime"}
+native report: {"utc": "2026-11-06T18:55:32Z", "address": 4423014336, "message": "program"}
+2026-11-06T18:55:35.586Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=29993ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:56:05.585Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=59992ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:56:35.587Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=89994ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:57:05.590Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=119997ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T18:57:35.592Z [Test262] selection="native register-copy codegen selfbuild" phase="native stage2 under LLDB" elapsed=149999ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+native report: {"utc": "2026-11-06T18:57:40Z", "address": 18249289456, "message": "runtime: generic specialization limit exceeded"}
+Process 45310 resuming
+Process 45310 exited with status = 1 (0x00000001)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-inline-unions-control-flow-diagnostic-v2/final.json",'w').write(json.dumps({'state':'exited' if p.GetState()==lldb.eStateExited else str(p.GetState()),'exitStatus':p.GetExitStatus()})); p.Kill() if p.GetState()!=lldb.eStateExited else None
+36
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-report-diagnostic-v2.ts:34
+  if(second.status!==0||start.state!=='stopped'||end.state!=='exited'||end.exitStatus!==0)throw Error('native stage2 failed: '+JSON.stringify(end));
+                                                                                                ^
+
+Error: native stage2 failed: {"state":"exited","exitStatus":1}
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/selfbuild-report-diagnostic-v2.ts:34:97
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0
