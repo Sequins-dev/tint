@@ -1,0 +1,38 @@
+{
+  "kind": "immutable-slot-source-launch-validation",
+  "conformance": false,
+  "reproduction": "docs/results/c1-slot-edit-reproduction-v1.json",
+  "retainedPriorFailure": "docs/results/c1-slot-launcher-reexecution-v1.json",
+  "launchMode": "zsh -c with the current coordinator-provided slot helper text captured once before launch",
+  "sameSharedSlotDirectories": true,
+  "sameCapFileLogic": true,
+  "effectiveCap": 8,
+  "coordinatorFileModifiedByC1": false,
+  "completedRun": {
+    "selection": "language/statements/class/strict-mode",
+    "report": "docs/results/test262-c1-foundation-language-statements-class-strict-mode-v2.json",
+    "journal": "docs/results/test262-c1-foundation-language-statements-class-strict-mode-v2.jsonl",
+    "stderr": "docs/results/test262-c1-foundation-language-statements-class-strict-mode-v2.json.stderr.txt",
+    "slotSource": "docs/results/test262-c1-foundation-language-statements-class-strict-mode-v2.json.slot-source.txt",
+    "slotSourceSha256": "171551603ecb7d58f9db18279d17275f34a2ef7fbeede2321904dafab54ab858",
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "totals": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    }
+  },
+  "slotAcquisitions": 1,
+  "duplicateInvocations": 0,
+  "nativeVariants": 4,
+  "nativePasses": 4,
+  "launcherExitStatus": 0
+}
