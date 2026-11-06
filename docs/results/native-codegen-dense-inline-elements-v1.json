@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-language-operation-performance",
+  "mergeReady": false,
+  "change": "Existing closed-executable private dense-array lowering admits inline general and optional-boolean cells; missing reads return general-none or boolean-none. Cell layout, managed scanning, holes, fallback, opacity proof and work cap are unchanged.",
+  "frozenToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/source-snapshot.json",
+    "sha256": "b7129f82bd3888e88987d57fcea785120fa8dff442d99277fc64fe4daa3ab1d8"
+  },
+  "sourceSnapshot": {
+    "sha256": "21a5c50dd2a49261ba2adcea4452b26af8686fed8e673f2cd928db0d96c46f3b",
+    "files": 568
+  },
+  "benchmark": {
+    "sourceSha256": "8af5e7111aa4a4e79bc2110af9c5f141442b5ae850144814f0e08c9fd932891e",
+    "iterations": 3000000,
+    "summary": [
+      {
+        "index": 0,
+        "medianCPUms": 605.9222500000001,
+        "minCPUms": 600.8364583333333,
+        "maxCPUms": 618.2019166666666,
+        "medianWallMs": 1174.907729,
+        "maxMissingCPUWallMs": 4.709333,
+        "loadRange": [44.5234375, 53.369140625],
+        "amortizedCPU_ns_perReadIteration": 201.97408333333337
+      },
+      {
+        "index": 1,
+        "medianCPUms": 63.21479166666666,
+        "minCPUms": 57.24570833333333,
+        "maxCPUms": 65.758375,
+        "medianWallMs": 159.8902915,
+        "maxMissingCPUWallMs": 1.676833,
+        "loadRange": [44.44580078125, 50.1806640625],
+        "amortizedCPU_ns_perReadIteration": 21.07159722222222
+      }
+    ],
+    "medianCPUSpeedup": 9.58513401728894,
+    "equivalentExits": 8,
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-array-rxrLaQ/general-array",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "21a5c50dd2a49261ba2adcea4452b26af8686fed8e673f2cd928db0d96c46f3b",
+            "files": 568
+          },
+          "imageSha256": "9c28cb61a9e6d0e7166aac66746e2aed2abce4de9402bf756fb57cd796b92295",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-array-rxrLaQ/general-array.source.ts",
+          "fixtureSha256": "8af5e7111aa4a4e79bc2110af9c5f141442b5ae850144814f0e08c9fd932891e",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/build-general-array-production-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "managedBytes": 4194304,
+            "allocationCapacity": 65536
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-array-MwYa8o/general-array",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "21a5c50dd2a49261ba2adcea4452b26af8686fed8e673f2cd928db0d96c46f3b",
+            "files": 568
+          },
+          "imageSha256": "f5b3b081e3120626e838391d6d432be10bf82f52a77c16a1f09aefb9c6538755",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-array-MwYa8o/general-array.source.ts",
+          "fixtureSha256": "8af5e7111aa4a4e79bc2110af9c5f141442b5ae850144814f0e08c9fd932891e",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/build-general-array-production-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "managedBytes": 4194304,
+            "allocationCapacity": 65536
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "baselineMethod": "Same frozen production host and source inputs with a recorded loader that makes the private dense pass decline. This matches the former whole-program rejection on this general-element fixture, reproduced by the red tests.",
+    "baselineAdapter": {
+      "path": "prototype-decline-private-dense-v1.mjs",
+      "sha256": "48f528cec8602d9c4f964c8afd24807f4ed596b1a0947d7a5b45a6be1d023e5f"
+    },
+    "afterMethod": "Unmodified frozen production host; no loader adapter.",
+    "wallInterpretation": "Recorded for completeness; CPU medians and spread are the evidence under host load. The amortized iteration cost includes initialization, loop arithmetic, type checks and summation as well as array access."
+  },
+  "nativeSemanticFixture": {
+    "manifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "21a5c50dd2a49261ba2adcea4452b26af8686fed8e673f2cd928db0d96c46f3b",
+        "files": 568
+      },
+      "imageSha256": "df5ca27f31b049ac7e14a35b504c97ae8ad58ebdb89896088ad34a53bacc7914",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-dense-general-boolean-gc-GzFPos/dense-general-boolean-gc.source.ts",
+      "fixtureSha256": "2b969fd17fdd127b8e86f0481aecf4e0d0fab9f487cdcd587d69cdc54c2f9c04",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/build-dense-general-gc-production-v1.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "managedBytes": 32768,
+        "allocationCapacity": 4096,
+        "rootCapacity": 4096,
+        "stackBytes": 1048576
+      },
+      "debugSymbols": false
+    },
+    "expectedNativeExits": 8,
+    "actualNativeExits": 8,
+    "nodeReferenceExit": 0,
+    "nodeReferenceResult": 42,
+    "coverage": "Mixed general values, false, stored undefined versus holes, truncation, aliasing, closures, sorting, shrink/regrow, sparse migration, reference cycles and moving GC on a 32768-byte heap."
+  },
+  "compilerProofReplay": {
+    "kind": "native-list-proof-replay",
+    "capture": {
+      "kind": "immutable-node-lowering-diagnostic",
+      "node": "v24.12.0",
+      "bytes": 188151037,
+      "sha256": "b36459424efd940e6bb24048c21f3af34f0db483ec2cfa18c8de9a0671957257",
+      "contracts": 605,
+      "types": {
+        "optional-string=>optional-string": 1,
+        "optional-reference=>optional-reference": 591,
+        "general=>general": 11,
+        "optional-boolean=>optional-boolean": 2
+      },
+      "roots": [11499, 11500],
+      "maxWork": 10000000,
+      "aliases": 4492
+    },
+    "prototypeImports": [
+      "--import",
+      "./.tint-bootstrap/perf/prototype-dense-general-v2.mjs",
+      "--import",
+      "./.tint-bootstrap/perf/trace-dense-decline-v2.mjs"
+    ],
+    "elapsedMs": 1863.015167,
+    "accepted": true,
+    "rewritten": 4512,
+    "work": 8675732
+  },
+  "resourceBound": "Real compiler admission rewrites 4512 functions using 8675732 of the existing 10000000 work bound; no cap increase.",
+  "managedBoundary": "The Test262 batch builder disables private dense arrays and native compilation also requires no managed surfaces. This slice improves the native compiler executable; it does not relax that boundary or establish a Test262 execution speedup.",
+  "selfbuild": "Matched native before/after compilation is in progress. Production host emission equivalence, final byte-identical after stage images, artifact checks and current-main gates are still required.",
+  "suiteProjection": "No whole-suite hours reduction can be extrapolated from this operation benchmark; Node-hosted batch compilation and managed Test262 images are separate workloads.",
+  "artifacts": {
+    "benchmark.json": {
+      "sha256": "46e195a726b61f77a6acf904ebaaa957bbcbbedc5d185d6b6a61a4010b94ed14",
+      "uncompressedBytes": 8983
+    },
+    "benchmark.log": {
+      "sha256": "8049b62435eed6e2307b4cbcf87591aa77d8d5b413be527b4fc6696aae19357f",
+      "uncompressedBytes": 5592
+    },
+    "native-gc.json": {
+      "sha256": "237861b1541f29455b072cb2ad09f51a8e63e5764b80dcd3cea4311ba02405c5",
+      "uncompressedBytes": 9192
+    },
+    "native-gc.log": {
+      "sha256": "8d23f021800346e087b2e0997847ed3f3e5a4efce6600a551d342d4510cb0273",
+      "uncompressedBytes": 5400
+    },
+    "tests-red.log": {
+      "sha256": "9595cdea2b2ff70cb4a4766c58af112aa640c2b99e2362b2eaf8ff29bd1d5fd9",
+      "uncompressedBytes": 3426
+    },
+    "tests-green.log": {
+      "sha256": "0bbbf5da1ff003993d77ad825712da5e5f4dcb8cf2859b7eb6002dfe3be24fb9",
+      "uncompressedBytes": 1820
+    }
+  }
+}
