@@ -1,0 +1,79 @@
+import { verifyHostedFixture } from "./hosted-fixture.ts";
+
+const header =
+  "type R={readonly ok:true;readonly value:number}|{readonly ok:false;readonly error:string};";
+const cases = [
+  [
+    true,
+    header +
+      "function f(a:R,b:R):number{if(!a.ok)return 0;if(!b.ok)return 0;a={ok:false,error:'x'};return b.value;}",
+  ],
+  [
+    false,
+    header +
+      "function f(a:R):number{if(!a.ok)return 0;a={ok:false,error:'x'};return a.value;}",
+  ],
+  [
+    true,
+    header +
+      "function f(a:R,flag:boolean):number{if(!a.ok)return 0;if(flag){a={ok:false,error:'x'};return 0;}return a.value;}",
+  ],
+  [
+    false,
+    "interface O{value?:number}function f(a:O):number{if(a.value===undefined)return 0;a={};return a.value;}",
+  ],
+  [
+    false,
+    "function f(flag:boolean):number{let n:number;while(flag){n=1;}return n;}",
+  ],
+  [false, "function f():number{let n:number;try{n=1;}catch{}return n;}"],
+  [
+    false,
+    "function f(flag:boolean):number{let n:number;if(flag){return 0;n=1;}return n;}",
+  ],
+  [
+    true,
+    "function f(flag:boolean):number{let n:number;if(flag)n=1;else n=2;return n;}",
+  ],
+  [
+    true,
+    Array.from({ length: 500 }, (_, i) => `const v${i}:number=${i};`).join(
+      "\n",
+    ),
+  ],
+] as const;
+
+verifyHostedFixture(
+  `import {createSourceTextView} from "source";
+import {parseModule} from "syntax";
+import {checkClosureModule} from "checker";
+export function run():number {
+${cases
+  .map(
+    ([expected, source], i) => `{
+ const parsed=parseModule(createSourceTextView(${JSON.stringify(source)}));
+ if(!parsed.ok)return ${i * 2 + 1};
+ const checked=checkClosureModule(parsed.value);
+ if(checked.ok!==${expected})return ${i * 2 + 2};
+}`,
+  )
+  .join("\n")}
+ return 42;
+}`,
+  "checker-flow",
+  [
+    ["source", "packages/source/src/text.ts"],
+    ["syntax", "packages/typescript/src/syntax/index.ts"],
+    ["checker", "packages/typescript/src/checker/index.ts"],
+  ],
+  [],
+  [],
+  [],
+  {
+    runtimeEntry: "initializeCopyingRuntime",
+    managedBytes: 268435456,
+    allocationCapacity: 8388608,
+    rootCapacity: 16384,
+    stackBytes: 16777216,
+  },
+);

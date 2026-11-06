@@ -754,15 +754,14 @@ export function checkClosureModule(module: Module): ClosureResult {
   const pendingParameters = new Set<number>();
   const narrowed: { binding: number; type: number; property?: string }[] = [],
     narrowKeys = createStringIndex<number>();
-  function forgetNarrowed(binding?: number): void {
-    for (const token of present) {
-      const fact = narrowed[token - graph.bindings.length];
-      if (
-        fact !== undefined &&
-        (binding === undefined || fact.binding === binding)
-      )
-        present.delete(token);
-    }
+  // Interned tokens remain valid across branch snapshots; writes need only
+  // invalidate tokens belonging to the binding being assigned.
+  const narrowingTokens = new Map<number, number[]>();
+  function forgetNarrowed(binding: number): void {
+    const tokens = narrowingTokens.get(binding);
+    if (tokens !== undefined)
+      for (const token of tokens)
+        if (token !== undefined) present.delete(token);
   }
   function narrowedType(
     binding: number,
@@ -798,6 +797,9 @@ export function checkClosureModule(module: Module): ClosureResult {
     if (known !== undefined) return known;
     const token = graph.bindings.length + narrowed.length;
     narrowKeys.set(key, token);
+    const tokens = narrowingTokens.get(binding);
+    if (tokens === undefined) narrowingTokens.set(binding, [token]);
+    else tokens.push(token);
     narrowed.push({
       binding,
       type,
@@ -4697,10 +4699,10 @@ export function checkClosureModule(module: Module): ClosureResult {
     for (const node of nodes) {
       if (node === undefined) throw "missing statement";
       const reachable = (completion & 1) !== 0,
-        before = new Set(present),
+        before = reachable ? undefined : new Set(present),
         done = statement(node, owner, result);
       if (reachable) completion = sequenceCompletion(completion, done);
-      else present = before;
+      else if (before !== undefined) present = before;
     }
     return completion;
   }
@@ -4733,7 +4735,6 @@ export function checkClosureModule(module: Module): ClosureResult {
     const node = input;
     if (++depth > 256)
       fail(node, "LIMIT", "closure checking nesting limit exceeded");
-    let definiteEntry = stableFacts();
     try {
       switch (node.kind) {
         case "class":
@@ -4806,6 +4807,7 @@ export function checkClosureModule(module: Module): ClosureResult {
           return 1;
         }
         case "try": {
+          const definiteEntry = stableFacts();
           const handler = node.handler;
           const finalizer = node.finalizer;
           const invariant = stableFacts(definiteEntry, true);
@@ -4895,6 +4897,7 @@ export function checkClosureModule(module: Module): ClosureResult {
           return yes | no;
         }
         case "switch": {
+          const definiteEntry = stableFacts();
           const switchNode = node;
           condition(node.expression, owner);
           const before = new Set(present),
@@ -4970,6 +4973,7 @@ export function checkClosureModule(module: Module): ClosureResult {
           return completion;
         }
         case "label": {
+          const definiteEntry = stableFacts();
           const completion = statement(node.body, owner, result);
           // Labelled exits can bypass assignments in their body. Keep entry
           // facts until completion analysis tracks individual named targets.
@@ -4977,6 +4981,7 @@ export function checkClosureModule(module: Module): ClosureResult {
           return completion | 1;
         }
         case "do-while": {
+          const definiteEntry = stableFacts();
           present = new Set(definiteEntry);
           const body = loopBody(node.body, owner, result);
           present = new Set(definiteEntry);
@@ -4984,7 +4989,8 @@ export function checkClosureModule(module: Module): ClosureResult {
           present = new Set(definiteEntry);
           return loopCompletion(body, true, unconditionalTest(node.test));
         }
-        case "while":
+        case "while": {
+          const definiteEntry = stableFacts();
           present = new Set(definiteEntry);
           condition(node.test, owner);
           present = refine(node.test, true, present);
@@ -4993,6 +4999,7 @@ export function checkClosureModule(module: Module): ClosureResult {
             present = new Set(definiteEntry);
             return loopCompletion(body, false, unconditionalTest(node.test));
           }
+        }
         case "for-of": {
           if (node.await)
             fail(
@@ -5010,7 +5017,7 @@ export function checkClosureModule(module: Module): ClosureResult {
           // The iterable is evaluated once, under the incoming facts. Only
           // immutable object discriminants remain valid across iterations.
           const iterable = expression(node.iterable, owner);
-          definiteEntry = stableFacts();
+          const definiteEntry = stableFacts();
           present = new Set(definiteEntry);
           if (loopBinding.kind === "array-binding") {
             const map = types[iterable];
@@ -5060,7 +5067,7 @@ export function checkClosureModule(module: Module): ClosureResult {
         case "for": {
           if (node.initializer !== undefined)
             statement(node.initializer, owner, result);
-          definiteEntry = stableFacts();
+          const definiteEntry = stableFacts();
           present = new Set(definiteEntry);
           const test = node.test;
           if (test !== undefined) {
