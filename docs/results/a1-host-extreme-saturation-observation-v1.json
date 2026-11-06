@@ -1,0 +1,30 @@
+{
+  "kind": "host-saturation-observation",
+  "conformance": false,
+  "at": "2026-11-06T19:40:10Z",
+  "selection": "language/statementList",
+  "phase": "compiling batch0",
+  "runnerPid": 3322,
+  "observations": [
+    {
+      "localTime": "03:39",
+      "load": [
+        495.23,
+        177.25,
+        98.32
+      ],
+      "compilerCpuTime": "5:46.98"
+    },
+    {
+      "localTime": "03:40",
+      "load": [
+        605.96,
+        250.41,
+        129.29
+      ],
+      "compilerCpuTime": "6:05.27"
+    }
+  ],
+  "diagnostics": "ps pipeline required about35s; monitor regained output; worker-thread heartbeat continued each30s but its own ps lookup timed out. Compiler R state and increasing CPU time; no native variant started. No other cluster process touched.",
+  "policy": "Preserve saturation evidence and all native outcomes. Any low-CPU-share timeout is inconclusive and needs separate focused recheck."
+}
