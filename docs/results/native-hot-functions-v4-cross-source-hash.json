@@ -1,0 +1,109 @@
+{
+  "kind": "controlled-node-host-hash-comparison",
+  "conformance": false,
+  "pairs": 3,
+  "order": [
+    "main/hash",
+    "hash/main",
+    "main/hash"
+  ],
+  "stats": {
+    "main-host": {
+      "cpuMs": {
+        "median": 508698.223,
+        "min": 395599.902,
+        "max": 528027.739,
+        "observations": [
+          395599.902,
+          508698.223,
+          528027.739
+        ]
+      },
+      "wallMsDiagnostic": {
+        "median": 892716.781375,
+        "min": 460779.376333,
+        "max": 1117999.641708
+      },
+      "loadOneMinuteRange": [
+        26.47314453125,
+        44.1083984375
+      ]
+    },
+    "hash-host": {
+      "cpuMs": {
+        "median": 390421.862,
+        "min": 372389.686,
+        "max": 447268.265,
+        "observations": [
+          372389.686,
+          390421.862,
+          447268.265
+        ]
+      },
+      "wallMsDiagnostic": {
+        "median": 491821.803375,
+        "min": 386294.695625,
+        "max": 747798.218458
+      },
+      "loadOneMinuteRange": [
+        19.12841796875,
+        52.91650390625
+      ]
+    }
+  },
+  "cpuMedianRatioOldToFixed": 1.3029450256553512,
+  "identicalAcrossAllSix": {
+    "nativeSource": {
+      "sha256": "bb9bce32cacb56e9e4b9635e01240ea48a534c5978948d9a329d7daab30a60c8",
+      "files": 568
+    },
+    "fixtureInputs": [
+      {
+        "path": "language/expressions/left-shift/S11.7.1_A1.js",
+        "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+        "variant": "sloppy",
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ]
+      },
+      {
+        "path": "language/expressions/left-shift/S11.7.1_A1.js",
+        "sha256": "8a3a72746c5779f3c83a50db91df6da09fa0aeae66af7618cef8f104a235b41c",
+        "variant": "strict",
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ]
+      }
+    ],
+    "imageBytes": 158070527,
+    "imageSha256": "78fb1e18aadb32d49ef38127be0c67ab48b4cf0d51fae906a3548a3851f1ff74",
+    "checkerAndIRTraceSha256": "ef3b71e1a27d44b5e1ac0e0520f9ef925f05df8aef1d45d41bc84bd3d5ae4e61"
+  },
+  "configuration": {
+    "moduleExecution": true,
+    "dynamicImport": true,
+    "jsonModules": true,
+    "nodeVersion": "v24.12.0"
+  },
+  "instrumentation": "Read-only checker/emitter wrapper records structural sizes. No V8 CPU profiler. Process.cpuUsage accounts user+system CPU over compile; wall and load retained separately. Frozen hosts and one shared native source snapshot stay unchanged across all pairs.",
+  "finding": "The original roughly 12% increase is not reproduced when the embedded native compiler source is held constant. The hash-fixed host is faster in all three CPU pairs; both hosts produce byte-identical images and identical checker/IR traces. There is no observed loss of output deduplication or structural sharing. The original pair also compiled a changed linker implementation into its native image, and has a larger output. Do not interpret these saturated-host repeats as precise attribution of every original CPU-second.",
+  "wholeSuiteScenario": "At 64 variants per batch, CPU median times imply old-host and fixed-host compilation-only scenarios. The measured selection has two variants; constant compile cost at occupancy 64 is unproven, especially for the interrupted 64-variant pathological case. Execution excluded.",
+  "projectionCPUHoursAt64": {
+    "main-host": 228.06636997833334,
+    "hash-host": 175.03913479666667
+  }
+}
