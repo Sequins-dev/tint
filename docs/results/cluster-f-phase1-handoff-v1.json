@@ -1,0 +1,151 @@
+{
+  "kind": "cluster-f-phase1-handoff",
+  "scope": "Inherited work only. No unstarted selections launched.",
+  "branch": "test/native-iterator-generator-coverage",
+  "baseMain": "3017779f912db87f43ba0c46d0bb55dde30c6fa4",
+  "completeReports": [
+    {
+      "selection": "built-ins/Iterator",
+      "totals": {
+        "total": 1368,
+        "passed": 1364,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 4,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9970760233918129
+      },
+      "report": "docs/results/test262-iterator-family-current-native-v1.json"
+    },
+    {
+      "selection": "staging/sm/Iterator",
+      "totals": {
+        "total": 348,
+        "passed": 348,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-staging-sm-iterator-native-v1.json"
+    },
+    {
+      "selection": "language/statements/async-generator",
+      "totals": {
+        "total": 590,
+        "passed": 590,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-async-generator-statements-current-native-v1.json"
+    }
+  ],
+  "recovery": {
+    "runnerPid": 6622,
+    "controllerPid": 48103,
+    "queuePid": 92205,
+    "initialState": "Runner acknowledged between-variants; controller waiting for missing keeper; journal last modified about two hours earlier.",
+    "action": "SIGTERM obsolete controller and queue, then remove owned pause marker. Original runner continued on the same frozen toolchain, journal and settings without restart or retries.",
+    "outcome": "Original runner completed; canonical report and full journal preserved. No inferior interrupted.",
+    "controllerLog": "docs/results/cluster-f-phase1-controller-retirement-v1.jsonl",
+    "unstartedSelectionsDeferred": [
+      "language/expressions/yield",
+      "language/statements/generators",
+      "language/expressions/generators",
+      "language/expressions/async-generator"
+    ]
+  },
+  "dirtyFileDecisions": [
+    {
+      "worktree": "t3-ffc74d90",
+      "path": "pnpm-lock.yaml",
+      "decision": "Only adds @tint/foundation to the packages/js-engine dependency importer. Identical correction already present on main; no unique work discarded. Primary briefly committed it before rebase skipped the patch-equivalent commit; secondary worktrees restored the duplicate diff."
+    },
+    {
+      "worktree": "t3-412c28f4",
+      "path": "pnpm-lock.yaml",
+      "decision": "Only adds @tint/foundation to the packages/js-engine dependency importer. Identical correction already present on main; no unique work discarded. Primary briefly committed it before rebase skipped the patch-equivalent commit; secondary worktrees restored the duplicate diff."
+    },
+    {
+      "worktree": "t3-deb8d7e4",
+      "path": "pnpm-lock.yaml",
+      "decision": "Only adds @tint/foundation to the packages/js-engine dependency importer. Identical correction already present on main; no unique work discarded. Primary briefly committed it before rebase skipped the patch-equivalent commit; secondary worktrees restored the duplicate diff."
+    }
+  ],
+  "consolidation": {
+    "method": "git cherry verified both commits patch-equivalent; ancestry-only merge retained both original branches. Rebase preserved merge ancestry.",
+    "safeToRemove": [
+      {
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-412c28f4",
+        "branch": "fix/iterator-closing-semantics",
+        "commit": "c4fd37cd4acf71f8265e38c98b2b5785654ec630"
+      },
+      {
+        "worktree": "/Users/stephenbelanger/.t3/worktrees/tint/t3-deb8d7e4",
+        "branch": "fix/async-generator-semantics",
+        "commit": "ee0935dfa19a537428cc37c79f3d6d33b506aff2"
+      }
+    ]
+  },
+  "validation": [
+    {
+      "command": "pnpm check (Node 26.0.0)",
+      "exitStatus": 1,
+      "tests": 4468,
+      "passed": 4467,
+      "failed": 1,
+      "cause": "Pinned independent Unicode oracle requires Unicode 16.0; Node 26 uses a newer Unicode version.",
+      "log": "docs/results/cluster-f-phase1-check-node26-v1.log"
+    },
+    {
+      "command": "Node 24.12.0 --test packages/foundation/test/unicode-identifiers-index.test.ts",
+      "exitStatus": 0,
+      "passed": 3
+    },
+    {
+      "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH pnpm check",
+      "exitStatus": 0,
+      "tests": 4468,
+      "passed": 4468,
+      "failed": 0,
+      "log": "docs/results/cluster-f-phase1-check-node24-v1.log"
+    },
+    {
+      "command": "git diff --check",
+      "exitStatus": 0
+    }
+  ],
+  "nativeCompilerEvidence": {
+    "newImplementationChanges": false,
+    "compilerGraph": "docs/results/iterator-generator-bootstrap-graph-node-v1.json",
+    "acceptedSelfBuild": "docs/results/json-await-native-compiler-acceptance-v1.json",
+    "nativeFixture": "docs/results/native-iterator-realm-order-validation-v1.json",
+    "note": "Inherited runtime cleanup is outside the unchanged 220-module compiler graph. Existing graph agreement and six native fixture cases retained; no new self-build claimed."
+  },
+  "remainingNonPassGroups": [
+    {
+      "selection": "built-ins/Iterator",
+      "count": 4,
+      "status": "timeout",
+      "paths": [
+        "zip/result-is-iterator.js (sloppy, strict)",
+        "zipKeyed/result-is-iterator.js (sloppy, strict)"
+      ],
+      "cause": "Unchanged wellKnownIntrinsicObjects.js harness compiles 87 dynamic Function sources and exceeds containment budget.",
+      "nextStep": "Phase 2: investigate dynamic native compilation cost; retain all four timeouts and rerun the full selection after a validated fix."
+    }
+  ],
+  "inheritedProcessesStillRunning": [],
+  "limitations": [
+    "Separate populations; no summed whole-suite pass fraction.",
+    "Pending scope selections remain unmeasured in Phase 1.",
+    "Compiler/runtime sources unchanged during recovery; workspace gates remain applicable after documentation-only rebases."
+  ]
+}
