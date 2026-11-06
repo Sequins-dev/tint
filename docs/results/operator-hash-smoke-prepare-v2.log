@@ -1,0 +1,18 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/runner/slot-4 after 0s
+2026-11-06T17:08:56.238Z [Test262] selection="linked-hash-smoke-aot-build" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-06T17:08:56.241Z [Test262] selection="linked-hash-smoke-aot-build" phase="loading public ESM compiler entries" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+prepared native hash smoke {"sha256":"2c11522ff6e3ded7e59612e3f3806023abb71f272313be365c9caff68299a6db","files":568}
+allocator
+2026-11-06T17:08:56.714Z [Test262] selection="linked-hash-smoke-aot-build" phase="allocator" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+runtime
+2026-11-06T17:08:56.894Z [Test262] selection="linked-hash-smoke-aot-build" phase="runtime" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+program
+2026-11-06T17:08:57.763Z [Test262] selection="linked-hash-smoke-aot-build" phase="program" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/prepare-hash-smoke-v2.mjs:8
+const graph=loadSourceGraph(snapshot.inputs,projectMappings(),projectRoots());if(!graph.ok)throw Error(JSON.stringify(graph.error));const result=buildMacOSProgram({...projectBuildRequest(graph.value,s=>{console.log(s);heartbeat.phase(s);}),debugSymbols:true,debugDirectory:root});if(!result.ok)throw Error(JSON.stringify(result.error));writeFileSync(expected,result.value,{mode:0o755,flag:'wx'});writeFileSync(expected+'.manifest.json',JSON.stringify({kind:'native-linked-hash-smoke-build',sourceSnapshot:workspaceSourceIdentity(snapshot),baseSources:workspaceSourceIdentity(base),sourceRoot:root,fixture:text,fixtureSha256:createHash('sha256').update(text).digest('hex'),imageSha256:createHash('sha256').update(result.value).digest('hex'),debugSymbols:true},null,2));console.log('wrote',expected,result.value.length);
+                                                                                                                                                                                                                                                                                                            ^
+
+Error: {"stage":"check","message":"packages/compiler/src/cli.ts:376:418: parameter count does not match context"}
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-phase2/prepare-hash-smoke-v2.mjs:8:301
+
+Node.js v24.12.0
