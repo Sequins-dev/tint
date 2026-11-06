@@ -1,0 +1,33 @@
+{
+  "kind": "c2-debugger-diagnostic-capture-validation",
+  "conformance": false,
+  "base": "df1fdb7fa35ba50b065b7434000b7d7740e93fa1",
+  "implementationCommit": "09b5cca",
+  "change": "Increase retained LLDB stdout tail from2048 to8192bytes so earlier launch-script errors fit before subsequent command echoes.",
+  "sourceKind": "Node-only tooling; compiler/runtime portable code and execution semantics unchanged.",
+  "focusedTests": {
+    "files": [
+      "tools/native-debugger-session.test.ts",
+      "tools/test262-native.test.ts"
+    ],
+    "passed": 30,
+    "total": 30,
+    "exitStatus": 0
+  },
+  "workspaceGate": {
+    "command": "Node24 PATH + ~/.t3/tint-slots/tint-check",
+    "node": "v24.12.0",
+    "tests": 4555,
+    "passed": 4555,
+    "failed": 0,
+    "exitStatus": 0,
+    "log": "docs/results/c2-debugger-capture-gates-v1.log",
+    "sha256": "04e30b3f04dd89f293710162d1e6442d5f7bd7e0c1d66af5ac72fda4b3c8691b"
+  },
+  "rebase": "Subsequent main changes since tested base4665a78 are report-only; packages/tools source unchanged except this capture patch.",
+  "limitations": "This is evidence-capture improvement, not a launch-failure fix. Active frozen-v11 retains original2KiB behavior; future fresh-main rechecks can capture8KiB. All recorded pre-entry crashes remain unchanged.",
+  "completeEvidence": [
+    "docs/results/c2-elements-complete-file-harvest-v1.json",
+    "docs/results/test262-c2-elements-early-errors-delete-native-v2.json"
+  ]
+}
