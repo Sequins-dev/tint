@@ -1,0 +1,40 @@
+{
+  "kind": "c2-native-debugger-launch-failure",
+  "conformance": false,
+  "createdAt": "2026-11-06T21:30:06.683788+00:00",
+  "selection": "language/statements/class/elements",
+  "toolchain": "docs/results/c2-frozen-toolchain-v11.json",
+  "journal": ".tint-bootstrap/c2/test262-c2-statements-elements-native-v2.jsonl",
+  "observation": {
+    "kind": "observation",
+    "path": "language/statements/class/elements/async-gen-private-method/yield-as-label-identifier.js",
+    "sha256": "91f1e683ad9eefb38e850e95696e8e4205ffcf098f258913ef4fdbf4d99a0ad1",
+    "variant": "sloppy",
+    "metadata": {
+      "flags": ["generated"],
+      "features": ["async-iteration", "class-methods-private"],
+      "includes": [],
+      "negative": {
+        "phase": "parse",
+        "type": "SyntaxError"
+      }
+    },
+    "canSuspend": true,
+    "harness": [],
+    "outcome": {
+      "kind": "crash",
+      "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: ebugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QfEwwq/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\\nlaunch_error = lldb.SBError()\\nlaunch_succeeded = launch_process.RemoteLaunch([\\\"26\\\"], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QfEwwq/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QfEwwq/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QfEwwq/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+    },
+    "status": "crash",
+    "elapsedMs": 195502.03100000002,
+    "batch": 0
+  },
+  "classification": "Pre-entry LLDB infrastructure failure, retained as crash; no stopped-at-entry state or inferior PID established.",
+  "initialState": {
+    "state": "2",
+    "pid": 0
+  },
+  "knownEvidence": "Process must be launched. Captured debugserver, connection and launch log tails are empty. The bounded LLDB stdout tail does not establish why the launch script did not produce a stopped process.",
+  "priorDirectFamily": "docs/results/test262-c2-async-gen-private-method-native-v1.json",
+  "triage": "The same unchanged file was included in the prior156/156 direct-launch subgroup. Current connected-launch observation remains unchanged. Continue complete survey; recheck this complete two-variant file separately after family completion, with fresh-main toolchain and debugger tracing to preserve fuller startup evidence. No automatic retry or semantic failure inference."
+}
