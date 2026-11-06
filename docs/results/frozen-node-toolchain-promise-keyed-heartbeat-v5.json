@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "head": "8dcc8e3a37b03f2a4f360ec9bf630b6ab23802b4",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "94eee3509308a20e9a30dab622e1294c3531eb8e6a994dd0328925f0037f791e",
+    "files": 568
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v5",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v5/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v5/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v5/source-snapshot.json",
+    "sha256": "0c6c37709b40c9461ac756ae50ef9c12000cfbb5be63d8473142a4a836b2b32d"
+  },
+  "runIdentity": "6bd64176c6b93281763e599e2e422b11577575e3a30cf7c6ee771c81b33e3f31",
+  "main": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "machineLimit": 10,
+    "clusterLimit": 1
+  },
+  "priorNativeFixture": "docs/results/native-promise-keyed-validation-v3.json",
+  "scope": "Rebased graph includes current main; the two keyed Promise implementation files match the native-validated bytes. Other upstream source differences retain their own provenance.",
+  "purpose": "Current rebased host tooling for explicit smoke continuation of frozen stage2 image. Image provenance remains the original v3 frozen source; no attribution of current host source to the older image."
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "native-selfbuild-smoke-startup-interruption",
+  "conformance": false,
+  "at": "2026-11-06T18:48:09.360294+00:00",
+  "reason": "No progress for over two minutes during debugserver direct launch. LLDB waits in socket poll before port handshake; debugserver waits in DNBProcessWaitForEvents; inferior suspended with zero CPU. No initial-entry JSON or connection log established.",
+  "processes": [
+    "93976  6414 02:30   0:00.29   0.0 S   ",
+    "94384 93976 02:25   0:00.01   0.0 S   ",
+    "94388 94384 02:25   0:00.00   0.0 TX  "
+  ],
+  "initialEntryRecorded": false,
+  "finalOutcomeRecorded": false,
+  "action": "SIGTERM to owned LLDB 93976; parent retains failed result and existing cleanup removes suspended inferior and debugserver. No executing inferior interrupted.",
+  "evidence": [
+    {
+      "path": "docs/results/promise-keyed-selfbuild-v3-smoke-lldb-wait-sample.txt",
+      "sha256": "fc8c4223ddb48dc09eff30761df4936e5eb7cf3a9ef7a1733cfab95093276ed6"
+    },
+    {
+      "path": "docs/results/promise-keyed-selfbuild-v3-smoke-debugserver-wait-sample.txt",
+      "sha256": "edd7216d4f1c5f2f1523775994262976aaf5ed992b28c5b3adfda143ab69dc34"
+    }
+  ]
+}

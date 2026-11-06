@@ -1,0 +1,117 @@
+{
+  "kind": "native-promise-keyed-self-build",
+  "conformance": false,
+  "accepted": false,
+  "containmentMs": 7200000,
+  "resourcePolicy": "selfbuild 2; single recheck after saturated-host timeouts",
+  "snapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/sources",
+  "stage1": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage1",
+  "stage2": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2",
+  "commands": [
+    {
+      "label": "build-stage1",
+      "binary": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v3/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage1",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-promise-keyed-heartbeat-v3",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/sources",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage1-signature",
+      "binary": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage1"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage1-dwarf",
+      "binary": "/usr/bin/xcrun",
+      "args": [
+        "dwarfdump",
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage1"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage2-signature",
+      "binary": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage2-dwarf",
+      "binary": "/usr/bin/xcrun",
+      "args": [
+        "dwarfdump",
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "prepare-smoke",
+      "binary": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "args": [
+        "tools/prepare-compiler-smoke.ts",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0
+    }
+  ],
+  "native": [
+    {
+      "label": "build-stage2",
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage1",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/sources",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2",
+        "--debug-symbols"
+      ],
+      "debuggerExitStatus": 0,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-self-7xkhbb",
+      "initial": {
+        "state": 5,
+        "stopped": true,
+        "pid": 18795
+      },
+      "final": {
+        "state": 10,
+        "exited": true,
+        "exitStatus": 0
+      }
+    },
+    {
+      "label": "stage2-smoke-build",
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/stage2",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/promise-keyed-selfbuild-v3/smoke",
+        "--debug-symbols"
+      ],
+      "debuggerExitStatus": null,
+      "directory": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-keyed-self-JHjdvm",
+      "initial": null,
+      "final": null
+    }
+  ],
+  "stageImages": {
+    "bytes": 71847842,
+    "sha256": "742548cd1b9ddebfc1c0ae74ea8a88889afe2a3934e03b602b177db175048f1c",
+    "byteIdentical": true
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nnull !== 0\n"
+}
