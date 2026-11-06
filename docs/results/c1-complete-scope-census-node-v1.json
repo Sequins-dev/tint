@@ -1,0 +1,189 @@
+{
+  "kind": "c1-complete-disjoint-scope-census",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "sourceCensus": "docs/results/language-class-remaining-selection-census-node-v1.json",
+  "sourceCensusSha256": "556929819bc6efcb652397c6fbe4a9ddb438a8ac62565a8f09b59f4e113d5f77",
+  "files": 1625,
+  "variants": 3114,
+  "foundationVariants": 2081,
+  "additionalVariants": 1033,
+  "populations": [
+    {
+      "selection": "language/statements/class/syntax",
+      "files": 13,
+      "variants": 26
+    },
+    {
+      "selection": "language/statements/class/definition",
+      "files": 65,
+      "variants": 130
+    },
+    {
+      "selection": "language/statements/class/name-binding",
+      "files": 6,
+      "variants": 12
+    },
+    {
+      "selection": "language/statements/class/arguments",
+      "files": 2,
+      "variants": 4
+    },
+    {
+      "selection": "language/statements/class/strict-mode",
+      "files": 2,
+      "variants": 4
+    },
+    {
+      "selection": "language/statements/class/super",
+      "files": 8,
+      "variants": 16
+    },
+    {
+      "selection": "language/statements/class/method",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/method-static",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/method",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/method-static",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/accessor-name-static",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-static",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/subclass",
+      "files": 109,
+      "variants": 217
+    },
+    {
+      "selection": "language/statements/class/subclass-builtins",
+      "files": 36,
+      "variants": 72
+    },
+    {
+      "selection": "language/expressions/class/subclass-builtins",
+      "files": 36,
+      "variants": 72
+    },
+    {
+      "selection": "language/statements/class/gen-method",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/gen-method-static",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method-static",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/async-method",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/async-method-static",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method-static",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/async-gen-method",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/statements/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/statements/class/*.js",
+      "files": 255,
+      "variants": 504
+    },
+    {
+      "selection": "language/expressions/class/*.js",
+      "files": 261,
+      "variants": 495
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "files": 12,
+      "variants": 21
+    },
+    {
+      "selection": "language/expressions/class/decorator",
+      "files": 8,
+      "variants": 13
+    }
+  ],
+  "disjoint": true,
+  "exhaustiveWithinC1Ownership": true,
+  "excludedOwnership": [
+    "language/statements/class/elements",
+    "language/statements/class/dstr",
+    "language/expressions/class/elements",
+    "language/expressions/class/dstr"
+  ],
+  "scope": "Ownership and population proof from the pinned immutable census. Every C1 source maps to exactly one selection; no native pass claims. Decorators remain in the denominator."
+}
