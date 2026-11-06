@@ -168,3 +168,33 @@ test("hosted entries issue a permanent, non-reusable identity mapping for each c
     "identity tombstones stay reserved after context cleanup",
   );
 });
+
+test("threaded hosted entry initializes a fresh context before forwarding its raw scalar", () => {
+  const input = request();
+  const program = module([{ kind: "float", index: 0 }]);
+  const result = emitHostedEntry({
+    ...input,
+    program: { native: program, entry: 0 },
+    threaded: true,
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(result.value.workerEntryOffset !== undefined);
+  assert.ok(result.value.workerEntryOffset > 0);
+  assert.ok(result.value.workerEntryOffset < result.value.moduleOffsets[0]!);
+  assert.equal(emitHostedEntry({ ...input, threaded: true }).ok, false);
+});
+
+test("threaded startup refuses a target without thread lifecycle authority", () => {
+  const input = request();
+  const { threads: _threads, ...abi } = input.abi;
+  const program = module([{ kind: "float", index: 0 }]);
+  assert.equal(
+    emitHostedEntry({
+      ...input,
+      abi,
+      program: { native: program, entry: 0 },
+      threaded: true,
+    }).ok,
+    false,
+  );
+});

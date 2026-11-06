@@ -3897,6 +3897,50 @@ export function emitModule(
               const resultId = op.id;
               if (resultId === undefined)
                 throw "verified host result invariant";
+              if (operation === "hosted-thread-entry") {
+                imports.push({
+                  offset: instructions.length * 4,
+                  rd: 9,
+                  scratch: 17,
+                  target: { kind: "import", name: "tint:hosted-thread-entry" },
+                });
+                relativePointer(9);
+                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                floatStore(0, resultId);
+                break;
+              }
+              if (operation === "thread-start" || operation === "thread-join") {
+                const threads = host().threads;
+                if (threads === undefined)
+                  fail("UNSUPPORTED", "target has no thread lifecycle ABI");
+                rawStore("zr", resultOffset);
+                if (operation === "thread-start") {
+                  address(0, resultOffset);
+                  imm(1, 0);
+                  integer(0, 2, true);
+                  integer(1, 3, true);
+                  foreign(threads.createSymbol);
+                } else {
+                  integer(0, 0, true);
+                  address(1, resultOffset);
+                  foreign(threads.joinSymbol);
+                }
+                // pthread routines return an error number directly, not errno.
+                emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                emit({ op: "fneg", rd: 0, rn: 0 });
+                const failed = instructions.length;
+                emit({ op: "cbnz", width: 32, rt: 0, displacement: 0 });
+                rawLoad(9, resultOffset);
+                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                patchInstruction(failed, {
+                  op: "cbnz",
+                  width: 32,
+                  rt: 0,
+                  displacement: (instructions.length - failed) * 4,
+                });
+                floatStore(0, resultId);
+                break;
+              }
               if (operation === "executable-call-managed") {
                 if (host().executableMemory === undefined)
                   fail("UNSUPPORTED", "target has no executable-memory ABI");

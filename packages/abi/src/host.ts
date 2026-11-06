@@ -17,6 +17,13 @@ export interface PosixHostABI {
     readonly writeProtectSymbol: string;
     readonly instructionCacheSymbol: string;
   };
+  /** Raw system-thread lifecycle. Entries obey the platform (void*) -> void*
+   * ABI and must establish an isolated managed context before running Tint code.
+   * No managed callback or object may be passed through this boundary. */
+  readonly threads?: {
+    readonly createSymbol: string;
+    readonly joinSymbol: string;
+  };
   readonly symbolPrefix: string;
   readonly errnoSymbol: string;
   readonly readFlags: number;

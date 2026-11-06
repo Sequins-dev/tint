@@ -174,3 +174,30 @@ export function nativeFunctionSignatureWithIndex(
 export function currentContextDomain(): number {
   throw "HOST_UNAVAILABLE";
 }
+
+/** Trusted raw thread lifecycle. entry obeys the platform void*(void*) ABI,
+ * establishes its own hosted context before executing managed code, and returns
+ * a scalar status in 0..255. argument is a scalar or a raw shared mailbox address;
+ * it must never point into a managed heap. The owner keeps code and shared storage
+ * alive through join. Entry/argument must be exact nonnegative native integers.
+ * Returns an opaque positive thread handle, or a negative platform error number.
+ * Only explicit compiler bindings authorize these leaves; they are not globals. */
+export function startNativeThread(entry: number, argument: number): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Join exactly once, on the owner thread, with a live handle returned by start.
+ * Returns the worker's scalar status or a negative platform error number. The
+ * containing process's deadline remains authoritative for a stuck/failed worker;
+ * asynchronous cancellation cannot safely unwind a managed heap. */
+export function joinNativeThread(handle: number): number {
+  throw "HOST_UNAVAILABLE";
+}
+
+/** Address of the image-owned worker startup thunk. The image must explicitly
+ * enable threaded startup. Each call through this address allocates and tears
+ * down an independent hosted heap, collector and context, then invokes the same
+ * application export with the raw scalar argument. The process invokes it with 0.
+ * Never substitute a managed function's code pointer for this entry. */
+export function hostedThreadEntry(): number {
+  throw "HOST_UNAVAILABLE";
+}

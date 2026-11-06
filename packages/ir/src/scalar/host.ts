@@ -1,5 +1,8 @@
 import type { ScalarType, ModuleIR, Instruction, FunctionIR } from "./model.ts";
 export type HostOperation =
+  | "hosted-thread-entry"
+  | "thread-start"
+  | "thread-join"
   | "cpu-pause"
   | "monotonic-time"
   | "wall-clock-time"
@@ -48,6 +51,11 @@ export function hostParameters(
   operation: HostOperation,
 ): readonly ScalarType[] | undefined {
   switch (operation) {
+    case "thread-start":
+      return ["number", "number"];
+    case "thread-join":
+      return ["number"];
+    case "hosted-thread-entry":
     case "cpu-pause":
       return [];
     case "shared-read-unsigned":

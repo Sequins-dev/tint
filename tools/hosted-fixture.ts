@@ -32,6 +32,7 @@ export function verifyHostedFixture(
   additionalRuntimes: readonly RuntimeSource[] = [],
   options: {
     readonly allowJit?: boolean;
+    readonly threaded?: boolean;
     readonly hostBindings?: readonly NativeHostBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
@@ -77,6 +78,7 @@ export function verifyHostedFixture(
   const request = projectBuildRequest(modules, () => {});
   const built = buildMacOSProgram({
     ...request,
+    threaded: options.threaded ?? false,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
     runtimes: [...request.runtimes, ...additionalRuntimes],

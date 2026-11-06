@@ -152,3 +152,31 @@ AsyncGeneratorFunction adapter takes an idle hidden carrier's continuation and
 leaves all requests with the visible generator. The current
 [Node checkpoint](results/async-generator-function-node-checkpoint-v1.json)
 records validation separately from the queued native proofs and Test262 groups.
+
+## Native thread lifecycle boundary (cluster K, validation in progress)
+
+Threaded hosted images explicitly opt in through `BuildRequest.threaded`. Their
+application entry takes one number: zero for the root process, or a copied scalar /
+raw mailbox address for a worker. `hostedThreadEntry` supplies an image-owned system
+thread thunk. It reuses hosted startup to create a private stack with guard pages,
+heap, allocator, collector metadata, roots and permanent ownership domain before
+initializing a new module instance and calling the application. Cleanup releases
+that worker's heap/control/stack mappings; ownership tombstones remain permanent.
+The ordinary process startup path remains available for nonthreaded images.
+
+`startNativeThread` and `joinNativeThread` are trusted compiler capabilities, never
+Script globals. A managed callback is not a system thread entry. Neither managed
+objects nor function closures may be passed as arguments or return values. The
+owner retains raw mailboxes and code until every referencing worker has joined.
+The Darwin adapter provides pthread symbols; other platforms must explicitly
+supply lifecycle authority. Calls return negative platform error numbers directly,
+without consulting errno. Worker completion returns a scalar status in 0..255;
+managed abrupt completion or startup failure returns the hosted failure status.
+
+Each worker must construct its own ScriptAgent, realms, jobs and executable arena.
+Only raw shared-block capabilities and copied mailbox payloads cross that boundary.
+This lifecycle capability is a prerequisite for the agent API, not an implemented
+`$262.agent` host. Waiter enrollment, platform parking/wakeup and the external-event
+pump remain separate work. No Script completion is inferred from the existence of
+a thread. Whole-variant containment remains process-scoped: unsafe asynchronous
+thread cancellation cannot unwind a managed collector safely.

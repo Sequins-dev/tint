@@ -12,6 +12,8 @@ import {
   type NativeImportReference,
 } from "./scalar/index.ts";
 export interface HostRequest {
+  /** Opt in to a raw pthread entry and a one-number application entry. */
+  readonly threaded?: boolean;
   readonly allocator: {
     readonly native: NativeModule;
     readonly initialize: number;
@@ -33,6 +35,7 @@ export interface HostedCode {
   readonly moduleOffsets: readonly number[];
   readonly code: Uint8Array;
   readonly entryOffset: number;
+  readonly workerEntryOffset: number | undefined;
   readonly imports: readonly NativeImportReference[];
 }
 export type HostEmission =
@@ -59,6 +62,8 @@ function align(value: number, alignment: number): number {
 /** Emits a POSIX-shaped startup adapter. Image format/signing remain separate.
  * All modules use Tint's private ABI; process entry uses the platform main ABI. */
 export function emitHostedEntry(request: HostRequest): HostEmission {
+  if (request.threaded === true && request.abi.threads === undefined)
+    return { ok: false, error: "target has no thread lifecycle ABI" };
   for (const native of [
     request.allocator.native,
     request.runtime.native,
@@ -118,7 +123,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     init.signature.parameters.length !== 3 ||
     allocate.signature.parameters.length !== 1 ||
     initialize.signature.parameters.length !== 15 ||
-    main.signature.parameters.length !== 0 ||
+    (request.threaded === true
+      ? main.signature.parameters.length !== 1 ||
+        main.signature.parameters[0]?.kind !== "float" ||
+        main.signature.parameters[0]?.index !== 0
+      : main.signature.parameters.length !== 0) ||
     initialize.signature.stackBytes !== 32
   )
     return { ok: false, error: "invalid host entry signature" };
@@ -333,6 +342,17 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     imm(9, value);
     emit({ op: "scvtf-d-x", rd: register, rn: 9 });
   }
+  let workerEntryOffset: number | undefined;
+  if (request.threaded === true) {
+    // Root process forwards zero; worker forwards only its raw scalar argument.
+    imm(2, 0);
+    branch("host-start");
+    workerEntryOffset = instructions.length * 4;
+    move(2, 0);
+    imm(0, 0);
+    imm(1, 0);
+    label("host-start");
+  }
   // Preserve the system frame and all callee-saved registers used by startup.
   for (const first of [29, 19, 21, 23, 25, 27]) {
     if (first === undefined) throw "host save invariant";
@@ -355,6 +375,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     shift: 0,
     setFlags: false,
   });
+  if (request.threaded === true) move(27, 2);
   move(23, 0);
   move(24, 1);
   imm(20, 0);
@@ -482,6 +503,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   store(21, 104);
   imm(9, request.managedBytes);
   store(9, 128);
+  if (request.threaded === true) emit({ op: "scvtf-d-x", rd: 0, rn: 27 });
   privateCall(2, main.offset, false);
   emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 80 });
   emit({ op: "fcvtzs-w-d", rd: 25, rn: 0 });
@@ -613,6 +635,25 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     code.set(module.code, base);
     for (const fixup of module.imports) {
       if (fixup === undefined) throw "host import invariant";
+      if (fixup.target.name === "tint:hosted-thread-entry") {
+        if (workerEntryOffset === undefined)
+          return {
+            ok: false,
+            error: "thread entry requires threaded hosted startup",
+          };
+        const patched = patchRelativeAddress(code, {
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          targetOffset: workerEntryOffset,
+        });
+        if (!patched.ok)
+          return {
+            ok: false,
+            error: "thread entry relocation: " + patched.error,
+          };
+        continue;
+      }
       imports.push({
         offset: base + fixup.offset,
         rd: fixup.rd,
@@ -636,6 +677,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   }
   return {
     ok: true,
-    value: { code, entryOffset: 0, imports, moduleOffsets: bases },
+    value: {
+      code,
+      entryOffset: 0,
+      workerEntryOffset,
+      imports,
+      moduleOffsets: bases,
+    },
   };
 }

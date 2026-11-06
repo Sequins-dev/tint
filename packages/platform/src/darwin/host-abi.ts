@@ -7,6 +7,10 @@ export function darwinHostABI(): PosixHostABI {
       writeProtectSymbol: "_pthread_jit_write_protect_np",
       instructionCacheSymbol: "_sys_icache_invalidate",
     },
+    threads: {
+      createSymbol: "_pthread_create",
+      joinSymbol: "_pthread_join",
+    },
     symbolPrefix: "_",
     errnoSymbol: "___error",
     readFlags: 0,

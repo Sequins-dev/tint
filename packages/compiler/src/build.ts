@@ -42,6 +42,7 @@ function debugFrame(
   };
 }
 export interface BuildRequest {
+  readonly threaded?: boolean;
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
   readonly allowJit?: boolean;
@@ -272,6 +273,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     return failure("program", "program entry is missing");
   request.report("startup");
   const hosted = emitHostedEntry({
+    threaded: request.threaded ?? false,
     abi: darwinHostABI(),
     allocator: {
       native: allocator.value,

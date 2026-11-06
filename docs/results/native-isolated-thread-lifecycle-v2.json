@@ -1,0 +1,91 @@
+{
+  "kind": "native-thread-lifecycle-fixture",
+  "outcome": {
+    "kind": "completed"
+  },
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "823c1adee187bdad0b26bdb2b9ea28f533ca10a66e83c8158f9e629fa37122a3",
+      "files": 568
+    },
+    "imageSha256": "1232a3140998233a9253b25ea01767dc46ae2e7d9ca882baef9fc36b8cf6e420",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-isolated-threads-v1-hcoMgE/isolated-threads-v1.source.ts",
+    "fixtureSha256": "f3cfa9c8fab729a031f80bdf28636c5b74b7b798838e43941e2ef189b4e8abbb",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/build-isolated-v3.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "threaded": true,
+      "managedBytes": 1048576,
+      "allocationCapacity": 65536,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "hostBindings": [
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "mapMemory",
+          "operation": "memory-map"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "unmapMemory",
+          "operation": "memory-unmap"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "readMemoryWord",
+          "operation": "memory-read-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "writeMemoryWord",
+          "operation": "memory-write-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "startNativeThread",
+          "operation": "thread-start"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "joinNativeThread",
+          "operation": "thread-join"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "hostedThreadEntry",
+          "operation": "hosted-thread-entry"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "currentContextDomain",
+          "operation": "context-domain"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "currentRootHead",
+          "operation": "root-head"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedUnsigned",
+          "operation": "shared-read-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedUnsigned",
+          "operation": "shared-write-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "compareExchangeSharedUnsigned",
+          "operation": "shared-compare-exchange-unsigned"
+        }
+      ]
+    },
+    "debugSymbols": false
+  },
+  "scope": "One short process; eight isolated hosted worker contexts and one throwing worker. Not Test262 conformance."
+}
