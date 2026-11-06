@@ -73,7 +73,15 @@ The complete [`Intl.RelativeTimeFormat` family](results/test262-relative-time-na
 
 The complete weak-family selections pass [WeakMap **281/281**](results/test262-weak-map-native-v1.json), [WeakSet **169/170**](results/test262-weak-set-native-v1.json), [WeakRef **58/58**](results/test262-weak-ref-native-v1.json), and [FinalizationRegistry **93/94**](results/test262-finalization-registry-native-v1.json). WeakSet and FinalizationRegistry each retain one pre-entry launch failure, with no semantic failures or unsupported cases. The [real-GC lifetime fixture](results/native-weak-lifetimes-v2.json) also passes. These reports retain their own source snapshots.
 
-The complete [`language/statements/async-generator` selection](results/test262-async-generator-statements-current-native-v1.json) passes **590/590**, with zero failures, unsupported variants or infrastructure errors. The inherited frozen runner completed after removal of its obsolete keeper hold; [Phase 1 handoff](results/cluster-f-phase1-handoff-v1.json) records recovery and branch consolidation. The complete [`language/expressions/yield` selection](results/test262-cluster-f-yield-expressions-v1.json) passes **123/123**, with zero non-passes. The [native self-hosting gate](results/cluster-f-phase2-first-slice-acceptance-v1.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Remaining generator selections are in progress or deferred.
+These complete generator-language selections have zero failures, unsupported variants or infrastructure errors. Each report retains its own frozen source snapshot.
+
+| Selection | Pass/total | Report |
+| --- | ---: | --- |
+| `language/statements/async-generator` | 590/590 | [Report](results/test262-async-generator-statements-current-native-v1.json) |
+| `language/expressions/yield` | 123/123 | [Report](results/test262-cluster-f-yield-expressions-v1.json) |
+| `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
+
+The [native self-hosting gate](results/cluster-f-phase2-first-slice-acceptance-v1.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Generator-expression selections remain pending.
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
