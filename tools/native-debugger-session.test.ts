@@ -225,3 +225,108 @@ sys.modules['subprocess'] = types.SimpleNamespace(Popen=lambda *args,**kwargs:ty
     }
   },
 );
+
+test(
+  "connected launch waits for asynchronous readiness before launching exactly once",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const { execFileSync } = await import("node:child_process");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const directory = mkdtempSync(join(tmpdir(), "tint-connect-"));
+    const script = JSON.parse(
+      debugserverLaunchCommand(
+        "/tmp/program",
+        directory,
+        [],
+        50,
+        "connected",
+      ).slice("script exec(".length, -1),
+    );
+    // Model the LLDB contract: asynchronous connection can return before its
+    // process state is published. Launch is legal only after eStateConnected.
+    const driver = `
+import sys, types
+class Sock:
+ def __init__(self): self.reads=0
+ def settimeout(self, seconds): pass
+ def bind(self, path): pass
+ def listen(self, count): pass
+ def accept(self): return Sock(), None
+ def recv(self, count):
+  self.reads+=1
+  return b'1234' if self.reads==1 else b''
+ def close(self): pass
+sys.modules['socket']=types.SimpleNamespace(AF_UNIX=1,SOCK_STREAM=1,socket=lambda *args:Sock())
+sys.modules['subprocess']=types.SimpleNamespace(DEVNULL=-1,STDOUT=-2,Popen=lambda *args,**kwargs:types.SimpleNamespace(pid=123))
+class Result:
+ def Succeeded(self): return True
+ def GetOutput(self): return ''
+ def GetError(self): return ''
+class Process:
+ def __init__(self): self.state=4
+ def GetState(self): return self.state
+ def GetBroadcaster(self): return self
+ def RemoteLaunch(self,argv,envp,stdin,stdout,stderr,cwd,flags,stop,error):
+  assert self.GetState()==2
+  target.launches+=1
+  self.state=5
+  return True
+class Listener:
+ def __init__(self): self.events=0
+ def GetNextEventForBroadcasterWithType(self,broadcaster,mask,event):
+  assert broadcaster is target.process and mask==1
+  self.events+=1
+  broadcaster.state=2
+  return True
+class Error:
+ def Success(self): return True
+ def GetCString(self): return ''
+class Info:
+ def __init__(self,*args): pass
+ def SetExecutableFile(self,*args): pass
+ def SetLaunchFlags(self,*args): pass
+class Target:
+ def __init__(self): self.process=Process(); self.launches=0
+ def GetProcess(self): return self.process
+ def Launch(self,info,error):
+  raise AssertionError('must launch through the existing process')
+target=Target()
+listener=Listener()
+debugger=types.SimpleNamespace(GetListener=lambda:listener,SetAsync=lambda value:None,GetSelectedTarget=lambda:target,GetCommandInterpreter=lambda:types.SimpleNamespace(HandleCommand=lambda *args:None))
+lldb=types.SimpleNamespace(debugger=debugger,SBEvent=lambda:object(),SBProcess=types.SimpleNamespace(eBroadcastBitStateChanged=1),SBCommandReturnObject=Result,SBLaunchInfo=Info,SBError=Error,SBFileSpec=lambda path:path,eStateInvalid=0,eStateUnloaded=1,eStateConnected=2,eStateAttaching=3,eStateLaunching=4,eLaunchFlagDebug=1,eLaunchFlagStopAtEntry=2,eLaunchFlagDisableSTDIO=4,ePathTypeSupportExecutableDir=1,SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda value:types.SimpleNamespace(GetDirectory=lambda:'/tmp',GetFilename=lambda:'support')))
+exec(${JSON.stringify(script)})
+assert target.launches==1 and listener.events==1
+`;
+    try {
+      execFileSync("python3", ["-c", driver], {
+        timeout: 10000,
+        stdio: "pipe",
+      });
+      for (const [before, replacement, expected] of [
+        [
+          "self.state=4",
+          "self.state=8",
+          /unexpected remote connection state: 8/,
+        ],
+        [
+          "broadcaster.state=2",
+          "broadcaster.state=4",
+          /remote connection did not reach eStateConnected/,
+        ],
+      ] as const)
+        assert.throws(
+          () =>
+            execFileSync(
+              "python3",
+              ["-c", driver.replace(before, replacement)],
+              { timeout: 10000, stdio: "pipe" },
+            ),
+          expected,
+        );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);

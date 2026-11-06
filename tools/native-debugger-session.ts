@@ -28,7 +28,7 @@ export function debugserverLaunchCommand(
     ...(mode === "direct" ? [binary, ...arguments_] : []),
   ];
   const script = [
-    "import os, socket, subprocess",
+    "import os, socket, subprocess, time",
     "support = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)",
     "debugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')",
     "port_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)",
@@ -50,16 +50,32 @@ export function debugserverLaunchCommand(
     "port = int(b''.join(port_parts).decode('ascii'))",
     "assert 0 < port <= 65535",
     "connection_result = lldb.SBCommandReturnObject()",
-    ...(mode === "connected" ? ["lldb.debugger.SetAsync(True)"] : []),
+    ...(mode === "connected"
+      ? [
+          "lldb.debugger.SetAsync(True)",
+          "connection_started = time.monotonic()",
+        ]
+      : []),
     "lldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)",
     `open(${JSON.stringify(join(directory, "connection.log"))}, 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))`,
     "assert connection_result.Succeeded(), connection_result.GetError()",
   ];
   if (mode === "connected")
     script.push(
+      // Async connection may return before the primary listener publishes its
+      // state event. Consume only this process's state events before launching.
+      `connection_deadline = connection_started + ${startupTimeoutMs / 1000}`,
+      "while True:",
+      "    launch_process = lldb.debugger.GetSelectedTarget().GetProcess()",
+      "    connection_state = launch_process.GetState()",
+      "    if connection_state == lldb.eStateConnected: break",
+      "    assert connection_state in (lldb.eStateInvalid, lldb.eStateUnloaded, lldb.eStateAttaching, lldb.eStateLaunching), 'unexpected remote connection state: ' + str(connection_state)",
+      "    assert time.monotonic() < connection_deadline, 'remote connection did not reach eStateConnected'",
+      "    connection_event = lldb.SBEvent()",
+      "    if lldb.debugger.GetListener().GetNextEventForBroadcasterWithType(launch_process.GetBroadcaster(), lldb.SBProcess.eBroadcastBitStateChanged, connection_event): continue",
+      "    time.sleep(0.01)",
+      `open(${JSON.stringify(join(directory, "connection-ready.log"))}, 'w').write('state=' + str(connection_state) + ' elapsed=' + str(time.monotonic() - connection_started))`,
       "lldb.debugger.SetAsync(False)",
-      "launch_process = lldb.debugger.GetSelectedTarget().GetProcess()",
-      "assert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'",
       "launch_error = lldb.SBError()",
       // Launch through the connected process rather than asking SBTarget to
       // launch another process; retain the existing connection and listener.
@@ -89,6 +105,7 @@ export function readDebuggerSessionLogs(directory: string): string {
   for (const [label, filename] of [
     ["Debugserver", "debugserver.log"],
     ["Connection", "connection.log"],
+    ["Connection readiness", "connection-ready.log"],
     ["Launch", "launch.log"],
     ["Process state", "state.log"],
     ["Remote packets", "packets.log"],

@@ -1,0 +1,22 @@
+ (plugin = gdb-remote, state = connected)
+ (plugin = gdb-remote, state = stopped, restarted = 0)
+ Process::ControlPrivateStateThread (signal = 4)
+ Sending control event of type: 4.
+<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xcb9695800, pid = 0) thread starting...
+<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...
+<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xcb9695800, pid = 0) got a control event: 4
+<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...
+<lldb.process.internal-state(pid=0)>             Process::ShouldBroadcastEvent (0xcb66837a0) => new state: connected, last broadcast state: connected - YES
+<lldb.process.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public
+<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...
+lldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)
+ (plugin = gdb-remote status = 9 (0x00000009), description="killed")
+ (plugin = gdb-remote, state = exited)
+ (plugin = gdb-remote, state = exited, stop_id = 1
+<lldb.process.internal-state(pid=0)>             Process::ShouldBroadcastEvent (0xcb66837a0) => new state: exited, last broadcast state: exited - YES
+<lldb.process.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state exited (old state exited) to public
+<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xcb9695800, pid = 0) about to exit with internal state exited...
+<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xcb9695800, pid = 0) thread exiting...
+ Process::ControlPrivateStateThread (signal = 1)
+ Sending control event of type: 1.
+ Went to stop the private state thread, but it was already invalid.

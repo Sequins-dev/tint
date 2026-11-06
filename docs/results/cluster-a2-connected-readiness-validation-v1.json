@@ -1,0 +1,366 @@
+{
+  "kind": "native-debugger-connection-readiness-validation",
+  "generatedAt": "2026-11-06T22:17:03.470161+00:00",
+  "conformance": false,
+  "wholeSelection": false,
+  "finding": "Asynchronous gdb-remote can return before the primary process state-change event publishes eStateConnected. The old immediate assertion aborts before RemoteLaunch; the next LLDB command can then observe connected with PID 0.",
+  "reusedWork": {
+    "commit": "e2de561de11c0da65fd318e1ddf5308762f31561",
+    "origin": "Unmerged A3 connection-state event work",
+    "adaptation": "Consume only selected-process state events while keeping main 4514550 RemoteLaunch API and one launch attempt."
+  },
+  "binary": {
+    "path": ".tint-bootstrap/a2/object-syntax-batch0-diagnostic-image",
+    "sha256": "3c11626b4bfffbdeac6f43cbd25f8246f25004ed9ee38a70471150e40ef28fe0",
+    "origin": "Copied immutable parser-host image from fresh object batch 0; selector 0 is unchanged __proto__-duplicate.js sloppy parse-negative.",
+    "sourceSnapshot": "123935ef906ff413ccbc14759243a25d66e8ad9cf4a26ce1dfdea9504cc9378c",
+    "expectedExitStatus": 40,
+    "expectedExitMeaning": "Native parser SyntaxError; fixture body is never evaluated."
+  },
+  "baselineDebuggerSourceSha256": "50b5ff4b15416758e4509c112d18deea0e8f328979b20d9b85b490681c4000b3",
+  "fixedDebuggerSourceSha256": "cb54ee81d8f984e1bcd266de4b1924848a8f1bb0d635e7782f02ffcda4618ce0",
+  "nativeSeries": [
+    {
+      "series": "short-path-baseline",
+      "launches": [
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 52991
+          },
+          "dir": "/tmp/a2-lldb-rpm4G1",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 53529
+          },
+          "dir": "/tmp/a2-lldb-6QDqb6",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 53651
+          },
+          "dir": "/tmp/a2-lldb-vVqH7w",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 54590
+          },
+          "dir": "/tmp/a2-lldb-SlXWka",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 54863
+          },
+          "dir": "/tmp/a2-lldb-Srl8Dw",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 55133
+          },
+          "dir": "/tmp/a2-lldb-cNOBvl",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 55203
+          },
+          "dir": "/tmp/a2-lldb-7Uhc91",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 55288
+          },
+          "dir": "/tmp/a2-lldb-kqaKOF",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 55392
+          },
+          "dir": "/tmp/a2-lldb-wnEA5L",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 55548
+          },
+          "dir": "/tmp/a2-lldb-JsJN5Y",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        }
+      ]
+    },
+    {
+      "series": "native-path-baseline",
+      "launches": [
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 60376
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Kg1PZq",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": null,
+          "startupException": null
+        },
+        {
+          "status": 1,
+          "state": {
+            "state": 2,
+            "pid": 0
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iSjOts",
+          "final": null,
+          "readiness": null,
+          "startupException": "Traceback (most recent call last):\n  File \"<string>\", line 30, in <module>\nAssertionError: debugserver is not connected\n"
+        }
+      ]
+    },
+    {
+      "series": "fixed-native-path",
+      "launches": [
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80315
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BA8M4c",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006711624999999999",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80344
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-vh1x7P",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.005890791000000006",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80367
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-uF5jgF",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006575500000000012",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80399
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-gP7ZTC",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.005707624999999994",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80516
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-FqD6PF",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.00615858299999994",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80557
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-JXmlZS",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006812415999999988",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80573
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-QFvd2I",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006180792000000046",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80673
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6e0qqE",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006255458000000047",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80708
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jmeDBv",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.005346999999999991",
+          "startupException": null
+        },
+        {
+          "status": 0,
+          "state": {
+            "state": 5,
+            "pid": 80771
+          },
+          "dir": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-L3zep6",
+          "final": {
+            "state": 10,
+            "exit": 40
+          },
+          "readiness": "state=2 elapsed=0.006670833000000043",
+          "startupException": null
+        }
+      ]
+    }
+  ],
+  "unit": {
+    "red": {
+      "command": "node --test --test-concurrency=2 tools/native-debugger-session.test.ts",
+      "exitStatus": 1,
+      "log": "docs/results/a2-connected-readiness-red-v1.log"
+    },
+    "green": {
+      "command": "node --test --test-concurrency=2 tools/native-debugger-session.test.ts tools/test262-native.test.ts",
+      "exitStatus": 0,
+      "testsPassed": 31,
+      "log": "docs/results/a2-connected-readiness-green-v1.log"
+    }
+  },
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/a2/connected-readiness-build-v1.log",
+    "sha256": "f2e3592bfa3cbcb06298c00e758cafcae2402ab30b17a6415b230835a1bde120"
+  },
+  "portableSourceChanged": false,
+  "selfBuildRequired": false,
+  "measurementPolicy": "The running full object journal remains on frozen v3; all recorded infrastructure failures remain in its denominator and need separate focused rechecks. These debugger diagnostics add no Test262 coverage."
+}

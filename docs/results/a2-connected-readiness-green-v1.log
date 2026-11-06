@@ -1,0 +1,39 @@
+✔ debugserver terminates option parsing before forwarding inferior flags (1.165583ms)
+✔ debugger startup uses the caller's complete execution budget (0.341417ms)
+✔ synchronous debugger launch can own an isolated POSIX process group (26.246708ms)
+✔ connected launch publishes the stub before requesting the inferior (0.245667ms)
+✔ debugger scripts preserve Python syntax for quoted paths and arguments (73.351125ms)
+✔ debugger diagnostics retain launch state and bounded protocol evidence (1.953291ms)
+✔ optional process tracing quotes private paths and captures remote startup packets (0.292417ms)
+✔ Darwin debugger socket paths are checked in UTF-8 bytes before launch (0.315709ms)
+✔ connected sessions launch through the existing process rather than replacing it (38.361083ms)
+✔ connected launch waits for asynchronous readiness before launching exactly once (195.790209ms)
+✔ native harness failures retain their error type without becoming runtime failures (1.136083ms)
+✔ native outcomes distinguish completion, unsupported and exception phases (0.143458ms)
+✔ native preparation retains separate Script entries and rejects unavailable goals (13.5335ms)
+✔ parser limitations never masquerade as successful negative conformance (0.455166ms)
+✔ native debugger protocol requires verified normal termination (7.308667ms)
+✔ native preparation accepts synchronous sloppy and raw Script goals (2.157667ms)
+✔ native async exit outcomes preserve completion failures (0.155625ms)
+✔ native AggregateError outcomes retain their constructor (0.075917ms)
+✔ native parser rejection has a distinct parse-phase exit code (0.078583ms)
+✔ native debugger protocol requires a confirmed initial stop and a valid inferior PID (0.244209ms)
+✔ debugger launch experiments are explicit and reject invalid platform modes (0.242084ms)
+✔ frozen native hosts omit optional disposal imports when their source graph predates the intrinsic (27.408916ms)
+✔ native batches share one runtime while retaining separate ordered Script entry lists (6.362042ms)
+✔ native Test262Error outcomes preserve intentional runtime negatives (0.114792ms)
+✔ shared backing host imports require an explicit enabled public capability (12.161542ms)
+✔ Atomics query host installation requires its captured public capability (9.459458ms)
+✔ native pause hint uses an explicit captured provider role (2.4375ms)
+✔ atomic backing requires an explicit captured host capability (4.288625ms)
+✔ native batch cases retain independent agent suspension policies (2.834666ms)
+✔ native engine publication resolves its explicit public storage contract (2.059459ms)
+✔ an unused captured engine entry is available to the generated host without a package grant (5143.640667ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5548.392

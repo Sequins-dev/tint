@@ -1,0 +1,99 @@
+✔ debugserver terminates option parsing before forwarding inferior flags (2.039083ms)
+✔ debugger startup uses the caller's complete execution budget (0.365375ms)
+✔ synchronous debugger launch can own an isolated POSIX process group (9.708125ms)
+✔ connected launch publishes the stub before requesting the inferior (0.731959ms)
+✔ debugger scripts preserve Python syntax for quoted paths and arguments (65.012ms)
+✔ debugger diagnostics retain launch state and bounded protocol evidence (1.522ms)
+✔ optional process tracing quotes private paths and captures remote startup packets (0.193792ms)
+✔ Darwin debugger socket paths are checked in UTF-8 bytes before launch (0.259167ms)
+✔ connected sessions launch through the existing process rather than replacing it (35.177875ms)
+✖ connected launch waits for asynchronous readiness before launching exactly once (51.026417ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 256.115166
+
+✖ failing tests:
+
+test at tools/native-debugger-session.test.ts:229:1
+✖ connected launch waits for asynchronous readiness before launching exactly once (51.026417ms)
+  Error: Command failed: python3 -c 
+  import sys, types
+  class Sock:
+   def __init__(self): self.reads=0
+   def settimeout(self, seconds): pass
+   def bind(self, path): pass
+   def listen(self, count): pass
+   def accept(self): return Sock(), None
+   def recv(self, count):
+    self.reads+=1
+    return b'1234' if self.reads==1 else b''
+   def close(self): pass
+  sys.modules['socket']=types.SimpleNamespace(AF_UNIX=1,SOCK_STREAM=1,socket=lambda *args:Sock())
+  sys.modules['subprocess']=types.SimpleNamespace(DEVNULL=-1,STDOUT=-2,Popen=lambda *args,**kwargs:types.SimpleNamespace(pid=123))
+  class Result:
+   def Succeeded(self): return True
+   def GetOutput(self): return ''
+   def GetError(self): return ''
+  class Process:
+   def __init__(self): self.state=4
+   def GetState(self): return self.state
+   def GetBroadcaster(self): return self
+   def RemoteLaunch(self,argv,envp,stdin,stdout,stderr,cwd,flags,stop,error):
+    assert self.GetState()==2
+    target.launches+=1
+    self.state=5
+    return True
+  class Listener:
+   def __init__(self): self.events=0
+   def GetNextEventForBroadcasterWithType(self,broadcaster,mask,event):
+    assert broadcaster is target.process and mask==1
+    self.events+=1
+    broadcaster.state=2
+    return True
+  class Error:
+   def Success(self): return True
+   def GetCString(self): return ''
+  class Info:
+   def __init__(self,*args): pass
+   def SetExecutableFile(self,*args): pass
+   def SetLaunchFlags(self,*args): pass
+  class Target:
+   def __init__(self): self.process=Process(); self.launches=0
+   def GetProcess(self): return self.process
+   def Launch(self,info,error):
+    raise AssertionError('must launch through the existing process')
+  target=Target()
+  listener=Listener()
+  debugger=types.SimpleNamespace(GetListener=lambda:listener,SetAsync=lambda value:None,GetSelectedTarget=lambda:target,GetCommandInterpreter=lambda:types.SimpleNamespace(HandleCommand=lambda *args:None))
+  lldb=types.SimpleNamespace(debugger=debugger,SBEvent=lambda:object(),SBProcess=types.SimpleNamespace(eBroadcastBitStateChanged=1),SBCommandReturnObject=Result,SBLaunchInfo=Info,SBError=Error,SBFileSpec=lambda path:path,eStateInvalid=0,eStateUnloaded=1,eStateConnected=2,eStateAttaching=3,eStateLaunching=4,eLaunchFlagDebug=1,eLaunchFlagStopAtEntry=2,eLaunchFlagDisableSTDIO=4,ePathTypeSupportExecutableDir=1,SBHostOS=types.SimpleNamespace(GetLLDBPath=lambda value:types.SimpleNamespace(GetDirectory=lambda:'/tmp',GetFilename=lambda:'support')))
+  exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(0.05)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/port\",\"--\",\"127.0.0.1:0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(0.05)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.SetAsync(True)\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()\nlldb.debugger.SetAsync(False)\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\nlaunch_error = lldb.SBError()\nlaunch_succeeded = launch_process.RemoteLaunch([], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/launch.log\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()")
+  assert target.launches==1 and listener.events==1
+  
+  Traceback (most recent call last):
+    File "<string>", line 51, in <module>
+      exec("import os, socket, subprocess\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(0.05)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/port\",\"--\",\"127.0.0.1:0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(0.05)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.SetAsync(True)\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()\nlldb.debugger.SetAsync(False)\nlaunch_process = lldb.debugger.GetSelectedTarget().GetProcess()\nassert launch_process.GetState() == lldb.eStateConnected, 'debugserver is not connected'\nlaunch_error = lldb.SBError()\nlaunch_succeeded = launch_process.RemoteLaunch([], None, None, None, None, None, lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO, True, launch_error)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-connect-Fcu6S6/launch.log\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\nassert launch_succeeded and launch_error.Success(), launch_error.GetCString()")
+      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "<string>", line 29, in <module>
+      def __init__(self): self.events=0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  AssertionError: debugserver is not connected
+  
+      at genericNodeError (node:internal/errors:985:15)
+      at wrappedFn (node:internal/errors:539:14)
+      at checkExecSyncError (node:child_process:925:11)
+      at execFileSync (node:child_process:961:15)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95/tools/native-debugger-session.test.ts:303:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    status: 1,
+    signal: null,
+    output: [ null, <Buffer >, <Buffer 54 72 61 63 65 62 61 63 6b 20 28 6d 6f 73 74 20 72 65 63 65 6e 74 20 63 61 6c 6c 20 6c 61 73 74 29 3a 0a 20 20 46 69 6c 65 20 22 3c 73 74 72 69 6e 67 ... 5008 more bytes> ],
+    pid: 75579,
+    stdout: <Buffer >,
+    stderr: <Buffer 54 72 61 63 65 62 61 63 6b 20 28 6d 6f 73 74 20 72 65 63 65 6e 74 20 63 61 6c 6c 20 6c 61 73 74 29 3a 0a 20 20 46 69 6c 65 20 22 3c 73 74 72 69 6e 67 ... 5008 more bytes>
+  }
