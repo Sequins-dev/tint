@@ -1,0 +1,46 @@
+{
+  "kind": "cluster-j-string-charcodes-allocation-reproduction",
+  "at": "2026-11-06T23:40:59.485029+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+    "files": 569
+  },
+  "frozenToolchain": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v11",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-wn50H1/string-charcodes",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+      "files": 569
+    },
+    "imageSha256": "39b595ff3791cfc7a90446de69a7eb3041af7eb79c296f29a2b50dae3fb8d515",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-wn50H1/string-charcodes.source.ts",
+    "fixtureSha256": "f8f8bed38e6d274fd8ebec299d7f227d2b84604d45ee7e685b3140f19e7d977e",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v11/tools/verify-hosted-string-charcodes.ts"
+    ],
+    "generatedModulesSha256": "6952e58d6e41b71d4352490f10e92ca67896d13f7140caec3abba9193e0e59aa",
+    "options": {
+      "runtimeModule": "string-charcodes-region-runtime",
+      "runtimeEntry": "initializeRuntime",
+      "managedBytes": 67108864,
+      "allocationCapacity": 1048576,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": true
+  },
+  "manifestSha256": "4fdef1502b1d7ea240e124b68a9e0774753cbaa9d96e1e1288916c5e774b961e",
+  "debuggerLaunch": "debugserver-direct",
+  "outcome": {
+    "kind": "completed"
+  },
+  "expectedOutcome": "completed",
+  "elapsedSeconds": 2.5023467499995604,
+  "validationContract": "Frozen executeNativeFile independently validates initial stopped state with positive PID. Only final exited42 maps to completed. Stopped faults are contained and killed before debugger exit.",
+  "logs": [
+    ".tint-bootstrap/j-charcodes-green-v11.build.log",
+    ".tint-bootstrap/j-charcodes-green-v11.execute.log"
+  ]
+}

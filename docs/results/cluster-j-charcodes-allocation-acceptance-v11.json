@@ -1,0 +1,100 @@
+{
+  "kind": "cluster-j-string-charcodes-allocation-acceptance",
+  "at": "2026-11-06T23:44:23.903611+00:00",
+  "conformance": false,
+  "purpose": "Eliminate quadratic accumulated-string copying while preserving String.fromCharCode coercions and order. A fixed64MiB noncollecting region bounds total native allocation independently of CPU share.",
+  "controls": {
+    "fixtureSha256": "f8f8bed38e6d274fd8ebec299d7f227d2b84604d45ee7e685b3140f19e7d977e",
+    "generatedModulesSha256": "6952e58d6e41b71d4352490f10e92ca67896d13f7140caec3abba9193e0e59aa",
+    "options": {
+      "runtimeModule": "string-charcodes-region-runtime",
+      "runtimeEntry": "initializeRuntime",
+      "managedBytes": 67108864,
+      "allocationCapacity": 1048576,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": true,
+    "debuggerLaunch": "debugserver-direct",
+    "portableSourceChanges": [
+      "packages/js-runtime/src/objects/primitive-intrinsics.ts"
+    ],
+    "otherPortableSourcesByteIdentical": 568,
+    "fixtureToolAndHostedHelperAndNativeProcessHelperByteIdentical": true
+  },
+  "red": {
+    "sourceSnapshot": {
+      "sha256": "fdb21c8b50d280c171a22fc2ff3c9dbcf6747bfb3abc2061aa659d96f4fd3849",
+      "files": 569
+    },
+    "outcome": "crash",
+    "expected": true,
+    "location": "primitive-intrinsics.ts:456, text += String.fromCharCode(number(argument));",
+    "seconds": 2.4447859170031734
+  },
+  "green": {
+    "sourceSnapshot": {
+      "sha256": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+      "files": 569
+    },
+    "outcome": "completed",
+    "expectedExitStatus": 42,
+    "seconds": 2.5023467499995604
+  },
+  "semanticChecks": {
+    "before": {
+      "tests": 6,
+      "passed": 6,
+      "exitStatus": 0
+    },
+    "after": {
+      "tests": 6,
+      "passed": 6,
+      "exitStatus": 0
+    },
+    "pnpmBuild": 0,
+    "testTypecheck": 0,
+    "hostTypecheck": 0
+  },
+  "validationContract": "Frozen executeNativeFile independently validates initial stopped state with positive PID. Only final exited42 maps to completed. Stopped faults are contained and killed before debugger exit.",
+  "interpretation": "The original exhausts the fixed allocation region; the balanced implementation completes the full20000-code-unit result. Elapsed times include debugger startup and are not a speedup benchmark. This bespoke regression is separate from unchanged native Test262 evidence.",
+  "evidence": [
+    {
+      "path": "docs/results/cluster-j-charcodes-red-v10.json",
+      "sha256": "d6ceccd98ddedd051a9448207b9524c0208f84e3aadb18afc25934e46a64b083"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-red-v10.build.log",
+      "sha256": "392e40613cd92ce25a875b3fc13872055e18deddf3e2e9a0d781b3c9d241bf83"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-red-v10.execute.log",
+      "sha256": "51b5bc1e343cf7a611dcf52be13dee8752b2f8aa21af393f3f79f0b77b5a3f80"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-green-v11.json",
+      "sha256": "091f2d1e4ffbe1e9add39ad7b9b27ea8854c663bc399b7fd001c4afeca3d5ee7"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-green-v11.build.log",
+      "sha256": "03ade8680d1586adc508f11e823b42cacf8ab791706098d2c8950d4c46941574"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-green-v11.execute.log",
+      "sha256": "be082efd8e350dba3d472c8480ed2ca891deec32520100b6ed1e9b901e8089cc"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-allocation-fixture-v10.ts",
+      "sha256": "f8f8bed38e6d274fd8ebec299d7f227d2b84604d45ee7e685b3140f19e7d977e"
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-baseline-red-v9.json",
+      "sha256": "7c81dd5b785d35229d073bfbb5c16a8c15161914af67238a4a1339a9bf0aad13",
+      "role": "Earlier unchanged-source baseline on frozen v9; retained separately from matched v10/v11 acceptance."
+    },
+    {
+      "path": "docs/results/cluster-j-charcodes-baseline-debug-red-v9.json",
+      "sha256": "63b732b803d17e9aeed0481a361d2ff966aef1825addc583bcb22da239efa7f0",
+      "role": "Earlier unchanged-source baseline on frozen v9; retained separately from matched v10/v11 acceptance."
+    }
+  ]
+}

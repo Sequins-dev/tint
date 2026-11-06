@@ -1,0 +1,47 @@
+{
+  "kind": "cluster-j-string-charcodes-allocation-reproduction",
+  "at": "2026-11-06T23:38:23.782204+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "fdb21c8b50d280c171a22fc2ff3c9dbcf6747bfb3abc2061aa659d96f4fd3849",
+    "files": 569
+  },
+  "frozenToolchain": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v10",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-lHA5bT/string-charcodes",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "fdb21c8b50d280c171a22fc2ff3c9dbcf6747bfb3abc2061aa659d96f4fd3849",
+      "files": 569
+    },
+    "imageSha256": "96d9d74d21a362971a9c95c1beec180d88738f39d43b6a9621019fac34498d18",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-lHA5bT/string-charcodes.source.ts",
+    "fixtureSha256": "f8f8bed38e6d274fd8ebec299d7f227d2b84604d45ee7e685b3140f19e7d977e",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v10/tools/verify-hosted-string-charcodes.ts"
+    ],
+    "generatedModulesSha256": "6952e58d6e41b71d4352490f10e92ca67896d13f7140caec3abba9193e0e59aa",
+    "options": {
+      "runtimeModule": "string-charcodes-region-runtime",
+      "runtimeEntry": "initializeRuntime",
+      "managedBytes": 67108864,
+      "allocationCapacity": 1048576,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": true
+  },
+  "manifestSha256": "4c5dd9b750ab90c1c04f9da05f5bba6327f5f43b942b816eeaae7b7303fac228",
+  "debuggerLaunch": "debugserver-direct",
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: \nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-lHA5bT/string-charcodes\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-lHA5bT/string-charcodes' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(60)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-charcodes-lHA5bT/string-charcodes\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jf2hbl/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 67916 resuming\nProcess 67916 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x100ed1048)\n       frame #0: 0x0000000100ed1048 string-charcodes`program:packages/js-runtime/src/objects/primitive-intrinsics.ts:closure@15673 [closure_4058] at primitive-intrinsics.ts:456:11\n   453 \t      (receiver, args): unknown => {\n   454 \t        let text = \"\";\n   455 \t        for (const argument of args)\n-> 456 \t          text += String.fromCharCode(number(argument));\n    \t          ^\n   457 \t        return text;\n   458 \t      },\n   459 \t      hooks,\nTarget 0: (string-charcodes) stopped.\n\nDebugserver: \nConnection: Process 67916 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x0000000101bf89c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x101bf89c0 <+0>:  mov    x0, sp\n    0x101bf89c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x101bf89c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x101bf89cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (string-charcodes) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+  },
+  "expectedOutcome": "crash",
+  "elapsedSeconds": 2.4447859170031734,
+  "validationContract": "Frozen executeNativeFile independently validates initial stopped state with positive PID. Only final exited42 maps to completed. Stopped faults are contained and killed before debugger exit.",
+  "logs": [
+    ".tint-bootstrap/j-charcodes-red-v10.build.log",
+    ".tint-bootstrap/j-charcodes-red-v10.execute.log"
+  ]
+}
