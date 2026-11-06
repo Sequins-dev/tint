@@ -34,7 +34,10 @@ scripts, script extensions and binary character properties use the reusable
 ZWJ sequence tables, generated with checked source digests. All seven string
 properties, including `RGI_Emoji`, compile through the existing Unicode-set string
 matcher, preserving set intersection/subtraction, longest-first matching,
-backtracking and lookbehind. The [native red/green fixture](results/regexp-string-properties-native-red-green-v1.json)
+backtracking and lookbehind. Matching uses sorted, case-folded property tables
+rather than scanning every string alternative. The [joined-corpus native fixture](results/regexp-indexed-string-properties-native-v1.json)
+retains its pre-fix budget failure and verifies whole-corpus forward/reverse matching
+and case folding after indexing. The [native red/green fixture](results/regexp-string-properties-native-red-green-v1.json)
 checks the matching path; the [host corpus](results/regexp-string-properties-host-corpus-v1.json)
 checks 15,812 property/union relations against the official input files. These
 fixtures are separate from unchanged Test262 selection results; complete reruns

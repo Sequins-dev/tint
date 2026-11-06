@@ -324,3 +324,57 @@ test("default matching budget permits linear scans of large inputs while explici
     "limit",
   );
 });
+
+test("string properties match joined Unicode corpora without exhausting the default budget", async () => {
+  const { stringPropertyNames, stringPropertyValues } =
+    await import("../src/regexp/engine/string-property-data.ts");
+  const all: string[] = [];
+  for (let i = 0; i < stringPropertyNames.length; i++) {
+    const values = stringPropertyValues[i]!;
+    all.push(...values);
+    const compiled = compileRegExp(
+      String.raw`^\p{${stringPropertyNames[i]}}+$`,
+      "v",
+    );
+    assert.ok(compiled.ok);
+    assert.equal(
+      executeRegExp(compiled.value, values.join("")).kind,
+      "match",
+      stringPropertyNames[i],
+    );
+    const input = values.join("");
+    const reverse = compileRegExp(
+      String.raw`(?<=^\p{${stringPropertyNames[i]}}+)$`,
+      "v",
+    );
+    assert.ok(reverse.ok);
+    assert.equal(
+      executeRegExp(reverse.value, input, input.length, true).kind,
+      "match",
+      stringPropertyNames[i],
+    );
+  }
+  const compiled = compileRegExp(String.raw`^\p{RGI_Emoji}+$`, "v");
+  assert.ok(compiled.ok);
+  assert.equal(executeRegExp(compiled.value, all.join("")).kind, "match");
+});
+
+test("indexed string properties fold case and retain nonmember suffixes during lookbehind", () => {
+  for (const flags of ["v", "vi"]) {
+    const compiled = compileRegExp(String.raw`^\p{Basic_Emoji}$`, flags);
+    assert.ok(compiled.ok);
+    assert.equal(
+      executeRegExp(compiled.value, "ⓜ️").kind,
+      flags === "vi" ? "match" : "no-match",
+    );
+  }
+  const compiled = compileRegExp(
+    String.raw`(?<=(^\p{RGI_Emoji_ZWJ_Sequence}))x`,
+    "v",
+  );
+  assert.ok(compiled.ok);
+  const result = executeRegExp(compiled.value, "👩‍💻x");
+  assert.equal(result.kind, "match");
+  if (result.kind === "match")
+    assert.deepEqual(result.match.captures[1], { start: 0, end: 5 });
+});

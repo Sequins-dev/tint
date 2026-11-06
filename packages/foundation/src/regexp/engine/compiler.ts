@@ -1,7 +1,4 @@
-import {
-  stringPropertyNames,
-  stringPropertyValues,
-} from "./string-property-data.ts";
+import { stringPropertyNames } from "./string-property-data.ts";
 import { unicodePropertyRanges } from "../../unicode/properties/index.ts";
 import {
   parseRegExp,
@@ -10,7 +7,7 @@ import {
   type ClassSetExpression,
   type RegExpResult,
 } from "../syntax/index.ts";
-import type { Instruction, RegExpProgram } from "./model.ts";
+import type { CompiledClassSet, Instruction, RegExpProgram } from "./model.ts";
 interface Options {
   readonly ignoreCase: boolean;
   readonly multiline: boolean;
@@ -65,32 +62,21 @@ export function compileRegExp(
     )
       reject("Unicode property membership tables are not implemented");
   }
-  function prepareEntry(entry: ClassEntry): ClassSetExpression {
+  function prepareEntry(entry: ClassEntry): CompiledClassSet {
     if (entry.kind !== "property" || !entry.strings) {
       validateEntry(entry);
       return { kind: "entry", entry };
     }
-    const operands: ClassSetExpression[] = [];
-    for (let i = 0; i < stringPropertyNames.length; i++) {
-      if (
-        entry.property !== "RGI_Emoji" &&
-        entry.property !== stringPropertyNames[i]
-      )
-        continue;
-      const alternatives = stringPropertyValues[i];
-      if (alternatives === undefined) throw "REGEXP_STRING_PROPERTY_INVARIANT";
-      operands.push({ kind: "strings", alternatives });
-    }
-    if (operands.length === 0)
+    if (!stringPropertyNames.includes(entry.property))
       reject("Unicode string property tables are not implemented");
-    return { kind: "union", operands };
+    return { kind: "string-property", property: entry.property };
   }
-  function prepareSet(set: ClassSetExpression): ClassSetExpression {
+  function prepareSet(set: ClassSetExpression): CompiledClassSet {
     if (set.kind === "entry") return prepareEntry(set.entry);
     if (set.kind === "strings") return set;
     if (set.kind === "complement")
       return { kind: "complement", body: prepareSet(set.body) };
-    const operands: ClassSetExpression[] = [];
+    const operands: CompiledClassSet[] = [];
     for (const child of set.operands) {
       if (child === undefined) throw "REGEXP_SET_INVARIANT";
       operands.push(prepareSet(child));
@@ -135,7 +121,7 @@ export function compileRegExp(
       if (
         node.entries.some((entry) => entry.kind === "property" && entry.strings)
       ) {
-        const operands: ClassSetExpression[] = [];
+        const operands: CompiledClassSet[] = [];
         for (const entry of node.entries) {
           if (entry === undefined) throw "REGEXP_CLASS_INVARIANT";
           operands.push(prepareEntry(entry));

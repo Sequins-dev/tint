@@ -1,0 +1,88 @@
+{
+  "kind": "hosted-native-regexp-indexed-string-properties",
+  "conformance": false,
+  "observations": [
+    {
+      "phase": "red",
+      "expectedExit": 3,
+      "nativeEntryAndExitConfirmed": true,
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "8942ad387811c9b6d29f99e6925e39116b9cae15d20e3427b52b6abc74a640de",
+          "files": 569
+        },
+        "imageSha256": "e64978285f287ced32d16f22ab2f6940a2f21a85ca96e6491938a7248c3144e3",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-yNNjMQ/regexp-string-property-corpus.source.ts",
+        "fixtureSha256": "e727f302c4be34ea65c9a6362830d90b3a70742a9672072ebaf4aa54533fef7f",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/regexp-string-corpus-red.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 268435456,
+          "allocationCapacity": 8388608
+        },
+        "debugSymbols": false
+      },
+      "fixture": "\nimport {compileRegExp,executeRegExp} from \"engine\";\nimport {stringPropertyNames,stringPropertyValues} from \"data\";\nexport function run():number {\n const slash=String.fromCharCode(92),all:string[]=[];\n for(let i=0;i<stringPropertyNames.length;i++) {\n  const name=stringPropertyNames[i],values=stringPropertyValues[i];if(name===undefined||values===undefined)return 1;\n  const compiled=compileRegExp(\"^\"+slash+\"p{\"+name+\"}+$\",\"v\");if(!compiled.ok)return 2;\n  if(executeRegExp(compiled.value,values.join(\"\")).kind!==\"match\")return 3;\n  for(const value of values){if(value===undefined)return 5;all.push(value);}\n }\n const compiled=compileRegExp(\"^\"+slash+\"p{RGI_Emoji}+$\",\"v\");\n if(!compiled.ok||executeRegExp(compiled.value,all.join(\"\")).kind!==\"match\")return 4;\n return 42;\n}",
+      "lldbLog": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-yNNjMQ/regexp-string-property-corpus\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-yNNjMQ/regexp-string-property-corpus' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 57319 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-yNNjMQ/regexp-string-property-corpus' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 57319 resuming\nProcess 57319 exited with status = 3 (0x00000003)\n(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 3\n"
+    },
+    {
+      "phase": "green",
+      "expectedExit": 42,
+      "nativeEntryAndExitConfirmed": true,
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "bd2144eae70ae5550d07957e682e5c67abc9e48adbee8d9a3cf82bf337c3feb0",
+          "files": 569
+        },
+        "imageSha256": "a001f31e66d23ae2081dfba15942bd7837d82a5e0574532025147fa674e4577a",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-9qiMgv/regexp-string-property-corpus.source.ts",
+        "fixtureSha256": "e727f302c4be34ea65c9a6362830d90b3a70742a9672072ebaf4aa54533fef7f",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/tools/verify-hosted-regexp-string-property-corpus.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 268435456,
+          "allocationCapacity": 8388608
+        },
+        "debugSymbols": false
+      },
+      "fixture": "\nimport {compileRegExp,executeRegExp} from \"engine\";\nimport {stringPropertyNames,stringPropertyValues} from \"data\";\nexport function run():number {\n const slash=String.fromCharCode(92),all:string[]=[];\n for(let i=0;i<stringPropertyNames.length;i++) {\n  const name=stringPropertyNames[i],values=stringPropertyValues[i];if(name===undefined||values===undefined)return 1;\n  const compiled=compileRegExp(\"^\"+slash+\"p{\"+name+\"}+$\",\"v\");if(!compiled.ok)return 2;\n  if(executeRegExp(compiled.value,values.join(\"\")).kind!==\"match\")return 3;\n  for(const value of values){if(value===undefined)return 5;all.push(value);}\n }\n const compiled=compileRegExp(\"^\"+slash+\"p{RGI_Emoji}+$\",\"v\");\n if(!compiled.ok||executeRegExp(compiled.value,all.join(\"\")).kind!==\"match\")return 4;\n return 42;\n}",
+      "lldbLog": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-9qiMgv/regexp-string-property-corpus\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-9qiMgv/regexp-string-property-corpus' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 58440 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-9qiMgv/regexp-string-property-corpus' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 58440 resuming\nProcess 58440 exited with status = 42 (0x0000002a)\n(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\n"
+    },
+    {
+      "phase": "boundary-expansion",
+      "expectedExit": 42,
+      "nativeEntryAndExitConfirmed": true,
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "bd2144eae70ae5550d07957e682e5c67abc9e48adbee8d9a3cf82bf337c3feb0",
+          "files": 569
+        },
+        "imageSha256": "9dde3c4c142914b021a14e02eee79402287963664279d0a90573c3df68a24edb",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-YcCa0x/regexp-string-property-corpus.source.ts",
+        "fixtureSha256": "929f57a70396988abcaaa9e4fa4f086279a43b1af23cc2e1c57802bb54348aac",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/tools/verify-hosted-regexp-string-property-corpus.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 268435456,
+          "allocationCapacity": 8388608
+        },
+        "debugSymbols": false
+      },
+      "fixture": "\nimport {compileRegExp,executeRegExp} from \"engine\";\nimport {stringPropertyNames,stringPropertyValues} from \"data\";\nexport function run():number {\n const slash=String.fromCharCode(92),all:string[]=[];\n for(let i=0;i<stringPropertyNames.length;i++) {\n  const name=stringPropertyNames[i],values=stringPropertyValues[i];if(name===undefined||values===undefined)return 1;\n  const compiled=compileRegExp(\"^\"+slash+\"p{\"+name+\"}+$\",\"v\");if(!compiled.ok)return 2;\n  if(executeRegExp(compiled.value,values.join(\"\")).kind!==\"match\")return 3;\n  const input=values.join(\"\");\n  const reverse=compileRegExp(\"(?<=^\"+slash+\"p{\"+name+\"}+)$\",\"v\");\n  if(!reverse.ok||executeRegExp(reverse.value,input,input.length,true).kind!==\"match\")return 6;\n  for(const value of values){if(value===undefined)return 5;all.push(value);}\n }\n const compiled=compileRegExp(\"^\"+slash+\"p{RGI_Emoji}+$\",\"v\");\n if(!compiled.ok||executeRegExp(compiled.value,all.join(\"\")).kind!==\"match\")return 4;\n const folded=compileRegExp(\"^\"+slash+\"p{Basic_Emoji}$\",\"vi\");\n if(!folded.ok||executeRegExp(folded.value,\"\u24dc\ufe0f\").kind!==\"match\")return 7;\n return 42;\n}",
+      "lldbLog": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-YcCa0x/regexp-string-property-corpus\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-YcCa0x/regexp-string-property-corpus' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 69875 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-string-property-corpus-YcCa0x/regexp-string-property-corpus' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\n(lldb) continue\nProcess 69875 resuming\nProcess 69875 exited with status = 42 (0x0000002a)\n(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\n"
+    }
+  ],
+  "initialFixtureBuildFailure": "The original fixture lacked an explicit undefined-element guard on its corpus array traversal; the compiler rejected it before emitting an image. The guarded reproduction above is the first native observation."
+}

@@ -8,7 +8,14 @@ import {
   foldedRange,
   foldedProperty,
 } from "./case-fold.ts";
-import type { ClassEntry, ClassSetExpression } from "../syntax/index.ts";
+import type { ClassEntry } from "../syntax/index.ts";
+import type { CompiledClassSet } from "./model.ts";
+import {
+  stringPropertyNames,
+  stringPropertyValues,
+  foldedStringPropertyValues,
+  stringPropertyMaxLengths,
+} from "./string-property-data.ts";
 export interface Character {
   readonly value: number;
   readonly end: number;
@@ -99,9 +106,60 @@ export function entryMatches(
 function addUnique(result: number[], value: number): void {
   if (!result.includes(value)) result.push(value);
 }
+/** Find every matching prefix/suffix in the sorted Unicode string table. */
+function propertyEnds(
+  property: string,
+  input: string,
+  position: number,
+  direction: number,
+  budget: WorkBudget,
+  ignoreCase: boolean,
+): number[] {
+  const index = stringPropertyNames.indexOf(property);
+  const values = ignoreCase
+    ? foldedStringPropertyValues[index]
+    : stringPropertyValues[index];
+  const maxLength = stringPropertyMaxLengths[index];
+  if (values === undefined || maxLength === undefined)
+    throw "REGEXP_STRING_PROPERTY_INVARIANT";
+  const result: number[] = [];
+  let end = position,
+    text = "";
+  while (text.length < maxLength) {
+    if (--budget.remaining < 0) break;
+    const character = readCharacter(input, end, direction, true);
+    if (character === undefined) break;
+    end = character.end;
+    const unit = String.fromCodePoint(
+      ignoreCase ? canonicalize(character.value, true) : character.value,
+    );
+    text = direction > 0 ? text + unit : unit + text;
+    if (text.length > maxLength) break;
+    let low = 0,
+      high = values.length;
+    while (low < high) {
+      if (--budget.remaining < 0) return result;
+      const middle = Math.floor((low + high) / 2),
+        value = values[middle];
+      if (value === undefined) throw "REGEXP_STRING_PROPERTY_INVARIANT";
+      if (value < text) low = middle + 1;
+      else high = middle;
+    }
+    const candidate = values[low];
+    if (candidate === text) result.push(end);
+    // A failed forward prefix cannot be repaired by extending it. Backward
+    // matching must keep looking: a nonmember suffix can belong to a longer string.
+    if (
+      direction > 0 &&
+      (candidate === undefined || !candidate.startsWith(text))
+    )
+      break;
+  }
+  return result;
+}
 /** Set operations compare consumed strings through their unique endpoint. */
 export function setEnds(
-  set: ClassSetExpression,
+  set: CompiledClassSet,
   input: string,
   position: number,
   direction: number,
@@ -109,6 +167,15 @@ export function setEnds(
   ignoreCase: boolean = false,
 ): number[] {
   if (--budget.remaining < 0) return [];
+  if (set.kind === "string-property")
+    return propertyEnds(
+      set.property,
+      input,
+      position,
+      direction,
+      budget,
+      ignoreCase,
+    );
   if (set.kind === "entry") {
     const character = readCharacter(input, position, direction, true);
     return character !== undefined &&

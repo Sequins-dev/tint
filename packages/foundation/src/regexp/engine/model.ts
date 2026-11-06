@@ -1,9 +1,14 @@
-import type {
-  ClassEntry,
-  ClassSetExpression,
-  NamedCapture,
-  RegExpFlags,
-} from "../syntax/index.ts";
+import type { ClassEntry, NamedCapture, RegExpFlags } from "../syntax/index.ts";
+/** Matching-only property references keep generated string tables out of the syntax AST. */
+export type CompiledClassSet =
+  | { readonly kind: "entry"; readonly entry: ClassEntry }
+  | { readonly kind: "strings"; readonly alternatives: readonly string[] }
+  | { readonly kind: "string-property"; readonly property: string }
+  | {
+      readonly kind: "union" | "intersection" | "subtraction";
+      readonly operands: readonly CompiledClassSet[];
+    }
+  | { readonly kind: "complement"; readonly body: CompiledClassSet };
 export type Instruction =
   | { readonly kind: "accept" }
   | {
@@ -23,7 +28,7 @@ export type Instruction =
   | {
       readonly kind: "set";
       readonly ignoreCase: boolean;
-      readonly body: ClassSetExpression;
+      readonly body: CompiledClassSet;
       readonly next: number;
     }
   | {
