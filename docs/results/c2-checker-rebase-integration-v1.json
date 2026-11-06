@@ -1,0 +1,34 @@
+{
+  "kind": "c2-checker-rebase-integration",
+  "conformance": false,
+  "base": "b7aa59a648bf8168c8c56778ec15e9ecc7edac7c",
+  "rebasedHead": "204bdd93a5f35bc0ccf5843dc1281642ca508198",
+  "implementationCommit": "b6d980f",
+  "previousImplementationCommit": "d0a480a",
+  "previousAcceptance": "docs/results/c2-checker-flow-acceptance-v1.json",
+  "checkerSourceUnchanged": true,
+  "checkerSha256": "827003d4b27cb04aea1ba5804a41f46247640bb3bae56c3733f60392b81bcbc7",
+  "sourceSnapshot": {
+    "sha256": "96cd5816f12e2cf389d959a1564ce854aff3596b081d08b3147a5b804f87ad28",
+    "files": 568
+  },
+  "changedSinceNativeSnapshot": [
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-engine/src/lowering/runtime-imports.ts",
+    "packages/js-engine/src/script-evaluation.ts",
+    "packages/js-runtime/src/environments/global/index.ts",
+    "packages/js-runtime/src/environments/global/scope.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/index.ts"
+  ],
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4507,
+    "passed": 4507,
+    "failed": 0,
+    "log": ".tint-bootstrap/c2/check-v7.log",
+    "logSha256": "b3255bb59258ad7e87f580f1ada3166346b649815ef102db85aa6ca2c9881451"
+  },
+  "nativeProvenance": "Earlier native checker regression and self-build evidence retains its own frozen inputs. The rebase changed seven Annex B/eval files from main, not the checker fix. No native execution on this rebased source graph is claimed by this report. The active statement-elements run continues on its original frozen-v9 graph."
+}
