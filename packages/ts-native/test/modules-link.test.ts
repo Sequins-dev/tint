@@ -2,7 +2,7 @@ import { checkClosureModule } from "@tint/typescript/checker";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
-import { parseModule } from "@tint/typescript/syntax";
+import { parseModule, rewriteModule } from "@tint/typescript/syntax";
 import { bindModule } from "@tint/typescript/binding";
 import {
   linkModules,
@@ -751,4 +751,39 @@ test("linking rebases retained export source starts without changing declaration
     start: original.start,
     end: original.end,
   });
+});
+
+test("linked copies receive fresh graph hashes when generated source hashes collide", () => {
+  const dep = input("dep", "export function add(n:number):number{return n+1;}");
+  const main = input(
+    "main",
+    'import {add} from "dep";export function run(n:number):number{return add(n);}',
+    [["dep", "dep"]],
+  );
+  const sources = [main, dep].map((source) => ({
+    ...source,
+    module: rewriteModule(source.module, {
+      statement: (node) => ({ ...node, start: 0, end: 0, nodeHash: 0 }),
+      expression: (node) => ({ ...node, start: 0, end: 0, nodeHash: 0 }),
+      type: (node) => ({ ...node, start: 0, end: 0, nodeHash: 0 }),
+    }),
+  }));
+  const before = JSON.stringify(sources);
+  const linked = linkModules(sources, "main", []);
+  assert.ok(linked.ok, JSON.stringify(linked));
+  const hashes = new Set<number>();
+  linked.value.origins.forEach((origin, node) => {
+    assert.equal(typeof node.nodeHash, "number");
+    const hash = node.nodeHash!;
+    assert.ok(
+      !hashes.has(hash),
+      "distinct linked copies must not inherit one source hash",
+    );
+    hashes.add(hash);
+    assert.ok(origin.module === "main" || origin.module === "dep");
+  });
+  assert.ok(hashes.size > 5);
+  assert.equal(JSON.stringify(sources), before);
+  const checked = checkClosureModule(linked.value.module);
+  assert.ok(checked.ok, JSON.stringify(checked));
 });

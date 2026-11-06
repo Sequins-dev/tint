@@ -357,7 +357,8 @@ export function linkModules(
     const statements: Statement[] = [],
       exports: LinkedExport[] = [],
       ranges: SourceRange[] = [];
-    let cursor = 0;
+    let cursor = 0,
+      nextNodeHash = 0;
     for (const inputSource of emissionOrder) {
       if (inputSource === undefined) throw "missing source";
       const source = inputSource;
@@ -471,6 +472,9 @@ export function linkModules(
           ...node,
           start: original.start + offset,
           end: original.end + offset,
+          // Source hashes are local to their original graph. Generated nodes
+          // may all share a span; give every linked copy its own index hash.
+          nodeHash: nextNodeHash++,
         };
         origins.set(result, { module: source.id, node: original });
         return result;
