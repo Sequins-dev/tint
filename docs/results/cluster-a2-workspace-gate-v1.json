@@ -1,0 +1,25 @@
+{
+  "kind": "cluster-a2-workspace-gate",
+  "baseline": "5c21ca4029dbda7bb15018a095582afdd1173ad4",
+  "head": "652454f",
+  "portableSourceChanged": false,
+  "nodeVersion": "v24.12.0",
+  "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH pnpm check",
+  "exitStatus": 0,
+  "tests": 4478,
+  "passed": 4478,
+  "failed": 0,
+  "log": ".tint-bootstrap/a2/check-v2.log",
+  "logSha256": "aa826eee86291301ac9a4e9530b74b4a04efb11e711b09df2d20bd0d2a9b5e27",
+  "earlierAttempt": {
+    "log": ".tint-bootstrap/a2/check-v1.log",
+    "exitStatus": 1,
+    "tests": 4478,
+    "passed": 4476,
+    "failed": 2,
+    "causes": [
+      "Homebrew node@24 alias resolves to Node 26; Unicode 17 fails pinned Unicode 16 oracle.",
+      "Worktree lacked .tint-bootstrap/test262 fixture path; local symlink now targets unchanged shared pinned checkout."
+    ]
+  }
+}
