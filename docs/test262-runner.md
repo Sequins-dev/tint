@@ -116,6 +116,67 @@ share that agent. Reports retain the selected `canSuspend` value. This policy do
 not provide threads or waiting by itself. The Node reference adapter reports the
 non-suspending policy as unsupported because it does not configure such an agent.
 
+## Deduplicated native coverage ledger
+
+Run analysis only (no compilation or native execution):
+
+```sh
+node tools/test262-coverage-ledger.ts /path/to/pinned/test262 docs/results/test262-coverage-ledger-vN.json
+```
+
+Use a new version each time; both JSON and Markdown destinations are immutable.
+Default JSON is compact: totals, directory gaps, evidence age and toolchain spread,
+all accepted artifact names, selected-artifact provenance, excluded/rejected
+artifacts, and a SHA-256 commitment to the full per-variant table. No per-variant
+rows are stored in the committed report.
+
+To export the table on request, use a new ignored destination (never commit it):
+
+```sh
+node tools/test262-coverage-ledger.ts /path/to/pinned/test262 docs/results/test262-coverage-ledger-vN.json --full .tint-bootstrap/coverage-ledger-vN.jsonl
+shasum -a 256 .tint-bootstrap/coverage-ledger-vN.jsonl
+```
+
+The full export is optional and exclusive-create; its destination must be ignored
+by Git. It is canonical UTF-8 JSONL, sorted by binary path then variant, with
+compact JSON objects in the fixed field order `path`, `variant`, `sha256`,
+`syntaxNegative`, `status`, `report`, and one LF after every row, including the
+last. Its SHA-256, byte length, row count and serialization policy are included
+in the compact report even without exporting it. The hash excludes generation
+timestamps. The same committed inputs (identified by `inputMain`), Git addition
+dates and pinned checkout reproduce the same table and hash. Preserve those
+inputs when verifying an older report; later observations can change the hash.
+
+The tool inventories all 103,264 pinned variants with the runner's metadata,
+`syntaxVariants`, harness and fixture policy. It scans reports and streaming JSONL
+journals tracked under `docs/results/` on local `main`; rebase first. Progress goes
+to stderr. Canonical Tint native runtime reports must contain every expected
+variant in their selection with consistent totals. Explicit subset reports instead
+require `complete: true`, a `rootSelection` and a matching `requestedVariants`
+count; every listed variant must belong to that root. Journals additionally require
+a final, consistent `complete` record. Interrupted prefixes and rejected evidence
+are listed separately and contribute nothing. Every source and ordered harness
+hash is checked against the clean pinned checkout. A mismatched observation
+rejects its entire artifact; no failure or unsupported outcome is filtered away.
+
+For each variant, the latest accepted complete artifact wins, including later
+non-passes. Dates use `generatedAt`, `timestamp`, `completedAt`, then `startedAt`;
+otherwise a linked journal's start time, then the first Git-addition commit date.
+Git dates are explicit proxies for unavailable run dates. Equal dates use the
+lexically greatest repository-relative filename, independent of scan order or
+filesystem mtimes. Canonical JSON and completed journals use the same rule.
+Missing frozen-toolchain identities remain explicitly unknown; source snapshots
+are retained separately. JSON records selected-artifact provenance, evidence dates,
+toolchain spread, accepted artifact names and rejection diagnostics. The Markdown companion summarizes
+all outcomes and disjoint directory gaps at depth 2–3.
+
+This is a **deduplicated aggregate of separate complete runs on varying
+toolchains**, not a whole-suite measurement or proof about today's compiler.
+Its pass fraction is an evidence lower bound over the full denominator. Native
+syntax-gate summaries and Node results are excluded; parse/early negatives count
+only when individually observed in an accepted native runtime report. The goal's
+complete pinned whole-suite run requirement remains unchanged.
+
 ## Full native syntax validation
 
 `tools/test262-early-errors.ts` inventories parsing plus declaration/context checks
