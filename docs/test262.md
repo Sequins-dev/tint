@@ -313,8 +313,8 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`built-ins/String/prototype/Symbol.iterator`](results/test262-cluster-j-current-built-ins-String-prototype-Symbol.iterator-v21.json) | 12 / 12 (100%) | Current frozen4337c648 complete selection; overlaps file indices |
 | [`built-ins/String/prototype/at`](results/test262-cluster-j-current-built-ins-String-prototype-at-v21.json) | 22 / 22 (100%) | Current frozen4337c648 complete selection; overlaps file indices |
 | [`built-ins/String/prototype/charAt`](results/test262-cluster-j-current-built-ins-String-prototype-charAt-v21.json) | 60 / 60 (100%) | Current frozen4337c648 complete selection; overlaps file indices |
-| [`built-ins/String/prototype/charCodeAt`](results/test262-cluster-j-current-built-ins-String-prototype-charCodeAt-v9.json) | 50 / 50 (100%) | Complete direct-launch report; overlaps the complete-file index |
-| [`built-ins/String/prototype/codePointAt`](results/test262-cluster-j-current-built-ins-String-prototype-codePointAt-v9.json) | 32 / 32 (100%) | Complete direct-launch report; overlaps the complete-file index |
+| [`built-ins/String/prototype/charCodeAt`](results/test262-cluster-j-current-built-ins-String-prototype-charCodeAt-v21.json) | 50 / 50 (100%) | Current frozen4337c648 complete selection; overlaps file indices |
+| [`built-ins/String/prototype/codePointAt`](results/test262-cluster-j-current-built-ins-String-prototype-codePointAt-v21.json) | 32 / 32 (100%) | Current frozen4337c648 complete selection; overlaps file indices |
 | [`built-ins/String/prototype/concat`](results/test262-cluster-j-current-built-ins-String-prototype-concat-v9.json) | 44 / 44 (100%) | Complete direct-launch report; overlaps the complete-file index |
 | [`built-ins/String/prototype/constructor`](results/test262-cluster-j-current-built-ins-String-prototype-constructor-v9.json) | 4 / 4 (100%) | Complete direct-launch report; overlaps the complete-file index |
 | [`built-ins/String/prototype/endsWith`](results/test262-cluster-j-current-built-ins-String-prototype-endsWith-v9.json) | 54 / 54 (100%) | Complete direct-launch report; overlaps the complete-file index |
