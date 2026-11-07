@@ -1,0 +1,804 @@
+{
+  "kind": "native-explicit-subset-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-07T22:27:51.702Z",
+  "selection": "built-ins",
+  "subset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 572,
+    "variantSubsetSha256": "05f11ecb0ce687d26ecfdd2cb228be6334bcc7cd1976509973dc32cc33111217"
+  },
+  "previouslyUnmeasuredVariants": 570,
+  "priorUnsupportedErrorVariants": 2,
+  "previouslyPassingErrorVariantsNotRemeasured": 22,
+  "expectedVariants": 572,
+  "observedVariants": 572,
+  "uniqueVariants": 572,
+  "terminalCompleteRecords": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-small-builtins-gaps-native-v1.jsonl",
+  "journalSha256": "2269d2381b7f8e98804ab1ea024f99d71aa9bb44d243c67841c143958eb40413",
+  "journalBytes": 347610,
+  "report": "docs/results/test262-small-builtins-gaps-native-v1.json",
+  "reportSha256": "9797120e360afca37588672cc464957703ccc36a4ccd05f5f39c9b68933f82b4",
+  "totals": {
+    "total": 572,
+    "passed": 504,
+    "failed": 68,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.8811188811188811
+  },
+  "compilationRecords": 9,
+  "sourceSnapshot": {
+    "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+    "files": 601
+  },
+  "frozenManifestFileSha256": "9a4f731fb6bd08a7b5a130c60d538cc3b6ddfaccdf15809fdd297cb47bb9a014",
+  "frozenManifestPayloadSha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb",
+  "frozenFilesRevalidated": true,
+  "manifest": "docs/results/g-small-ledger18-gap-variants-v1.json",
+  "manifestSha256": "6ecca3ad8b64af27ec18fadf52b99d55c8508313d9ca4a789ceadfaeee36a6c7",
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "observationsEqualCanonical": true,
+  "debuggerLaunch": "debugserver-direct",
+  "stderr": {
+    "path": ".tint-bootstrap/small-builtins-gap-native-v1.stderr.log",
+    "sha256": "680aad32e6b1547c5a45a5c77b7177ac584acb87f6eac01a886b3df56b21490e",
+    "bytes": 363253
+  },
+  "nonpasses": [
+    {
+      "path": "built-ins/Error/prototype/stack/getter-cross-realm.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-cross-realm.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-data-property-shadows.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-data-property-shadows.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-as-prototype.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-as-prototype.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-instance.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-instance.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-prototype.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-error-prototype.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-foreign-new-target.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-foreign-new-target.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-no-error-data.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-no-error-data.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-not-a-constructor.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-not-a-constructor.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-receiver-is-proxy.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-receiver-is-proxy.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-subclass.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-subclass.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-this-not-object.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/getter-this-not-object.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/instance-no-own-stack.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/instance-no-own-stack.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/prop-desc.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/prop-desc.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-creates-own-property.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-creates-own-property.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-cross-realm.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-cross-realm.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-delete-round-trip.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-delete-round-trip.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-empty-string.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-empty-string.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-existing-own-property.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-existing-own-property.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-no-argument.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-no-argument.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-error-receiver.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-error-receiver.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-extensible-receiver.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-extensible-receiver.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-string-value.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-string-value.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-writable-stack.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-non-writable-stack.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-not-a-constructor.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-not-a-constructor.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-own-accessor.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-own-accessor.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-trap-rejects.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-trap-rejects.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-trap-throws.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-trap-throws.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-wrapping-prototype.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-proxy-wrapping-prototype.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-null-proto.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-null-proto.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-other-prototype.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-other-prototype.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-prototype.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-prototype.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-proxy.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-receiver-is-proxy.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-this-not-object.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-this-not-object.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-via-assignment.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Error/prototype/stack/setter-via-assignment.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "scope": "One completed native execution of the exact G small-built-in gap set from ledger18. Prior22Errorpasses remain separate. Every requested variant and all outcomes are retained; no snapshots or retries are combined."
+}
