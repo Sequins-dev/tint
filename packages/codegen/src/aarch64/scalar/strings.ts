@@ -286,7 +286,8 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     advance(9, 24);
     advance(10, 24);
     compareImmediate(11, 4);
-    branch("tail", "cc");
+    // The empty case returned above; short inputs can enter the unit loop.
+    branch("units", "cc");
     label("words");
     emit({ op: "ldr", width: 64, rt: 14, rn: 9, offset: 0 });
     emit({ op: "ldr", width: 64, rt: 15, rn: 10, offset: 0 });
