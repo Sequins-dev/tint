@@ -1,0 +1,18 @@
+{
+  "kind": "diagnostic-validation-index",
+  "nativeConformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v27.json",
+  "sourceSnapshot": {
+    "sha256": "17e591878bca84335b352dbc0715c05550c74cebc757d3c303072bf0cd65b855",
+    "files": 587
+  },
+  "examples": 1023,
+  "errors": 0,
+  "report": "calendar-object-adapter-arithmetic-probe-h-v7.json.gz",
+  "method": "Node executes pinned calendar examples with unchanged assertion/Temporal helpers and Temporal calls routed to Tint object adapters. Not a native or Test262 result.",
+  "retainedIntermediateProblems": [
+    "v5 diagnostic logger assumed thrown values have a stack property; a thrown undefined stopped that probe.",
+    "v6 completed and retained two bridge errors: Node BigInt inputs were not converted to Tint BigInt values for ZonedDateTime constructor examples.",
+    "v7 converts both directions of the BigInt boundary; all 1023 examples pass."
+  ]
+}
