@@ -1,0 +1,23 @@
+{
+  "kind": "native-service-development-validation",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "b66553c8e54d3aec2e75cfcd535415e8146cd16307f8330d7995b32186813560",
+    "files": 593
+  },
+  "bootstrapExit": 1,
+  "nativeCompilerEntryReached": false,
+  "bootstrapError": "Tint check rejects a mixed readonly array literal at service-unit-link.ts:3379..3387. Replaced with contextually typed pushes in20a5e39b.",
+  "workspaceGate": {
+    "typecheck": 0,
+    "tests": {
+      "passed": 4760,
+      "total": 4761,
+      "failed": "complete native compiler pipeline passes checking after specialization: same mixed readonly array issue"
+    },
+    "boundaries": "not run after failure",
+    "format": "not run after failure",
+    "exit": 1
+  },
+  "driverDiagnostic": "The sequence attempted to write the same exit filename as its bootstrap child, producing EEXIST after the real bootstrap failure. Next sequence uses separate wrapper exit names."
+}
