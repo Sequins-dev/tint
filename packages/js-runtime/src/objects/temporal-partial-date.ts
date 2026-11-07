@@ -378,7 +378,8 @@ export function installTemporalPartialDates(
       true,
       hooks,
     );
-    for (const method of ["toString", "toJSON", "valueOf"]) {
+    // The core locale fallback uses intrinsic slots and ignores locale options.
+    for (const method of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
       if (method === undefined) throw "TEMPORAL_PARTIAL_METHOD_INVARIANT";
       builtinProperty(
         prototype,
