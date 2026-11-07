@@ -1,0 +1,57 @@
+{
+  "kind": "c2-complete-native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T23:32:38.138Z",
+  "report": "docs/results/test262-c2-statements-elements-native-v3.json",
+  "manifest": "docs/results/c2-statements-elements-complete-variants-v1.json",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "acceptedReports": 1,
+  "acceptedVariants": 3156,
+  "counts": {
+    "pass": 3154,
+    "unsupported": 2
+  },
+  "totals": {
+    "total": 3156,
+    "passed": 3154,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9993662864385298
+  },
+  "nonpasses": [
+    {
+      "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "sloppy",
+      "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":616,\"end\":742,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      }
+    },
+    {
+      "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "strict",
+      "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":630,\"end\":756,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      }
+    }
+  ],
+  "rejected": [],
+  "configuredBatchSize": 64,
+  "debuggerLaunch": "debugserver-direct",
+  "toolchain": "docs/results/c2-frozen-toolchain-v22-statements-elements-v1.json",
+  "sourceSnapshot": {
+    "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+    "files": 600
+  },
+  "implementationAlreadyOnMain": "876d1500bd3d8ce7aa87118bb1f194f9f34c70db",
+  "nonDocChangesAtFreeze": [],
+  "wrapperExitStatus": 0,
+  "validation": "Exact full pinned directory variant set, hashes, metadata, ordered harness and all native judgments accepted. Journal ends with its complete record. All original non-passes remain in the denominator."
+}

@@ -1,0 +1,122 @@
+{
+  "kind": "c2-class-auto-accessor-resolution-index",
+  "conformance": false,
+  "generatedAt": "2026-11-07T23:38:22.716Z",
+  "originalParentReports": [
+    {
+      "path": "docs/results/test262-c2-statements-elements-native-v3.json",
+      "sha256": "8de5a1c0aa76fefcf5ef5e8ea1d2748e1fc250e89c4cafcd855662b80ba14024",
+      "totals": {
+        "total": 3156,
+        "passed": 3154,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9993662864385298
+      }
+    },
+    {
+      "path": "docs/results/test262-c2-expressions-elements-native-v1.json",
+      "sha256": "c8a8937a18db7d026cfee2bb646888d5d98997d6b21fdca653802f23584dd8af",
+      "totals": {
+        "total": 2943,
+        "passed": 2941,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.99932042133877
+      }
+    }
+  ],
+  "recheckReport": {
+    "path": "docs/results/test262-c2-auto-accessors-direct-native-v1.json",
+    "sha256": "dd37d8ed6b2c3fd6ddd0c5911d582024cb2a035b2efae2e37e11d325be6921aa",
+    "totals": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    }
+  },
+  "implementation": "docs/results/c2-class-auto-accessor-acceptance-v1.json",
+  "validation": "docs/results/c2-class-auto-accessor-recheck-validation-v1.json",
+  "observations": [
+    {
+      "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "sloppy",
+      "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+      "originalReport": "docs/results/test262-c2-statements-elements-native-v3.json",
+      "originalSourceSnapshot": {
+        "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+        "files": 600
+      },
+      "originalStatus": "unsupported",
+      "originalOutcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":616,\"end\":742,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "freshStatus": "pass"
+    },
+    {
+      "path": "language/statements/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "strict",
+      "sha256": "8cd2c009e80da67fb703278693d604295e33b1b9bb658046922c0991399d8142",
+      "originalReport": "docs/results/test262-c2-statements-elements-native-v3.json",
+      "originalSourceSnapshot": {
+        "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+        "files": 600
+      },
+      "originalStatus": "unsupported",
+      "originalOutcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":630,\"end\":756,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "freshStatus": "pass"
+    },
+    {
+      "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "sloppy",
+      "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+      "originalReport": "docs/results/test262-c2-expressions-elements-native-v1.json",
+      "originalSourceSnapshot": {
+        "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+        "files": 570
+      },
+      "originalStatus": "unsupported",
+      "originalOutcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":623,\"end\":747,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "freshStatus": "pass"
+    },
+    {
+      "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+      "variant": "strict",
+      "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+      "originalReport": "docs/results/test262-c2-expressions-elements-native-v1.json",
+      "originalSourceSnapshot": {
+        "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+        "files": 570
+      },
+      "originalStatus": "unsupported",
+      "originalOutcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":637,\"end\":761,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "freshStatus": "pass"
+    }
+  ],
+  "policy": "All four historical unsupported variants now pass natively on a current-main toolchain. Original complete parent reports and totals are unchanged. This resolution index adds no independent coverage."
+}
