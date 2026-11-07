@@ -1,0 +1,87 @@
+{
+  "kind": "cluster-k-complete-typedarrayconstructors-survey",
+  "createdAt": "2026-11-07T22:20:34.019476+00:00",
+  "selection": "built-ins/TypedArrayConstructors",
+  "complete": true,
+  "report": "docs/results/test262-typedarrayconstructors-cluster-k-v1.json",
+  "totals": {
+    "total": 1446,
+    "passed": 1446,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "journal": {
+    "path": ".tint-bootstrap/cluster-k/typedarrayconstructors-v1.jsonl",
+    "sha256": "77bf2b40e54b26b8c671ce401a2ea7cf63ecedd6fcf4627afc3cb34285c9b4e8",
+    "bytes": 1061384,
+    "terminalRecord": {
+      "kind": "complete",
+      "totals": {
+        "total": 1446,
+        "passed": 1446,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "runnerExitStatus": 0,
+    "wrapperExitStatus": 0
+  },
+  "verification": {
+    "canonicalExtractionExitStatus": 0,
+    "all1446IdentitiesAndStatusesMatchOriginalRunnerReport": true,
+    "totalsMatchOriginalRunnerAndTerminalRecord": true
+  },
+  "toolchain": "docs/results/frozen-node-toolchain-cluster-k-breadth-v4.json",
+  "debuggerLaunch": "debugserver-direct",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "retainedNonpasses": [],
+  "scope": "Complete unchanged native family. Overlapping named-constructor, argument, static-method and internal-method extracts remain immutable; do not sum them with this parent. No whole-suite or native performance claim.",
+  "nextMeasurement": {
+    "selection": "built-ins/Atomics",
+    "variants": 778,
+    "frozenToolchain": "docs/results/frozen-node-toolchain-cluster-k-breadth-v5.json",
+    "journal": ".tint-bootstrap/cluster-k/atomics-agent-v1.jsonl",
+    "note": "Already started as the sole K runner after the constructor process exited. Includes full waitAsync selection; extract it canonically once all its variants are observed."
+  }
+}
