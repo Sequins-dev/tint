@@ -1,0 +1,32 @@
+{
+  "kind": "semantic-regression-cycle",
+  "conformance": false,
+  "scope": "Calendar identifier canonicalization primitive shared by Temporal and Intl; not non-ISO date conversion.",
+  "nativeRed": "docs/results/intl-temporal-plain-date-triage-h-v1.json",
+  "red": {
+    "exitStatus": 1,
+    "passed": 1,
+    "failed": 1,
+    "reason": "Valid CLDR calendar aliases were rejected with RangeError."
+  },
+  "green": {
+    "exitStatus": 0,
+    "passed": 18,
+    "failed": 0,
+    "buildExitStatus": 0
+  },
+  "implementation": "Reuse the pinned CLDR calendar vocabulary and Unicode type aliases through a pure calendar module; preserve Temporal primitive-string validation and distinct TypeError/RangeError boundaries.",
+  "remaining": "Non-ISO conversion and arithmetic remain explicitly unsupported. Alias validation alone does not establish unchanged public PlainDate canonicalization selections pass.",
+  "transcripts": [
+    {
+      "tag": "red",
+      "path": "docs/results/temporal-calendar-alias-red-h-v1.log.gz",
+      "sha256": "acb5c4e1d4cd416db9c843ac8f7e58b04236aa95a195ee49de1072f724eb419e"
+    },
+    {
+      "tag": "green",
+      "path": "docs/results/temporal-calendar-alias-green-h-v1.log.gz",
+      "sha256": "b8952b4656b7b716f20d755d5d880c3795e966e25e1178684f7d2117e574aa5c"
+    }
+  ]
+}

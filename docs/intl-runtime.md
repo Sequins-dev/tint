@@ -72,6 +72,14 @@ Explicit collation keywords are returned as stored; unmatched locales use
 pass. `Intl.Collator` comparison remains unimplemented; metadata support does not
 establish collation-service conformance. The unchanged [collation selection](results/test262-locale-collations-native-v1.json) passes 24/26 variants; both failures instantiate the missing Collator. The updated full Locale selection is pending.
 
+## Calendar algorithms
+
+`calendar.ts` is the shared portable calendar boundary. Identifier validation and
+canonicalization reuse the pinned CLDR calendar vocabulary and Unicode type
+aliases already used by Locale. Temporal applies its primitive-string and error
+semantics around this pure operation. Calendar identity does not imply that
+non-ISO date conversion or arithmetic is implemented.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,

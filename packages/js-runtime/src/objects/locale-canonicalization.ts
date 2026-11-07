@@ -202,7 +202,12 @@ export function printLocaleLanguage(
   return result;
 }
 
-function canonicalType(extension: string, key: string, source: string): string {
+/** Shared Unicode/transformed type aliases from the pinned CLDR vocabulary. */
+export function canonicalLocaleType(
+  extension: string,
+  key: string,
+  source: string,
+): string {
   let value = source;
   for (let step = 0; ; step++) {
     const replacement = localeTableValue(
@@ -258,7 +263,7 @@ function printExtension(extension: LocaleExtension): string {
     if (field === undefined) throw "LOCALE_FIELD_INVARIANT";
     if (extension.key === "u" && seen.includes(field.key)) continue;
     seen.push(field.key);
-    const value = canonicalType(extension.key, field.key, field.value);
+    const value = canonicalLocaleType(extension.key, field.key, field.value);
     fields.push({
       key: field.key,
       value: extension.key === "u" && value === "true" ? "" : value,

@@ -1,0 +1,35 @@
+{
+  "kind": "queued-workspace-gate-interruption",
+  "conformance": false,
+  "at": "2026-11-07T00:21:03.958Z",
+  "reason": "Gate v1 passed 4604 tests. Cancelled this own queued refresh before execution to combine the coordinator-requested calendar identifier/alias fix into the next complete validation slice; no test or native process started.",
+  "input": {
+    "at": "2026-11-07T00:19:35.526Z",
+    "base": "de52b57c8d17fff8a9cd6763329439e2ce1111d2",
+    "head": "efb56b293b6329d87e2c555b386dfad0d8be66fc",
+    "sourceSnapshot": {
+      "sha256": "67e0567194afbf7645db4a69ffec194eb434b62ee0af90553656a9cc5ce7114c",
+      "files": 568
+    }
+  },
+  "processes": [
+    [
+      "23843",
+      "1",
+      "23843",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+    ],
+    [
+      "23847",
+      "23843",
+      "23843",
+      "/bin/zsh"
+    ],
+    [
+      "28463",
+      "23847",
+      "23843",
+      "sleep"
+    ]
+  ]
+}

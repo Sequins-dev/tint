@@ -1,3 +1,4 @@
+import { canonicalCalendarIdentifier } from "./calendar.ts";
 import { viewObjectValue } from "./values.ts";
 import {
   parseISODateTime,
@@ -39,36 +40,8 @@ export function canonicalTemporalCalendar(
   if (suppliedCalendar === undefined) return "iso8601";
   if (typeof suppliedCalendar !== "string")
     throw createRuntimeError(realm, "type");
-  let calendar = "";
-  for (let i = 0; i < suppliedCalendar.length; i++) {
-    const code = suppliedCalendar.charCodeAt(i);
-    calendar += String.fromCharCode(
-      code >= 65 && code <= 90 ? code + 32 : code,
-    );
-  }
-  if (
-    [
-      "iso8601",
-      "gregory",
-      "buddhist",
-      "chinese",
-      "coptic",
-      "dangi",
-      "ethioaa",
-      "ethiopic",
-      "hebrew",
-      "indian",
-      "islamic",
-      "islamic-rgsa",
-      "islamic-civil",
-      "islamic-tbla",
-      "islamic-umalqura",
-      "japanese",
-      "persian",
-      "roc",
-    ].includes(calendar)
-  )
-    return calendar;
+  const calendar = canonicalCalendarIdentifier(suppliedCalendar);
+  if (calendar !== undefined) return calendar;
   throw createRuntimeError(realm, "range");
 }
 export function requireISOCalendar(
