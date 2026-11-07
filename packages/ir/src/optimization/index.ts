@@ -41,6 +41,7 @@ export interface PassStatistics {
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
+    | "function-local-cleanup"
     | "forward-local-loads"
     | "remove-unread-stores"
     | "remove-dead-scalars"
@@ -116,6 +117,64 @@ export interface OptimizationOptions {
    * profiling currently favors the smaller default. */
   readonly inlining?: "small" | "guarded";
 }
+/** Large graphs otherwise spend the entire budget on a module-wide phase whose
+ * unfinished output is discarded. Prioritize independent scalar cleanup and
+ * retain each completed function/pass checkpoint, without increasing the bound.
+ * The per-function allowance leaves work for later functions after a large one. */
+function cleanupFunctions(module: ModuleIR, budget: number): Optimization {
+  const functions: FunctionIR[] = [],
+    effects = summarizeEffects(module, budget);
+  let visited = 0,
+    rewritten = 0,
+    skipped = 0,
+    changed = false;
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "optimizer cleanup function invariant";
+    if (fn.import === true) {
+      functions.push(fn);
+      continue;
+    }
+    const allowance = Math.min(50000, budget - visited);
+    let current = fn,
+      spent = 0;
+    for (let phase = 0; phase < 4; phase++) {
+      const remaining = allowance - spent;
+      const result =
+        phase === 0
+          ? forwardLocalLoads(current, remaining, effects)
+          : phase === 1
+            ? removeUnreadStores(current, remaining)
+            : phase === 2
+              ? removeDeadScalars(current, remaining)
+              : compactSlots(current, remaining);
+      if (result === undefined) {
+        // An unfinished attempt publishes no changes and consumes its allowance.
+        spent = allowance;
+        skipped++;
+        break;
+      }
+      current = result.fn;
+      spent += result.visited;
+      rewritten += "forwarded" in result ? result.forwarded : result.removed;
+    }
+    visited += spent;
+    if (current !== fn) changed = true;
+    functions.push(current);
+  }
+  return {
+    module: changed ? { ...module, functions } : module,
+    passes: [
+      {
+        phase: "scalar",
+        pass: "function-local-cleanup",
+        visited,
+        rewritten,
+        skipped,
+      },
+    ],
+    budgetExhausted: skipped > 0,
+  };
+}
 /** Consume verified scalar IR; the publisher must verify transformed IR before
  * emission. Budget exhaustion discards the unfinished phase while retaining
  * completed phases. No input is mutated. */
@@ -126,6 +185,27 @@ export function optimizeModule(
 ): Optimization {
   if (!Number.isSafeInteger(maxInstructions) || maxInstructions < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
+  let instructions = 0,
+    blocks = 0,
+    slots = 0;
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "optimizer function invariant";
+    slots += fn.slots.length;
+    blocks += fn.blocks.length;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "optimizer block invariant";
+      instructions += block.instructions.length;
+    }
+  }
+  // Preserve the initial all-or-nothing contract when even one scan cannot fit.
+  // Otherwise reserve the budget for useful local work when the multi-phase
+  // pipeline's estimated footprint already exceeds it.
+  if (
+    module.functions.length > 1 &&
+    instructions <= maxInstructions &&
+    instructions * 5 + slots * 2 + blocks > maxInstructions
+  )
+    return cleanupFunctions(module, maxInstructions);
   let visited = 0,
     rewritten = 0;
   const functions: FunctionIR[] = [];

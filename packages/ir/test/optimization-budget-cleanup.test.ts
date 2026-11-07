@@ -1,0 +1,118 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { verify, type FunctionIR, type ModuleIR } from "@tint/ir/scalar";
+import { optimizeModule } from "../src/optimization/index.ts";
+
+const span = { start: 0, end: 0 };
+function copies(id: number): FunctionIR {
+  return {
+    id,
+    name: "copies" + id,
+    exported: true,
+    parameters: [0],
+    slots: ["number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "store", slot: 1, value: 0, ...span },
+          { kind: "load", id: 1, slot: 1, ...span },
+        ],
+        terminator: { kind: "return", value: 1, ...span },
+      },
+    ],
+  };
+}
+test("large graphs retain completed local cleanup within the total work bound", () => {
+  const input: ModuleIR = {
+    functions: Array.from({ length: 50 }, (_, id) => copies(id)),
+  };
+  const original = structuredClone(input);
+  assert.deepEqual(verify(input), { ok: true });
+  const output = optimizeModule(input, 500);
+  assert.deepEqual(verify(output.module), { ok: true });
+  assert.deepEqual(input, original);
+  assert.equal(output.budgetExhausted, true);
+  assert.ok(output.passes.reduce((n, pass) => n + pass.visited, 0) <= 500);
+  const first = output.module.functions[0]!;
+  assert.deepEqual(first.slots, ["number"]);
+  assert.deepEqual(first.blocks[0]!.instructions, [
+    { kind: "load", id: 0, slot: 0, ...span },
+  ]);
+  assert.deepEqual(first.blocks[0]!.terminator, {
+    kind: "return",
+    value: 0,
+    ...span,
+  });
+  assert.equal(output.module.functions.at(-1), input.functions.at(-1));
+});
+test("an oversized function does not discard cleanup in later small functions", () => {
+  const large = copies(0);
+  const input: ModuleIR = {
+    functions: [
+      {
+        ...large,
+        blocks: [
+          {
+            id: 0,
+            instructions: Array.from({ length: 25000 }, (_, id) => ({
+              kind: "constant" as const,
+              id,
+              value: id,
+              ...span,
+            })),
+            terminator: { kind: "return", value: 24999, ...span },
+          },
+        ],
+      },
+      copies(1),
+    ],
+  };
+  const output = optimizeModule(input, 60000);
+  assert.deepEqual(verify(output.module), { ok: true });
+  assert.equal(output.budgetExhausted, true);
+  assert.ok(output.passes.reduce((n, pass) => n + pass.visited, 0) <= 60000);
+  assert.deepEqual(output.module.functions[1]!.slots, ["number"]);
+});
+test("completed cleanup retains observable host effects and ABI slots", () => {
+  const base = copies(0);
+  const effectful: FunctionIR = {
+    ...base,
+    parameters: [0, 1],
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "load", id: 1, slot: 0, ...span },
+          {
+            kind: "host-call",
+            id: 2,
+            operation: "argument-count",
+            arguments: [],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 1, ...span },
+      },
+    ],
+  };
+  const input: ModuleIR = {
+    functions: [
+      effectful,
+      ...Array.from({ length: 49 }, (_, id) => copies(id + 1)),
+    ],
+  };
+  const output = optimizeModule(input, 500);
+  assert.deepEqual(verify(output.module), { ok: true });
+  const fn = output.module.functions[0]!;
+  assert.deepEqual(fn.parameters, [0, 1]);
+  assert.deepEqual(fn.slots, ["number", "number"]);
+  assert.deepEqual(
+    fn.blocks[0]!.instructions.map((op) => op.kind),
+    ["load", "host-call"],
+  );
+});
