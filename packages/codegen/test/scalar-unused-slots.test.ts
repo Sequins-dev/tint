@@ -76,7 +76,9 @@ test("exception and guarded transfer destinations retain native storage", () => 
   };
   const r = emitModule(input);
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]!.offsets.length, 2);
+  // The parameter remains rooted; its load dies at the guarded read before any
+  // safepoint. The exception destination retains its separate general root.
+  assert.equal(r.value.roots[0]!.offsets.length, 1);
   assert.equal(r.value.roots[0]!.generalOffsets.length, 1);
 });
 test("invalid original slot uses retain native verification diagnostics", () => {
