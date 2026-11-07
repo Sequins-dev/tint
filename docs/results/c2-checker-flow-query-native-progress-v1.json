@@ -1,0 +1,27 @@
+{
+  "kind": "c2-query-native-progress-observation",
+  "generatedAt": "2026-11-07T09:27:29.087850+00:00",
+  "selfBuildReport": "docs/results/c2-checker-flow-query-selfbuild-recheck-v3.json",
+  "nativePid": 88785,
+  "lastObservedBeforeCompletion": {
+    "elapsedSeconds": 277,
+    "cpuSeconds": 269.03,
+    "cpuPercent": 88.4,
+    "rssBytes": 4064788480,
+    "state": "running"
+  },
+  "nativeLaunchAndCompileWallMs": 309070.490542,
+  "cpuInterpretation": "CPU is a measured lower bound sampled before completion, not final native CPU. Progress was near one full core; not authorization-blocked or CPU-starved. Single sample is not a matched speedup benchmark.",
+  "stallInvestigation": {
+    "sample": ".tint-bootstrap/c2/query-selfbuild-native-sample-v3.txt",
+    "sha256": "1f7bbb04805514efe4fe9c9f1ee76b3406c1af55ecbd3b697639955d5deaf89e",
+    "sampleTime": "2026-11-07T09:23:27.076Z",
+    "finding": "Native compiler actively lowering module statements/expressions and performing generational GC; no task_for_pid wait.",
+    "sourceGraph": {
+      "sha256": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+      "files": 568
+    }
+  },
+  "querySourceSha256": "8bae88f440934797215de0461a76f4f16c152475ea682e433b23dd54b5455fed",
+  "currentCheckerIdenticalToValidatedNativeFixtureAndSelfBuild": true
+}

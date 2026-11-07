@@ -1,0 +1,65 @@
+{
+  "kind": "native-frozen-self-build-focused-recheck",
+  "conformance": false,
+  "startedAt": "2026-11-07T09:20:07.422Z",
+  "originalFailure": "docs/results/c2-checker-flow-query-selfbuild-v1.json",
+  "buildToolchain": "docs/results/c2-frozen-toolchain-v17-query-joined-v1.json",
+  "sourceSnapshot": {
+    "sha256": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+    "files": 568
+  },
+  "originalImage": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+  "imageSha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-joined-v1",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v3",
+  "directory": "/tmp/tc2-query-re-2o9TZM",
+  "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/query-selfbuild-lldb-v3.log",
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerTracing": true,
+  "changedLaunchPreparation": "Exact retained stage1 bytes, rechecked only after recorded host authorization restoration. NativeImageRunner atomic rename and tracing preserved. Earlier pre-entry failures remain separate immutable observations.",
+  "complete": true,
+  "stagedImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-htq6GP/test",
+  "wallMs": 309070.490542,
+  "debuggerExitStatus": 0,
+  "error": null,
+  "initial": {
+    "state": "stopped",
+    "pid": 88785
+  },
+  "result": {
+    "state": "exited",
+    "exitStatus": 0,
+    "stop": null
+  },
+  "sessionLogs": "\nDebugserver: \nConnection: Process 88785 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001088889c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1088889c0 <+0>:  mov    x0, sp\n    0x1088889c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1088889c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1088889cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: =88785)>         Process::HandlePrivateEvent (pid = 88785) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=88785)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=88785)>         Process::ShouldBroadcastEvent (0x758453d40) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=88785)>         Process::HandlePrivateEvent (pid = 88785) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=88785)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote status = 0 (0x00000000), description=\"\")\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited, stop_id = 13\n<lldb.process.internal-state(pid=88785)>         Process::ShouldBroadcastEvent (0x758453ac0) => new state: exited, last broadcast state: exited - YES\n<lldb.process.internal-state(pid=88785)>         Process::HandlePrivateEvent (pid = 88785) broadcasting new state exited (old state exited) to hijacked\n<lldb.process.internal-state(pid=88785)>         Process::RunPrivateStateThread (arg = 0x759508800, pid = 88785) about to exit with internal state exited...\n (plugin = gdb-remote, state = exited, restarted = 0)\n (plugin = gdb-remote, state = exited) -- unlocking run lock\n timeout = <infinite>, event_sp) => exited\n<lldb.process.internal-state(pid=88785)>         Process::RunPrivateStateThread (arg = 0x759508800, pid = 88785) thread exiting...\n Failed to update some delayed breakpoints during detach: unknown error\nunknown error\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: 6b01000000;1a:7034146b01000000;1b:1800000000000000;1c:98e4dce302000000;1d:c02b146b01000000;1e:ac74818701000000;1f:802a146b01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16b142bc0=902c146b01000000807c818701000000;memory:0x16b142c90=9036146b010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 88785) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=88785)>         <  23> send packet: $pd6;thread:1970892;#a6\n<lldb.process.internal-state(pid=88785)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=88785)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=88785)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=88785)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=88785)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 88785) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 88785) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n<lldb.process.gdb-remote.async>  <   7> read packet: $W00#00\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::SendContinuePacketAndWaitForResponse () got packet: W00\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 88785) thread exiting...\n ProcessGDBRemote::DoDetach(keep_stopped: 0)\n ProcessGDBRemote::DoDetach() detach packet send failed: Sending disconnect packet failed.\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n",
+  "byteIdentical": true,
+  "stage2Sha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c",
+  "stage2Bytes": 60079074,
+  "checks": [
+    {
+      "name": "signature",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1-signature-v3.log",
+      "exitStatus": 0
+    },
+    {
+      "name": "dwarf",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1-dwarf-v3.log",
+      "exitStatus": 0
+    },
+    {
+      "name": "signature",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v3",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v3-signature-v3.log",
+      "exitStatus": 0
+    },
+    {
+      "name": "dwarf",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v3",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v3-dwarf-v3.log",
+      "exitStatus": 0
+    }
+  ],
+  "generatedAt": "2026-11-07T09:25:17.140Z"
+}
