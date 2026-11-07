@@ -161,7 +161,7 @@ function setArrayLength<Key, Value>(
   if (result !== "accepted") return result;
   // Sparse holes require no work; only present indices can block shrinking.
   const keys =
-    length === 0 && clearConfigurableIndices(object, array)
+    length === 0 && clearConfigurableIndices<Key, Value>(object, array)
       ? []
       : ownKeys<Key, Value>(object, array.index);
   for (let position = keys.length - 1; position >= 0; position--) {
