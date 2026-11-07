@@ -26,43 +26,71 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       setFlags: true,
     });
   }
-  // x12 count, x13 source units, x14 destination units; clobbers x15/x16, advances pointers.
+  function compareImmediate(register: number, value: number): void {
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: register,
+      immediate: value,
+      shift: 0,
+      setFlags: true,
+    });
+  }
+  function advance(register: number, bytes: number): void {
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: register,
+      rn: register,
+      immediate: bytes,
+      shift: 0,
+      setFlags: false,
+    });
+  }
+  function decrement(register: number, units: number): void {
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: register,
+      rn: register,
+      immediate: units,
+      shift: 0,
+      setFlags: true,
+    });
+  }
+  // x12 count, x13 source, x14 fresh destination; preserve x12, clobber x15/x16.
+  // A full word is accessible only while at least four UTF-16 units remain.
   function copyUnits(prefix: string): void {
-    emit({ op: "movz", width: 64, rd: 15, immediate: 0, shift: 0 });
-    compare(15, 12);
-    branch(prefix + "-done", "eq");
-    label(prefix + "-loop");
-    emit({ op: "ldrh", rt: 16, rn: 13, offset: 0 });
-    emit({ op: "strh", rt: 16, rn: 14, offset: 0 });
-    emit({
-      op: "add-imm",
-      width: 64,
-      rd: 13,
-      rn: 13,
-      immediate: 2,
-      shift: 0,
-      setFlags: false,
-    });
-    emit({
-      op: "add-imm",
-      width: 64,
-      rd: 14,
-      rn: 14,
-      immediate: 2,
-      shift: 0,
-      setFlags: false,
-    });
     emit({
       op: "add-imm",
       width: 64,
       rd: 15,
-      rn: 15,
-      immediate: 1,
+      rn: 12,
+      immediate: 0,
       shift: 0,
       setFlags: false,
     });
-    compare(15, 12);
-    branch(prefix + "-loop", "cc");
+    compareImmediate(15, 4);
+    branch(prefix + "-tail", "cc");
+    label(prefix + "-words");
+    emit({ op: "ldr", width: 64, rt: 16, rn: 13, offset: 0 });
+    emit({ op: "str", width: 64, rt: 16, rn: 14, offset: 0 });
+    advance(13, 8);
+    advance(14, 8);
+    decrement(15, 4);
+    compareImmediate(15, 4);
+    branch(prefix + "-words", "cs");
+    label(prefix + "-tail");
+    compareImmediate(15, 0);
+    branch(prefix + "-done", "eq");
+    label(prefix + "-units");
+    emit({ op: "ldrh", rt: 16, rn: 13, offset: 0 });
+    emit({ op: "strh", rt: 16, rn: 14, offset: 0 });
+    advance(13, 2);
+    advance(14, 2);
+    decrement(15, 1);
+    branch(prefix + "-units", "ne");
     label(prefix + "-done");
   }
   if (kind === "string-slice-bounds") {
@@ -253,63 +281,34 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
         setFlags: false,
       });
     }
-    emit({ op: "movz", width: 64, rd: 13, immediate: 0, shift: 0 });
-    compare(13, 11);
+    compareImmediate(11, 0);
     branch("equal", "eq");
-    emit({
-      op: "add-imm",
-      width: 64,
-      rd: 9,
-      rn: 9,
-      immediate: 24,
-      shift: 0,
-      setFlags: false,
-    });
-    emit({
-      op: "add-imm",
-      width: 64,
-      rd: 10,
-      rn: 10,
-      immediate: 24,
-      shift: 0,
-      setFlags: false,
-    });
-    label("scan");
-    emit({
-      op: "add-reg",
-      width: 64,
-      rd: 14,
-      rn: 9,
-      rm: 13,
-      shift: "lsl",
-      amount: 1,
-      setFlags: false,
-    });
-    emit({
-      op: "add-reg",
-      width: 64,
-      rd: 15,
-      rn: 10,
-      rm: 13,
-      shift: "lsl",
-      amount: 1,
-      setFlags: false,
-    });
-    emit({ op: "ldrh", rt: 14, rn: 14, offset: 0 });
-    emit({ op: "ldrh", rt: 15, rn: 15, offset: 0 });
+    advance(9, 24);
+    advance(10, 24);
+    compareImmediate(11, 4);
+    branch("tail", "cc");
+    label("words");
+    emit({ op: "ldr", width: 64, rt: 14, rn: 9, offset: 0 });
+    emit({ op: "ldr", width: 64, rt: 15, rn: 10, offset: 0 });
     compare(14, 15);
     branch("different", "ne");
-    emit({
-      op: "add-imm",
-      width: 64,
-      rd: 13,
-      rn: 13,
-      immediate: 1,
-      shift: 0,
-      setFlags: false,
-    });
-    compare(13, 11);
-    branch("scan", "cc");
+    advance(9, 8);
+    advance(10, 8);
+    decrement(11, 4);
+    compareImmediate(11, 4);
+    branch("words", "cs");
+    label("tail");
+    compareImmediate(11, 0);
+    branch("equal", "eq");
+    label("units");
+    emit({ op: "ldrh", rt: 14, rn: 9, offset: 0 });
+    emit({ op: "ldrh", rt: 15, rn: 10, offset: 0 });
+    compare(14, 15);
+    branch("different", "ne");
+    advance(9, 2);
+    advance(10, 2);
+    decrement(11, 1);
+    branch("units", "ne");
     label("equal");
     emit({ op: "movz", width: 32, rd: 9, immediate: 1, shift: 0 });
     emit({ op: "ret", rn: 30 });
