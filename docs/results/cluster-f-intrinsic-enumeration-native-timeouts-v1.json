@@ -1,0 +1,119 @@
+{
+  "kind": "native-timeout-root-cause-triage",
+  "conformance": false,
+  "recordedAt": "2026-11-07T16:16:30.308628+00:00",
+  "sourceSnapshot": {
+    "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+    "files": 595
+  },
+  "frozenToolchainSha256": "0991bdfa99c553aa307f2f657bed6177946447b0984fcee6a7e6c569eacafa5b",
+  "variantManifest": "docs/results/cluster-f-remaining-small-language-variant-input-v1.json",
+  "parentSelection": "language [explicit variant subset]",
+  "parentSelectionComplete": false,
+  "completeFamilyReport": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-arrow-function.json",
+  "caseReport": "docs/results/test262-cluster-f-async-arrow-prototype-timeout-v1.json",
+  "sameBatchControlReport": "docs/results/test262-cluster-f-async-arrow-intrinsic-control-v1.json",
+  "prefix": "docs/results/cluster-f-small-language-intrinsic-triage-prefix-v1.jsonl",
+  "prefixSha256": "9bbb1a6f2c2f8ae32164555cd1afd2c56ff5b0915529e461675d43b41e390e8f",
+  "sourceHarnessFixtureAndVariantValidationExitStatus": 0,
+  "keyedObservationValidationExitStatus": 0,
+  "observations": [
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "sloppy",
+      "sha256": "c5c6a130be9b96181a8961d4304f8c349b9682f0472a11fc2bf69712ad66183e",
+      "status": "timeout",
+      "batch": 5,
+      "pid": 43867,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T16:05:31.217478+00:00",
+      "lastCpuSeconds": 286.94,
+      "lastWallSeconds": 296.0,
+      "cpuSample": [
+        "43867",
+        "43864",
+        "97.8",
+        "4:46.94",
+        "04:56",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DxNMaf/test 32"
+      ],
+      "blocker": "The unchanged intrinsic-enumeration test does not finish within the 300-second native containment budget despite receiving over 250 CPU-seconds. It needs a symbolized native profile and a shared execution/compiler performance fix; the source-based Function-preparation hypothesis is not a proven internal hotspot."
+    },
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "strict",
+      "sha256": "c5c6a130be9b96181a8961d4304f8c349b9682f0472a11fc2bf69712ad66183e",
+      "status": "timeout",
+      "batch": 5,
+      "pid": 65687,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T16:10:18.811293+00:00",
+      "lastCpuSeconds": 269.11,
+      "lastWallSeconds": 280.0,
+      "cpuSample": [
+        "65687",
+        "65686",
+        "95.8",
+        "4:29.11",
+        "04:40",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DxNMaf/test 33"
+      ],
+      "blocker": "The unchanged intrinsic-enumeration test does not finish within the 300-second native containment budget despite receiving over 250 CPU-seconds. It needs a symbolized native profile and a shared execution/compiler performance fix; the source-based Function-preparation hypothesis is not a proven internal hotspot."
+    }
+  ],
+  "confirmed": "Both direct-mode variants timed out after the initial stop while the native inferior consumed almost a full core. Same-image, same-batch control variants passed. No host-authorization block or semantic assertion failure was observed.",
+  "hypothesis": "The test uniquely adds wellKnownIntrinsicObjects.js within this 654-variant selection. Its unchanged harness eagerly constructs and invokes 87 Function bodies. Repeated dynamic Function preparation is a source-based inference; unsymbolized samples do not establish the internal hotspot.",
+  "scopeCoordination": {
+    "ownerHint": "D eval/Function semantics and P shared native preparation/performance",
+    "nextStep": "Use the retained exact image and source snapshot to create a symbolized profile of this unchanged case, locate the preparation/execution cost, then rerun the case and complete affected family after the fix. Do not alter the Test262 source/harness or silently retry away the original outcomes.",
+    "relatedButNotYetRechecked": [
+      "built-ins/Iterator/zip/result-is-iterator.js",
+      "built-ins/Iterator/zipKeyed/result-is-iterator.js"
+    ],
+    "upcomingUnmeasuredHarnessUsers": [
+      "built-ins/GeneratorFunction/is-a-constructor.js",
+      "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "built-ins/AsyncFunction/is-a-constructor.js"
+    ]
+  },
+  "debuggerCaveat": "The ending E97/dyld-PC signature also appears in the old Iterator logs. Here CPU samples prove native execution before that signature; the signature alone does not establish a pre-entry failure. The historical Iterator outcomes still need their requested fresh direct rechecks.",
+  "artifacts": {
+    "cpuSnapshots": "docs/results/cluster-f-intrinsic-enumeration-cpu-observations-v1.jsonl.gz",
+    "samples": [
+      "docs/results/cluster-f-intrinsic-enumeration-sloppy-sample-v1.txt.gz",
+      "docs/results/cluster-f-intrinsic-enumeration-strict-sample-v1.txt.gz"
+    ],
+    "retainedPrivateImage": {
+      "kind": "native-image-diagnostic-copy",
+      "conformance": false,
+      "at": "2026-11-07T16:02:38.046973+00:00",
+      "process": [
+        "43867",
+        "43864",
+        "97.4",
+        "1:58.53",
+        "02:02",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DxNMaf/test 32"
+      ],
+      "original": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DxNMaf/test",
+      "copy": ".tint-bootstrap/cluster-f-small-language-intrinsic-harness-image-v1",
+      "bytes": 173856079,
+      "sha256": "14373fa22ade65e2662155068f12b0e12fc8093129147dd2c7629bbcb4655610",
+      "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-remaining-small-language-v1.jsonl"
+    },
+    "nmExitStatus": 0,
+    "nmResult": "no symbols",
+    "dwarfdumpExitStatus": 0,
+    "dwarfdumpResult": "no .debug_info contents",
+    "lateSloppySampleExitStatus": 255,
+    "lateSloppySampleFailure": "sample[66880]: sample cannot examine process 43867 (with name like '43867') because it no longer appears to be running.",
+    "retainedImageSignatureVerificationExitStatus": 0
+  },
+  "sourcesChanged": false,
+  "variantsManuallyKilledOrRetried": false,
+  "timeoutSource": "Runner configured containment 300000 ms; original observations retained.",
+  "requestedVariants": 654
+}
