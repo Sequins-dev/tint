@@ -1,0 +1,22 @@
+{
+  "kind": "c2-native-complete-file-harvest-validation",
+  "generatedAt": "2026-11-07T11:29:19.321Z",
+  "manifest": "docs/results/c2-expressions-elements-complete-file-harvest-v2.json",
+  "acceptedReports": 275,
+  "acceptedVariants": 548,
+  "passed": 548,
+  "rejected": [],
+  "disjointFrom": [
+    "earlier295-fileharvest",
+    "444-variant early-errors directory",
+    "allfourcompleteasyncprivatefamilies"
+  ],
+  "combinedPublishedEvidence": {
+    "reports": 575,
+    "uniqueVariants": 1858,
+    "passed": 1858,
+    "observedPrefixVariants": 1858,
+    "unpublishedPartialFileVariants": 0
+  },
+  "policy": "Canonical ledger verifies all pinned source/harness bytes, metadata, native judgments and complete selection cardinalities. Deduplication explicitly accounts for older overlaps; parent remains incomplete."
+}
