@@ -356,6 +356,9 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`built-ins/TypedArray/prototype/sort`](results/test262-typedarray-sort-cluster-k-v1.json) | 72 / 72 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/prototype/subarray`](results/test262-typedarray-subarray-cluster-k-v1.json) | 134 / 134 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/prototype/toLocaleString`](results/test262-typedarray-tolocalestring-cluster-k-v1.json) | 78 / 78 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
+| [`built-ins/TypedArray/prototype/toReversed`](results/test262-typedarray-toreversed-cluster-k-v1.json) | 18 / 18 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
+| [`built-ins/TypedArray/prototype/toSorted`](results/test262-typedarray-tosorted-cluster-k-v1.json) | 24 / 24 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
+| [`built-ins/TypedArray/prototype/toString`](results/test262-typedarray-tostring-cluster-k-v1.json) | 6 / 6 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/out-of-bounds-behaves-like-detached.js`](results/test262-typedarray-out-of-bounds-behaves-like-detached-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeouts retained |
 | [`built-ins/TypedArray/out-of-bounds-get-and-set.js`](results/test262-typedarray-out-of-bounds-get-and-set-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeout retained |
 | [`built-ins/TypedArray/out-of-bounds-has.js`](results/test262-typedarray-out-of-bounds-has-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeouts retained |
