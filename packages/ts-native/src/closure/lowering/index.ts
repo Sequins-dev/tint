@@ -486,8 +486,8 @@ function lowerEntries(
       }
       const found = signatures.findIndex(
         (s, index) =>
-          s !== undefined &&
           !imported.has(entries[index] ?? -1) &&
+          s !== undefined &&
           s.returnType === result &&
           s.parameters.length === parameters.length &&
           s.parameters.every((p, i) => p === parameters[i]),
