@@ -1,0 +1,1662 @@
+{
+  "kind": "native-hot-function-attribution",
+  "version": 11,
+  "utc": "2026-11-07T13:53:59.018Z",
+  "scope": "A2 call sloppy diagnostic, independent from the 9/9 official selection. Ten selected windows; exclusive main-thread counts; not a causal before/after sample-share comparison.",
+  "attribution": {
+    "samples": 7897,
+    "windows": [
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-0.txt",
+        "samples": 761
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-1.txt",
+        "samples": 796
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-2.txt",
+        "samples": 793
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-3.txt",
+        "samples": 791
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-4.txt",
+        "samples": 789
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-5.txt",
+        "samples": 794
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-6.txt",
+        "samples": 791
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-7.txt",
+        "samples": 791
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-8.txt",
+        "samples": 796
+      },
+      {
+        "path": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-9.txt",
+        "samples": 795
+      }
+    ],
+    "groups": [
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+        "samples": 1237,
+        "percent": 15.664176269469419
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+        "samples": 1063,
+        "percent": 13.460807901734835
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+        "samples": 812,
+        "percent": 10.28238571609472
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+        "samples": 452,
+        "percent": 5.723692541471445
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+        "samples": 325,
+        "percent": 4.115486893757123
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+        "samples": 317,
+        "percent": 4.014182600987717
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+        "samples": 236,
+        "percent": 2.98847663669748
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+        "samples": 229,
+        "percent": 2.89983538052425
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+        "samples": 205,
+        "percent": 2.5959225022160313
+      },
+      {
+        "function": "program:helper:string-equal",
+        "samples": 199,
+        "percent": 2.519944282638977
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+        "samples": 188,
+        "percent": 2.3806508800810433
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+        "samples": 175,
+        "percent": 2.2160314043307587
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+        "samples": 154,
+        "percent": 1.9501076358110674
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+        "samples": 138,
+        "percent": 1.7474990502722554
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+        "samples": 123,
+        "percent": 1.557553501329619
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:position",
+        "samples": 119,
+        "percent": 1.5069013549449157
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+        "samples": 117,
+        "percent": 1.4815752817525643
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+        "samples": 104,
+        "percent": 1.3169558060022792
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:expression",
+        "samples": 82,
+        "percent": 1.0383690008864126
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@8120",
+        "samples": 70,
+        "percent": 0.8864125617323034
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+        "samples": 67,
+        "percent": 0.8484234519437761
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+        "samples": 60,
+        "percent": 0.7597821957705457
+      },
+      {
+        "function": "runtime:helper:remainder",
+        "samples": 60,
+        "percent": 0.7597821957705457
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+        "samples": 57,
+        "percent": 0.7217930859820185
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:expression",
+        "samples": 56,
+        "percent": 0.7091300493858427
+      },
+      {
+        "function": "program:helper:string-concat-copy",
+        "samples": 54,
+        "percent": 0.6838039761934912
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+        "samples": 54,
+        "percent": 0.6838039761934912
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:statement",
+        "samples": 54,
+        "percent": 0.6838039761934912
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+        "samples": 44,
+        "percent": 0.5571736102317336
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+        "samples": 39,
+        "percent": 0.49385842725085477
+      },
+      {
+        "function": "runtime:helper:to-uint32",
+        "samples": 38,
+        "percent": 0.481195390654679
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+        "samples": 37,
+        "percent": 0.46853235405850324
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+        "samples": 36,
+        "percent": 0.45586931746232745
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:validIndex",
+        "samples": 34,
+        "percent": 0.4305432442699759
+      },
+      {
+        "function": "program:helper:to-uint32",
+        "samples": 30,
+        "percent": 0.37989109788527287
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+        "samples": 28,
+        "percent": 0.35456502469292134
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+        "samples": 27,
+        "percent": 0.3419019880967456
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+        "samples": 26,
+        "percent": 0.3292389515005698
+      },
+      {
+        "function": "runtime:helper:memory-move",
+        "samples": 24,
+        "percent": 0.30391287830821834
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@7370",
+        "samples": 24,
+        "percent": 0.30391287830821834
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:declarations",
+        "samples": 23,
+        "percent": 0.29124984171204255
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:collect",
+        "samples": 23,
+        "percent": 0.29124984171204255
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:index",
+        "samples": 21,
+        "percent": 0.265923768519691
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:next",
+        "samples": 19,
+        "percent": 0.2405976953273395
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+        "samples": 19,
+        "percent": 0.2405976953273395
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+        "samples": 18,
+        "percent": 0.22793465873116373
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2639",
+        "samples": 17,
+        "percent": 0.21527162213498796
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+        "samples": 16,
+        "percent": 0.2026085855388122
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:writeList",
+        "samples": 15,
+        "percent": 0.18994554894263643
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+        "samples": 15,
+        "percent": 0.18994554894263643
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:tokenAt",
+        "samples": 14,
+        "percent": 0.17728251234646067
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+        "samples": 13,
+        "percent": 0.1646194757502849
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:compare",
+        "samples": 12,
+        "percent": 0.15195643915410917
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+        "samples": 12,
+        "percent": 0.15195643915410917
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:copyType",
+        "samples": 11,
+        "percent": 0.1392934025579334
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+        "samples": 11,
+        "percent": 0.1392934025579334
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:closure@8727",
+        "samples": 11,
+        "percent": 0.1392934025579334
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:expr",
+        "samples": 11,
+        "percent": 0.1392934025579334
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:type",
+        "samples": 11,
+        "percent": 0.1392934025579334
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2559",
+        "samples": 10,
+        "percent": 0.12663036596175764
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:named",
+        "samples": 10,
+        "percent": 0.12663036596175764
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:mark",
+        "samples": 8,
+        "percent": 0.1013042927694061
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:current",
+        "samples": 7,
+        "percent": 0.08864125617323033
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolve",
+        "samples": 7,
+        "percent": 0.08864125617323033
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:resolve",
+        "samples": 7,
+        "percent": 0.08864125617323033
+      },
+      {
+        "function": "program:helper:remainder",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:graphDepth",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:relates",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:writeNumberList",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:hoistVariables",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:closure@41842",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:ungroup",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:recordTypeFlow",
+        "samples": 6,
+        "percent": 0.07597821957705458
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:rotateLeft",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@7323",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:helper:string-code-unit",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:fingerprint",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:setMap",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@4441",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:stmt",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:statement",
+        "samples": 5,
+        "percent": 0.06331518298087882
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:at",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:unionCycle",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:cell",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:enter",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:rewriteModule",
+        "samples": 4,
+        "percent": 0.05065214638470305
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1039",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1348",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@899",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:result",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:createNumberList",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:helper:array-initialize",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:createTypeSystem",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:same",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:assignable",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:type",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:resolveModuleExports",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-function-flows.ts:checkManagedFunctionFlows",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:closure@4601",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:discriminants",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6820",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6456",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6949",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineField",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:narrowedType",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:valid",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:checkClosureModule",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:resizeList",
+        "samples": 3,
+        "percent": 0.03798910978852729
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:quotedText",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:eat",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:parserCheckpoint",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:take",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:type",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:key",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:createKeyIndex",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:addSet",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:lookupDeclaration",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "runtime:helper:string-equal",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:expression",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:cell:write:2",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/ir/src/scalar/index.ts:verify",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:checkFunction",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/chains.ts:isOptionalChain",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:variableBinding",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3419",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:pure",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineLiteralBinding",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:stableFacts",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:hasNumberList",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:hasList",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:add",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:isUndefined",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineDiscriminant",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:validIndex",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:predeclare",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:createList",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refine",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:binding",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:closure@9188",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:fn",
+        "samples": 2,
+        "percent": 0.025326073192351525
+      },
+      {
+        "function": "program:helper:string-starts-with",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:edge",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:valid",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:advance",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@831",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/source/src/text.ts:createSourceTextView",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/source/src/text.ts:positionAt",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolveInterfaceTypes",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:quote",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:render",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:afterParameters",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:closure@14442",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:enter",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:parameters",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:reserved",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:semi",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-records.ts:bindManagedJitRecords",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-signatures.ts:classOf",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/binary/word64.ts:fromParts",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:pushNumberList",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ir/src/scalar/liveness.ts:analyzeSlots",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:validRead",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:valueParameterCaptures",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/records.ts:record",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/representation-views.ts:incompatible",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:computeScalarRelation",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:temporaryRegisters",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/binary/bytes.ts:check",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:block",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:enter",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/isa.ts:encode",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emit",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:grow",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/native-runtime/src/values/index.ts:fromNumber",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6321",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:specializeModule",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:closure@18208",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:presentType",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:unionSubset",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/bindings.ts:parameterIdentifiers",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/isa.ts:integer",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5931",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:lengthNumberList",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:linkModules",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:key",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:capture",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@26675",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:add",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:describeModuleExportDeclaration",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/chains.ts:isDirectEvalCandidate",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:parameter",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:property",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5226",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:cloneSet",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:renamed",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:register",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:closure@46300",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:reference",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:isList",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:narrowToken",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:canonical",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:closure@30069",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:call",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:scalarType",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/records.ts:visit",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@147696",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:collectFunction",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:object",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:signature",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/records.ts:arrayElement",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:statements",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:annotation",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:closure@4733",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:chainReceiver",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@97730",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:intersect",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:invalidateCalls",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:join",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:literalProperty",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      },
+      {
+        "function": "program:packages/typescript/src/types/discriminants.ts:build",
+        "samples": 1,
+        "percent": 0.012663036596175762
+      }
+    ]
+  },
+  "execution": {
+    "kind": "native-workload-profile",
+    "conformance": false,
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/leaf-call-profile-input-v1/after/image",
+    "imageSha256": "654f476fbc0ab8cd326a84086a53ceecc7c81a59e73bfc899d0279f296b6329d",
+    "selectedCase": "0",
+    "containmentMs": 300000,
+    "containmentScope": "300 seconds after observed initial stopped state; independent 300-second startup watchdog",
+    "startedUTC": "2026-11-07T13:39:54.166Z",
+    "wallMs": 291023,
+    "startLoad": [15.59130859375, 16.7607421875, 15.77001953125],
+    "endLoad": [18.8876953125, 16.63671875, 15.8857421875],
+    "initial": {
+      "state": "stopped",
+      "pid": 14896
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42
+    },
+    "timedOut": false,
+    "debugger": {
+      "code": 0,
+      "signal": null
+    },
+    "cpu": {
+      "pid": 14896,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 6217612317,
+        "systemTicks": 157229578,
+        "instructions": 2025018266100,
+        "cycles": 679043710274
+      },
+      "cpuMsLowerBound": 265618.41229166667,
+      "finalUnobservedWallBoundMs": 104.858959,
+      "probes": 2711,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    },
+    "samples": [
+      {
+        "index": 0,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-0.txt",
+        "startUTC": "2026-11-07T13:39:57.449Z",
+        "loadBefore": [15.3837890625, 16.6982421875, 15.75341796875],
+        "status": 0,
+        "endUTC": "2026-11-07T13:40:02.767Z",
+        "loadAfter": [15.99365234375, 16.802734375, 15.79541015625]
+      },
+      {
+        "index": 1,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-1.txt",
+        "startUTC": "2026-11-07T13:40:27.662Z",
+        "loadBefore": [15.490234375, 16.63623046875, 15.76513671875],
+        "status": 0,
+        "endUTC": "2026-11-07T13:40:32.942Z",
+        "loadAfter": [15.21044921875, 16.55908203125, 15.74267578125]
+      },
+      {
+        "index": 2,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-2.txt",
+        "startUTC": "2026-11-07T13:40:57.888Z",
+        "loadBefore": [15.1767578125, 16.447265625, 15.7255859375],
+        "status": 0,
+        "endUTC": "2026-11-07T13:41:03.103Z",
+        "loadAfter": [15.08251953125, 16.40625, 15.71533203125]
+      },
+      {
+        "index": 3,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-3.txt",
+        "startUTC": "2026-11-07T13:41:28.101Z",
+        "loadBefore": [14.31884765625, 16.11669921875, 15.6298828125],
+        "status": 0,
+        "endUTC": "2026-11-07T13:41:33.439Z",
+        "loadAfter": [14.533203125, 16.13134765625, 15.6376953125]
+      },
+      {
+        "index": 4,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-4.txt",
+        "startUTC": "2026-11-07T13:41:58.328Z",
+        "loadBefore": [14.70361328125, 16.0400390625, 15.6181640625],
+        "status": 0,
+        "endUTC": "2026-11-07T13:42:03.589Z",
+        "loadAfter": [14.56689453125, 15.9892578125, 15.6025390625]
+      },
+      {
+        "index": 5,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-5.txt",
+        "startUTC": "2026-11-07T13:42:28.520Z",
+        "loadBefore": [14.451171875, 15.8701171875, 15.5712890625],
+        "status": 0,
+        "endUTC": "2026-11-07T13:42:33.788Z",
+        "loadAfter": [14.0947265625, 15.7724609375, 15.53857421875]
+      },
+      {
+        "index": 6,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-6.txt",
+        "startUTC": "2026-11-07T13:42:58.722Z",
+        "loadBefore": [14.4365234375, 15.71044921875, 15.521484375],
+        "status": 0,
+        "endUTC": "2026-11-07T13:43:04.051Z",
+        "loadAfter": [14.4814453125, 15.6982421875, 15.51806640625]
+      },
+      {
+        "index": 7,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-7.txt",
+        "startUTC": "2026-11-07T13:43:28.938Z",
+        "loadBefore": [14.56787109375, 15.611328125, 15.49072265625],
+        "status": 0,
+        "endUTC": "2026-11-07T13:43:34.166Z",
+        "loadAfter": [14.20166015625, 15.51806640625, 15.45849609375]
+      },
+      {
+        "index": 8,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-8.txt",
+        "startUTC": "2026-11-07T13:43:58.939Z",
+        "loadBefore": [17.10302734375, 16.1640625, 15.6962890625],
+        "status": 0,
+        "endUTC": "2026-11-07T13:44:04.234Z",
+        "loadAfter": [17.0947265625, 16.177734375, 15.70361328125]
+      },
+      {
+        "index": 9,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-leaf-call-v1/sample-9.txt",
+        "startUTC": "2026-11-07T13:44:29.180Z",
+        "loadBefore": [17.05712890625, 16.203125, 15.7236328125],
+        "status": 0,
+        "endUTC": "2026-11-07T13:44:34.434Z",
+        "loadAfter": [16.89208984375, 16.18310546875, 15.71923828125]
+      }
+    ]
+  },
+  "image": {
+    "kind": "symbolized-native-language-operation-diagnostic",
+    "conformance": false,
+    "label": "after",
+    "inputs": [
+      {
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "sha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16",
+        "variant": "sloppy",
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ]
+      }
+    ],
+    "sourceSnapshot": {
+      "sha256": "42ecbaecaef8cb1c9d0e53018ca9312db30536eee8fc146def448f6984286843",
+      "files": 591
+    },
+    "frozenToolchain": {
+      "schemaVersion": 1,
+      "nodeVersion": "v24.12.0",
+      "sourceSnapshot": {
+        "sha256": "42ecbaecaef8cb1c9d0e53018ca9312db30536eee8fc146def448f6984286843",
+        "files": 591
+      },
+      "links": [
+        {
+          "path": "node_modules/@tint/abi",
+          "target": "../../packages/abi"
+        },
+        {
+          "path": "node_modules/@tint/bench",
+          "target": "../../packages/bench"
+        },
+        {
+          "path": "node_modules/@tint/codegen",
+          "target": "../../packages/codegen"
+        },
+        {
+          "path": "node_modules/@tint/compiler",
+          "target": "../../packages/compiler"
+        },
+        {
+          "path": "node_modules/@tint/foundation",
+          "target": "../../packages/foundation"
+        },
+        {
+          "path": "node_modules/@tint/image",
+          "target": "../../packages/image"
+        },
+        {
+          "path": "node_modules/@tint/ir",
+          "target": "../../packages/ir"
+        },
+        {
+          "path": "node_modules/@tint/js-engine",
+          "target": "../../packages/js-engine"
+        },
+        {
+          "path": "node_modules/@tint/js-runtime",
+          "target": "../../packages/js-runtime"
+        },
+        {
+          "path": "node_modules/@tint/native-runtime",
+          "target": "../../packages/native-runtime"
+        },
+        {
+          "path": "node_modules/@tint/platform",
+          "target": "../../packages/platform"
+        },
+        {
+          "path": "node_modules/@tint/source",
+          "target": "../../packages/source"
+        },
+        {
+          "path": "node_modules/@tint/ts-native",
+          "target": "../../packages/ts-native"
+        },
+        {
+          "path": "node_modules/@tint/typescript",
+          "target": "../../packages/typescript"
+        }
+      ],
+      "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+    },
+    "adapters": [
+      {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/leaf-call-debug-image-v1.mjs",
+        "sha256": "66a7610d91a8a49abd2ad20e552381497d1351417c9891f312fa5a76b3295b0a"
+      }
+    ],
+    "nodeVersion": "v24.12.0",
+    "execArgv": [
+      "--import",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/leaf-call-debug-image-v1.mjs"
+    ],
+    "moduleExecution": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "loadStart": [18.77490234375, 17.505859375, 15.50439453125],
+    "loadEnd": [16.31591796875, 16.9853515625, 15.81787109375],
+    "compileCPU": {
+      "user": 320845750,
+      "system": 7702084
+    },
+    "compileWallMs": 278041.93875,
+    "imageSha256": "654f476fbc0ab8cd326a84086a53ceecc7c81a59e73bfc899d0279f296b6329d",
+    "imageBytes": 185820799
+  },
+  "runtimeBodies": [
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]",
+      "counts": {
+        "instructions": 533,
+        "loads": 127,
+        "stores": 143,
+        "calls": 1,
+        "pointerFloatMoves": 27
+      },
+      "scope": "Static H23 A1 runtime image, same source-level callback family; not substituted for dynamic A2 counts."
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$61]",
+      "counts": {
+        "instructions": 4843,
+        "loads": 1084,
+        "stores": 2206,
+        "calls": 12,
+        "pointerFloatMoves": 99
+      },
+      "scope": "Static H23 A1 runtime image, same source-level callback family; not substituted for dynamic A2 counts."
+    }
+  ],
+  "finding": "Reusable runtime modules retain roots and disable the existing scalar callee-saved planner. Numeric-only, non-address-exposed local homes do not require closed-world pointer assumptions; this is the next isolated codegen candidate, not a completed speedup.",
+  "timeoutMetadata": "Diagnostic build manifest contains the builder default timeoutMs=60000. That field is only consumed by the external runner, not emitted into native code (test262-native.ts references timeoutMs only in its declaration). The diagnostic uses a separately recorded 300000ms post-entry containment and exits42; canonical selection uses300000ms throughout.",
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/report.json",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--report.json.gz",
+      "sourceBytes": 6052,
+      "sha256": "bf2c936cf72682f45017b498bf37cba50dd4e8071cbc017758334b75e154cec3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/attribution.json",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--attribution.json.gz",
+      "sourceBytes": 37213,
+      "sha256": "23484379606c3fdd62430c442cfe2d3e890165270d422887856f661eb0673443"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/lldb.log",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--lldb.log.gz",
+      "sourceBytes": 3009,
+      "sha256": "45d6c830738f1e9b89a3a60861dcc9d9ad0d51c4774dd0b91fd2271325791066"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-0.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-0.txt.gz",
+      "sourceBytes": 614944,
+      "sha256": "0cf1c2c8b6a16a08d714dfc8e7dcb4c27a4bc00e982baec899891cc949349a3d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-1.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-1.txt.gz",
+      "sourceBytes": 298114,
+      "sha256": "faf5b2f34e75ff69296f4459aa76b4a8b466c005f7af25c060a9ff279b41a0fd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-2.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-2.txt.gz",
+      "sourceBytes": 357043,
+      "sha256": "8ba488eca5ce44545f2706c1627c72c373e0adab0e842edd006080c9a4b70f35"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-3.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-3.txt.gz",
+      "sourceBytes": 469329,
+      "sha256": "c6d6688cd005aa048f31d6b9a0efb9abcaa51d8ab483ca9857ab1154d5c320cc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-4.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-4.txt.gz",
+      "sourceBytes": 608434,
+      "sha256": "c062cf8b67d81e95124f4934993cbbac97c2eecb88fb9112e2faa1fb0b8c307f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-5.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-5.txt.gz",
+      "sourceBytes": 768386,
+      "sha256": "4338f05e8c9178ea341b5738b85faf160f2576176c399d587509788c67677be5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-6.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-6.txt.gz",
+      "sourceBytes": 597112,
+      "sha256": "4ae2d7b7df7e48de1196f939c4237932cab41b68f54ab8be9c6bad035555dac5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-7.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-7.txt.gz",
+      "sourceBytes": 263866,
+      "sha256": "5c02145ab210fe7b26fb0fad765b3d73049eb4e926b0c752fcbc541ffde6f6c7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-8.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-8.txt.gz",
+      "sourceBytes": 371123,
+      "sha256": "82203a7dc2f9ac5225224e8f0df00d2c32883cb3a7aab0bb33c914652fb7baa2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1/sample-9.txt",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1--sample-9.txt.gz",
+      "sourceBytes": 316497,
+      "sha256": "b8065df053721fbb1adcc2a73328a3177c0ddee4beaf05929099cb6ff48b3250"
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-call-profile-input-v1/after/manifest.json",
+      "path": "docs/results/native-hot-functions-v11-assets/leaf-call-profile-input-v1--after--manifest.json.gz",
+      "sourceBytes": 4201,
+      "sha256": "93bf0a3d4a7566787ac0b4191caff2c2cad2b8bf714e2bb5befe26478f0c411b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/build-leaf-call-profile-input-v1.mjs",
+      "path": "docs/results/native-hot-functions-v11-assets/build-leaf-call-profile-input-v1.mjs.gz",
+      "sourceBytes": 3573,
+      "sha256": "e199335b93b6df1ab4a0f47d654e766e0a8f1c5e1c14eda0a0eb96332c572482"
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-call-debug-image-v1.mjs",
+      "path": "docs/results/native-hot-functions-v11-assets/leaf-call-debug-image-v1.mjs.gz",
+      "sourceBytes": 634,
+      "sha256": "a9446c0fa22d1c7dae57caa4ebe61d7b66ebbfcd6ad8260e5287d71b8cfa9493"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-call-profile-input-v1-exit.json",
+      "path": "docs/results/native-hot-functions-v11-assets/prepare-leaf-call-profile-input-v1-exit.json.gz",
+      "sourceBytes": 419,
+      "sha256": "4a74bbdccd699aa6fd60a405c01d3830c941333f8f71fb9d9fb3f5bded57abe9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1-driver-exit.json",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1-driver-exit.json.gz",
+      "sourceBytes": 274,
+      "sha256": "5bf3f834d1b1b304775aeaafbf366538ea59c6202c3b98d07eab2f945114492c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-call-v1-driver.mjs",
+      "path": "docs/results/native-hot-functions-v11-assets/profile-leaf-call-v1-driver.mjs.gz",
+      "sourceBytes": 1257,
+      "sha256": "d1d09e0d7b1e575bba160cf25e9c9df5bb13261ae278561b6ad2241e84f76361"
+    },
+    {
+      "source": ".tint-bootstrap/perf/a1-copying-read-static-v1.json",
+      "path": "docs/results/native-hot-functions-v11-assets/a1-copying-read-static-v1.json.gz",
+      "sourceBytes": 50148,
+      "sha256": "69ff06ba78f39574e44e67d73da58e4d806f1faaccbc46294673648af6c0f1e3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/a1-resolve-reference-static-v1.json",
+      "path": "docs/results/native-hot-functions-v11-assets/a1-resolve-reference-static-v1.json.gz",
+      "sourceBytes": 464294,
+      "sha256": "9599375ba632c239ad89308de672cbc8090c49228ba9588f7727a2b060b80704"
+    },
+    {
+      "source": ".tint-bootstrap/perf/open-scalar-registers-red-v1.log",
+      "path": "docs/results/native-hot-functions-v11-assets/open-scalar-registers-red-v1.log.gz",
+      "sourceBytes": 1076,
+      "sha256": "c1eae1e9398941e91660f7ef851f0590f04dfe6aef00c2ded707788d978f5e7b"
+    }
+  ]
+}
