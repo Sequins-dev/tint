@@ -242,7 +242,7 @@ function periodText(
     input.second +
     input.millisecond / 1000;
   const half = input.hour < 12 ? "am" : "pm";
-  let period = half;
+  let period: string = half;
   if (symbol === "B")
     period = dateTimeDayPeriod(formatter.periods, seconds) ?? half;
   else if (symbol === "b" && (seconds === 0 || seconds === 43200))
