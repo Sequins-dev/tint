@@ -1157,7 +1157,13 @@ export function checkClosureModule(module: Module): ClosureResult {
       if (b.mutable && b.captured) callSafeFacts = undefined;
       if (deferred.has(b.id)) present.add(assignedToken(b.id));
       forgetNarrowed(b.id);
-      if (!system.assignable(undefinedType, op.value)) present.add(b.id);
+      // Presence only narrows a declared union containing undefined. Definite
+      // assignment has separate tokens; definite types need no snapshot entry.
+      if (
+        presentType(type) !== undefined &&
+        !system.assignable(undefinedType, op.value)
+      )
+        present.add(b.id);
       else present.delete(b.id);
     }
     return type;

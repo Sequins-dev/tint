@@ -75,7 +75,19 @@ const cases = [
   [
     true,
     "function touch():number{return 0;} function run():number{" +
-      Array.from({ length: 200 }, (_, i) => `const v${i}=touch();`).join("") +
+      Array.from(
+        { length: 200 },
+        (_, i) => `const v${i}:number|undefined=touch();`,
+      ).join("") +
+      "return v199;}",
+  ],
+  [
+    true,
+    "function touch():number{return 0;} function run():number{" +
+      Array.from(
+        { length: 200 },
+        (_, i) => `const v${i}=touch();if(v${i}<0)return 0;`,
+      ).join("") +
       "return v199;}",
   ],
   [

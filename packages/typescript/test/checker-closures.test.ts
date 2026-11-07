@@ -76,7 +76,7 @@ test("calls do not repeatedly scan growing sets of stable initialized bindings",
       "function touch():number{return 0;} function run():number{" +
         Array.from(
           { length: count },
-          (_, i) => `const value${i}=touch();`,
+          (_, i) => `const value${i}:number|undefined=touch();`,
         ).join("") +
         `return value${count - 1};}`,
     );
@@ -85,6 +85,32 @@ test("calls do not repeatedly scan growing sets of stable initialized bindings",
     Set.prototype[Symbol.iterator] = original;
   }
   assert.ok(work <= count * 4, `call invalidation visits: ${work}`);
+});
+
+test("branch snapshots do not accumulate redundant nonnullable presence facts", () => {
+  const original = globalThis.Set;
+  let work = 0;
+  globalThis.Set = new Proxy(original, {
+    construct(target, args) {
+      if (args[0] instanceof original) work += args[0].size;
+      return Reflect.construct(target, args);
+    },
+  });
+  const count = 200;
+  try {
+    const result = check(
+      "function touch():number{return 0;} function run():number{" +
+        Array.from(
+          { length: count },
+          (_, i) => `const value${i}=touch();if(value${i}<0)return 0;`,
+        ).join("") +
+        `return value${count - 1};}`,
+    );
+    assert.ok(result.ok, JSON.stringify(result));
+  } finally {
+    globalThis.Set = original;
+  }
+  assert.ok(work <= count * 16, `branch snapshot fact copies: ${work}`);
 });
 
 test("calls invalidate captured bindings written after a previous call", () => {
