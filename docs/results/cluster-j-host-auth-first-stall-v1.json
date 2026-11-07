@@ -1,0 +1,15 @@
+{
+  "kind": "cluster-j-native-preentry-stall-observation",
+  "at": "2026-11-07T00:50:30.976964+00:00",
+  "selection": "built-ins/String/prototype/indexOf/S15.5.4.7_A5_T6.js",
+  "variant": "strict",
+  "inferiorPid": 31289,
+  "lastObservedCpu": "0:00.00",
+  "lastObservedState": "T",
+  "lastObservedWall": "04:29",
+  "debuggerPid": 30904,
+  "debugserverPid": 31288,
+  "copiedDiagnostics": [],
+  "finding": "Inferior remained stopped with zero CPU for the whole observation. Debugger and stub also sleeping. This is a launch/control stall, not CPU-bound runtime slowness. Preserve the eventual original runner status and recheck separately.",
+  "journal": ".tint-bootstrap/cluster-j-string-v9.jsonl"
+}

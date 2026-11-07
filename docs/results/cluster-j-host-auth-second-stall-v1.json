@@ -1,0 +1,52 @@
+{
+  "at": "2026-11-07T00:52:06.654Z",
+  "uptime": "8:52  up 3 days, 12:17, 1 user, load averages: 9.36 14.75 20.41",
+  "processes": [
+    {
+      "pid": 56955,
+      "ppid": 67498,
+      "elapsed": "02:53",
+      "cpuTime": "0:00.31",
+      "cpu": "0.0",
+      "state": "S",
+      "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb"
+    },
+    {
+      "pid": 57001,
+      "ppid": 56955,
+      "elapsed": "02:50",
+      "cpuTime": "0:00.01",
+      "cpu": "0.0",
+      "state": "S",
+      "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver"
+    },
+    {
+      "pid": 57002,
+      "ppid": 57001,
+      "elapsed": "02:50",
+      "cpuTime": "0:00.00",
+      "cpu": "0.0",
+      "state": "T",
+      "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-NrsHY0/test"
+    },
+    {
+      "pid": 63303,
+      "ppid": 1,
+      "elapsed": "01:58:32",
+      "cpuTime": "0:00.22",
+      "cpu": "0.0",
+      "state": "Ss",
+      "command": "/bin/zsh"
+    },
+    {
+      "pid": 67498,
+      "ppid": 63303,
+      "elapsed": "01:57:49",
+      "cpuTime": "62:03.70",
+      "cpu": "0.0",
+      "state": "S",
+      "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+    }
+  ],
+  "runner": "2026-11-07T00:51:48.405Z [Test262 STALL] selection=\"built-ins/String\" phase=\"executing built-ins/String/prototype/indexOf/S15.5.4.7_A6.js [sloppy; flags=] (launching debugger / awaiting LLDB)\" elapsed=154766ms done=641/2443 pass=640 fail=0 unsupported=0 infra=1 waiting runner=67498 child/inferior=56955,57001,57002"
+}

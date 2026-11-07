@@ -1,0 +1,10 @@
+{
+  "kind": "cluster-j-diagnostic-sampler-stall",
+  "at": "2026-11-07T00:44:38.268760+00:00",
+  "samplerPid": 24305,
+  "targetRunnerPid": 67498,
+  "process": "  PID  PPID ELAPSED      TIME STAT COMMAND\n24305 24294   01:56   0:00.00 S    sample 67498 1 10 -file .tint-bootstrap/j-string-v9-batch10-stall-sample.txt\n",
+  "finding": "Sampler remained sleeping with zero CPU, no initial stdout and no output file for over73s. Terminated only the sampler; retained the live runner. No native failure or variant timeout inferred.",
+  "expectedSamplerExit": 143,
+  "journal": ".tint-bootstrap/cluster-j-string-v9.jsonl"
+}
