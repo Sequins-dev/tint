@@ -1,0 +1,144 @@
+{
+  "kind": "cluster-j-current-main-shared-eval-profile",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T23:06:39.194684+00:00",
+  "priorReport": "docs/results/cluster-j-regexp-literal-eval-performance-blocker-v39.json",
+  "manifest": {
+    "kind": "bounded-eval-profile-fixture",
+    "conformance": false,
+    "sourceSnapshot": {
+      "sha256": "0935103af5790160ecb6ac9537853d760fc9fb783173ee4682ef256a0603d2a5",
+      "files": 601
+    },
+    "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);var pattern=eval(\"/\"+xx+\"/\");if(pattern.source!==xx)throw 1;}",
+    "sourceSha256": "79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-uhNvcc/test",
+    "imageSha256": "bf0711355003b34e9bb85e2b5094869419e7083ec50ed1179d43438229e1bd2b",
+    "iterations": 1000,
+    "modifiedTool": "Private tools clone adds debugSymbols:true only; frozen39 toolchain is untouched",
+    "debuggerLaunch": "debugserver-direct",
+    "timeoutMs": 60000
+  },
+  "matchedBoundedFixtureSourceSha256": "79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+  "comparisonLimit": "Current graph adds P reference-inlining/UTF16 kernels AND C2 auto-accessors; not an isolated P speedup benchmark. Both bounded diagnostics timed out65wall; no runtime improvement claim.",
+  "buildExit": 0,
+  "nativeDriverExit": 1,
+  "initialStopVerified": {
+    "state": "stopped",
+    "pid": 25529
+  },
+  "expectedNativeExit42Verified": false,
+  "outerContainmentSeconds": 65,
+  "nativeOutcome": "timeout; own diagnostic debugger and inferior cleaned up",
+  "lastCpuSample": {
+    "at": "2026-11-07T23:06:00.895979+00:00",
+    "process": "25529   1:02.00 01:04 RX"
+  },
+  "firstSample": {
+    "atNativeSeconds": 0.5,
+    "samples": 609,
+    "stack": "scriptCompiler -> readManagedSurfaceDirectory -> planManagedSurfaceContracts -> canonicalizeManagedSurfaceTypes/serializeManagedSurfaceTypes",
+    "interpretation": "First-eval setup; compiler cached once. Not repeated per eval."
+  },
+  "laterSample": {
+    "atNativeSeconds": 20,
+    "samples": 739,
+    "stack": "script-evaluation.run -> createScriptEntryCompiler closure -> prepareManagedSurfaceEntry -> lowerManagedJitProgram -> lowerModuleEntries/lowerEntries -> validateCollectionElement -> assignable/relates/solveRelation -> pair -> createNumberIndex.intern/grow",
+    "interpretation": "All739samples within shared native JIT collection element type-relation validation. This one-second snapshot is not a whole-run percentage. No RegExp matching frames in either snapshot."
+  },
+  "ownership": "P shared JIT preparation/type-checking throughput; handoff-J-to-P.md updated. J continues original conformance run and preserves all timeout observations.",
+  "nextStep": "P fix generic preparation/structural relation work; then fresh-main explicit single-variant rechecks. No RegExp semantic workaround or changed Test262 sources.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/attribute-late.ts",
+      "bytes": 464,
+      "sha256": "fe9bef651eeee931170f5418b8610d445f80ec52c52cb2b16b049b1099960805"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/attribute.ts",
+      "bytes": 454,
+      "sha256": "d773f558d7de6643b66ba269c7a9e3cbe730e770259daa9373f425f80e3fa1e1"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/build.stderr",
+      "bytes": 946,
+      "sha256": "5686f3f7ff9286daf45a7057a2950612b126dc7a942350f4df688e56ed8c987d"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/build.stdout",
+      "bytes": 730,
+      "sha256": "e87455df6fef439ee6f6603cc11cda3a06aeb3bb6160142fb541884ee2a53301"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/build.ts",
+      "bytes": 1818,
+      "sha256": "4d7516db1a8e4807ae4d17ce1fed63f42ae79f45f1cc9f5cd5b9c305c96a54a2"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/cpu.jsonl",
+      "bytes": 46412,
+      "sha256": "b8f9c87388cab7581533ee65440fb1987a5b2507b4bbf80e589a5bdb88afef44"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/exclusive-late-profile.json",
+      "bytes": 3939,
+      "sha256": "d3d79517523803ef53c7bc4c6a7b46e43171497bcb6de2d9ca94522e48405c18"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/exclusive-profile.json",
+      "bytes": 10101,
+      "sha256": "c5c48cb1fd64499284d9dab72d1e195e7eae465993d23890ea1ab386395d284c"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/initial.json",
+      "bytes": 34,
+      "sha256": "221f935b6c90f6a8bea3888d268c98992f6f0db76f790158f374d81d8a7dae05"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/launch.json",
+      "bytes": 1670,
+      "sha256": "e8c8d7081ccf683e8653f59668532395cc90fee52eab30e881e133a04cfe4b99"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/manifest.json",
+      "bytes": 790,
+      "sha256": "4faa36c3b3a8e90107970f1c71c9854c2c53abe072ab434f2be714629a740067"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/native-late.sample.txt.gz",
+      "bytes": 10174,
+      "sha256": "5ef6329b638210aae66b3a2ab2651475195637cfb8232e44ab7870981507dc3c"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/native.log",
+      "bytes": 2290,
+      "sha256": "f8f6c5d6d3c389bd874c157aedf862a524e144a59a8335f307ec4106cf5c537e"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/native.sample.txt.gz",
+      "bytes": 25636,
+      "sha256": "3e432f6bb66419fd343d76793ba927f1959d949580fc773acdba90daeab1be50"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/run.py",
+      "bytes": 3914,
+      "sha256": "39e547d71e18be903200bc45ab446e15f8bd34125ac3bd8b74f5dc9d144edf20"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/run.stdout",
+      "bytes": 875,
+      "sha256": "56096f53030d3d8562ced7f47c3ed8008a9e8d6339df61238bd00989771e6975"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/sample-command.log",
+      "bytes": 289,
+      "sha256": "5723d2cf9bdbbf79394039fab7a654f8ebd53ce284c0d2445795e8a2105780e9"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v40-evidence/sample-late-command.log",
+      "bytes": 294,
+      "sha256": "54d9165a9f24358fb8f0ec58533ebc7b15b58683ef207d794bb90ed37e01b21b"
+    }
+  ]
+}

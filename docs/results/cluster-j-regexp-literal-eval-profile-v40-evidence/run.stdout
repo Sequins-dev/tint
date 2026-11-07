@@ -1,0 +1,12 @@
+2026-11-07T23:04:55.965127+00:00 native bounded fixture 0.0 s
+2026-11-07T23:05:06.049429+00:00 native bounded fixture 10.1 s
+2026-11-07T23:05:16.009833+00:00 native bounded fixture 20.0 s
+2026-11-07T23:05:26.048111+00:00 native bounded fixture 30.1 s
+2026-11-07T23:05:36.024959+00:00 native bounded fixture 40.1 s
+2026-11-07T23:05:46.063245+00:00 native bounded fixture 50.1 s
+2026-11-07T23:05:56.006659+00:00 native bounded fixture 60.0 s
+Traceback (most recent call last):
+  File "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-literal-eval-profile-v40/run.py", line 12, in <module>
+    if time.monotonic()-start>65:raise TimeoutError('Bounded native diagnostic exceeded containment')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: Bounded native diagnostic exceeded containment

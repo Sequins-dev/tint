@@ -1,0 +1,135 @@
+{
+  "samples": 739,
+  "leafGroups": [
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+      "samples": 166,
+      "percent": 22.46278755074425
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+      "samples": 127,
+      "percent": 17.185385656292286
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+      "samples": 55,
+      "percent": 7.442489851150203
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+      "samples": 53,
+      "percent": 7.171853856562923
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+      "samples": 44,
+      "percent": 5.953991880920162
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+      "samples": 40,
+      "percent": 5.412719891745602
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+      "samples": 36,
+      "percent": 4.871447902571042
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+      "samples": 34,
+      "percent": 4.600811907983762
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+      "samples": 32,
+      "percent": 4.330175913396482
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+      "samples": 31,
+      "percent": 4.194857916102841
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+      "samples": 15,
+      "percent": 2.029769959404601
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+      "samples": 14,
+      "percent": 1.8944519621109608
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+      "samples": 13,
+      "percent": 1.7591339648173208
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+      "samples": 11,
+      "percent": 1.4884979702300405
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+      "samples": 10,
+      "percent": 1.3531799729364005
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+      "samples": 10,
+      "percent": 1.3531799729364005
+    },
+    {
+      "function": "runtime:helper:to-uint32",
+      "samples": 9,
+      "percent": 1.2178619756427604
+    },
+    {
+      "function": "runtime:helper:remainder",
+      "samples": 8,
+      "percent": 1.0825439783491204
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+      "samples": 7,
+      "percent": 0.9472259810554804
+    },
+    {
+      "function": "runtime:helper:memory-move",
+      "samples": 6,
+      "percent": 0.8119079837618404
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+      "samples": 6,
+      "percent": 0.8119079837618404
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+      "samples": 5,
+      "percent": 0.6765899864682002
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+      "samples": 3,
+      "percent": 0.4059539918809202
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2559",
+      "samples": 2,
+      "percent": 0.2706359945872801
+    },
+    {
+      "function": "runtime:helper:string-equal",
+      "samples": 1,
+      "percent": 0.13531799729364005
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+      "samples": 1,
+      "percent": 0.13531799729364005
+    }
+  ]
+}
