@@ -1,0 +1,47 @@
+{
+  "kind": "portable-semantic-triage",
+  "conformance": false,
+  "nativeExecution": false,
+  "startedAt": "2026-11-07T01:01:49.296Z",
+  "completedAt": "2026-11-07T01:01:49.466Z",
+  "nodeVersion": "v24.12.0",
+  "head": "ed857e311dbcfebdc1903efc1d5cfcb45c0249bf",
+  "sourceSnapshot": {
+    "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+    "files": 569
+  },
+  "scope": "Unchanged pinned function caller/arguments descriptor tests through the existing lowered-node-host portable oracle. This does not execute native output or replace conformance evidence.",
+  "nodeReference": "docs/results/test262-object-cluster-g-node-reference-v1.json",
+  "total": 4,
+  "passed": 4,
+  "observations": [
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-arguments.js",
+      "variant": "sloppy",
+      "sha256": "5e3b7791efe154b33803aaedb586446c61dde3a64354af7ff59b20b2a75862a8",
+      "result": "none",
+      "printed": []
+    },
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-arguments.js",
+      "variant": "strict",
+      "sha256": "5e3b7791efe154b33803aaedb586446c61dde3a64354af7ff59b20b2a75862a8",
+      "result": "none",
+      "printed": []
+    },
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-caller.js",
+      "variant": "sloppy",
+      "sha256": "02e3d0061d597999aeb54238fc2a86fae70d52dc4f512fbcdacfb5a2edaf4edf",
+      "result": "none",
+      "printed": []
+    },
+    {
+      "path": "built-ins/Object/internals/DefineOwnProperty/consistent-value-function-caller.js",
+      "variant": "strict",
+      "sha256": "02e3d0061d597999aeb54238fc2a86fae70d52dc4f512fbcdacfb5a2edaf4edf",
+      "result": "none",
+      "printed": []
+    }
+  ]
+}

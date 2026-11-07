@@ -1,0 +1,43 @@
+{
+  "kind": "cluster-g-authorization-hold-validation",
+  "conformance": false,
+  "nativeExecution": false,
+  "validatedAt": "2026-11-07T01:04:48.686069+00:00",
+  "head": "ed857e311dbcfebdc1903efc1d5cfcb45c0249bf",
+  "build": {
+    "command": "PATH=node24:$PATH pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/object-held-portable-triage-build-v1.log"
+  },
+  "focusedTests": {
+    "command": "node --test --test-concurrency=2 tools/native-run-journal.test.ts tools/native-variant-selection.test.ts",
+    "exitStatus": 0,
+    "passed": 17,
+    "total": 17,
+    "nativeImagesLaunched": 0,
+    "log": "docs/results/g-object-held-focused-tests-v1.log",
+    "logSha256": "38ff510cd50a7fc9dcb865add4f5f2c6d91404aefd16976ca07efef8d386b895"
+  },
+  "portableOracle": {
+    "report": "docs/results/g-object-function-descriptor-portable-triage-v1.json",
+    "exitStatus": 0,
+    "passed": 4,
+    "total": 4,
+    "nativeExecution": false
+  },
+  "staticJournalValidation": {
+    "report": "docs/results/g-object-held-journal-static-validation-v1.json",
+    "exitStatus": 0,
+    "restoredObservations": 706,
+    "originalUnchanged": true,
+    "nativeExecution": false
+  },
+  "recheckManifest": {
+    "path": "docs/results/g-object-host-authorization-recheck-variants-v1.json",
+    "validated": true,
+    "files": 1,
+    "variants": 2,
+    "variantSubsetSha256": "dd7024c2db2a498832e41d1d58d103a4bde0d544421b39fc67c72f4a2d45d66b"
+  },
+  "status": "Native run remains stopped pending HOST AUTHORIZATION RESTORED. No host change or new native launch performed."
+}

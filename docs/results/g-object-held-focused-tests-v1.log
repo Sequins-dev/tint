@@ -1,0 +1,25 @@
+✔ resuming retains all outcomes and incomplete compilation membership without replay (4.633458ms)
+✔ resume rejects changed source, toolchain, batch policy and resources before appending (1.4225ms)
+✔ resume rejects truncated, duplicate and inconsistent observations (2.10275ms)
+✔ completed journals can restore a report without execution or further appends (1.672ms)
+✔ a freshly completed journal becomes read-only (1.081083ms)
+✔ module fixture hashes participate in resume identity without changing historical Script inputs (0.488ms)
+✔ Script-root absence proofs participate in resume identity (0.769708ms)
+✔ default native selection keeps all strictness variants and groups syntax negatives (2.195083ms)
+✔ explicit variants retain native ordering and carry a stable complete-subset identity (0.853333ms)
+✔ raw and module requests must match the pinned metadata policy (0.328875ms)
+✔ variant manifests reject missing, fixture and out-of-root paths (0.123125ms)
+✔ variant manifests reject duplicate requests instead of reducing the denominator (0.089167ms)
+✔ optional hashes must match the pinned source (0.166375ms)
+✔ invalid or empty manifests fail before any native preparation (0.200375ms)
+✔ resume rejects a changed subset before appending any records (2.528708ms)
+✔ subset metadata is ledger accepted while retaining a non-pass (0.520833ms)
+✔ native CLI validates the manifest environment option before opening a journal (390.527583ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 586.196041
