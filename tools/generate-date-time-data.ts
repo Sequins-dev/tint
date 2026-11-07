@@ -275,6 +275,14 @@ for (const locale of localeKeys) {
           `monthPatterns/monthPatternContext[@type='${context}']/monthPatternWidth[@type='${width}']/monthPattern[@type='leap']`,
         );
       }
+    for (const context of ["format", "stand-alone"])
+      for (const day of ["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
+        add(
+          "days",
+          context + ".short." + day,
+          `days/dayContext[@type='${context}']/dayWidth[@type='short']/day[@type='${day}']`,
+          true,
+        );
     add(
       "leapMonths",
       "numeric",
