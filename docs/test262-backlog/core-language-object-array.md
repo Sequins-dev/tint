@@ -15,8 +15,8 @@ continues to report all families, including those outside the active focus.
 | Scope              | Variants | Completed-report outcome footprint |
 | ------------------ | -------: | ---------------------------------: |
 | `language/*`       |   44,701 |                              9,110 |
-| `built-ins/Object` |    6,802 |                                938 |
-| `built-ins/Array`  |    6,119 |                              1,223 |
+| `built-ins/Object` |    6,802 |                              6,802 |
+| `built-ins/Array`  |    6,119 |                              6,119 |
 
 Footprints include historical non-passes and syntax-negative observations. They
 are not pass counts. The current native syntax gate already accepts or rejects
@@ -71,8 +71,7 @@ parameters, function declarations and expressions, arrows, construction and
 new.target, try/catch, const/let, loops, conditions, switch, break/continue,
 throw, blocks and with. These independent checkpoints now use the [accepted V19 frozen toolchain](../results/frozen-node-toolchain-managed-templates-v1.json) after the tagged-template selection, as recorded in the [queue handoff](../results/language-foundation-queue-supersession-node-v1.json). Existing direct-eval and for-of runs retain their own captured sources and finish before new function/class groups, per the [queue order](../results/language-foundation-queue-order-node-v2.json). Each complete selection gets a new immutable report; sources and overlapping totals are not merged.
 
-Broad Object/Array family measurements are deferred. Their older reports remain
-historical evidence, rather than a reason to override the language priority.
+The coordinated built-in breadth survey now has a complete [Object report](../results/test262-object-family-native-v2.json): **6,794/6,802 passes**, retaining six missing String locale-method failures and two original host-authorization timeouts. The [audit](../results/g-object-family-completion-audit-v1.json) verifies every pinned variant and the unchanged original prefix. Array has a recovered [historical full-family report](../results/test262-array-family-historical-extract-native-v1.json), **5,972/6,119**, retaining 142 unsupported variants and five debugger crashes; its fresh measurement follows the separate Object authorization recheck.
 
 ## Preparation inventory
 

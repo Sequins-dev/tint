@@ -1,0 +1,145 @@
+{
+  "kind": "native-survey-completion-audit",
+  "conformance": false,
+  "ownerExitStatus": 1,
+  "ownerExitClassification": "Known slot wrapper parse error after native report and terminal completion; see shared SLOT WRAPPER EXIT-1 NOTE. Native runner exit code was not separately captured; complete native observations and compilation records are verified below.",
+  "wrapperError": "/Users/stephenbelanger/.t3/tint-slots/slot:29: parse error near `)'",
+  "stderr": {
+    "path": ".tint-bootstrap/object-family-native-v2-resume-v1.stderr.log",
+    "sha256": "7ea14e11eb26df150fcfa08c2053e5d0569a424a45c1260125d6238f54104098",
+    "bytes": 4204209,
+    "artifact": "docs/results/g-object-family-resume-stderr-v1.log.gz",
+    "artifactSha256": "a3e463444fd471212e1ae8846c71aea590973397ed4996bf6a2d2f0141a2e7a1"
+  },
+  "completedAt": "2026-11-07T16:58:47.814Z",
+  "selection": "built-ins/Object",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "journalSha256": "33f0e1de9c769671ddf0ba8982207b2a2ab9922af45bf570680f18e0e01df9ee",
+  "journalBytes": 3935599,
+  "report": "docs/results/test262-object-family-native-v2.json",
+  "reportSha256": "a0bba4f3f72d66cbd3d83e5eb67ed395c3d839a433ef216f35edf6476814d23c",
+  "totals": {
+    "total": 6802,
+    "passed": 6794,
+    "failed": 6,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9988238753307851
+  },
+  "expectedVariants": 6802,
+  "observedVariants": 6802,
+  "uniqueVariants": 6802,
+  "terminalCompleteRecords": 1,
+  "compilationRecords": 108,
+  "resumeRecords": 1,
+  "originalPrefix": {
+    "report": "docs/results/g-object-host-authorization-prefix-v1.jsonl",
+    "sha256": "bb2303ad09f819e6083c4e28f2794dce809aab7b2ecefb0cff5431cb729a35d6",
+    "observations": 706,
+    "byteExact": true,
+    "observationsUnchanged": true
+  },
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "frozenManifestFileSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+  "frozenManifestPayloadSha256": "23cad7d29f9594f37e7ab082b3873f450450a8f6eae46f41d80c20d84c1136b1",
+  "frozenFilesRevalidated": true,
+  "strictExtractor": {
+    "entry": ".tint-bootstrap/node-toolchain-builtins-object-v4/tools/test262-native-extract.ts",
+    "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+    "observationsEqualCanonical": true,
+    "exitStatus": 0
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nonpasses": [
+    {
+      "path": "built-ins/Object/create/15.2.3.5-4-48.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "built-ins/Object/create/15.2.3.5-4-48.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-3lUktt/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "scope": "Mechanical audit of one completed native survey, not a new execution or a combination of retries. Every original observation and compilation is retained. Full selected denominator verified with the frozen strict extractor."
+}
