@@ -1,0 +1,13 @@
+{
+  "kind": "compile-cost-observer-correction",
+  "at": "2026-11-07T17:41:34.025239+00:00",
+  "firstBaselineNativeReport": ".tint-bootstrap/test262-cluster-j-nonintl64-baseline-v26.json",
+  "firstBaselineNativePassed": 64,
+  "cpuConclusion": "inconclusive; no CPU records because v1 wrapped stderr.write while native heartbeat uses fs.writeSync",
+  "originalHook": ".tint-bootstrap/j-compile-cpu-hook.mjs",
+  "correctedHook": ".tint-bootstrap/j-compile-cpu-hook-v2.mjs",
+  "correctedHookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+  "correctedSmoke": ".tint-bootstrap/j-compile-cpu-hook-smoke-v2.jsonl",
+  "correctedBaselineCPU": ".tint-bootstrap/j-nonintl64-baseline-cpu-v26b.jsonl",
+  "policy": "Retain original64nativePASS; repeat is for CPU instrumentation, never replaces the original native observations. Frozen toolchain scripts unchanged; external Node import hook wraps only heartbeat fd2 writes and records process.cpuUsage and maxRSS before staging."
+}

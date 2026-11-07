@@ -1,0 +1,49 @@
+{
+  "kind": "cluster-j-collator-initial-compile-cost",
+  "at": "2026-11-07T17:48:24.880923+00:00",
+  "conclusiveAcceptance": false,
+  "reason": "First matched pair is +5.22%, marginally above the approximate5% target; needs confirmation or improvement. No cost acceptance claimed.",
+  "baseline": {
+    "kind": "native-batch-compile-cpu",
+    "pid": 99225,
+    "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+    "phase": "compiling batch 0 (64 variants)",
+    "startedAt": "2026-11-07T17:37:18.124Z",
+    "endedAt": "2026-11-07T17:40:25.213Z",
+    "wallMs": 187088.886792,
+    "userUs": 235881478,
+    "systemUs": 4269800,
+    "totalUs": 240151278,
+    "peakRSSKiB": 4535696,
+    "nextPhase": "staging batch 0"
+  },
+  "candidate": {
+    "kind": "native-batch-compile-cpu",
+    "pid": 10722,
+    "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+    "phase": "compiling batch 0 (64 variants)",
+    "startedAt": "2026-11-07T17:41:51.390Z",
+    "endedAt": "2026-11-07T17:45:26.872Z",
+    "wallMs": 215455.181708,
+    "userUs": 248613055,
+    "systemUs": 4070555,
+    "totalUs": 252683610,
+    "peakRSSKiB": 4358752,
+    "nextPhase": "staging batch 0"
+  },
+  "increasePercent": 5.218515639129762,
+  "inputs": {
+    "manifest": ".tint-bootstrap/j-nonintl64-control-manifest-v1.json",
+    "sha256": "45841b4ce3b1e98664d72abb54597382ca508c6456978de89b67c8c0eca3ed58",
+    "variants": 64,
+    "selection": "Non-Intl String.fromCharCode34/fromCodePoint22/at8"
+  },
+  "nativeOutcomes": {
+    "baseline": "64/64PASS",
+    "candidate": "64/64PASS"
+  },
+  "baselineSource": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+  "baselineMainCommit": "7fe6eecb963ead44f6666a8ecc80017486f74876",
+  "candidateSource": "74686ae07c7d0e4922c013475e1f74173c4f6cbdf913d8d98b2136e9c6ef6f16",
+  "policy": "CPU is direct process.cpuUsage over compiling\u2192staging phases, including V8 worker CPU. Wall time and observed elapsedMs are not used as CPU. External read-only Node import observer has matching SHA and does not change frozen scripts. Old initialbaseline64PASS lacking CPU remains retained and separate."
+}

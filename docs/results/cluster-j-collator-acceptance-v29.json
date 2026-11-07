@@ -1,0 +1,360 @@
+{
+  "kind": "cluster-j-collator-native-acceptance",
+  "at": "2026-11-07T18:41:28.150543+00:00",
+  "sourceSnapshot": {
+    "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+    "files": 600
+  },
+  "feature": "Portable root UCA17/CLDR48 Collator with implemented locale tailorings, options, constructor/prototype/compare/resolvedOptions/supportedLocalesOf and String.localeCompare behind existing Intl boundary; packed data lazy-decoded on comparison. Shared Locale.getCollations service availability preserves explicit keywords and specified unmatched fallback.",
+  "serviceBoundary": {
+    "languages": [
+      "de",
+      "en",
+      "es",
+      "fr",
+      "it",
+      "sv",
+      "th"
+    ],
+    "publicTypes": [
+      "eor",
+      "phonebk"
+    ],
+    "phonebookLanguage": "de",
+    "defaultLocale": "en",
+    "profiles": [
+      "root/standard",
+      "root/search",
+      "root/eor",
+      "de/phonebk",
+      "de/search",
+      "es/standard",
+      "es/search",
+      "sv/standard",
+      "th/standard"
+    ],
+    "draftPolicy": "Approved/contributed profiles only; provisional German EOR excluded and inherits approved root EOR. Broader raw CLDR49 metadata catalog remains pinned independently.",
+    "outsideScope": "Intl.supportedValuesOf(collation) remains explicitly unsupported in I scope; handoff-J-to-I.md records actual registry for future integration, no false list/stub added."
+  },
+  "data": {
+    "inputs": "tools/collation-data-inputs.json",
+    "output": "tools/collation-data-output.json",
+    "license": "packages/js-runtime/LICENSE-COLLATION-UNICODE.txt",
+    "cldr": "48",
+    "unicode": "17.0.0",
+    "archiveSha256": "06c7c698d6fd8d67cefac15a0206b0109b00e0ef1636f86f84449fa959561f74",
+    "corpus": {
+      "archiveMember": "common/uca/CollationTest_CLDR_NON_IGNORABLE.txt",
+      "sha256": "a409a9253563c2062cf7df0834b8afe18e4c1d68ee30990ce30fc3723b7a8b43",
+      "bytes": 18395314,
+      "rows": 206298,
+      "inversions": 0,
+      "report": {
+        "path": "docs/results/cluster-j-collator-evidence-v29/j-collation-root-production-corpus-v29.log",
+        "bytes": 1163,
+        "sha256": "e31f26574b94250700076ed329d96067a645cd39e8448cfae2d707c2d9a5f1fa",
+        "original": ".tint-bootstrap/j-collation-root-production-corpus-v29.log"
+      }
+    },
+    "interpretation": "Generator preserves FDD1 script boundary contractions, distinct fractional reference forms and numeric primary prefix; implicit Han starts after its group boundary. Prefix lookup examines only the possible prefix length. Unicode normalization/CCC infrastructure is reused."
+  },
+  "semanticChecks": {
+    "focusedPassed": 31,
+    "focusedReport": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-focused-green-v29b.log",
+      "bytes": 2975,
+      "sha256": "f2e785f02a77cee29cd6c274c6bbea8c9cbea4419d626f3bb80e1a50a7b419a4",
+      "original": ".tint-bootstrap/j-collator-focused-green-v29b.log"
+    },
+    "redApi": {
+      "failed": 5,
+      "report": {
+        "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-prototype/api-red.log",
+        "bytes": 5627,
+        "sha256": "0907024a0e604131f42a959ac0606e98d58c8b034eec7ec73adebf02bee8523d",
+        "original": ".tint-bootstrap/j-collator-prototype/api-red.log"
+      }
+    },
+    "redHan": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collation-han-boundary-red-v28.log",
+      "bytes": 1633,
+      "sha256": "1ab9fa35fa3a16fe5c92842e9d89d774e6aaa98387e83191efd502c98808eeaa",
+      "original": ".tint-bootstrap/j-collation-han-boundary-red-v28.log"
+    },
+    "redMetadataRegistry": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-locale-registry-red-v29.log",
+      "bytes": 1634,
+      "sha256": "99758dbfb62a938e9493717b3cdbcb3ef29bfaa50e16b21adc9d0a141716868e",
+      "original": ".tint-bootstrap/j-collator-locale-registry-red-v29.log"
+    },
+    "stableReferenceOptions": {
+      "comparisons": 65712,
+      "differences": 0,
+      "report": {
+        "path": "docs/results/cluster-j-collator-evidence-v29/j-collation-production-options-v29.log",
+        "bytes": 51,
+        "sha256": "075d2735239f5c5f4824cf6e2dd51293cac3b1bb4452fc83f5322e57b2810e3b",
+        "original": ".tint-bootstrap/j-collation-production-options-v29.log"
+      }
+    },
+    "stableReferenceTailorings": {
+      "comparisons": 224676,
+      "differences": 0,
+      "report": {
+        "path": "docs/results/cluster-j-collator-evidence-v29/j-collation-production-tailorings-v29.log",
+        "bytes": 795,
+        "sha256": "254b5dbd49fe2ce0ec2569090925c27ec084f58da5649674da1c9d7e6563cdfe",
+        "original": ".tint-bootstrap/j-collation-production-tailorings-v29.log"
+      }
+    },
+    "referenceBoundary": "Node24.12.0 uses ICU77.1/Unicode16/CLDR47; only stable selected cases compared. Root corpus is independently pinned UCA17. Host checks are not native Test262 conformance."
+  },
+  "nativeConformance": {
+    "combined": "docs/results/test262-cluster-j-collator-localecompare-g6-localeinfo-native-v29.json",
+    "totals": {
+      "total": 188,
+      "passed": 186,
+      "failed": 2,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 0.9893617021276596
+    },
+    "completeSelections": {
+      "intl402/Collator": "128/130",
+      "built-ins/String/prototype/localeCompare": "26/26",
+      "intl402/Locale/prototype/getCollations": "26/26"
+    },
+    "gTransferredVariants": {
+      "total": 6,
+      "passed": 6,
+      "paths": [
+        "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+        "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+        "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js"
+      ],
+      "manifest": {
+        "path": "docs/results/cluster-j-collator-evidence-v29/j-g-string-locale-recheck-manifest-v1.json",
+        "bytes": 1137,
+        "sha256": "c9c6f7f2dda306f521e9b2ed40f04696ddeb8b8287e920d46aa248423f9d7cd2",
+        "original": ".tint-bootstrap/j-g-string-locale-recheck-manifest-v1.json"
+      }
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "containmentMs": 300000,
+    "variantPolicy": "All pinned variants in each complete selection; no filters/exclusions. Explicit manifest also rechecks all G6. Canonical report authentic run start prevents later publication overriding newer source evidence.",
+    "retainedOriginal": "docs/results/test262-cluster-j-collator-localecompare-g6-native-v27.json"
+  },
+  "remainingFailures": {
+    "variants": [
+      {
+        "path": "intl402/Collator/this-value-ignored.js",
+        "sha256": "2aeae73102a4d3ef3dea09fd35420268ecbf98088970d006e85802c69738ccdd",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": [
+            "testIntl.js"
+          ]
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          },
+          {
+            "name": "testIntl.js",
+            "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+          }
+        ],
+        "outcome": {
+          "kind": "error",
+          "phase": "runtime",
+          "type": "TypeError",
+          "message": "native Script threw"
+        },
+        "status": "fail",
+        "elapsedMs": 188824.86837499996,
+        "batch": 2
+      },
+      {
+        "path": "intl402/Collator/this-value-ignored.js",
+        "sha256": "2aeae73102a4d3ef3dea09fd35420268ecbf98088970d006e85802c69738ccdd",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": [
+            "testIntl.js"
+          ]
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          },
+          {
+            "name": "testIntl.js",
+            "sha256": "cadaec6ed6b4c5dc4a45843da60101a363ea956566c582817c05aa3d88159551"
+          }
+        ],
+        "outcome": {
+          "kind": "error",
+          "phase": "runtime",
+          "type": "TypeError",
+          "message": "native Script threw"
+        },
+        "status": "fail",
+        "elapsedMs": 189146.03466600005,
+        "batch": 2
+      }
+    ],
+    "blocker": "Unchanged testIntl.js testWithIntlConstructors unconditionally instantiates Collator, NumberFormat and DateTimeFormat. Current Intl installer lacks DateTimeFormat, so new undefined throws. Collator and NumberFormat receiver-ignore behaviour passes direct diagnostic; DateTimeFormat belongs to H. No replacement constructor/harness change/exclusion.",
+    "diagnostic": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-this-ignored-diagnostic-v28.json",
+      "bytes": 819,
+      "sha256": "8c2db2b2e7d958108c669881a1a98f1a03dc4dfa814c67684bde8334da1aef14",
+      "original": ".tint-bootstrap/j-collator-this-ignored-diagnostic-v28.json"
+    },
+    "diagnosticConformance": false,
+    "recheckManifest": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-datetimeformat-dependency-recheck-manifest-v27.json",
+      "bytes": 341,
+      "sha256": "d9acfb9fbf4f232130b9e790af4b59746c53b9a982c6b6eada6191a777d7616a",
+      "original": ".tint-bootstrap/j-collator-datetimeformat-dependency-recheck-manifest-v27.json"
+    },
+    "handoff": "~/.t3/tint-briefs/handoff-J-to-H.md"
+  },
+  "nativeFixture": {
+    "report": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-prototype/native-api-v29.json",
+      "bytes": 1240,
+      "sha256": "36379290d58e3d2b1cd39c4dd4595f0ead3326aef556dfa33f81d70de9b46276",
+      "original": ".tint-bootstrap/j-collator-prototype/native-api-v29.json"
+    },
+    "manifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "imageSha256": "3cc953527e93f544bfac7e324a546c46d09dc93330c2ecbd9192f7b8d89e9dae",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-intl-collator-QUm2Ty/intl-collator.source.ts",
+      "fixtureSha256": "4dae1b322bb1798af3963aec3de005cf041d7d95bd9571b2844213724a6671ab",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29/tools/verify-hosted-intl-collator.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "managedBytes": 268435456,
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": true
+    },
+    "manifestSha256": "252e0da639a73b70d9efd7302438be5f0d48f0c864bffaefdb88a7e6b5c70614",
+    "result": "Independent stopped entry then expected exit42; root, tailoring, options, descriptors, bound identity, Unicode numeric runs and canonical equivalence, implicit Han boundary, plus bound comparisons and Locale service agreement after256MiB allocation pressure.",
+    "metadataRed": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-prototype/registry-red-direct-exit-v29.json",
+      "bytes": 1507,
+      "sha256": "d8b84089393d00428854c0d456bdda6ca802a8d6811d61d623825767df7e0559",
+      "original": ".tint-bootstrap/j-collator-prototype/registry-red-direct-exit-v29.json"
+    },
+    "redInterpretation": "Controlled return26 marks metadata/service mismatch. Original generic helper labels reserved26 harness URIError, not an actual thrown URIError; direct LLDB replay records stopped entry and exit26. Earlier native setup/typecheck failures retained separately.",
+    "oldGraphs": "Native28 graph30df and earlier27 graph746 fixtures/selfbuilds are retained; only final29 sourcec5e is current acceptance."
+  },
+  "selfBuild": {
+    "kind": "cluster-j-frozen-native-selfbuild",
+    "at": "2026-11-07T18:26:21.042769+00:00",
+    "sourceSnapshot": {
+      "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+      "files": 600
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "bootstrapExit": 0,
+    "bootstrapSeconds": 64.29216762504075,
+    "nativeExit": 0,
+    "nativeSeconds": 329.933016917028,
+    "initial": {
+      "state": "stopped",
+      "pid": 25939
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "stageComparisonExit": 0,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0,
+    "images": [
+      {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-string-stage1-v29",
+        "bytes": 53679234,
+        "sha256": "07acdcdcc3306f2e41da463e8050a1b04256af86a91682451ff5ab3be79e6218"
+      },
+      {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-string-stage2-v29",
+        "bytes": 53679234,
+        "sha256": "07acdcdcc3306f2e41da463e8050a1b04256af86a91682451ff5ab3be79e6218"
+      }
+    ]
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "passed": 4826,
+    "report": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-check-v29b.log",
+      "bytes": 404263,
+      "sha256": "69b20d700adad1c0123ae47e82035e4ac850fa1f049fa75db6fc8600a06cd98b",
+      "original": ".tint-bootstrap/j-collator-check-v29b.log"
+    },
+    "retainedFailure": {
+      "path": "docs/results/cluster-j-collator-evidence-v29/j-collator-check-v29.log",
+      "bytes": 404857,
+      "sha256": "184d2c0514778afa4c5ca894b8ef9bce8a961604016a8b9b18b03c15d389dacb",
+      "original": ".tint-bootstrap/j-collator-check-v29.log"
+    },
+    "correction": "One older Locale method-realm test expected emoji for de before actual Collator availability existed. Updated to actual eor,phonebk; semantic raw catalog still checks broader pinned CLDR data. Test-only change leaves frozen portable graph unchanged."
+  },
+  "compileCost": {
+    "report": "docs/results/cluster-j-collator-compile-cost-v29.json",
+    "acceptedWithinApproximateFivePercent": true,
+    "changePercent": -6.4150451226621445,
+    "baselineCpuSeconds": 236.442499,
+    "candidateCpuSeconds": 221.274606,
+    "allTrialsRetained": true
+  },
+  "iterators": {
+    "report": "docs/results/test262-cluster-j-string-regexp-iterators-native-v28.json",
+    "passed": 48,
+    "total": 48,
+    "completeFamilies": [
+      "built-ins/StringIteratorPrototype",
+      "built-ins/RegExpStringIteratorPrototype"
+    ],
+    "sourceSnapshot": "30dfc0f95ed313e7fcdaa6f1445b53a318b21f7edd1afe5f22a6baa7d98a9f4c"
+  },
+  "inventory": "docs/results/cluster-j-inventory-v6.json",
+  "scopeBoundary": "Latest per-file String evidence2443/2443 combines frozen graphs and does not replace historical fullString21report2267/2443. RegExp breadth remains, no whole-scope/full-suite completion claim.",
+  "provenanceNote": "Frozen29 basis text says uncommitted Collator in error; implementation commits were already present. Immutable record kept; rebase changed SHAs, source snapshot and loaded build manifests are authoritative. Reports on unmerged features belong to same READY range as implementation.",
+  "evidenceIndex": "docs/results/cluster-j-collator-evidence-v29/index.json"
+}

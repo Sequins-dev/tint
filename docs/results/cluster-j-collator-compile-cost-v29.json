@@ -1,0 +1,280 @@
+{
+  "kind": "cluster-j-collator-matched-non-intl-compile-cost",
+  "at": "2026-11-07T18:41:27.936174+00:00",
+  "finalPair": {
+    "baselineVersion": "29",
+    "candidateVersion": "29",
+    "baselineSource": {
+      "sha256": "81dd092bb0517b075471e1e719068514072f4036b925466dd4ff9f153def8ef0",
+      "files": 595
+    },
+    "candidateSource": {
+      "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+      "files": 600
+    },
+    "variantSubsetSha256": "8b1da498794c1ccfc69d61c918507918a099ef4a97ccedf669cb0f4cd4c182af",
+    "baseline": {
+      "kind": "native-batch-compile-cpu",
+      "pid": 59155,
+      "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+      "phase": "compiling batch 0 (64 variants)",
+      "startedAt": "2026-11-07T18:33:01.160Z",
+      "endedAt": "2026-11-07T18:36:08.621Z",
+      "wallMs": 187459.636375,
+      "userUs": 233297308,
+      "systemUs": 3145191,
+      "totalUs": 236442499,
+      "peakRSSKiB": 4576192,
+      "nextPhase": "staging batch 0"
+    },
+    "candidate": {
+      "kind": "native-batch-compile-cpu",
+      "pid": 76610,
+      "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+      "phase": "compiling batch 0 (64 variants)",
+      "startedAt": "2026-11-07T18:37:08.992Z",
+      "endedAt": "2026-11-07T18:40:03.918Z",
+      "wallMs": 174925.369708,
+      "userUs": 216878762,
+      "systemUs": 4395844,
+      "totalUs": 221274606,
+      "peakRSSKiB": 4543968,
+      "nextPhase": "staging batch 0"
+    },
+    "compileCpuChangePercent": -6.4150451226621445,
+    "nativePasses": [
+      64,
+      64
+    ],
+    "observationsEquivalent": true
+  },
+  "acceptedWithinApproximateFivePercent": true,
+  "allTrials": [
+    {
+      "baselineVersion": "26b",
+      "candidateVersion": "27",
+      "baselineSource": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "candidateSource": {
+        "sha256": "74686ae07c7d0e4922c013475e1f74173c4f6cbdf913d8d98b2136e9c6ef6f16",
+        "files": 599
+      },
+      "variantSubsetSha256": "8b1da498794c1ccfc69d61c918507918a099ef4a97ccedf669cb0f4cd4c182af",
+      "baseline": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 99225,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T17:37:18.124Z",
+        "endedAt": "2026-11-07T17:40:25.213Z",
+        "wallMs": 187088.886792,
+        "userUs": 235881478,
+        "systemUs": 4269800,
+        "totalUs": 240151278,
+        "peakRSSKiB": 4535696,
+        "nextPhase": "staging batch 0"
+      },
+      "candidate": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 10722,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T17:41:51.390Z",
+        "endedAt": "2026-11-07T17:45:26.872Z",
+        "wallMs": 215455.181708,
+        "userUs": 248613055,
+        "systemUs": 4070555,
+        "totalUs": 252683610,
+        "peakRSSKiB": 4358752,
+        "nextPhase": "staging batch 0"
+      },
+      "compileCpuChangePercent": 5.218515639129762,
+      "nativePasses": [
+        64,
+        64
+      ],
+      "observationsEquivalent": true
+    },
+    {
+      "baselineVersion": "26c",
+      "candidateVersion": "28",
+      "baselineSource": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "candidateSource": {
+        "sha256": "30dfc0f95ed313e7fcdaa6f1445b53a318b21f7edd1afe5f22a6baa7d98a9f4c",
+        "files": 599
+      },
+      "variantSubsetSha256": "8b1da498794c1ccfc69d61c918507918a099ef4a97ccedf669cb0f4cd4c182af",
+      "baseline": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 71245,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T18:01:45.797Z",
+        "endedAt": "2026-11-07T18:04:40.193Z",
+        "wallMs": 174395.848417,
+        "userUs": 215868849,
+        "systemUs": 4153618,
+        "totalUs": 220022467,
+        "peakRSSKiB": 4759536,
+        "nextPhase": "staging batch 0"
+      },
+      "candidate": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 81307,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T18:06:28.670Z",
+        "endedAt": "2026-11-07T18:09:23.468Z",
+        "wallMs": 174797.312834,
+        "userUs": 218222239,
+        "systemUs": 4520527,
+        "totalUs": 222742766,
+        "peakRSSKiB": 4192272,
+        "nextPhase": "staging batch 0"
+      },
+      "compileCpuChangePercent": 1.2363732836428998,
+      "nativePasses": [
+        64,
+        64
+      ],
+      "observationsEquivalent": true
+    },
+    {
+      "baselineVersion": "29",
+      "candidateVersion": "29",
+      "baselineSource": {
+        "sha256": "81dd092bb0517b075471e1e719068514072f4036b925466dd4ff9f153def8ef0",
+        "files": 595
+      },
+      "candidateSource": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "variantSubsetSha256": "8b1da498794c1ccfc69d61c918507918a099ef4a97ccedf669cb0f4cd4c182af",
+      "baseline": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 59155,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T18:33:01.160Z",
+        "endedAt": "2026-11-07T18:36:08.621Z",
+        "wallMs": 187459.636375,
+        "userUs": 233297308,
+        "systemUs": 3145191,
+        "totalUs": 236442499,
+        "peakRSSKiB": 4576192,
+        "nextPhase": "staging batch 0"
+      },
+      "candidate": {
+        "kind": "native-batch-compile-cpu",
+        "pid": 76610,
+        "hookSha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f",
+        "phase": "compiling batch 0 (64 variants)",
+        "startedAt": "2026-11-07T18:37:08.992Z",
+        "endedAt": "2026-11-07T18:40:03.918Z",
+        "wallMs": 174925.369708,
+        "userUs": 216878762,
+        "systemUs": 4395844,
+        "totalUs": 221274606,
+        "peakRSSKiB": 4543968,
+        "nextPhase": "staging batch 0"
+      },
+      "compileCpuChangePercent": -6.4150451226621445,
+      "nativePasses": [
+        64,
+        64
+      ],
+      "observationsEquivalent": true
+    }
+  ],
+  "method": "Separate fresh frozen Node24.12.0 processes; identical unchanged64variant manifest, batch64, monolithic runtime, direct300s native execution; read-only external fs.writeSync hook records process.cpuUsage exactly between compiling batch0 and staging. CPU includes V8 threads, excludes native child execution. Wall time and process-total CPU are retained separately and are not compile CPU substitutes. Compiler/codegen source hashes match in final pair; only catalog and Collator runtime integration differ. Large collation tables use packed ASCII lazy decoding. No frozen script mutation.",
+  "interpretation": "Initial old-graph pair +5.22% was unaccepted and retained; second old-graph pair used Han-boundary/short-prefix correction and measured +1.24%. Final pair rebuilds both sides after P cleanup landed on main; compare each candidate only with its own matched baseline. Baseline variation prevents general throughput claims.",
+  "uninstrumentedBaseline": "First baseline26passed64/64 but hookv1wrappedstderr.write instead of fs.writeSync, so no compileCPUrecords; retained as inconclusive performance in instrumentation-note-v1 and journal.",
+  "hook": {
+    "path": ".tint-bootstrap/j-compile-cpu-hook-v2.mjs",
+    "sha256": "26b8b0727e8ab7b61d7fd59f621063bfc586e73ec2f871cf8fad05bf329a249f"
+  },
+  "manifest": {
+    "path": ".tint-bootstrap/j-nonintl64-control-manifest-v1.json",
+    "sha256": "45841b4ce3b1e98664d72abb54597382ca508c6456978de89b67c8c0eca3ed58"
+  },
+  "graphDifference": {
+    "kind": "matched-non-intl64-graph-difference",
+    "baseline": {
+      "sha256": "81dd092bb0517b075471e1e719068514072f4036b925466dd4ff9f153def8ef0",
+      "files": 595
+    },
+    "candidate": {
+      "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+      "files": 600
+    },
+    "changes": [
+      {
+        "id": "packages/compiler/src/catalog.ts",
+        "baseline": "47ba0882b860b1302bd83c8fd46c730d8db04f0b2f5ae80dd2d7cec7bb4dddd8",
+        "candidate": "67327e8ecd9c28e08b46d8321845286f99da396500d67e229bf7d6750694012a"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/errors.ts",
+        "baseline": "e49a22007b61bf57b1ea5c9afdeabcd3470f5612ae2d2ffc5d0b3193f5a2c9c7",
+        "candidate": "713002bc17b1e37bbb54d7afb484d347d526f7532d0ef3fc943742cff3f6c826"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/functions.ts",
+        "baseline": "b9944d88dd50902541dfe446a1a5b92d36ba6b43ca864e7e1fb0e4dc12b9e27f",
+        "candidate": "f41cfae897c1c658bec3304927fea6e4c4a86c882419e3494b945b4f658cbcf2"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/intl.ts",
+        "baseline": "19c4015bb5ede068d47f3051fec0ce3be1da7bfc8251bc8827e7d23d7425f46c",
+        "candidate": "95d9db425d4a95214dd3c73f85f518f43554bd4329d01cb25e644985f3fe85f5"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/locale-info.ts",
+        "baseline": "5f34183bbe97e6139a48b50b316012097b245e792f02d9d7f0ec139b7bcd23e3",
+        "candidate": "01d3308a05bf4548d92cb3a3e21bf3523a3db803a28124142a9ba41674695d03"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/operations.ts",
+        "baseline": "44beb9fc137418ae780651fbeeacb9c6c5bd746632aa38d43223d0006df81ee8",
+        "candidate": "54c5e0c765455cff3a94e2eeecfffac082e97e6d84fa3921199075277d770692"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/primitive-intrinsics.ts",
+        "baseline": "86b5dae4354b4b9c3f324350d79a00cad5ddb422bec62d4f3d993cff32a4bca7",
+        "candidate": "4fa9304f09340cb91d2cfe38da4ec8c526d0d4d81f0ad84f96bf44e7560bd5e8"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/collation-data.ts",
+        "baseline": null,
+        "candidate": "238935af8d76256a374cb16b38732d1984bcedec5596c07a36336e76aba8fec6"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/collation-engine.ts",
+        "baseline": null,
+        "candidate": "c86390f511ca16f0edc7b8aa1a1be34182a63ac8c1cdb277696e03e9a9860389"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/collation-locales.ts",
+        "baseline": null,
+        "candidate": "235b89f14bcf900b38fe1e5886555fe88c8176e24eafbedc6a8aab9eb8c52381"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/collator.ts",
+        "baseline": null,
+        "candidate": "1eafbcebf6760f16307a2c88bc0dee679833229bdbdca7ac4f0b6aa586a55a1e"
+      },
+      {
+        "id": "packages/js-runtime/src/objects/intl-collator.ts",
+        "baseline": null,
+        "candidate": "cba07d4912cefa8c7bd7efea370294973f5688b67fa8897580906fdd63cb934e"
+      }
+    ],
+    "compilerCodegenChanges": []
+  }
+}

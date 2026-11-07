@@ -1,0 +1,28 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T18:19:10.906Z",
+  "sourceSnapshot": {
+    "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+    "files": 600
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29/source-snapshot.json",
+    "sha256": "2932315174446a8391d59f285b22dd9f0f264d19b515c86a9e675adb33ffa2d1"
+  },
+  "mainAtCapture": "9569babf813e8e446a0c31e557ad01dc640c03b3",
+  "head": "3c8f488071c784726fb0a07a5ac057688d1c9b22",
+  "portableChangesFromV28": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/codegen/src/aarch64/scalar/temporary-registers.ts",
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/src/objects/collation-locales.ts",
+    "packages/js-runtime/src/objects/collator.ts",
+    "packages/js-runtime/src/objects/intl-collator.ts",
+    "packages/js-runtime/src/objects/locale-info.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Current main code plus committed Collator and Han-boundary fixes. Shared pure Collator service registry now drives Locale.getCollations for supported languages; explicit keywords and specified unmatched emoji/eor fallback retained. Complete raw CLDR metadata catalog unchanged and independently checked. Native fixture checks metadata/service agreement after GC pressure. Uncommitted Collator root UCA17/CLDR48 packed data, lazy engine, supported tailoring profiles, realm slots, constructor/options/compare and String.localeCompare adapter. Prototype and failed instrumentation outcomes remain separate. Matched nonIntl64 compile CPU and full Collator130/String.localeCompare26/G6 are required before readiness."
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "collator-this-ignored-dependency-diagnostic",
+  "at": "2026-11-07T18:02:48.208Z",
+  "conformance": false,
+  "source": "current frozen28 implementation, only constructor presence and direct host calls inspected",
+  "rows": [
+    {
+      "name": "Collator",
+      "present": true,
+      "constructorReceiverIgnored": true,
+      "functionReceiverIgnored": true
+    },
+    {
+      "name": "NumberFormat",
+      "present": true,
+      "constructorReceiverIgnored": true,
+      "functionReceiverIgnored": true
+    },
+    {
+      "name": "DateTimeFormat",
+      "present": false,
+      "blocksMandatoryTestIntlConstructorLoop": true
+    }
+  ],
+  "blocker": "testIntl.js testWithIntlConstructors always includes DateTimeFormat; runtime installer has no DateTimeFormat. No replacement constructor is installed."
+}

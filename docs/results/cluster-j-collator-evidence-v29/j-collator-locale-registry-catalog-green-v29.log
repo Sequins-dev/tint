@@ -1,0 +1,25 @@
+✔ Collator constructor, prototype, accessor and bound function descriptors (10.445208ms)
+✔ Collator locale extensions and explicit options resolve independently (12.54ms)
+✔ Collator compares actual root and tailored collation elements with options (66.790083ms)
+✔ Collator observes option order once and bound compare converts left before right (5.937125ms)
+✔ String.localeCompare descriptors and coercion precede locale option access (1.942666ms)
+✔ Locale collation metadata lists only collations supported by the service (10.07425ms)
+✔ hour-cycle preferences use language/region data and preserve explicit hour-cycle values (7.394125ms)
+✔ text direction uses explicit scripts or actual likely-subtag data (3.08125ms)
+✔ week preferences apply region, subdivision and valid overrides in specification order (2.924958ms)
+✔ time-zone information uses explicit region and canonical common-use catalog (0.216541ms)
+✔ the complete territory catalog contains sorted unique nonempty canonical zone names (0.606959ms)
+✔ numbering-system queries use explicit slots or the real formatter default (0.308625ms)
+✔ calendar preferences honor explicit keywords and region, subdivision, likely and override precedence (3.023375ms)
+✔ calendar catalogs are canonical and independent fresh arrays (0.199375ms)
+✔ collation metadata follows service availability and the specified unmatched fallback (0.165583ms)
+✔ collation metadata preserves explicit unsupported and empty keywords with fresh lists (0.174792ms)
+✔ pinned CLDR collation catalog remains complete beyond current service availability (0.0975ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 542.209

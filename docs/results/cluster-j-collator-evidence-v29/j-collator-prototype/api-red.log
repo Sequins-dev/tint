@@ -1,0 +1,108 @@
+✖ Collator constructor, prototype, accessor and bound function descriptors (4.226125ms)
+✖ Collator locale extensions and explicit options resolve independently (0.600792ms)
+✖ Collator compares actual root and tailored collation elements with options (0.49125ms)
+✖ Collator observes option order once and bound compare converts left before right (0.403792ms)
+✖ String.localeCompare descriptors and coercion precede locale option access (0.457417ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 362.989958
+
+✖ failing tests:
+
+test at .tint-bootstrap/j-collator-prototype/api.test.ts:22:1
+✖ Collator constructor, prototype, accessor and bound function descriptors (4.226125ms)
+  AssertionError [ERR_ASSERTION]: Collator is installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:16:62)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:23:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/j-collator-prototype/api.test.ts:37:1
+✖ Collator locale extensions and explicit options resolve independently (0.600792ms)
+  AssertionError [ERR_ASSERTION]: Collator is installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:16:62)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:38:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/j-collator-prototype/api.test.ts:53:1
+✖ Collator compares actual root and tailored collation elements with options (0.49125ms)
+  AssertionError [ERR_ASSERTION]: Collator is installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:16:62)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:54:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/j-collator-prototype/api.test.ts:70:1
+✖ Collator observes option order once and bound compare converts left before right (0.403792ms)
+  AssertionError [ERR_ASSERTION]: Collator is installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:16:62)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:71:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at .tint-bootstrap/j-collator-prototype/api.test.ts:81:1
+✖ String.localeCompare descriptors and coercion precede locale option access (0.457417ms)
+  AssertionError [ERR_ASSERTION]: Collator is installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:16:62)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-collator-prototype/api.test.ts:82:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

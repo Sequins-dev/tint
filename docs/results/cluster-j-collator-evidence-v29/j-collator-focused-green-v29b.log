@@ -1,0 +1,39 @@
+✔ root ordering, decomposition and discontiguous contractions (41.207583ms)
+✔ sensitivity and caseFirst retain the correct comparison levels (0.2945ms)
+✔ numeric ordering uses arbitrary-length decimal runs in every Nd block (0.777459ms)
+✔ punctuation shifting includes expansions and primary-ignorable followers (0.142125ms)
+✔ root references replace only the selected fields and preserve script boundaries (0.162ms)
+✔ implicit Han values follow their group boundary (0.074416ms)
+✔ Collator constructor, prototype, accessor and bound function descriptors (10.627041ms)
+✔ Collator locale extensions and explicit options resolve independently (10.988916ms)
+✔ Collator compares actual root and tailored collation elements with options (60.429417ms)
+✔ Collator observes option order once and bound compare converts left before right (5.995167ms)
+✔ String.localeCompare descriptors and coercion precede locale option access (1.973708ms)
+✔ Locale collation metadata lists only collations supported by the service (9.823209ms)
+✔ Locale calendar methods have ordinary builtin metadata and preserve explicit empty/unknown slots (15.290875ms)
+✔ calendar results use the method realm, are fresh and do not consult a receiver toString (3.452417ms)
+✔ calendar methods require the actual Locale internal slot (1.98275ms)
+✔ Locale collation methods preserve keywords, metadata, brands and method-realm arrays (6.15775ms)
+✔ hour-cycle preferences use language/region data and preserve explicit hour-cycle values (7.044833ms)
+✔ text direction uses explicit scripts or actual likely-subtag data (3.329292ms)
+✔ week preferences apply region, subdivision and valid overrides in specification order (3.34475ms)
+✔ time-zone information uses explicit region and canonical common-use catalog (0.20775ms)
+✔ the complete territory catalog contains sorted unique nonempty canonical zone names (0.567458ms)
+✔ numbering-system queries use explicit slots or the real formatter default (0.28575ms)
+✔ calendar preferences honor explicit keywords and region, subdivision, likely and override precedence (2.886917ms)
+✔ calendar catalogs are canonical and independent fresh arrays (0.212667ms)
+✔ collation metadata follows service availability and the specified unmatched fallback (0.267042ms)
+✔ collation metadata preserves explicit unsupported and empty keywords with fresh lists (0.234958ms)
+✔ pinned CLDR collation catalog remains complete beyond current service availability (0.089833ms)
+✔ fractional references select exactly primary, secondary and tertiary fields (1.6855ms)
+✔ tailorings apply ordered relations, expansions and canonical keys (1.081ms)
+✔ data policy skips provisional profiles and rejects unsupported grammar (0.687875ms)
+✔ checked-in packed collation bytes match the generator output manifest (1.388791ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 650.647167

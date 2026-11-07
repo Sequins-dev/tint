@@ -1,0 +1,37 @@
+✔ Collator constructor, prototype, accessor and bound function descriptors (8.313166ms)
+✔ Collator locale extensions and explicit options resolve independently (10.965041ms)
+✔ Collator compares actual root and tailored collation elements with options (52.951417ms)
+✔ Collator observes option order once and bound compare converts left before right (5.440958ms)
+✔ String.localeCompare descriptors and coercion precede locale option access (1.694125ms)
+✖ Locale collation metadata lists only collations supported by the service (3.175791ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 422.70275
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-collator.test.ts:351:1
+✖ Locale collation metadata lists only collations supported by the service (3.175791ms)
+  AssertionError [ERR_ASSERTION]: en:emoji
+  
+  'default' !== 'emoji'
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-collator.test.ts:357:76)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'default',
+    expected: 'emoji',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

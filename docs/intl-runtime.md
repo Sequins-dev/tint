@@ -63,16 +63,14 @@ and [six native boundary fixtures](results/native-locale-calendars-validation-v1
 It preserves explicit keywords and territory preference order using pinned CLDR 49
 calendar vocabulary and preferences.
 
-Collation metadata uses the same pinned archive with per-member hashes. Its
-catalog resolves collation-specific parent inheritance, canonicalizes public type
-names, excludes search/standard/private tailorings and returns sorted fresh lists.
-Explicit collation keywords are returned as stored; unmatched locales use
-`emoji,eor`, without likely-subtag expansion.
-[Five native boundary fixtures](results/native-locale-collations-validation-v1.json)
-pass. `collator.ts` resolves the Collator service options and locale extensions;
-`intl-collator.ts` installs its constructor, branded accessors and methods, and
-`String.prototype.localeCompare`. Both interfaces share the same comparison
-engine and preserve receiver/string/locale/option coercion order.
+The complete raw collation metadata catalog uses the pinned CLDR 49 archive
+with per-member hashes. It resolves collation-specific parent inheritance and
+canonical public names. `collation-locales.ts` supplies the actual service types
+for `Locale.getCollations()`. Explicit keywords are returned as stored; unmatched
+locales use `emoji,eor`, without likely-subtag expansion. `collator.ts` resolves
+service options and locale extensions; `intl-collator.ts` installs the constructor,
+branded accessors and methods, and `String.prototype.localeCompare`. Both interfaces
+share the comparison engine and preserve receiver/string/locale/option coercion order.
 
 `collation-engine.ts` uses the Unicode 17 CLDR 48 fractional root table, matching
 the existing normalization and casing version. Identifier and locale metadata
@@ -87,13 +85,20 @@ Available service languages are `de,en,es,fr,it,sv,th`; script/region requests u
 ordinary language lookup, and unmatched locales use the shared default `en`.
 The service includes root search/EOR, German phonebook/search, Spanish
 standard/search, Swedish standard and Thai standard data. Unapproved provisional
-German EOR data is excluded; German EOR uses the approved root profile. For supported locales, `Locale.getCollations()` uses the same service registry;
+German EOR data is excluded; German EOR uses the approved root profile.
+For supported locales, `Locale.getCollations()` uses the same service registry;
 explicit keywords and the specified `emoji,eor` unmatched-locale fallback remain
 independent of service support. The complete CLDR metadata catalog stays pinned
 and independently verified.
 Constructors and resolved-options queries do not decode the large tables; the
-first comparison does. Native conformance and the matched 64-variant non-Intl
-compile-cost acceptance are being validated for this implementation. The unchanged [collation selection](results/test262-locale-collations-native-v1.json) passes 24/26 variants; both failures instantiate the missing Collator. The updated full Locale selection is pending.
+first comparison does. The [complete native rerun](results/test262-cluster-j-collator-localecompare-g6-localeinfo-native-v29.json)
+passes 186/188: Collator128/130, localeCompare26/26, Locale.getCollations26/26 and
+G’s String-locale descriptors6/6. Two `this-value-ignored` cases use an unchanged
+harness that also requires the missing DateTimeFormat; they remain failures with
+a handoff to H. The [acceptance record](results/cluster-j-collator-acceptance-v29.json)
+links the native API fixture, byte-identical frozen self-build, semantic corpus,
+workspace gate and matched 64-variant non-Intl compile CPU measurements.
+
 
 ## Calendar algorithms
 
