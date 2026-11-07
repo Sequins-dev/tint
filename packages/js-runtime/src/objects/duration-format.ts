@@ -267,8 +267,9 @@ function numberParts(
       unit,
     );
   if (nf === undefined) throw "DURATION_NUMBER_FORMAT_INVARIANT";
-  const result: DurationFormatPart[] = [];
-  for (const part of decimalNumberParts(nf, value))
+  const result: DurationFormatPart[] = [],
+    numericParts = decimalNumberParts(nf, value);
+  for (const part of numericParts)
     result.push({ type: part.type, value: part.value, unit });
   return result;
 }
