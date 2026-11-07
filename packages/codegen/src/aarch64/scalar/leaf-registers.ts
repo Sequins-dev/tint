@@ -1,3 +1,4 @@
+import type { SignatureLayout } from "./abi.ts";
 import {
   scalarByteLength,
   instructionResult,
@@ -52,6 +53,22 @@ export function canUseLeafRegisters(fn: FunctionIR): boolean {
   return true;
 }
 
+export interface LeafStoragePlan {
+  readonly registers: Uint8Array;
+  readonly references?: Uint8Array;
+}
+function referenceWord(type: ScalarType): boolean {
+  return (
+    type === "reference" ||
+    type === "optional-reference" ||
+    type === "string" ||
+    type === "optional-string" ||
+    type === "Uint8Array" ||
+    type === "Uint16Array" ||
+    type === "Uint32Array" ||
+    type === "Float64Array"
+  );
+}
 /** Plan the same private leaf storage bank before emission, so typed copies can
  * use direct FP moves. One register owns one frame word for the whole function;
  * there is no lifetime aliasing, and no GC visibility decision is made here.
@@ -63,7 +80,8 @@ export function leafStorageRegisters(
   firstByte: number,
   lastByte: number,
   maxWork: number = 1000000,
-): Uint8Array | undefined {
+  signature?: SignatureLayout,
+): LeafStoragePlan | undefined {
   if (
     !Number.isSafeInteger(lastByte) ||
     lastByte < firstByte ||
@@ -77,7 +95,8 @@ export function leafStorageRegisters(
   if (words * 18 > maxWork) return undefined;
   const counts = new Uint32Array(words),
     registers = new Uint8Array(words);
-  let work = words * 18;
+  let work = words * 18,
+    integerSafe = true;
   function touch(offset: number, bytes: number): void {
     for (let byte = 0; byte < bytes; byte += 8) {
       work++;
@@ -106,6 +125,7 @@ export function leafStorageRegisters(
     for (const op of block.instructions) {
       if (op === undefined) throw "leaf storage instruction invariant";
       if (++work > maxWork) return undefined;
+      if (op.kind === "array-copy") integerSafe = false;
       visitInstructionOperands(op, operand);
       const result = instructionResult(op);
       if (result !== undefined) operand(result);
@@ -134,5 +154,93 @@ export function leafStorageRegisters(
     if (best < 0) break;
     registers[best] = register;
   }
-  return registers;
+  const original = { registers };
+  if (
+    signature === undefined ||
+    !integerSafe ||
+    signature.parameters.length !== fn.parameters.length
+  )
+    return original;
+  // Three analysis arrays, a separate emitter working copy, and five searches.
+  // Exhaustion retains the complete original FP bank, never partial new homes.
+  work += words * 9;
+  if (work > maxWork) return original;
+  const eligible = new Uint8Array(words),
+    references = new Uint8Array(words),
+    result = new Uint8Array(registers);
+  function mark(offset: number, type: ScalarType): void {
+    if (offset >= firstByte && offset / 8 < words && referenceWord(type))
+      eligible[offset / 8] = 1;
+  }
+  for (let slot = 0; slot < fn.slots.length; slot++) {
+    if (++work > maxWork) return original;
+    const type = fn.slots[slot],
+      offset = slotOffsets[slot];
+    if (type === undefined || offset === undefined)
+      throw "leaf reference slot invariant";
+    mark(offset, type);
+  }
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "leaf reference block invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "leaf reference instruction invariant";
+      if (++work > maxWork) return original;
+      const id = instructionResult(op);
+      if (id !== undefined) {
+        const storage = value(id);
+        mark(storage.offset, storage.type);
+      }
+    }
+  }
+  let used = 0;
+  // Incoming argument registers are reserved for their own live parameter homes.
+  // Other locals begin after the prologue; stack arguments follow consumed GPRs.
+  for (let i = 0; i < fn.parameters.length; i++) {
+    if (++work > maxWork) return original;
+    const slot = fn.parameters[i],
+      location = signature.parameters[i];
+    if (slot === undefined || location === undefined)
+      throw "leaf reference parameter invariant";
+    const offset = slotOffsets[slot];
+    if (offset === undefined) throw "leaf reference parameter offset invariant";
+    const word = offset / 8;
+    if (
+      location.kind === "integer" &&
+      eligible[word] === 1 &&
+      (counts[word] ?? 0) > 1
+    ) {
+      if (
+        location.index < 4 ||
+        location.index > 7 ||
+        (used & (1 << (location.index - 4))) !== 0
+      )
+        return original;
+      references[word] = location.index + 32;
+      used |= 1 << (location.index - 4);
+    }
+  }
+  for (let register = 4; register <= 8; register++) {
+    if ((used & (1 << (register - 4))) !== 0) continue;
+    let best = -1,
+      score = 1;
+    for (let word = firstByte / 8; word < words; word++) {
+      const count = counts[word] ?? 0;
+      if (eligible[word] === 1 && references[word] === 0 && count > score) {
+        best = word;
+        score = count;
+      }
+    }
+    if (best < 0) break;
+    references[best] = register + 32;
+    used |= 1 << (register - 4);
+  }
+  if (used === 0) return original;
+  for (let slot = 0; slot < fn.slots.length; slot++) {
+    if (++work > maxWork) return original;
+    const offset = slotOffsets[slot];
+    if (offset === undefined) throw "leaf reference local offset invariant";
+    const register = references[offset / 8] ?? 0;
+    if (register !== 0) result[offset / 8] = register;
+  }
+  return { registers: result, references };
 }

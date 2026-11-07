@@ -11,7 +11,8 @@ for (const type of [
   "optional-reference",
   "string",
 ] satisfies ScalarType[]) {
-  test(`leaf ${type} copies stay in the FP storage bank without an integer round trip`, () => {
+  const pointer = type === "optional-reference" || type === "string";
+  test(`leaf ${type} copies stay in their storage bank without a round trip`, () => {
     const fn: FunctionIR = {
       id: 0,
       name: "copy",
@@ -52,8 +53,8 @@ for (const type of [
     });
     assert.equal(
       rawRoundTrips.length,
-      1,
-      "only the result ABI may transfer through x9",
+      pointer ? 0 : 1,
+      "pointer copies avoid FP transfers; only numeric result ABI may use x9",
     );
   });
 }
@@ -78,7 +79,7 @@ test("leaf storage planning assigns distinct whole-word homes and falls back on 
     ],
   };
   const value = () => ({ offset: 32, type: "general" as const });
-  const plan = leafStorageRegisters(fn, [16], value, 16, 48);
+  const plan = leafStorageRegisters(fn, [16], value, 16, 48)?.registers;
   assert.ok(plan);
   assert.equal(plan[0], 0);
   assert.equal(plan[1], 0);

@@ -1661,9 +1661,17 @@ export function emitModule(
             value,
             localsOffset,
             maximumCursor,
+            1000000,
+            signature,
           )
         : undefined;
-      if (leafStorage !== undefined) scalarRegisters = leafStorage;
+      const leafBase =
+          leafStorage === undefined ? undefined : leafStorage.registers,
+        leafReferences =
+          leafStorage === undefined ? undefined : leafStorage.references;
+      if (leafBase !== undefined)
+        scalarRegisters =
+          leafReferences === undefined ? leafBase : new Uint8Array(leafBase);
       const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
       const frameBytes =
         Math.ceil((calleeSaveOffset + preservedCount * 8) / 16) * 16;
@@ -2528,6 +2536,16 @@ export function emitModule(
             const id = instructionResult(op);
             if (id !== undefined && transient[id] !== 0)
               storage[value(id).offset / 8] = transient[id] ?? 0;
+          }
+        if (leafReferences !== undefined && storage !== undefined)
+          for (const op of b.instructions) {
+            if (op === undefined) throw "leaf reference instruction invariant";
+            const id = instructionResult(op);
+            if (id === undefined) continue;
+            const v = value(id),
+              register = leafReferences[v.offset / 8] ?? 0;
+            if (register !== 0 && managed(v.type) && v.type !== "primitive")
+              storage[v.offset / 8] = register;
           }
         blockId = b.id;
         offsets[b.id * 2] = instructions.length * 4;
@@ -5901,6 +5919,18 @@ export function emitModule(
             const id = instructionResult(op);
             if (id !== undefined && transient[id] !== 0)
               storage[value(id).offset / 8] = 0;
+          }
+        if (
+          leafReferences !== undefined &&
+          leafBase !== undefined &&
+          storage !== undefined
+        )
+          for (const op of b.instructions) {
+            if (op === undefined) throw "leaf reference instruction invariant";
+            const id = instructionResult(op);
+            if (id !== undefined)
+              storage[value(id).offset / 8] =
+                leafBase[value(id).offset / 8] ?? 0;
           }
       }
       for (const block of fn.blocks) {
