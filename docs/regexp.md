@@ -101,9 +101,10 @@ map lookup needs the reference-array contracts introduced by helper specializati
 Runtime preparation now discovers those transitive contracts with progress checks
 and the existing specialization budget. Indexed maps now use the shared key index
 and pass native collision, identity, cursor and 10,000-key growth/deletion checks.
-The complete generated ASCII selection still times out after this change (v5);
-its remaining execution cost needs fresh diagnosis. These results do not establish
-property matching failure or success. The current complete [character-class selection](results/test262-cluster-j-current-built-ins-RegExp-CharacterClassEscapes-v17.json)
+The historical generated ASCII selection timed out after this change (v5). A
+[current complete native file report](results/test262-cluster-j-current-built-ins-RegExp-property-escapes-generated-ASCII-v20.json)
+now passes both variants, with the old timeouts retained. The fresh property-escape
+family remains incomplete; this file result does not establish full property coverage. The current complete [character-class selection](results/test262-cluster-j-current-built-ins-RegExp-CharacterClassEscapes-v17.json)
 passes 24/24 natively. The [six retained generated-test timeouts](results/cluster-j-generated-timeouts-rechecked-v1.json)
 also pass in separate focused rechecks; those results do not replace the historical
 ASCII-property observations or the full property-escape denominator.
