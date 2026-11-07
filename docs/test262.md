@@ -372,6 +372,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Member expressions           |         2 / 2 (100%) | None                                | [Report](results/test262-expressions-member-expression-a2-native-v1.json)   |
 | Conditional expressions      |      41 / 42 (97.62%) | 1 native CPU-budget timeout; recheck pending | [Report](results/test262-expressions-conditional-a2-native-v1.json)   |
 | Comma expressions            |       11 / 11 (100%) | None                                | [Report](results/test262-expressions-comma-a2-native-v1.json)               |
+| New expressions              |    114 / 118 (96.61%) | 4 contention-affected timeouts; rechecks pending | [Report](results/test262-expressions-new-a2-native-v1.json) |
 | Call expressions             |     171 / 171 (100%) | None                                | [Report](results/test262-expressions-call-a2-native-v1.json)                |
 | Array expressions            |     104 / 104 (100%) | None                                | [Report](results/test262-expressions-array-a2-native-v1.json)               |
 | Function expressions         |     484 / 484 (100%) | None                                | [Report](results/test262-function-a2-native-v1.json)                        |
