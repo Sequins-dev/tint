@@ -57,8 +57,8 @@ const module: ModuleIR = {
     },
   ],
 };
-function temporaryClears(closed: boolean): number {
-  const r = emitModule(module, closed ? { closedRoots: [0] } : {});
+function temporaryClears(closed: boolean, selected: ModuleIR = module): number {
+  const r = emitModule(selected, closed ? { closedRoots: [0] } : {});
   assert.ok(r.ok, JSON.stringify(r));
   const root = r.value.roots[0]!;
   assert.ok(root.offsets.length >= 2);
@@ -124,4 +124,78 @@ test("block proofs preserve unknown-call and budget fallbacks", async () => {
     blocks: [{ ...fn.blocks[0]!, id: 10000000 }],
   };
   assert.equal(nonAllocatingBlocks(sparse, new Uint8Array([0])), undefined);
+});
+
+test("initializer-style CFGs never expand root clearing beyond the conservative policy", () => {
+  let id = 0;
+  const loads = Array.from({ length: 8 }, () => ({
+    kind: "load" as const,
+    id: id++,
+    slot: 0,
+    ...s,
+  }));
+  const length = id++,
+    array = id++;
+  const first = [
+    ...loads,
+    { kind: "constant" as const, id: length, value: 1, ...s },
+    {
+      kind: "array-new" as const,
+      id: array,
+      type: "Uint32Array" as const,
+      length,
+      ...s,
+    },
+    ...loads.map((load) => ({
+      kind: "string-length" as const,
+      id: id++,
+      string: load.id,
+      ...s,
+    })),
+  ];
+  const blocks = [
+    {
+      id: 0,
+      instructions: first,
+      terminator: { kind: "jump" as const, target: 1, ...s },
+    },
+  ];
+  for (let block = 1; block < 24; block++) {
+    const count = id++,
+      value = id++;
+    blocks.push({
+      id: block,
+      instructions: [
+        { kind: "constant", id: count, value: 1, ...s },
+        {
+          kind: "array-new",
+          id: value,
+          type: "Uint32Array",
+          length: count,
+          ...s,
+        },
+      ],
+      terminator: { kind: "jump", target: block + 1, ...s },
+    });
+  }
+  const final = id++;
+  const selected: ModuleIR = {
+    functions: [
+      {
+        ...module.functions[0]!,
+        blocks: [
+          ...blocks,
+          {
+            id: 24,
+            instructions: [{ kind: "constant", id: final, value: 42, ...s }],
+            terminator: { kind: "return", value: final, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(
+    temporaryClears(true, selected) <= temporaryClears(false, selected),
+    "cold root pools must not be cleared in full at every allocating block",
+  );
 });

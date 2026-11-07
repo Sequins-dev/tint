@@ -1660,10 +1660,32 @@ export function emitModule(
           generalSlots.push(offset);
         }
       }
-      const deferredRootBlocks =
+      let deferredRootBlocks =
         hasRoots && closedRoots !== undefined && noSafepoints !== undefined
           ? nonAllocatingBlocks(fn, noSafepoints)
           : undefined;
+      if (deferredRootBlocks !== undefined) {
+        const poolWords = temporaryRoots.length + temporaryGenerals.length * 2;
+        let originalStores = poolWords,
+          deferredStores = 0,
+          directStores = true;
+        for (const offset of temporaryRoots)
+          if (offset > 32760) directStores = false;
+        for (const offset of temporaryGenerals)
+          if (offset + 8 > 32760) directStores = false;
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "root cleanup cost block invariant";
+          originalStores +=
+            (incomingReferences[block.id] ?? 0) +
+            (incomingGenerals[block.id] ?? 0) * 2;
+          if (deferredRootBlocks[block.id] !== 1) deferredStores += poolWords;
+        }
+        // Each accepted store is one scaled-immediate STR. Never multiply a
+        // large initializer's root pool across its allocating CFG blocks, or
+        // introduce additional large-offset address materialization.
+        if (!directStores || deferredStores > originalStores)
+          deferredRootBlocks = undefined;
+      }
       if (transientRegisters !== undefined) {
         const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
         if (preserved !== undefined)
