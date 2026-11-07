@@ -62,6 +62,20 @@ function identity(header: Record<string, unknown>): object {
   const { sourceSnapshotFile, ...value } = header;
   return value;
 }
+function linkingIdentity(header: object): void {
+  if (!object(header)) throw Error("invalid native linking identity");
+  const mode = header.nativeLinkingMode,
+    index = header.nativeServiceUnitIndexSha256;
+  if (mode === undefined && index === undefined) return;
+  if (mode === "monolithic" && index === null) return;
+  if (
+    mode === "aot-native-services-v1" &&
+    typeof index === "string" &&
+    /^[a-f0-9]{64}$/.test(index)
+  )
+    return;
+  throw Error("invalid native linking identity");
+}
 function journalAppender(
   path: string,
   sealed = false,
@@ -82,6 +96,7 @@ export function createNativeRunJournal(
   readonly append: (record: object) => void;
   readonly checkpoint: NativeRunCheckpoint;
 } {
+  linkingIdentity(header);
   const checkpoint: NativeRunCheckpoint = {
     observations: [],
     batches: [],

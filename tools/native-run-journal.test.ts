@@ -259,3 +259,37 @@ test("Script-root absence proofs participate in resume identity", async () => {
   const { absent: oldAbsent, ...oldPrior } = prior;
   assert.equal(sameNativeObservationInput(oldPrior, historical), true);
 });
+
+test("linked native journals require a unit-index digest and reject changed linking identity on resume", () =>
+  directory((path) => {
+    const linked = {
+      ...header,
+      nativeLinkingMode: "aot-native-services-v1",
+      nativeServiceUnitIndexSha256: "c".repeat(64),
+    };
+    for (const invalid of [
+      { ...linked, nativeServiceUnitIndexSha256: null },
+      { ...linked, nativeLinkingMode: "unknown" },
+      { ...linked, nativeLinkingMode: "monolithic" },
+    ]) {
+      assert.throws(
+        () => native.createNativeRunJournal(path, invalid),
+        /linking identity/,
+      );
+    }
+    native.createNativeRunJournal(path, linked);
+    const before = readFileSync(path, "utf8");
+    for (const changed of [
+      { ...linked, nativeServiceUnitIndexSha256: "d".repeat(64) },
+      {
+        ...linked,
+        nativeLinkingMode: "monolithic",
+        nativeServiceUnitIndexSha256: null,
+      },
+    ])
+      assert.throws(
+        () => native.createNativeRunJournal(path, changed, { resume: true }),
+        /identity/,
+      );
+    assert.equal(readFileSync(path, "utf8"), before);
+  }));

@@ -120,6 +120,10 @@ try {
     topLevelAwait,
     jsonModules,
   );
+  const nativeLinkingIdentity = {
+    nativeLinkingMode: "monolithic",
+    nativeServiceUnitIndexSha256: null,
+  } as const;
   const frozenToolchainSha256 = frozenNativeRunIdentity(
     import.meta.url,
     sourceSnapshot,
@@ -130,6 +134,7 @@ try {
       kind: "start",
       schemaVersion: 2,
       frozenToolchainSha256,
+      ...nativeLinkingIdentity,
       nodeVersion: process.version,
       debuggerTracing: nativeDebuggerTracing,
       revision: suite.revision,
@@ -503,6 +508,7 @@ try {
         sourceSnapshot,
         sourceSnapshotFile,
         frozenToolchainSha256,
+        ...nativeLinkingIdentity,
         resumption: {
           restoredVariants: checkpoint.observations.length,
           events: checkpoint.resumptions,
