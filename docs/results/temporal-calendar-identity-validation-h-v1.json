@@ -1,0 +1,35 @@
+{
+  "kind": "temporal-calendar-identity-validation",
+  "conformance": false,
+  "scope": "Shared Intl/Temporal identifier canonicalization and Gregorian/Japanese era field preparation before explicit unavailable calendar conversion.",
+  "sourceSnapshot": {
+    "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+    "files": 569
+  },
+  "workspaceGate": "docs/results/temporal-calendar-check-h-v3.json",
+  "workspaceTests": {
+    "passed": 4610,
+    "total": 4610
+  },
+  "nativeIdentifierPrimitive": "docs/results/native-calendar-identifiers-green-h-v13.json",
+  "nativeIdentifierChecks": 26,
+  "selfBuild": {
+    "report": "docs/results/temporal-calendar-identifiers-selfbuild-h-v13.json",
+    "success": true,
+    "byteIdentical": true,
+    "stage1Sha256": "4c9131689ad883036a7b000bb58d42676a3f2105831e5d5a7efffb87ef682bc5",
+    "stage2Sha256": "4c9131689ad883036a7b000bb58d42676a3f2105831e5d5a7efffb87ef682bc5",
+    "smokeExit": 42
+  },
+  "eraPreparationNative": {
+    "report": "docs/results/native-temporal-calendar-cumulative-green-h-v10.json",
+    "passed": 25,
+    "total": 25,
+    "sourceSnapshot": "87737ea153d1f0519ac1c4b461accfbf8f0447a5ac71d902d39a40a6b46ac547",
+    "note": "This prior native proof covers the unchanged era/date-field algorithms. The current graph additionally has the shared calendar canonicalization primitive and main frame optimization; it is separately covered by the v13 primitive fixture and matching self-build, not relabeled as a 25-case v13 rerun."
+  },
+  "semanticTests": "docs/results/temporal-calendar-alias-tdd-h-v2.json",
+  "supersededGreenMetadata": "The v1 alias TDD green metadata is explicitly retracted and corrected in v2. Its failed harness transcript remains retained.",
+  "remaining": "Non-ISO calendar date conversion/arithmetic and public calendar-bearing construction remain to implement; the old four alias selection failures are not claimed as new passes.",
+  "breadth": "The single H built-ins/Temporal/PlainYearMonth run is queued on frozen v12 with direct launch."
+}
