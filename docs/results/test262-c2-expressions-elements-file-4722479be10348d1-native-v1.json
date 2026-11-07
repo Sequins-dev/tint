@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/expressions/class/elements/private-accessor-name/inst-private-name-underscore.js",
+  "sourceSnapshot": {
+    "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+    "files": 570
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v19/source-snapshot.json",
+  "frozenToolchainSha256": "258bb24e7069e2d597c8d970e3edf5b4dc8d9a53c47044ced1c0956526bbd803",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/expressions-elements-harvest-prefix-v3.jsonl",
+    "journalSha256": "b8b9b9f860d38713adf8627e735da26c65d30ebdeded766e93df802bfad90f60",
+    "journalBytes": 1650733,
+    "observedVariants": 2306
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 34,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 221579.96458300017,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/class/elements/private-accessor-name/inst-private-name-underscore.js",
+      "sha256": "37b19ec2c8c434d67c0df3981a3c5ba9a2b839cf70000a181b4297042e98c0f5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 258441.23791700043,
+      "batch": 34
+    },
+    {
+      "path": "language/expressions/class/elements/private-accessor-name/inst-private-name-underscore.js",
+      "sha256": "37b19ec2c8c434d67c0df3981a3c5ba9a2b839cf70000a181b4297042e98c0f5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 259013.2854579985,
+      "batch": 34
+    }
+  ],
+  "startedAt": "2026-11-07T09:16:15.687Z",
+  "completedAt": "2026-11-07T12:15:50.573Z",
+  "observationTiming": {
+    "policy": "Complete files from a frozen-v19 prefix; capture time is an upper bound. Excludes earlier published files, the complete444-variant early-errors directory and all four complete async-private subfamilies. No new native execution; parent remains incomplete.",
+    "source": ".tint-bootstrap/c2/expressions-elements-harvest-prefix-v3.jsonl"
+  }
+}
