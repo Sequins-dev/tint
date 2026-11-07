@@ -1,0 +1,80 @@
+✖ String.match ignores primitive prototype symbol getters (4.579083ms)
+✖ String.matchAll ignores primitive prototype symbol getters (0.962083ms)
+✖ String.search ignores primitive prototype symbol getters (0.671916ms)
+✖ String.replace ignores primitive prototype symbol getters (0.471375ms)
+✖ String.replaceAll ignores primitive prototype symbol getters (0.35675ms)
+✖ String.split ignores primitive prototype symbol getters (0.361959ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 353.805167
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.match ignores primitive prototype symbol getters (4.579083ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.matchAll ignores primitive prototype symbol getters (0.962083ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.search ignores primitive prototype symbol getters (0.671916ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.replace ignores primitive prototype symbol getters (0.471375ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.replaceAll ignores primitive prototype symbol getters (0.35675ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:30:3
+✖ String.split ignores primitive prototype symbol getters (0.361959ms)
+  Error: primitive prototype symbol getter was called
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-regexp-primitives.test.ts:36:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

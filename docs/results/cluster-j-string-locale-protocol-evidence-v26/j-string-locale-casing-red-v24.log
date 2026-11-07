@@ -1,0 +1,128 @@
+✖ toLocaleLowerCase has standard function and property descriptors (3.726375ms)
+✖ toLocaleLowerCase follows full Unicode and Turkish, Azeri and Lithuanian contexts (0.505416ms)
+✖ toLocaleLowerCase coerces its receiver before reading every locale and uses the first (0.470833ms)
+✖ toLocaleUpperCase has standard function and property descriptors (0.261167ms)
+✖ toLocaleUpperCase follows full Unicode and Turkish, Azeri and Lithuanian contexts (0.256291ms)
+✖ toLocaleUpperCase coerces its receiver before reading every locale and uses the first (0.218959ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 315.645459
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:46:3
+✖ toLocaleLowerCase has standard function and property descriptors (3.726375ms)
+  AssertionError [ERR_ASSERTION]: toLocaleLowerCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:47:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:56:3
+✖ toLocaleLowerCase follows full Unicode and Turkish, Azeri and Lithuanian contexts (0.505416ms)
+  AssertionError [ERR_ASSERTION]: toLocaleLowerCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:57:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:63:3
+✖ toLocaleLowerCase coerces its receiver before reading every locale and uses the first (0.470833ms)
+  AssertionError [ERR_ASSERTION]: toLocaleLowerCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:64:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:46:3
+✖ toLocaleUpperCase has standard function and property descriptors (0.261167ms)
+  AssertionError [ERR_ASSERTION]: toLocaleUpperCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:47:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:56:3
+✖ toLocaleUpperCase follows full Unicode and Turkish, Azeri and Lithuanian contexts (0.256291ms)
+  AssertionError [ERR_ASSERTION]: toLocaleUpperCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:57:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:63:3
+✖ toLocaleUpperCase coerces its receiver before reading every locale and uses the first (0.218959ms)
+  AssertionError [ERR_ASSERTION]: toLocaleUpperCase must be installed
+      at setup (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:23:10)
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-string-locale-casing.test.ts:64:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

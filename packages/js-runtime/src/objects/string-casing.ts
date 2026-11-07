@@ -1,7 +1,10 @@
 import {
   unicodeLowercase,
   unicodeUppercase,
+  unicodeLocaleLowercase,
+  unicodeLocaleUppercase,
 } from "@tint/foundation/unicode/casing";
+import { canonicalLocaleList, runtimeDefaultLocale } from "./locale-objects.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
 import { stringValue } from "./coercion.ts";
 import {
@@ -15,7 +18,11 @@ export function installStringCasingMethods(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): void {
-  function install(name: string, upper: boolean): void {
+  function install(
+    name: string,
+    upper: boolean,
+    localized: boolean = false,
+  ): void {
     builtinProperty(
       realm.stringPrototype,
       name,
@@ -30,6 +37,16 @@ export function installStringCasingMethods(
           if (text.error === "unsupported")
             return rejectUnsupportedExecution(realm);
           if (text.error !== "none") throw createRuntimeError(realm, "type");
+          if (localized) {
+            const requested = canonicalLocaleList(args[0], realm, hooks);
+            const locale = requested[0] ?? runtimeDefaultLocale;
+            const separator = locale.indexOf("-");
+            const language =
+              separator < 0 ? locale : locale.slice(0, separator);
+            return upper
+              ? unicodeLocaleUppercase(text.value, language)
+              : unicodeLocaleLowercase(text.value, language);
+          }
           return upper
             ? unicodeUppercase(text.value)
             : unicodeLowercase(text.value);
@@ -43,4 +60,6 @@ export function installStringCasingMethods(
   }
   install("toLowerCase", false);
   install("toUpperCase", true);
+  install("toLocaleLowerCase", false, true);
+  install("toLocaleUpperCase", true, true);
 }

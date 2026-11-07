@@ -24,14 +24,22 @@ test("foundation Unicode purposes have narrow public entries without obsolete pa
     assert.ok(
       modules.every((module) => module.id.startsWith("packages/foundation/")),
     );
-    assert.equal(modules.length, name === "casing" ? 4 : 2);
-    if (name === "casing")
+    assert.equal(modules.length, name === "casing" ? 6 : 2);
+    if (name === "casing") {
       assert.ok(
         modules.some(
           (module) =>
             module.id === "packages/foundation/src/unicode/properties/index.ts",
         ),
       );
+      assert.ok(
+        modules.some(
+          (module) =>
+            module.id ===
+            "packages/foundation/src/unicode/normalization/index.ts",
+        ),
+      );
+    }
   }
 });
 test("frozen source contracts preserve all Unicode public entries without wildcard/root aliases", () => {

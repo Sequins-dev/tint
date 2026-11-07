@@ -1,0 +1,25 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T16:18:39.173Z",
+  "sourceSnapshot": {
+    "sha256": "0fe99d8c261e415a726b2de308e572f34993e75c79e57c4b50e2e094c63120db",
+    "files": 595
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v24",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v24/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v24/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v24/source-snapshot.json",
+    "sha256": "2682b6e5dc7d405ae98a149ee82bff49f0d874d1d94e6b090778418cd8f62821"
+  },
+  "mainRefAtCapture": "ab80115d87c380e0666b86d13085cd3e5cc9cdbf",
+  "head": "10e4f96efb2fed703c963a6cc79ca91fedd0bde2",
+  "portableChangesFromV23": [
+    "packages/foundation/src/unicode/casing/index.ts",
+    "packages/foundation/src/unicode/normalization/index.ts",
+    "packages/js-runtime/src/objects/string-casing.ts",
+    "packages/js-runtime/src/objects/string-regexp.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Committed branch code equals main at capture, plus recorded uncommitted locale-sensitive String casing and Object-only String symbol-protocol guard. Foundation normalization exposes its existing canonical combining class query. Collator implementation not included. String21 breadth stays on its original frozen graph."
+}

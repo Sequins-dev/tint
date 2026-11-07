@@ -1,0 +1,154 @@
+{
+  "kind": "cluster-j-string-locale-casing-protocol-acceptance",
+  "at": "2026-11-07T17:34:10.196010+00:00",
+  "sourceSnapshot": {
+    "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+    "files": 595
+  },
+  "fixes": [
+    "Full Unicode locale casing contexts for Turkish, Azeri and Lithuanian, retaining default full mappings and final sigma",
+    "Install standard toLocaleLowerCase and toLocaleUpperCase descriptors; require receiver/coerce before canonical locale processing; validate all requested locales and select the first",
+    "String match/matchAll/search/replace/replaceAll/split skip Symbol protocol methods on primitive arguments; boxed objects still dispatch/getters/errors"
+  ],
+  "semanticTests": {
+    "redLocaleCasing": {
+      "failed": 6,
+      "report": {
+        "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-locale-casing-red-v24.log",
+        "bytes": 7252,
+        "sha256": "78b2692dc6e21125f371709cccd9a35402505cb06668afbbaffc2558e3d9031b"
+      }
+    },
+    "redPrimitiveProtocols": {
+      "failed": 6,
+      "report": {
+        "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-primitive-protocol-red-v24.log",
+        "bytes": 5176,
+        "sha256": "ecfaa032e751a8760b6089fa74c9ff8f1e460e74b67ccc07d2f1dfa767c24229"
+      }
+    },
+    "green": {
+      "passed": 13,
+      "referenceComparisons": 3120,
+      "report": {
+        "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-locale-protocol-corpus-v24.log",
+        "bytes": 1235,
+        "sha256": "6836b83492ff6378201c0df9e264cb882d42b2eb4102269a139f6ad4ecedc618"
+      }
+    }
+  },
+  "nativeConformance": {
+    "report": "docs/results/test262-cluster-j-string-locale-protocol-native-v26.json",
+    "totals": {
+      "total": 158,
+      "passed": 158,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "localeCasingComplete": 108,
+    "primitiveProtocolRegressions": 46,
+    "gDescriptorCasingVariants": 4,
+    "launch": "debugserver-direct",
+    "manifest": {
+      "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-casing-protocol-recheck-manifest-v24.json",
+      "bytes": 31057,
+      "sha256": "41a6083b8b2fb16fc5c5fe61f8d71abec0c9241a13200db1f2b79b849c3ffde7"
+    }
+  },
+  "nativeFixture": {
+    "report": {
+      "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-locale-protocol-green-v26.json",
+      "bytes": 1688,
+      "sha256": "554ca356090164e60a5bda882581f58c66ba4f28d40642ac3b3478d6e14ab1c6"
+    },
+    "result": "stopped entry verified; expected exit42 completed",
+    "buildManifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "imageSha256": "8a4110eff4884e811a18de7a42fc520238ef940a4bbed567d10ca57cee138e2a",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-locale-protocols-kd3YWx/string-locale-protocols.source.ts",
+      "fixtureSha256": "d013ce66ad91ab3b2905167f00bbaca34b8a33d0efd55ae4ed6757f43fdc9036",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v26/tools/verify-hosted-string-locale-protocols.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "managedBytes": 268435456,
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": true
+    },
+    "note": "Frozen26 includes the corrected fixture tool. Initial frozen24 fixture tool failed checking because of a missing generic type argument; preserved as setup failure. Corrected workspace fixture24b manifest proves source0fe; fresh frozen25/26 native fixtures are independent later passes."
+  },
+  "selfBuild": {
+    "kind": "cluster-j-frozen-native-selfbuild",
+    "at": "2026-11-07T17:19:06.559030+00:00",
+    "sourceSnapshot": {
+      "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+      "files": 595
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "bootstrapExit": 0,
+    "bootstrapSeconds": 63.7067775419564,
+    "nativeExit": 0,
+    "nativeSeconds": 308.63163654197706,
+    "initial": {
+      "state": "stopped",
+      "pid": 49829
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "stageComparisonExit": 0,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0,
+    "images": [
+      {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-string-stage1-v26",
+        "bytes": 53893762,
+        "sha256": "83658cef90b545d390369d5530922bb96efb3cb3c0f8d6761f49c6ef81edaa3d"
+      },
+      {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-string-stage2-v26",
+        "bytes": 53893762,
+        "sha256": "83658cef90b545d390369d5530922bb96efb3cb3c0f8d6761f49c6ef81edaa3d"
+      }
+    ]
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "tests": 4805,
+    "passed": 4805,
+    "report": {
+      "path": "docs/results/cluster-j-string-locale-protocol-evidence-v26/j-string-locale-protocol-check-v26.log",
+      "bytes": 402429,
+      "sha256": "f26a877136f5a0d1537b7bfc4e095a1cac018fb71f9d7182c8893be1331c0057"
+    }
+  },
+  "retainedObservations": {
+    "oldFullString": "docs/results/test262-cluster-j-string-family-native-v21.json",
+    "oldFailuresRetained": 176,
+    "fixedOriginalVariants": 150,
+    "remainingLocaleCompare": 24,
+    "alreadyMergedSignedZero": 2,
+    "initialWorkspaceGate": "First24 gate failed only the Unicode module-count assertion; correction admits the newly reused normalization/CCC dependency, then24b/25/26 gates pass. Original failed gate is retained."
+  },
+  "remainingScope": "Intl.Collator/localeCompare and G full6 descriptor recheck continue as separate WIP. This slice fixes only G casing4; no claim that the full6 passes yet. Broad String family total remains old2267/2443 with newer complete file rechecks credited separately. RegExp breadth remains.",
+  "evidenceIndex": "docs/results/cluster-j-string-locale-protocol-evidence-v26/index.json"
+}

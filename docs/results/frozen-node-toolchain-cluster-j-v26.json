@@ -1,0 +1,24 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T17:11:52.143Z",
+  "sourceSnapshot": {
+    "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+    "files": 595
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v26",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v26/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v26/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v26/source-snapshot.json",
+    "sha256": "d83446fcb69bace15946efe8b4581a8c492ff2c0b1c06d37ae49f138593f6f23"
+  },
+  "mainRefAtCapture": "7228547f794054ed62408710e22377e3c84744b9",
+  "head": "7228547f794054ed62408710e22377e3c84744b9",
+  "portableChangesFromV25": [
+    "packages/ts-native/src/closure/lowering/index.ts",
+    "packages/ts-native/src/closure/lowering/planning.ts",
+    "packages/ts-native/src/scalar.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Rebased current main includes P immutable word-capture lowering and H callback-witness correction. Same locale casing and primitive String protocol fixes as v24; corrected native fixture is included. Collator prototype remains ignored and excluded. String21 breadth stays on its original frozen graph."
+}

@@ -24,6 +24,9 @@ function protocolMethod(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  // String protocols consult symbol methods only on Object arguments.
+  if (viewObjectValue(value, realm.objectPrototype) === undefined)
+    return undefined;
   const result = getObjectValueProperty(
     value,
     wellKnownSymbol(realm.symbolRegistry, name),

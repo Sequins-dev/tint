@@ -30,6 +30,10 @@ function combining(point: number): number {
   const index = find(combiningPoints, point);
   return index < 0 ? 0 : combiningClasses.charCodeAt(index);
 }
+/** Unicode canonical combining class, including zero for unlisted code points. */
+export function canonicalCombiningClass(point: number): number {
+  return combining(point);
+}
 function decompose(
   point: number,
   compatibility: boolean,
