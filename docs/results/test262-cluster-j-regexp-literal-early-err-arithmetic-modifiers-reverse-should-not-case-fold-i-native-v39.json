@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/literals/regexp/early-err-arithmetic-modifiers-reverse-should-not-case-fold-i.js",
+  "sourceSnapshot": {
+    "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v39/source-snapshot.json",
+  "frozenToolchainSha256": "8577a89abc7010610cd6f85ba3ba88af7a2a9c7b17bc81a1ff6be7665400cdae",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/cluster-j-regexp-literal-prefix-385-v39.jsonl",
+    "journalSha256": "a6dc5f3da3fe8cc2d33d3923bf37d36e365e033d91ae7730b64b6472aa40e154",
+    "journalBytes": 201562,
+    "observedVariants": 385
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 4581.251834000002,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/literals/regexp/early-err-arithmetic-modifiers-reverse-should-not-case-fold-i.js",
+      "sha256": "b5ee76e66a679d7160e61c76357e9e4562db17af8baa3c8a403da9292b74cea8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-modifiers"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32210.05791599999,
+      "batch": 1
+    },
+    {
+      "path": "language/literals/regexp/early-err-arithmetic-modifiers-reverse-should-not-case-fold-i.js",
+      "sha256": "b5ee76e66a679d7160e61c76357e9e4562db17af8baa3c8a403da9292b74cea8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-modifiers"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32809.103375,
+      "batch": 1
+    }
+  ],
+  "startedAt": "2026-11-07T22:43:12.017Z",
+  "publicationStartAnchor": {
+    "startedAt": "2026-11-07T22:43:12.017Z",
+    "policy": "Authentic fresh replacement-run first heartbeat; publication time is not run start."
+  }
+}
