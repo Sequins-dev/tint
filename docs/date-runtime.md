@@ -166,6 +166,14 @@ adapters own observable option reads, coercions, branding and range checks.
 Instant rounding follows the specification's positive-coordinate tie rules;
 clock rounding wraps a day rather than imposing Instant's epoch bounds.
 
+Gregorian and Japanese property bags prepare `era` and `eraYear` in field order,
+including primitive coercion and abrupt completion, before the unsupported
+calendar-conversion boundary. Independent options are read before that boundary.
+ISO bags ignore era fields. The [red-first semantic tests](results/temporal-calendar-preparation-tdd-h-v1.json)
+and [25 direct native regression cases](results/native-temporal-calendar-cumulative-green-h-v10.json)
+cover preparation and the existing partial-date operations; calendar arithmetic
+remains ISO only. These bespoke cases are separate from Test262 coverage.
+
 Constructor availability does not imply complete Temporal coverage. Non-ISO
 calendars, remaining methods and relative-calendar differences are separate slices.
 Complete selection results and retained failures belong in the

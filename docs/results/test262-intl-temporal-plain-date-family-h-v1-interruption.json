@@ -1,0 +1,27 @@
+{
+  "kind": "native-selection-interruption",
+  "conformance": false,
+  "at": "2026-11-07T00:16:20.226Z",
+  "reason": "Coordinator redirected breadth to built-ins/Temporal ISO while non-ISO calendar algorithms are implemented. Stopped the runner during batch1 compilation, with no debugger or native inferior child; no executing variant was killed.",
+  "selection": "intl402/Temporal/PlainDate",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+  "debuggerLaunch": "debugserver-direct",
+  "sourceSnapshot": {
+    "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+    "files": 568
+  },
+  "total": 986,
+  "observed": 64,
+  "counts": {
+    "fail": 4,
+    "unsupported": 56,
+    "pass": 4
+  },
+  "processes": [
+    "48988 25854 T    /Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+  ],
+  "journal": "docs/results/test262-intl-temporal-plain-date-family-h-v1.jsonl",
+  "prefix": "docs/results/test262-intl-temporal-plain-date-observed-files-prefix-h-v1.jsonl",
+  "completeFileIndex": "docs/results/intl-temporal-plain-date-complete-observed-files-h-v1.json",
+  "familyComplete": false
+}
