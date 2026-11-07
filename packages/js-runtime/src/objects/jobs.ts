@@ -57,6 +57,9 @@ export interface ScriptAgent {
   readonly keptAlive: unknown[];
   readonly registries: WeakRegistryEntry[];
   activeContext: ScriptExecutionContext | undefined;
+  /** Reused slots avoid allocating a linked frame on every function call. */
+  readonly executionContextNames: (string | undefined)[];
+  executionContextDepth: number;
   activeTailCallFrame: SourceTailCallFrame | undefined;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
@@ -71,6 +74,8 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     keptAlive: [],
     registries: [],
     activeContext: undefined,
+    executionContextNames: [],
+    executionContextDepth: 0,
     activeTailCallFrame: undefined,
     moduleAsyncEvaluationCount: 0,
     jobs: createJobQueue<QueuedScriptJob>(),
@@ -82,10 +87,13 @@ export function runScriptContext<Value>(
   action: () => Value,
 ): Value {
   const previous = agent.activeContext;
+  const depth = agent.executionContextDepth;
+  agent.executionContextDepth = depth + 1;
   agent.activeContext = context;
   try {
     return action();
   } finally {
+    agent.executionContextDepth = depth;
     agent.activeContext = previous;
   }
 }
@@ -148,6 +156,7 @@ export function drainScriptJobs(
  * the realm context, which preserves the caller's active Script/module. */
 export function createSourceExecutionContext(
   realm: ErrorRealm,
+  traceName: string = "",
 ): ObjectExecutionContext<unknown> {
   const agent = realm.agent;
   const active = agent.activeContext;
@@ -157,7 +166,15 @@ export function createSourceExecutionContext(
   };
   return {
     getRealm: (): ErrorRealm => realm,
-    run: (action): unknown => runScriptContext<unknown>(agent, context, action),
+    run: (action): unknown => {
+      const depth = agent.executionContextDepth;
+      agent.executionContextNames[depth] = traceName;
+      try {
+        return runScriptContext<unknown>(agent, context, action);
+      } finally {
+        agent.executionContextNames[depth] = undefined;
+      }
+    },
   };
 }
 

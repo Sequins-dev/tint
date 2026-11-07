@@ -1,0 +1,82 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "2a028e4ad83493b167a33c33efb3760b163835c3f78e39aaa88f79303442e7c1",
+    "files": 601
+  },
+  "imageSha256": "e957cf39cb0b9fef46f8c902baa8510764349a3b1c985394e85bfebc8bb50dbd",
+  "asynchronous": false,
+  "nodeReference": false,
+  "resources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack');if(d.enumerable||!d.configurable||d.get.name!=='get stack'||d.get.length!==0||d.set.name!=='set stack'||d.set.length!==1)throw 1;var constructors=[Error,EvalError,RangeError,ReferenceError,SyntaxError,TypeError,URIError,AggregateError,SuppressedError];for(var C of constructors){var e=C===AggregateError?new C([],'m'):C===SuppressedError?new C(1,2,'m'):new C('m');if(typeof d.get.call(e)!=='string'||Object.hasOwn(e,'stack')||d.get.call(C.prototype)!==undefined||d.get.call(Object.create(e))!==undefined)throw 2;}",
+      "sha256": "5b5c84efc5a1f27cc93dab707180f1f24cadc2013ce26eca521f5f4229b8b9c2"
+    },
+    {
+      "index": 1,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack'),calls=0,p=new Proxy({}, {getOwnPropertyDescriptor(){calls++;throw 1;}});for(var v of [undefined,null,false,1,'',Symbol('x'),1n]){var caught=false;try{d.get.call(v);}catch(e){caught=e instanceof TypeError;}if(!caught)throw 2;}for(var v of [undefined,null,false,1,{},Object('x'),1n]){var caught=false;try{d.set.call(p,v);}catch(e){caught=e instanceof TypeError;}if(!caught||calls)throw 3;}",
+      "sha256": "f2cc6b58d418f39bfc517a83924f5d25f2771442100e7b297941b6ca637d5f43"
+    },
+    {
+      "index": 2,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack');function origin(){return new Error('message');}function outer(){var result=origin();return result;}var e=outer(),trace=d.get.call(e);if(trace.indexOf('origin')<0||trace.indexOf('outer')<0)throw 1;Object.defineProperty(origin,'name',{get(){throw 2;}});if(d.get.call(e)!==trace)throw 3;e.stack='override';if(e.stack!=='override'||d.get.call(e)!==trace)throw 4;delete e.stack;if(e.stack!==trace)throw 5;function gone(){throw new Error('gone');}try{gone();}catch(x){}if((new Error()).stack.indexOf('gone')>=0)throw 6;",
+      "sha256": "19b7e2ae1ea0fe34bd5159cf9b31426166cc4250ed7b34198a1f62421f2ed89b"
+    },
+    {
+      "index": 3,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack'),o=$262.createRealm().global,e=new o.Error('foreign');if(typeof d.get.call(e)!=='string')throw 1;d.set.call(e,'foreign');var p=Object.getOwnPropertyDescriptor(e,'stack');if(p.value!=='foreign'||!p.writable||!p.enumerable||!p.configurable)throw 2;var caught=false;try{d.set.call(o.Error.prototype,'x');}catch(x){caught=x instanceof o.TypeError&&!(x instanceof TypeError);}if(!caught)throw 3;",
+      "sha256": "28195ed6fe30e0b866beecaa0e44625d61acf3d42ed63eb14b6a17144620d1d3"
+    },
+    {
+      "index": 4,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack'),e=new Error();Object.defineProperty(e,'stack',{value:'first',writable:true,enumerable:false,configurable:false});d.set.call(e,'second');var p=Object.getOwnPropertyDescriptor(e,'stack');if(p.value!=='second'||p.enumerable||p.configurable)throw 1;Object.defineProperty(e,'stack',{writable:false});var caught=false;try{d.set.call(e,'third');}catch(x){caught=x instanceof TypeError;}if(!caught||e.stack!=='second')throw 2;var seen;var a={set stack(v){seen=v;}};d.set.call(a,'sentinel');if(seen!=='sentinel')throw 3;",
+      "sha256": "4baca41b87f7f75d8d00849bbc1df77a7cf41aeb9a6de407d1a58dee13eb85c7"
+    },
+    {
+      "index": 5,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack'),log=[],target={},p=new Proxy(target,{getOwnPropertyDescriptor(t,k){log.push('getOwn');return Reflect.getOwnPropertyDescriptor(t,k);},defineProperty(t,k,v){log.push('define');return Reflect.defineProperty(t,k,v);},set(t,k,v,r){log.push('set');return true;}});d.set.call(p,'one');if(log.join(',')!=='getOwn,define'||target.stack!=='one')throw 1;log.length=0;d.set.call(p,'two');if(log.join(',')!=='getOwn,set')throw 2;var q=new Proxy(new Error(),{get(){throw 3;},getOwnPropertyDescriptor(){throw 4;}});if(d.get.call(q)!==undefined)throw 5;",
+      "sha256": "973dfb6698b14010206bfbb446239de3e0a21da9562f6a9d71d3d0dba852dce6"
+    },
+    {
+      "index": 6,
+      "source": "var d=Object.getOwnPropertyDescriptor(Error.prototype,'stack'),sentinel={},p=new Proxy({}, {getOwnPropertyDescriptor(){throw sentinel;}}),caught=false;try{d.set.call(p,'text');}catch(x){caught=x===sentinel;}if(!caught)throw 1;var closed=Object.preventExtensions({});caught=false;try{d.set.call(closed,'text');}catch(x){caught=x instanceof TypeError;}if(!caught)throw 2;Object.freeze(Error.prototype);var e=new Error();d.set.call(e,'text');if(e.stack!=='text')throw 3;caught=false;try{d.set.call(Error.prototype,'text');}catch(x){caught=x instanceof TypeError;}if(!caught)throw 4;",
+      "sha256": "7da9a66f210e0f325bdf3757a0fa52e7e1c9d333bffc95df527c689a0480c1c9"
+    }
+  ]
+}

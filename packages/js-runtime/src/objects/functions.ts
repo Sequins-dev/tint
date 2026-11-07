@@ -256,7 +256,7 @@ function sourceFunction(
   // Published only after initialization; the cell closes the function identity
   // cycle without relying on a mutable source-level name or ambient call state.
   const identity: { value: unknown } = { value: undefined };
-  const context = createSourceExecutionContext(realm);
+  const context = createSourceExecutionContext(realm, name);
   const metadata = tailCalls ? createFunctionRealmContext(realm) : context;
   const invoke: ObjectCall<unknown> = tailCalls
     ? (receiver, args): unknown =>

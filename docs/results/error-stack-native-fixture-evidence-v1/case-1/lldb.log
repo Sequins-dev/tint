@@ -1,0 +1,28 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-L9j6oS/test"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-L9j6oS/test' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess, time\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/port\",\"--\",\"127.0.0.1:0\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-L9j6oS/test\",\"1\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-es-w6ihsp/pid",'w').write(str(p.GetProcessID())); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/error-stack-native-v2/case-1/initial.json",'w').write(json.dumps({'state':p.GetState(),'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+5
+43
+(lldb) continue
+Process 87545 resuming
+Process 87545 exited with status = 42 (0x0000002a)
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); e=p.GetExitStatus(); open("/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/error-stack-native-v2/case-1/final.json",'w').write(json.dumps({'state':s,'exited':s==lldb.eStateExited,'exitStatus':e})); p.Kill() if s!=lldb.eStateExited else None; assert s==lldb.eStateExited and e==42
+47
+
+Debugserver: 
+Connection: Process 87545 stopped
+* thread #1, stop reason = signal SIGSTOP
+       frame #0: 0x00000001094309c0 dyld`_dyld_start
+dyld`_dyld_start:
+->  0x1094309c0 <+0>:  mov    x0, sp
+    0x1094309c4 <+4>:  and    sp, x0, #0xfffffffffffffff0
+    0x1094309c8 <+8>:  mov    x29, #0x0                 ; =0 
+    0x1094309cc <+12>: mov    x30, #0x0                 ; =0 
+Target 0: (test) stopped.
+
+Connection readiness: 
+Launch: 
+Process state: 
+Remote packets: 

@@ -1,0 +1,14 @@
+{
+  "kind": "native-fixture-launch-interruption",
+  "conformance": false,
+  "at": "2026-11-07T22:20:07.371307+00:00",
+  "reason": "Manual validator used a long worktree Unix socket path; debugserver exited with connect ENOENT while LLDB waited on accept. No inferior or initial stop existed. Not host authorization.",
+  "socketPath": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/error-stack-native-v1/case-0/port",
+  "socketPathBytes": 103,
+  "debugserverPid": 80547,
+  "debugserverState": "defunct",
+  "lldbPid": 80543,
+  "initialStopObserved": false,
+  "nativeInferiorActive": false,
+  "action": "SIGTERM only to waiting LLDB; preserve original validator report/logs; use a short mkdtemp socket directory in separate v2 validation."
+}

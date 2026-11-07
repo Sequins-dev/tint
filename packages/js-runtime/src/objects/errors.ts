@@ -30,6 +30,9 @@ import {
   createCallableObject,
   createConstructorObject,
   getProperty,
+  getOwnProperty,
+  createDataProperty,
+  setProperty,
   hasProperty,
   preventExtensions,
   makePrototypeImmutable,
@@ -46,6 +49,7 @@ import {
   builtinFunctionMetadata,
   builtinProperty,
   builtinFunction,
+  builtinAccessor,
 } from "./intrinsics.ts";
 import { installObjectPrototype } from "./object-prototype.ts";
 import { createPrimitiveObject } from "./boxed-primitives.ts";
@@ -285,7 +289,7 @@ export function createErrorRealm(
   const throwTypeError = createCallableObject<ScriptPropertyKey, unknown>(
     functionPrototype,
     (receiver, args): unknown => {
-      throw errorFromPrototype(typePrototype);
+      throw errorFromPrototype(typePrototype, agent, "TypeError");
     },
   );
   throwTypeError.internalInitialName = "";
@@ -574,7 +578,11 @@ export function createRuntimeError(
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const prototype = realm.prototypes.get(kind);
   if (prototype === undefined) throw "UNKNOWN_RUNTIME_ERROR_KIND";
-  return errorFromPrototype(prototype);
+  return errorFromPrototype(
+    prototype,
+    realm.agent,
+    realm.constructors.get(kind)?.internalInitialName ?? "Error",
+  );
 }
 /** Resource cleanup uses intrinsic failure objects, without invoking a mutable
  * global SuppressedError constructor or performing message coercion. */
@@ -599,9 +607,27 @@ function initializeSuppressedError(
 }
 function errorFromPrototype(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
+  agent: ScriptAgent,
+  name: string,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const error = createObject<ScriptPropertyKey, unknown>(prototype);
   error.internalErrorData = true;
+  let trace = name;
+  let sourceFrames = 0;
+  for (let index = agent.executionContextDepth - 1; index >= 0; index--) {
+    const frameName = agent.executionContextNames[index];
+    if (frameName !== undefined) {
+      trace += "\n    at " + (frameName || "<anonymous>");
+      sourceFrames++;
+    }
+  }
+  const active = agent.activeContext;
+  if (sourceFrames === 0 && active !== undefined)
+    trace +=
+      active.scriptOrModule === undefined
+        ? "\n    at <runtime>"
+        : "\n    at <script>";
+  error.internalErrorStack = trace;
   return error;
 }
 
@@ -659,7 +685,7 @@ export function installErrorIntrinsics(
       args: readonly unknown[],
       selected: OrdinaryObject<ScriptPropertyKey, unknown>,
     ): unknown {
-      const error = errorFromPrototype(selected);
+      const error = errorFromPrototype(selected, realm.agent, name);
       const aggregate = kind === "aggregate",
         suppressed = kind === "suppressed";
       const message = args[suppressed ? 2 : aggregate ? 1 : 0];
@@ -794,4 +820,54 @@ export function installErrorIntrinsics(
   const prototype = realm.prototypes.get("error");
   if (prototype === undefined) throw "ERROR_PROTOTYPE_INVARIANT";
   builtinProperty(prototype, "toString", toString, true, true, hooks);
+  // https://tc39.es/proposal-error-stack-accessor/
+  // Read the ErrorData brand directly: neither inheritance nor Proxy targets
+  // grant the slot, and public property writes do not replace the snapshot.
+  builtinAccessor(
+    prototype,
+    "stack",
+    builtinFunction(
+      realm.functionPrototype,
+      "get stack",
+      0,
+      (receiver, args): unknown => {
+        const object = viewObjectValue(receiver, realm.objectPrototype);
+        if (object === undefined) throw createRuntimeError(realm, "type");
+        return object.internalErrorData ? object.internalErrorStack : undefined;
+      },
+      hooks,
+    ),
+    builtinFunction(
+      realm.functionPrototype,
+      "set stack",
+      1,
+      (receiver, args): unknown => {
+        const object = viewObjectValue(receiver, realm.objectPrototype);
+        const value = args[0];
+        if (object === undefined || typeof value !== "string")
+          throw createRuntimeError(realm, "type");
+        if (object === prototype) throw createRuntimeError(realm, "type");
+        const accepted =
+          getOwnProperty<ScriptPropertyKey, unknown>(object, "stack") ===
+          undefined
+            ? createDataProperty<ScriptPropertyKey, unknown>(
+                object,
+                "stack",
+                value,
+                hooks,
+              )
+            : setProperty<ScriptPropertyKey, unknown>(
+                object,
+                "stack",
+                value,
+                { object, value: receiver },
+                hooks,
+              );
+        if (!accepted) throw createRuntimeError(realm, "type");
+        return undefined;
+      },
+      hooks,
+    ),
+    hooks,
+  );
 }

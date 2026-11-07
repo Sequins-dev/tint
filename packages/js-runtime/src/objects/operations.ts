@@ -74,6 +74,8 @@ export interface OrdinaryObject<Key, Value> {
   readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
   /** Presence of [[ErrorData]], independent of the object's prototype chain. */
   internalErrorData: boolean;
+  /** Creation-time logical stack, independent of the public stack property. */
+  internalErrorStack: string | undefined;
   internalDisposableStack: DisposalStack<Value> | undefined;
   internalAsyncDisposableStack: DisposalStack<Value> | undefined;
   internalTemporalPlainYearMonth: GregorianDate | undefined;
@@ -368,6 +370,7 @@ function allocateObject<Key, Value>(
     internalConstruct,
     internalExecutionContext,
     internalErrorData: false,
+    internalErrorStack: undefined,
     internalDisposableStack: undefined,
     internalAsyncDisposableStack: undefined,
     internalTemporalPlainYearMonth: undefined,
