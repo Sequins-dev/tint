@@ -1,0 +1,63 @@
+{
+  "kind": "native-agent-bounded-child-failure-fixture",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+      "files": 593
+    },
+    "imageSha256": "5dc0177814d38f90e7cad1cc885bdb72150ac76c10640e070a9c7fa7433f2146",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "$262.agent.start(\"var child=$262.createRealm();try{child.evalScript(\\\"var x=0;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;\\\");}catch(error){}$262.agent.leaving();\");",
+        "sha256": "b8bfc6d39ed371363f692e057bccbb66ae27ecd3f83a9c7f89b3913ace66a62d"
+      }
+    ]
+  },
+  "toolchain": "frozen-node-toolchain-cluster-k-agent-host-v3.json",
+  "expected": "graceful host failure exit70; OS faults are not accepted",
+  "accepted": true,
+  "outcome": {
+    "kind": "crash",
+    "detail": "unexpected native exit status 70"
+  },
+  "scope": "A worker catches a child realm code-budget failure and calls leaving. The host must preserve the sticky child-realm failure and reject the variant. Not unchanged Test262."
+}
