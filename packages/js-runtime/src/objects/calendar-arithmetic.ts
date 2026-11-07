@@ -1,4 +1,9 @@
 import {
+  isChineseCalendar,
+  chineseCalendarDateAdd,
+  chineseCalendarDateUntil,
+} from "./calendar-chinese.ts";
+import {
   hebrewCalendarDateAdd,
   hebrewCalendarDateUntil,
 } from "./calendar-hebrew.ts";
@@ -27,6 +32,16 @@ export function calendarDateAdd(
   days: number,
   overflow: "constrain" | "reject",
 ): GregorianDate | undefined {
+  if (isChineseCalendar(calendar))
+    return chineseCalendarDateAdd(
+      calendar,
+      date,
+      years,
+      months,
+      weeks,
+      days,
+      overflow,
+    );
   if (calendar === "hebrew")
     return hebrewCalendarDateAdd(
       calendar,
@@ -76,6 +91,8 @@ export function calendarDateUntil(
   two: GregorianDate,
   largestUnit: "year" | "month" | "week" | "day",
 ): GregorianDateDifference | undefined {
+  if (isChineseCalendar(calendar))
+    return chineseCalendarDateUntil(calendar, one, two, largestUnit);
   if (calendar === "hebrew")
     return hebrewCalendarDateUntil(calendar, one, two, largestUnit);
   if (isGregorianCalendar(calendar))

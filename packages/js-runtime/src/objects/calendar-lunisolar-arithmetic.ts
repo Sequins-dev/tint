@@ -136,7 +136,19 @@ export function lunisolarDateUntil(
               ? -1
               : 1
             : 0;
-    if (largest === "year" && order * sign > 0) {
+    const targetCode = algorithms.monthCode(calendar, b.year, b.month);
+    if (targetCode === undefined) return undefined;
+    const codeOrder =
+      year !== b.year
+        ? Math.sign(year - b.year)
+        : code.month !== targetCode.month
+          ? Math.sign(code.month - targetCode.month)
+          : code.leap !== targetCode.leap
+            ? code.leap
+              ? 1
+              : -1
+            : Math.sign(a.day - b.day);
+    if (largest === "year" && (order * sign > 0 || codeOrder * sign > 0)) {
       years -= sign;
       year = a.year + years;
       const adjustedMonth = algorithms.monthFromCode(

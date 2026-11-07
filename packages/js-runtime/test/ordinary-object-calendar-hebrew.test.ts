@@ -236,8 +236,9 @@ test("Hebrew calendar differences retain years before counting actual intervenin
     one,
     f.bag({ largestUnit: "year" }),
   ]) as ObjectValue;
-  assert.equal(f.get(backward, "years"), -1);
-  assert.equal(f.get(backward, "months"), 0);
+  // CompareSurpasses checks the original M05L before constraining it to M06.
+  assert.equal(f.get(backward, "years"), 0);
+  assert.equal(f.get(backward, "months"), -12);
 });
 
 test("Hebrew conjunction boundary years and epoch years have valid month and year lengths", () => {

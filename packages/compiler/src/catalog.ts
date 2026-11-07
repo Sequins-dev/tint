@@ -1035,6 +1035,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/calendar-astronomy.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/calendar-chinese.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/calendar-coptic.ts",
       packageId: "js-runtime",
     },

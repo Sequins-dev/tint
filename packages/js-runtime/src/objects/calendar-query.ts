@@ -1,4 +1,14 @@
 import {
+  isChineseCalendar,
+  chineseCalendarYearStart,
+  chineseCalendarDaysInMonth,
+  chineseCalendarMonthsInYear,
+  chineseCalendarFields,
+  chineseCalendarDateFromFields,
+  chineseCalendarEpochDay,
+  chineseCalendarMonthCode,
+} from "./calendar-chinese.ts";
+import {
   hebrewLeapYear,
   hebrewCalendarYearStart,
   hebrewCalendarDaysInMonth,
@@ -64,7 +74,8 @@ export function calendarAlgorithmsAvailable(calendar: string): boolean {
     calendar === "indian" ||
     calendar === "persian" ||
     isIslamicCalendar(calendar) ||
-    calendar === "hebrew"
+    calendar === "hebrew" ||
+    isChineseCalendar(calendar)
   );
 }
 export function calendarFieldsFromISO(
@@ -77,6 +88,7 @@ export function calendarFieldsFromISO(
   if (calendar === "indian") return indianCalendarFields(calendar, date);
   if (calendar === "persian") return persianCalendarFields(calendar, date);
   if (isIslamicCalendar(calendar)) return islamicCalendarFields(calendar, date);
+  if (isChineseCalendar(calendar)) return chineseCalendarFields(calendar, date);
   return calendar === "hebrew"
     ? hebrewCalendarFields(calendar, date)
     : undefined;
@@ -99,6 +111,8 @@ export function calendarDateFromFields(
     return islamicCalendarDateFromFields(calendar, fields, kind, overflow);
   if (calendar === "hebrew")
     return hebrewCalendarDateFromFields(calendar, fields, kind, overflow);
+  if (isChineseCalendar(calendar))
+    return chineseCalendarDateFromFields(calendar, fields, kind, overflow);
   return { value: undefined, error: "unsupported" };
 }
 export function calendarMonthsInYear(
@@ -106,6 +120,8 @@ export function calendarMonthsInYear(
   year: number,
 ): number | undefined {
   if (!Number.isSafeInteger(year)) return undefined;
+  if (isChineseCalendar(calendar))
+    return chineseCalendarMonthsInYear(calendar, year);
   if (calendar === "hebrew") return hebrewCalendarMonthsInYear(calendar, year);
   return isCopticCalendar(calendar)
     ? 13
@@ -132,6 +148,8 @@ export function calendarDaysInMonth(
     return persianCalendarDaysInMonth(calendar, year, month);
   if (isIslamicCalendar(calendar))
     return islamicCalendarDaysInMonth(calendar, year, month);
+  if (isChineseCalendar(calendar))
+    return chineseCalendarDaysInMonth(calendar, year, month);
   return calendar === "hebrew"
     ? hebrewCalendarDaysInMonth(calendar, year, month)
     : undefined;
@@ -152,6 +170,8 @@ export function calendarYearStartEpochDay(
   if (calendar === "persian") return persianCalendarYearStart(calendar, year);
   if (isIslamicCalendar(calendar))
     return islamicCalendarYearStart(calendar, year);
+  if (isChineseCalendar(calendar))
+    return chineseCalendarYearStart(calendar, year);
   return calendar === "hebrew"
     ? hebrewCalendarYearStart(calendar, year)
     : undefined;
@@ -201,6 +221,8 @@ export function calendarDateAt(
     epoch = islamicCalendarEpochDay(calendar, year, month, day);
   else if (calendar === "hebrew")
     epoch = hebrewCalendarEpochDay(calendar, year, month, day);
+  else if (isChineseCalendar(calendar))
+    epoch = chineseCalendarEpochDay(calendar, year, month, day);
   return epoch === undefined
     ? undefined
     : gregorianCoordinateFromEpochDay(epoch);
@@ -212,6 +234,10 @@ export function calendarInLeapYear(
 ): boolean | undefined {
   if (calendar === "hebrew")
     return Number.isSafeInteger(year) ? hebrewLeapYear(year) : undefined;
+  if (isChineseCalendar(calendar)) {
+    const count = chineseCalendarMonthsInYear(calendar, year);
+    return count === undefined ? undefined : count === 13;
+  }
   const days = calendarDaysInYear(calendar, year);
   return days === undefined
     ? undefined
@@ -226,6 +252,8 @@ export function calendarMonthCode(
 ): CalendarMonthCode | undefined {
   const fields = calendarFieldsFromISO(calendar, date);
   if (fields === undefined) return undefined;
+  if (isChineseCalendar(calendar))
+    return chineseCalendarMonthCode(calendar, fields.year, fields.month);
   return calendar === "hebrew"
     ? hebrewCalendarMonthCode(fields.year, fields.month)
     : { month: fields.month, leap: false };

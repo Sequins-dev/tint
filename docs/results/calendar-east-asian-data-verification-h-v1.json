@@ -1,0 +1,37 @@
+{
+  "kind": "calendar-data-verification",
+  "nativeConformance": false,
+  "revision": "b6b00b90cdad5bb4385a88c94f05718e94eebc93",
+  "sources": [
+    {
+      "path": "components/calendar/src/cal/east_asian_traditional/qing_data.rs",
+      "url": "https://raw.githubusercontent.com/unicode-org/icu4x/b6b00b90cdad5bb4385a88c94f05718e94eebc93/components/calendar/src/cal/east_asian_traditional/qing_data.rs",
+      "sha256": "e8097d4ba4651863644ef2ed7247d57640e949eb2c2ef207a2d8ebf9b5c4f69e"
+    },
+    {
+      "path": "components/calendar/src/cal/east_asian_traditional/china_data.rs",
+      "url": "https://raw.githubusercontent.com/unicode-org/icu4x/b6b00b90cdad5bb4385a88c94f05718e94eebc93/components/calendar/src/cal/east_asian_traditional/china_data.rs",
+      "sha256": "46e9ad101ef4501765524d5f5ea65ec1c87a1c9f1bec00cb66e7b57ad49ef9a5"
+    },
+    {
+      "path": "components/calendar/src/cal/east_asian_traditional/korea_data.rs",
+      "url": "https://raw.githubusercontent.com/unicode-org/icu4x/b6b00b90cdad5bb4385a88c94f05718e94eebc93/components/calendar/src/cal/east_asian_traditional/korea_data.rs",
+      "sha256": "109acbffe1cf64ce20bf483752f5c1d2f6b8cae07b6a75e17e79e0f2a20eb69f"
+    }
+  ],
+  "license": "Unicode-3.0; packages/js-runtime/LICENSE-CLDR.txt",
+  "calendars": [
+    "chinese",
+    "dangi"
+  ],
+  "yearsPerCalendar": 203,
+  "range": [
+    1900,
+    2102
+  ],
+  "publishedMonths": 5022,
+  "contiguity": "all adjacent year starts equal prior record end; astronomical transition at 2103 checked",
+  "regeneration": "node tools/generate-east-asian-calendar-data.ts <input-directory>",
+  "independentRecords": "calendar-east-asian-reference-data-h-v1.json.gz",
+  "recordsSHA256": "efb5e03c27d8063d51b97ed83b756b9e22e71fdd7099ccd1bbc66db04c237f07"
+}

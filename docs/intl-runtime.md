@@ -109,6 +109,22 @@ passes 164 focused tests, including full-domain reconstruction and exact
 conjunction thresholds. Native execution of these new calendar families remains
 held for host Developer Tools authorization.
 
+`calendar-chinese.ts` implements Chinese and Dangi month identities and arithmetic.
+Complete pinned ICU4X year tables cover 1900–2102, including published Chinese and
+Korean calendar differences and the two continuity years. Outside that interval,
+`calendar-astronomy.ts` computes new moons and winter solstices with portable math.
+Stable solar-cycle labels preserve a contiguous proleptic reckoning across the
+Temporal date domain. Dangi calculation offsets remain calendar rules independent
+of user time zones. Bounded caches retain year records and winter windows.
+
+Leap months repeat the preceding month code; absent leap months constrain backward.
+Month-day references use the specified rare-month table. Year differences compare
+the original month code before constraining it, as required by CompareSurpasses.
+[Semantic checks](results/temporal-chinese-semantic-validation-h-v1.json) and
+[algorithm invariants](results/calendar-east-asian-invariants-h-v1.json) remain
+separate from native evidence. Native execution and stage comparison are held
+pending host authorization.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,

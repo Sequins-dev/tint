@@ -1,0 +1,95 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T03:05:57.020872+00:00",
+  "calendars": [
+    "chinese",
+    "dangi"
+  ],
+  "initialRed": {
+    "tests": 7,
+    "failed": 7
+  },
+  "publishedDataRed": {
+    "tests": 8,
+    "passed": 7,
+    "failed": 1
+  },
+  "focusedGreen": {
+    "tests": 171,
+    "passed": 171,
+    "command": "node --test --test-concurrency=2 packages/js-runtime/test/ordinary-object-calendar*.test.ts packages/js-runtime/test/ordinary-object-temporal*.test.ts"
+  },
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "hostTypesExit": 0,
+  "retainedFailures": [
+    "First implementation imported the packed-table lookup from the data module instead of canonicalization; module-load failure preserved.",
+    "Shared original-monthCode comparison exposed an older Hebrew test expecting -1 year for M05L to earlier common M06. CompareSurpasses requires 0 years and -12 months; corrected with a public semantic test and native fixture.",
+    "Astronomical approximation disagreed with 59 Chinese and 8 Dangi published month records; complete pinned 1900-2102 tables replace approximations in this range.",
+    "An initial data extraction assumed 189 rows per modern table; strict count guard exposed two additional continuity years, 2101 and 2102. Complete 191-row tables plus 12 Qing records retained."
+  ],
+  "references": [
+    "https://tc39.es/proposal-intl-era-monthcode/",
+    "https://tc39.es/proposal-temporal/#sec-temporal-comparesurpasses",
+    "https://github.com/unicode-org/icu4x/tree/b6b00b90cdad5bb4385a88c94f05718e94eebc93/components/calendar/src/cal/east_asian_traditional",
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/astro.cpp"
+  ],
+  "invariants": "calendar-east-asian-invariants-h-v1.json",
+  "dataVerification": "calendar-east-asian-data-verification-h-v1.json",
+  "nativeStatus": "Eight-case fixture prepared; execution and native self-build comparison held for HOST AUTHORIZATION RESTORED. No Test262 gains claimed.",
+  "logs": {
+    "calendar-chinese-core-red-h-v1": {
+      "path": "calendar-chinese-core-red-h-v1.log.gz",
+      "sha256": "a4c70fdcbf12e897f62fc959f72cfca5592c7a8d7f8527fefd6522ee31b8d7ce"
+    },
+    "calendar-chinese-core-green-attempt-h-v1": {
+      "path": "calendar-chinese-core-green-attempt-h-v1.log.gz",
+      "sha256": "e12f5a0a6d95be6f6cb1beedee4475d6348a0ddebd93ea2ff916d355c4a18100"
+    },
+    "calendar-chinese-core-green-attempt-h-v2": {
+      "path": "calendar-chinese-core-green-attempt-h-v2.log.gz",
+      "sha256": "cd35438256d49bfa8d04e536f4b548426380216ab49f5f5157d429c13adfadb4"
+    },
+    "calendar-chinese-focused-h-v1": {
+      "path": "calendar-chinese-focused-h-v1.log.gz",
+      "sha256": "36ccaf0784b203ad859ae1ad3bfaf29b93d225fa350495d5f900ccb0a78d2097"
+    },
+    "calendar-chinese-focused-h-v2": {
+      "path": "calendar-chinese-focused-h-v2.log.gz",
+      "sha256": "fc3b5bf1fed51f08e33eb5b2be8bd0c8e3ac985efb1f34a08e4aaefd68632d30"
+    },
+    "calendar-chinese-published-red-h-v1": {
+      "path": "calendar-chinese-published-red-h-v1.log.gz",
+      "sha256": "54ac4949165cbe242e534384d0018b68b0060b822e99b48b821372fc2707c2a6"
+    },
+    "calendar-chinese-focused-h-v3": {
+      "path": "calendar-chinese-focused-h-v3.log.gz",
+      "sha256": "a85f716cece5c85a73dc45da1dfc5f2be39ef5eacebc345dd914a9b9608338b5"
+    },
+    "calendar-chinese-all-focused-h-v2": {
+      "path": "calendar-chinese-all-focused-h-v2.log.gz",
+      "sha256": "e28ea77f74d26beaed2e949fe7704b6188056f85f413af678c05aa550e2ab19c"
+    },
+    "calendar-chinese-build-h-v1": {
+      "path": "calendar-chinese-build-h-v1.log.gz",
+      "sha256": "f2d0c85c73b917653a9e884ca9303accffcc5386352a839a6729e1dd0e575816"
+    },
+    "calendar-chinese-build-h-v2": {
+      "path": "calendar-chinese-build-h-v2.log.gz",
+      "sha256": "f2d0c85c73b917653a9e884ca9303accffcc5386352a839a6729e1dd0e575816"
+    },
+    "calendar-chinese-test-types-h-v1": {
+      "path": "calendar-chinese-test-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "calendar-chinese-host-types-h-v1": {
+      "path": "calendar-chinese-host-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "calendar-east-asian-invariants-h-v1": {
+      "path": "calendar-east-asian-invariants-h-v1.log.gz",
+      "sha256": "295a6222a3b1dadbed83e3ed3720c9bc57035068e4e617207e84fc2fc6405fc6"
+    }
+  }
+}
