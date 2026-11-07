@@ -2650,13 +2650,19 @@ export function emitModule(
         }
         // SSA values are block-local. A final comparison used by the branch
         // has no other consumer, so its flags can replace a boolean carrier.
-        const finalInstruction = b.instructions[b.instructions.length - 1],
-          comparisonValue =
-            b.terminator.kind === "branch" &&
-            finalInstruction?.kind === "binary" &&
-            finalInstruction.id === b.terminator.condition
-              ? finalInstruction.id
-              : undefined;
+        const finalInstruction = b.instructions[b.instructions.length - 1];
+        let comparisonValue: number | undefined = undefined;
+        if (
+          finalInstruction !== undefined &&
+          finalInstruction.kind === "binary"
+        ) {
+          const terminator = b.terminator;
+          if (
+            terminator.kind === "branch" &&
+            finalInstruction.id === terminator.condition
+          )
+            comparisonValue = finalInstruction.id;
+        }
         let comparisonBranch: Condition | undefined = undefined;
         for (const op of b.instructions) {
           if (op === undefined) throw "instruction invariant";
