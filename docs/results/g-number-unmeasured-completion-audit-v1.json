@@ -1,0 +1,54 @@
+{
+  "kind": "native-explicit-subset-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-07T21:51:12.208Z",
+  "selection": "built-ins/Number",
+  "subset": {
+    "rootSelection": "built-ins/Number",
+    "requestedVariants": 576,
+    "variantSubsetSha256": "a9904fc59a5080a4fd2ec2e30d8a9eeaba57cdb79871cce9a4cb2cad76455551"
+  },
+  "fullFamilyVariants": 680,
+  "previouslyPassingVariantsNotRemeasured": 104,
+  "expectedVariants": 576,
+  "observedVariants": 576,
+  "uniqueVariants": 576,
+  "terminalCompleteRecords": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-number-unmeasured-native-v1.jsonl",
+  "journalSha256": "a1f68f024b20a34da8e825d3d6a698e59aa4ab03e725850c3adfbd524a050fee",
+  "journalBytes": 325263,
+  "report": "docs/results/test262-number-unmeasured-native-v1.json",
+  "reportSha256": "0f66f6c62f153b923cd5d1799be791138916e938dad42a717491b79fe341327b",
+  "totals": {
+    "total": 576,
+    "passed": 576,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "compilationRecords": 9,
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "frozenManifestFileSha256": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e",
+  "frozenManifestPayloadSha256": "3aad4823abbc319c820f79fd7ff7579a4d41bb34a0fee43e5a9164689aeec202",
+  "frozenFilesRevalidated": true,
+  "manifest": "docs/results/g-number-ledger18-unmeasured-variants-v1.json",
+  "manifestSha256": "dcad5c114940e460ffc00c092422f4dd30033d63e4e4f190e0da98f5bc329845",
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "observationsEqualCanonical": true,
+  "debuggerLaunch": "debugserver-direct",
+  "stderr": {
+    "path": ".tint-bootstrap/number-unmeasured-native-v1.stderr.log",
+    "sha256": "948a7e9aca5f22e3eb88c12d506970502092060625dc930eae52b33776d5ee76",
+    "bytes": 369172
+  },
+  "nonpasses": [],
+  "scope": "One completed native execution of the exact Number gap set from ledger18. Prior104passes remain in their original reports; no mixed-toolchain full-family report is synthesized."
+}
