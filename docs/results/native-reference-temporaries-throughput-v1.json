@@ -1,0 +1,3355 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-reference-temporaries-throughput-v1",
+  "utc": "2026-11-07T12:13:46.645918+00:00",
+  "implementation": "Verified block-local reference SSA values receive x4..x8 homes only between audited transparent operations and their last pre-safepoint use. Call arguments, allocation results and values spanning opaque operations retain traced storage. Numeric allocation has priority and its original plan survives extra-analysis exhaustion. Cached reference pseudo-homes are outside GC pools; durable locals and handler roots remain visible. No callee-save work or resource/cap change.",
+  "pointerLoop": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-pointer-loop-Wwcmfd/reference-pointer-loop",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "da87add81f34b2a11b61433bf9f8cdd7d20718a1d9b8017eb76e31ccf519bf77",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-pointer-loop-Wwcmfd/reference-pointer-loop.source.ts",
+          "fixtureSha256": "313ad2d1d2372e1ff2bcd364e9de1b420bfc47102c01e68518fa60409cad519c",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-before-pointer-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-pointer-loop-fLeJjz/reference-pointer-loop",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "f9a80a98f667080896605d34ae98aa8d712c9bd8fa1310a80cff90d12f1d8c77",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-pointer-loop-fLeJjz/reference-pointer-loop.source.ts",
+          "fixtureSha256": "313ad2d1d2372e1ff2bcd364e9de1b420bfc47102c01e68518fa60409cad519c",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-after-pointer-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "loadAverageAfter": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 88990
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 570.034125,
+        "cpuLowerBoundMs": 515.2384166666667,
+        "unobservedCPUWallBoundMs": 1.304167,
+        "instructions": 2868600355,
+        "cycles": 1550149969,
+        "probes": 445,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3306,
+          "instructions": 248407,
+          "cycles": 478167
+        },
+        "lastCPU": {
+          "userTicks": 12260884,
+          "systemTicks": 108144,
+          "instructions": 2868848762,
+          "cycles": 1550628136
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "loadAverageAfter": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89057
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 300.936541,
+        "cpuLowerBoundMs": 246.46604166666665,
+        "unobservedCPUWallBoundMs": 1.317666,
+        "instructions": 2516357217,
+        "cycles": 746046478,
+        "probes": 235,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3297,
+          "instructions": 240085,
+          "cycles": 445861
+        },
+        "lastCPU": {
+          "userTicks": 5844237,
+          "systemTicks": 74245,
+          "instructions": 2516597302,
+          "cycles": 746492339
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "loadAverageAfter": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89087
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 298.771958,
+        "cpuLowerBoundMs": 243.27608333333333,
+        "unobservedCPUWallBoundMs": 0.016333,
+        "instructions": 2515937471,
+        "cycles": 708882762,
+        "probes": 234,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2137,
+          "instructions": 109890,
+          "cycles": 221144
+        },
+        "lastCPU": {
+          "userTicks": 5774755,
+          "systemTicks": 66008,
+          "instructions": 2516047361,
+          "cycles": 709103906
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "loadAverageAfter": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89163
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 581.870458,
+        "cpuLowerBoundMs": 526.6662083333333,
+        "unobservedCPUWallBoundMs": 1.287917,
+        "instructions": 2867831840,
+        "cycles": 1543558621,
+        "probes": 454,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2437,
+          "instructions": 120821,
+          "cycles": 271985
+        },
+        "lastCPU": {
+          "userTicks": 12550573,
+          "systemTicks": 91853,
+          "instructions": 2867952661,
+          "cycles": 1543830606
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          17.78125,
+          17.81884765625,
+          17.646484375
+        ],
+        "loadAverageAfter": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89198
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 590.414208,
+        "cpuLowerBoundMs": 534.0560416666667,
+        "unobservedCPUWallBoundMs": 0.010792,
+        "instructions": 2867798629,
+        "cycles": 1549842442,
+        "probes": 461,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2645,
+          "instructions": 117523,
+          "cycles": 361748
+        },
+        "lastCPU": {
+          "userTicks": 12729271,
+          "systemTicks": 90719,
+          "instructions": 2867916152,
+          "cycles": 1550204190
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "loadAverageAfter": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89235
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 292.59025,
+        "cpuLowerBoundMs": 236.882,
+        "unobservedCPUWallBoundMs": 1.311417,
+        "instructions": 2516885851,
+        "cycles": 707462742,
+        "probes": 230,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2782,
+          "instructions": 114328,
+          "cycles": 260027
+        },
+        "lastCPU": {
+          "userTicks": 5602354,
+          "systemTicks": 85596,
+          "instructions": 2517000179,
+          "cycles": 707722769
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "loadAverageAfter": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89248
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 285.999959,
+        "cpuLowerBoundMs": 232.62833333333333,
+        "unobservedCPUWallBoundMs": 1.305792,
+        "instructions": 2515291662,
+        "cycles": 664578627,
+        "probes": 225,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2012,
+          "instructions": 119658,
+          "cycles": 249091
+        },
+        "lastCPU": {
+          "userTicks": 5522015,
+          "systemTicks": 63077,
+          "instructions": 2515411320,
+          "cycles": 664827718
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "loadAverageAfter": [
+          17.47802734375,
+          17.75537109375,
+          17.625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 89262
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 552.9715,
+        "cpuLowerBoundMs": 500.848875,
+        "unobservedCPUWallBoundMs": 0.014416,
+        "instructions": 2867954172,
+        "cycles": 1569805159,
+        "probes": 433,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2158,
+          "instructions": 114903,
+          "cycles": 317906
+        },
+        "lastCPU": {
+          "userTicks": 11932844,
+          "systemTicks": 89687,
+          "instructions": 2868069075,
+          "cycles": 1570123065
+        }
+      }
+    ]
+  },
+  "pointerSummary": [
+    {
+      "index": 0,
+      "cpuLowerBoundMs": {
+        "median": 520.9523125000001,
+        "min": 500.848875,
+        "max": 534.0560416666667
+      },
+      "inferiorWallMs": {
+        "median": 575.9522915,
+        "min": 552.9715,
+        "max": 590.414208
+      },
+      "instructions": {
+        "median": 2867893006.0,
+        "min": 2867798629,
+        "max": 2868600355
+      },
+      "cycles": {
+        "median": 1549996205.5,
+        "min": 1543558621,
+        "max": 1569805159
+      }
+    },
+    {
+      "index": 1,
+      "cpuLowerBoundMs": {
+        "median": 240.07904166666668,
+        "min": 232.62833333333333,
+        "max": 246.46604166666665
+      },
+      "inferiorWallMs": {
+        "median": 295.681104,
+        "min": 285.999959,
+        "max": 300.936541
+      },
+      "instructions": {
+        "median": 2516147344.0,
+        "min": 2515291662,
+        "max": 2516885851
+      },
+      "cycles": {
+        "median": 708172752.0,
+        "min": 664578627,
+        "max": 746046478
+      }
+    }
+  ],
+  "valueLoop": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-msC34M/reference-temporary-benchmark",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "d5d3d08c45e57f8349551caefa179cde8e277ad2ec10f69fd07b9e09a325d0b0",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-msC34M/reference-temporary-benchmark.source.ts",
+          "fixtureSha256": "fbeaebe80065a015acb6bb0b96f3e5406136479a97308153a3dabbf0ebd14b75",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-before-benchmark-v2.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-Y1IEID/reference-temporary-benchmark",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "6abd352f1ef51c6a923ea4738138548ffea1aa716eb13210daaa1511f91a4c60",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-Y1IEID/reference-temporary-benchmark.source.ts",
+          "fixtureSha256": "fbeaebe80065a015acb6bb0b96f3e5406136479a97308153a3dabbf0ebd14b75",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-after-benchmark-v2.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "loadAverageAfter": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42213
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 879.054333,
+        "cpuLowerBoundMs": 710.9477916666666,
+        "unobservedCPUWallBoundMs": 1.310375,
+        "instructions": 8422330596,
+        "cycles": 2123742771,
+        "probes": 601,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4882,
+          "instructions": 258210,
+          "cycles": 518287
+        },
+        "lastCPU": {
+          "userTicks": 16920468,
+          "systemTicks": 147161,
+          "instructions": 8422588806,
+          "cycles": 2124261058
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "loadAverageAfter": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42402
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 847.586917,
+        "cpuLowerBoundMs": 703.2707083333333,
+        "unobservedCPUWallBoundMs": 1.779542,
+        "instructions": 6022274965,
+        "cycles": 2128006805,
+        "probes": 592,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3172,
+          "instructions": 252068,
+          "cycles": 385708
+        },
+        "lastCPU": {
+          "userTicks": 16742433,
+          "systemTicks": 139236,
+          "instructions": 6022527033,
+          "cycles": 2128392513
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "loadAverageAfter": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42611
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 837.943084,
+        "cpuLowerBoundMs": 706.7145416666666,
+        "unobservedCPUWallBoundMs": 0.022375,
+        "instructions": 6019938121,
+        "cycles": 2124588798,
+        "probes": 556,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2631,
+          "instructions": 114858,
+          "cycles": 277815
+        },
+        "lastCPU": {
+          "userTicks": 16851633,
+          "systemTicks": 112147,
+          "instructions": 6020052979,
+          "cycles": 2124866613
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "loadAverageAfter": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42721
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 860.100209,
+        "cpuLowerBoundMs": 743.1632916666666,
+        "unobservedCPUWallBoundMs": 0.0225,
+        "instructions": 8420426065,
+        "cycles": 2121936139,
+        "probes": 565,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2308,
+          "instructions": 115860,
+          "cycles": 239237
+        },
+        "lastCPU": {
+          "userTicks": 17723795,
+          "systemTicks": 114432,
+          "instructions": 8420541925,
+          "cycles": 2122175376
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "loadAverageAfter": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42837
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 918.311458,
+        "cpuLowerBoundMs": 721.21625,
+        "unobservedCPUWallBoundMs": 1.314333,
+        "instructions": 8420039724,
+        "cycles": 2122646361,
+        "probes": 602,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2294,
+          "instructions": 120605,
+          "cycles": 296272
+        },
+        "lastCPU": {
+          "userTicks": 17179551,
+          "systemTicks": 131933,
+          "instructions": 8420160329,
+          "cycles": 2122942633
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          15.60986328125,
+          17.64404296875,
+          18.4013671875
+        ],
+        "loadAverageAfter": [
+          15.240234375,
+          17.53369140625,
+          18.35791015625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42997
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 874.118417,
+        "cpuLowerBoundMs": 736.0345416666667,
+        "unobservedCPUWallBoundMs": 2.176167,
+        "instructions": 6018568259,
+        "cycles": 2121962299,
+        "probes": 583,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2293,
+          "instructions": 115676,
+          "cycles": 221223
+        },
+        "lastCPU": {
+          "userTicks": 17568446,
+          "systemTicks": 98676,
+          "instructions": 6018683935,
+          "cycles": 2122183522
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          15.240234375,
+          17.53369140625,
+          18.35791015625
+        ],
+        "loadAverageAfter": [
+          15.240234375,
+          17.53369140625,
+          18.35791015625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 43109
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 884.25475,
+        "cpuLowerBoundMs": 736.8834583333334,
+        "unobservedCPUWallBoundMs": 4.072792,
+        "instructions": 6019737701,
+        "cycles": 2123378665,
+        "probes": 589,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2205,
+          "instructions": 105137,
+          "cycles": 297749
+        },
+        "lastCPU": {
+          "userTicks": 17569726,
+          "systemTicks": 117682,
+          "instructions": 6019842838,
+          "cycles": 2123676414
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          15.240234375,
+          17.53369140625,
+          18.35791015625
+        ],
+        "loadAverageAfter": [
+          15.240234375,
+          17.53369140625,
+          18.35791015625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 43223
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 796.236833,
+        "cpuLowerBoundMs": 689.9707916666666,
+        "unobservedCPUWallBoundMs": 1.126708,
+        "instructions": 8419274628,
+        "cycles": 2117236993,
+        "probes": 519,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2230,
+          "instructions": 120191,
+          "cycles": 267505
+        },
+        "lastCPU": {
+          "userTicks": 16461064,
+          "systemTicks": 100465,
+          "instructions": 8419394819,
+          "cycles": 2117504498
+        }
+      }
+    ]
+  },
+  "valueSummary": [
+    {
+      "index": 0,
+      "cpuLowerBoundMs": {
+        "median": 716.0820208333332,
+        "min": 689.9707916666666,
+        "max": 743.1632916666666
+      },
+      "inferiorWallMs": {
+        "median": 869.577271,
+        "min": 796.236833,
+        "max": 918.311458
+      },
+      "instructions": {
+        "median": 8420232894.5,
+        "min": 8419274628,
+        "max": 8422330596
+      },
+      "cycles": {
+        "median": 2122291250.0,
+        "min": 2117236993,
+        "max": 2123742771
+      }
+    },
+    {
+      "index": 1,
+      "cpuLowerBoundMs": {
+        "median": 721.3745416666666,
+        "min": 703.2707083333333,
+        "max": 736.8834583333334
+      },
+      "inferiorWallMs": {
+        "median": 860.852667,
+        "min": 837.943084,
+        "max": 884.25475
+      },
+      "instructions": {
+        "median": 6019837911.0,
+        "min": 6018568259,
+        "max": 6022274965
+      },
+      "cycles": {
+        "median": 2123983731.5,
+        "min": 2121962299,
+        "max": 2128006805
+      }
+    }
+  ],
+  "semanticFixture": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporaries-Nwvl2p/reference-temporaries",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "9704828c3e7d7a22be88748bb0e0ca5ebebb90f83386c515ab4a783dfb886a12",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporaries-Nwvl2p/reference-temporaries.source.ts",
+          "fixtureSha256": "00eb69560e6948f936275b6ca58372e73918e7e471aea336670a16ea7fe298c3",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-before-v8.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporaries-MoZMWk/reference-temporaries",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+            "files": 587
+          },
+          "imageSha256": "9c529e6210904ce8e6392d022eb3898d521f2b765bd50f5b247d95c6dfe4a029",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporaries-MoZMWk/reference-temporaries.source.ts",
+          "fixtureSha256": "00eb69560e6948f936275b6ca58372e73918e7e471aea336670a16ea7fe298c3",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-after-v8.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "loadAverageAfter": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 41741
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 88.625375,
+        "cpuLowerBoundMs": 5.406208333333333,
+        "unobservedCPUWallBoundMs": 1.300625,
+        "instructions": 32108760,
+        "cycles": 14590453,
+        "probes": 56,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3654,
+          "instructions": 244588,
+          "cycles": 475334
+        },
+        "lastCPU": {
+          "userTicks": 73021,
+          "systemTicks": 60382,
+          "instructions": 32353348,
+          "cycles": 15065787
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "loadAverageAfter": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 41831
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 59.311917,
+        "cpuLowerBoundMs": 5.402666666666667,
+        "unobservedCPUWallBoundMs": 1.303125,
+        "instructions": 31299815,
+        "cycles": 15347086,
+        "probes": 47,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3748,
+          "instructions": 236630,
+          "cycles": 435513
+        },
+        "lastCPU": {
+          "userTicks": 73633,
+          "systemTicks": 59779,
+          "instructions": 31536445,
+          "cycles": 15782599
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "loadAverageAfter": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 41915
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 126.423458,
+        "cpuLowerBoundMs": 4.708083333333333,
+        "unobservedCPUWallBoundMs": 2.145541,
+        "instructions": 29679246,
+        "cycles": 14562659,
+        "probes": 65,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1794,
+          "instructions": 113422,
+          "cycles": 218539
+        },
+        "lastCPU": {
+          "userTicks": 66850,
+          "systemTicks": 47938,
+          "instructions": 29792668,
+          "cycles": 14781198
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "loadAverageAfter": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 41963
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 58.388833,
+        "cpuLowerBoundMs": 4.105041666666667,
+        "unobservedCPUWallBoundMs": 1.308708,
+        "instructions": 24740840,
+        "cycles": 10759163,
+        "probes": 46,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2108,
+          "instructions": 115838,
+          "cycles": 227083
+        },
+        "lastCPU": {
+          "userTicks": 59209,
+          "systemTicks": 41420,
+          "instructions": 24856678,
+          "cycles": 10986246
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          15.1455078125,
+          17.63134765625,
+          18.40625
+        ],
+        "loadAverageAfter": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42016
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 56.806709,
+        "cpuLowerBoundMs": 4.634083333333333,
+        "unobservedCPUWallBoundMs": 0.019917,
+        "instructions": 30857197,
+        "cycles": 11987834,
+        "probes": 45,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2470,
+          "instructions": 114058,
+          "cycles": 314132
+        },
+        "lastCPU": {
+          "userTicks": 72078,
+          "systemTicks": 41610,
+          "instructions": 30971255,
+          "cycles": 12301966
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "loadAverageAfter": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42062
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 105.034917,
+        "cpuLowerBoundMs": 4.976791666666667,
+        "unobservedCPUWallBoundMs": 0.03025,
+        "instructions": 29870159,
+        "cycles": 14965454,
+        "probes": 54,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1929,
+          "instructions": 120856,
+          "cycles": 222982
+        },
+        "lastCPU": {
+          "userTicks": 70860,
+          "systemTicks": 50512,
+          "instructions": 29991015,
+          "cycles": 15188436
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "loadAverageAfter": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42108
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 102.720292,
+        "cpuLowerBoundMs": 5.272541666666667,
+        "unobservedCPUWallBoundMs": 8.694459,
+        "instructions": 29664083,
+        "cycles": 14002694,
+        "probes": 54,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1741,
+          "instructions": 107914,
+          "cycles": 206769
+        },
+        "lastCPU": {
+          "userTicks": 77524,
+          "systemTicks": 50758,
+          "instructions": 29771997,
+          "cycles": 14209463
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "loadAverageAfter": [
+          15.0537109375,
+          17.57080078125,
+          18.38037109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 42163
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 63.501,
+        "cpuLowerBoundMs": 5.116791666666667,
+        "unobservedCPUWallBoundMs": 0.015208,
+        "instructions": 30324814,
+        "cycles": 13715740,
+        "probes": 48,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2223,
+          "instructions": 117436,
+          "cycles": 282225
+        },
+        "lastCPU": {
+          "userTicks": 76834,
+          "systemTicks": 48192,
+          "instructions": 30442250,
+          "cycles": 13997965
+        }
+      }
+    ]
+  },
+  "nativeSelfbuild": {
+    "manifest": {
+      "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+        "sha256": "59a2a3856a9d0001a4e56c3b222915605e3d8542a854b9eb47f6e4f591eeb159"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+        "files": 587
+      },
+      "scope": "Same current candidate implementation/source snapshot compiled by frozen value-capture baseline and reference-temporary emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 50013,
+          "monotonicNs": 1349292750
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 317752109291
+        },
+        "loadBefore": [
+          14.40673828125,
+          16.89013671875,
+          18.04443359375
+        ],
+        "loadAfter": [
+          17.0224609375,
+          15.59814453125,
+          16.9619140625
+        ],
+        "cpu": {
+          "pid": 50013,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 7319689909,
+            "systemTicks": 49101790,
+            "instructions": 2968854691489,
+            "cycles": 915644388173
+          },
+          "cpuMsLowerBound": 307032.9874583333,
+          "finalUnobservedWallBoundMs": 104.334,
+          "probes": 3041,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 316402.816541,
+        "outputSha256": "8a45b43140bc6f17725932b249a8928956a2ca9ce139be40c7533efb365e006a",
+        "outputBytes": 54168482,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 67775,
+          "monotonicNs": 1889147000
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 338108107250
+        },
+        "loadBefore": [
+          17.0224609375,
+          15.59814453125,
+          16.9619140625
+        ],
+        "loadAfter": [
+          19.89501953125,
+          18.1884765625,
+          17.77001953125
+        ],
+        "cpu": {
+          "pid": 67775,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 7459383268,
+            "systemTicks": 36025487,
+            "instructions": 2839570517038,
+            "cycles": 848526901161
+          },
+          "cpuMsLowerBound": 312308.698125,
+          "finalUnobservedWallBoundMs": 105.074167,
+          "probes": 3238,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 336218.96025,
+        "outputSha256": "8a45b43140bc6f17725932b249a8928956a2ca9ce139be40c7533efb365e006a",
+        "outputBytes": 54168482,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 0.9831073847819791,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "nativeSelfbuildInterpretation": "One matched pair. Retired instructions -4.35%, cycles -7.33%; CPU 307.033->312.309s and wall 316.403->336.219s. No full-compiler CPU or wall speedup claimed. Both native executables reproduce the identical 54,168,482-byte candidate compiler image.",
+  "staticGenerationalReader": {
+    "scope": "Same frozen v23 source compiled by baseline and integer-bank emitters; all-path body counts, not retired hardware counts.",
+    "out": [
+      {
+        "label": "before",
+        "instructions": 850,
+        "loads": 184,
+        "stores": 254,
+        "calls": 1,
+        "fmov": 35
+      },
+      {
+        "label": "after",
+        "instructions": 820,
+        "loads": 174,
+        "stores": 224,
+        "calls": 1,
+        "fmov": 35
+      }
+    ]
+  },
+  "nativeSelection": {
+    "report": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "b38478cf07be381cf4fe35bb792232c255315e17f68ac582953c81cda79591e9",
+        "files": 587
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+      "frozenToolchainSha256": "44c917d679a4e136c89d6c6cabb74607bb77d9b108481cad2a9ab001d2c468cd",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 8,
+            "kind": "execution",
+            "compileMs": 164165.705,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 8,
+      "variantSubsetSha256": "d08e4fad6731ddaccdf2f9449e792d2a6c2003c8bc58c00173da68381a95e599",
+      "complete": true,
+      "totals": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 417261.31987500004,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 701491.710167,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 701966.323208,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 702410.478584,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 702901.874791,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 703411.357125,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 703890.25075,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 704353.090334,
+          "batch": 0
+        }
+      ]
+    },
+    "observationsEqual": true,
+    "observations": [
+      {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      }
+    ],
+    "beforeReports": [
+      "native-capture-throughput-v1.json",
+      "test262-perf-addition-a1-restored-v1.json"
+    ],
+    "scope": "Eight pinned variants, same test/harness hashes, strictness goals, fresh processes, 300-second budget and resources. Before outcome union consists of two disjoint complete reports; no whole-suite aggregation. Toolchains embed their own separately recorded compiler source snapshots; runtime timings across these different sources/batch compositions are context, not a causal compiler/codegen speed ratio."
+  },
+  "a1CPU": [
+    {
+      "pid": 54442,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 5735422853,
+        "systemTicks": 34054682,
+        "instructions": 2073739079634,
+        "cycles": 712678804752
+      },
+      "cpuMsLowerBound": 240394.89729166665,
+      "finalUnobservedWallBoundMs": 102.776833,
+      "probes": 2419,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    },
+    {
+      "pid": 69001,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 6305635357,
+        "systemTicks": 20696933,
+        "instructions": 2073496534307,
+        "cycles": 720059702576
+      },
+      "cpuMsLowerBound": 263597.17875,
+      "finalUnobservedWallBoundMs": 100.560291,
+      "probes": 2734,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    }
+  ],
+  "gate": {
+    "exit": {
+      "startedUTC": "2026-11-07T12:07:28.991Z",
+      "endedUTC": "2026-11-07T12:12:13.410Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+      "args": [],
+      "status": 0,
+      "signal": null
+    },
+    "launcher": {
+      "pid": 89453,
+      "args": [
+        ".tint-bootstrap/perf/record-background-exit-v1.mjs",
+        ".tint-bootstrap/perf/check-reference-temporaries-integer-v2-exit.json",
+        "/Users/stephenbelanger/.t3/tint-slots/tint-check"
+      ],
+      "utc": "2026-11-07T12:07:28.966Z",
+      "head": "d74dcc78eb7275fa75153a818252e40d92acd1f2",
+      "main": "f1c4e96083efb44c9318920c9d9ab3febc07e05b"
+    },
+    "counts": {
+      "tests": 4725,
+      "pass": 4725,
+      "fail": 0
+    }
+  },
+  "fpControl": {
+    "selfbuild": {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+          "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22/source-snapshot.json",
+          "sha256": "e6d0875993dfeb45d64fe4a62a8f4af69886245b7f2f20940b436391b1d6afcc"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "6679ae8c7e9b254d21f75f61f2ff4c1f18b0be7ef3f56453da77077c50042d00",
+          "files": 587
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen value-capture baseline and reference-temporary emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 54386,
+            "monotonicNs": 3560924291
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 470632792583
+          },
+          "loadBefore": [
+            19.46240234375,
+            18.4091796875,
+            16.8359375
+          ],
+          "loadAfter": [
+            19.0849609375,
+            21.79736328125,
+            19.51708984375
+          ],
+          "cpu": {
+            "pid": 54386,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 9052363166,
+              "systemTicks": 207396342,
+              "instructions": 2987369151889,
+              "cycles": 1025913456857
+            },
+            "cpuMsLowerBound": 385823.31283333333,
+            "finalUnobservedWallBoundMs": 105.064333,
+            "probes": 4482,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 467071.868292,
+          "outputSha256": "b624dc19e7f6f2b1342b351c8c1b2d6560fd3de411975be3516d2271248752fd",
+          "outputBytes": 54085922,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 9959,
+            "monotonicNs": 1888722750
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 416997510041
+          },
+          "loadBefore": [
+            19.0849609375,
+            21.79736328125,
+            19.51708984375
+          ],
+          "loadAfter": [
+            13.169921875,
+            17.3603515625,
+            18.322265625
+          ],
+          "cpu": {
+            "pid": 9959,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 8529706075,
+              "systemTicks": 219381404,
+              "instructions": 2860089002665,
+              "cycles": 970035078322
+            },
+            "cpuMsLowerBound": 364545.311625,
+            "finalUnobservedWallBoundMs": 101.557625,
+            "probes": 3988,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 415108.787291,
+          "outputSha256": "b624dc19e7f6f2b1342b351c8c1b2d6560fd3de411975be3516d2271248752fd",
+          "outputBytes": 54085922,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.0583686047517231,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    "valueLoop": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-aJOTZr/reference-temporary-benchmark",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "6679ae8c7e9b254d21f75f61f2ff4c1f18b0be7ef3f56453da77077c50042d00",
+              "files": 587
+            },
+            "imageSha256": "d5d3d08c45e57f8349551caefa179cde8e277ad2ec10f69fd07b9e09a325d0b0",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-aJOTZr/reference-temporary-benchmark.source.ts",
+            "fixtureSha256": "fbeaebe80065a015acb6bb0b96f3e5406136479a97308153a3dabbf0ebd14b75",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-before-benchmark-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 32768,
+              "allocationCapacity": 4096,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        },
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-s7OyVW/reference-temporary-benchmark",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "6679ae8c7e9b254d21f75f61f2ff4c1f18b0be7ef3f56453da77077c50042d00",
+              "files": 587
+            },
+            "imageSha256": "4cd23998d1048e3c058f36442e82c9dd057440460c9979223bc4f28559c5ce75",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-reference-temporary-benchmark-s7OyVW/reference-temporary-benchmark.source.ts",
+            "fixtureSha256": "fbeaebe80065a015acb6bb0b96f3e5406136479a97308153a3dabbf0ebd14b75",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/reference-temporary-fixture-after-benchmark-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 32768,
+              "allocationCapacity": 4096,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            19.57958984375,
+            18.087890625,
+            16.56591796875
+          ],
+          "loadAverageAfter": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51097
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 1062.394083,
+          "cpuLowerBoundMs": 836.841375,
+          "unobservedCPUWallBoundMs": 0.024083,
+          "instructions": 8454327470,
+          "cycles": 2169596893,
+          "probes": 604,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 4852,
+            "instructions": 388030,
+            "cycles": 490135
+          },
+          "lastCPU": {
+            "userTicks": 19515835,
+            "systemTicks": 573210,
+            "instructions": 8454715500,
+            "cycles": 2170087028
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "loadAverageAfter": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51131
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 1082.609917,
+          "cpuLowerBoundMs": 880.1723333333334,
+          "unobservedCPUWallBoundMs": 1.658583,
+          "instructions": 6051510458,
+          "cycles": 2204347117,
+          "probes": 749,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3764,
+            "instructions": 241829,
+            "cycles": 380717
+          },
+          "lastCPU": {
+            "userTicks": 20532385,
+            "systemTicks": 595515,
+            "instructions": 6051752287,
+            "cycles": 2204727834
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "loadAverageAfter": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51190
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 1015.951833,
+          "cpuLowerBoundMs": 907.1197916666666,
+          "unobservedCPUWallBoundMs": 0.024583,
+          "instructions": 6058715425,
+          "cycles": 2224816084,
+          "probes": 773,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3466,
+            "instructions": 142414,
+            "cycles": 356740
+          },
+          "lastCPU": {
+            "userTicks": 21084678,
+            "systemTicks": 689663,
+            "instructions": 6058857839,
+            "cycles": 2225172824
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            19.85302734375,
+            18.16943359375,
+            16.603515625
+          ],
+          "loadAverageAfter": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51203
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 985.55125,
+          "cpuLowerBoundMs": 838.406875,
+          "unobservedCPUWallBoundMs": 0.0355,
+          "instructions": 8458417834,
+          "cycles": 2179607393,
+          "probes": 717,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2322,
+            "instructions": 113550,
+            "cycles": 246898
+          },
+          "lastCPU": {
+            "userTicks": 19472910,
+            "systemTicks": 651177,
+            "instructions": 8458531384,
+            "cycles": 2179854291
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "loadAverageAfter": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51220
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 981.605625,
+          "cpuLowerBoundMs": 834.28675,
+          "unobservedCPUWallBoundMs": 1.376584,
+          "instructions": 8456552502,
+          "cycles": 2176736876,
+          "probes": 703,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3026,
+            "instructions": 140442,
+            "cycles": 333781
+          },
+          "lastCPU": {
+            "userTicks": 19403184,
+            "systemTicks": 622724,
+            "instructions": 8456692944,
+            "cycles": 2177070657
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "loadAverageAfter": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51237
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 1017.674209,
+          "cpuLowerBoundMs": 891.97225,
+          "unobservedCPUWallBoundMs": 0.026834,
+          "instructions": 6049950694,
+          "cycles": 2204150970,
+          "probes": 726,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3004,
+            "instructions": 129617,
+            "cycles": 310332
+          },
+          "lastCPU": {
+            "userTicks": 20852518,
+            "systemTicks": 557820,
+            "instructions": 6050080311,
+            "cycles": 2204461302
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            19.46435546875,
+            18.11669921875,
+            16.59375
+          ],
+          "loadAverageAfter": [
+            19.4267578125,
+            18.13134765625,
+            16.607421875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51257
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 996.9645,
+          "cpuLowerBoundMs": 898.0342083333334,
+          "unobservedCPUWallBoundMs": 1.340166,
+          "instructions": 6053654079,
+          "cycles": 2210722995,
+          "probes": 763,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2563,
+            "instructions": 117401,
+            "cycles": 275015
+          },
+          "lastCPU": {
+            "userTicks": 20951055,
+            "systemTicks": 604329,
+            "instructions": 6053771480,
+            "cycles": 2210998010
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            19.4267578125,
+            18.13134765625,
+            16.607421875
+          ],
+          "loadAverageAfter": [
+            19.4267578125,
+            18.13134765625,
+            16.607421875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 51287
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 1062.788,
+          "cpuLowerBoundMs": 842.905,
+          "unobservedCPUWallBoundMs": 1.343416,
+          "instructions": 8453671298,
+          "cycles": 2168547689,
+          "probes": 603,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2187,
+            "instructions": 119938,
+            "cycles": 241731
+          },
+          "lastCPU": {
+            "userTicks": 19660250,
+            "systemTicks": 571657,
+            "instructions": 8453791236,
+            "cycles": 2168789420
+          }
+        }
+      ]
+    },
+    "nativeSelection": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "6679ae8c7e9b254d21f75f61f2ff4c1f18b0be7ef3f56453da77077c50042d00",
+        "files": 587
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v22/source-snapshot.json",
+      "frozenToolchainSha256": "7f704cca2f835f28c5f955a07afa366ab8464ce966b562f1fc886197b1646900",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 8,
+            "kind": "execution",
+            "compileMs": 351310.848833,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 8,
+      "variantSubsetSha256": "d08e4fad6731ddaccdf2f9449e792d2a6c2003c8bc58c00173da68381a95e599",
+      "complete": true,
+      "totals": {
+        "total": 8,
+        "passed": 6,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.75
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6XMWUH/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n3\n32\n(lldb) continue\n\nDebugserver: \nConnection: Process 534 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d4f09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d4f09c0 <+0>:  mov    x0, sp\n    0x10d4f09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d4f09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d4f09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+          },
+          "status": "timeout",
+          "elapsedMs": 651483.481417,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-3zaGo2/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Hz9e5S/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 16715 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d0e09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d0e09c0 <+0>:  mov    x0, sp\n    0x10d0e09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d0e09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d0e09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+          },
+          "status": "timeout",
+          "elapsedMs": 951504.7825000001,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 952082.011584,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 952547.862666,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 953069.6807499999,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 953592.024334,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 954107.3395,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 954613.450666,
+          "batch": 0
+        }
+      ]
+    },
+    "a1CPU": [
+      {
+        "pid": 534,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 6370317577,
+          "systemTicks": 135636549,
+          "instructions": 1925029130129,
+          "cycles": 739253418686
+        },
+        "cpuMsLowerBound": 271081.4219166667,
+        "finalUnobservedWallBoundMs": 104.143708,
+        "probes": 963,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      {
+        "pid": 16715,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 6194001897,
+          "systemTicks": 122684696,
+          "instructions": 1922721861019,
+          "cycles": 717170769455
+        },
+        "cpuMsLowerBound": 263195.27470833337,
+        "finalUnobservedWallBoundMs": 104.20875,
+        "probes": 2870,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    ],
+    "interpretation": "Intermediate FP-bank design is not the delivered implementation. All stage images match; one compiler CPU pair improves 5.8%, while the value-loop CPU median worsens 6.8% and both canonical A1 cases time out after entry. These sources/batch configurations differ from the older A1 baseline; do not infer a causal A1 ratio. Full original observations retained."
+  },
+  "retainedPreparationFailures": "First fixture text used unsupported assertions; portable planner then needed explicit lookup and undefined guards for bootstrap. A manifest-read race failed before compilation. All recorded failures are pre-entry preparation, distinct from native semantic results. Initial gate also retained an obsolete code-size expectation: the same async template now fits the unchanged 262144-byte limit; deliberately small and exact-boundary rejection tests preserve enforcement.",
+  "wholeSuiteProjectionHours": null,
+  "projectionLimit": "The pointer loop and the sampled compiler are not the full suite execution mix. Node-hosted fixed batch compilation is unchanged as an execution architecture. No multiplication of operation gains or causal suite wall reduction is justified.",
+  "assets": [
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-equivalence-v1.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-equivalence-v1.json",
+      "uncompressedSha256": "765b731518674e29d96d049a60017a04d9c49386f8756f8e11ec903de79167dc"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-equivalence-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-equivalence-v1.jsonl",
+      "uncompressedSha256": "3b205971b45e0c50738ca8998815799815c0aa3db97c97a913ab69b0d16a3d74"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-equivalence-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-equivalence-v1.log",
+      "uncompressedSha256": "cc9326a0f98c761240bfdc315ae4c434f176f615ace1d50ee2b357b5c194f413"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-equivalence-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-equivalence-v1-inputs.json",
+      "uncompressedSha256": "2d4acfec22502bd2349828a6583933684fbd24ade65a01b012516e0cef17f328"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-operation-equivalence-v1.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-operation-equivalence-v1.json",
+      "uncompressedSha256": "48bcd0a4a246e7ccf44a3d37574b2e4df3357d6a549f675bcec53e644c05dff6"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-operation-equivalence-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-operation-equivalence-v1.jsonl",
+      "uncompressedSha256": "62425b1b2fe75d50f1cd5778bfe0ecae32e670846b3d3b93bb99cc25f9ba3aca"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-operation-equivalence-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-operation-equivalence-v1.log",
+      "uncompressedSha256": "19ef14470a73de7a6fde0b177047bb7326423653819800582951f8fadf3c28d6"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-operation-equivalence-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-operation-equivalence-v1-inputs.json",
+      "uncompressedSha256": "e5f157a2707d7f104205629071f55367206fcad9a7e63772d15709f857ad79ed"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-integer-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-integer-v1.ts",
+      "uncompressedSha256": "528c0f780aee644f4d4e2c0be96a8349fe66dc5442785d104f68ecbe8df73a99"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-integer-v1.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-integer-v1.log",
+      "uncompressedSha256": "55c62dfd51e06e67e6a17b11f4b7a6c3202504460a1c14f0d1726d08d253814d"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-integer-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-integer-v1-exit.json",
+      "uncompressedSha256": "33fcd470f9e9c9613c96d516d5f6c51c1960169071900528d2952d1afadaa2c8"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-checks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-checks-v1.log",
+      "uncompressedSha256": "c9a261baeef27dde148b339d72001dda20499f3a8ed408d21676240362a43b79"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-checks-v1.mjs.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-checks-v1.mjs",
+      "uncompressedSha256": "9b6caa7399af0fef0423047c705604f6a2845972a483864ad7d22cfb947d5eea"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-checks-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-checks-v1-exit.json",
+      "uncompressedSha256": "991a2833e6e7d4a40f0b722ac63909bd2379cd069776b8d628d2ce538293f8e2"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-pointer-counters-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-pointer-counters-v1.log",
+      "uncompressedSha256": "5a7378bc3ceb2806e59f7a792d0b270f3be0e3b4f5a5adb04d5e01d7afe7850a"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-pointer-counters-v1.mjs.gz",
+      "source": ".tint-bootstrap/perf/reference-pointer-counters-v1.mjs",
+      "uncompressedSha256": "7254fbc70cf797b70af9cf4f6528da7580d9821098065398c6bd70b954376c59"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-pointer-counters-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/reference-pointer-counters-v1-exit.json",
+      "uncompressedSha256": "c4e8d9a10358d38c4b08792c58452509d6094191cc1b68371e2ea87b7ea0eb57"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-pointer-builds-v1.mjs.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-pointer-builds-v1.mjs",
+      "uncompressedSha256": "3099db503ab276471d6f7d30bc2c58f494b560e4e2a61ebd30deb1604c84e1f6"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-pointer-builds-v1.log.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-pointer-builds-v1.log",
+      "uncompressedSha256": "9d6c3dc363888d6e26163fcf81787c6c06e6421fdb7d2dfc734c9e3d9c496cab"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-temporary-benchmark-v2.mjs.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-temporary-benchmark-v2.mjs",
+      "uncompressedSha256": "6269b3ab2081aa494914a11d90b14f4a255503db68b573051acd36ad5903b921"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-temporary-fixtures-v6.mjs.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-temporary-fixtures-v6.mjs",
+      "uncompressedSha256": "49e175b2887f0a0ad5df66870abf1bd12d0600f8712ce84ee526715aec67cf01"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-temporary-fixtures-v6.log.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-temporary-fixtures-v6.log",
+      "uncompressedSha256": "bf245466df26063bee83f1429725f2c61a2fb20be18b09f146a3c546c9f88bee"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-generational-static-v1.json.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-generational-static-v1.json",
+      "uncompressedSha256": "ef48210b2e51f75fcfb830b7f816470beb70b3f5ca47cd596ebb3bda244591da"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-generational-before-v1.txt.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-generational-before-v1.txt",
+      "uncompressedSha256": "efd5e356e34a1442dd98fa2a85f68c6f017a4e8e08586d0f0941162e34885217"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-generational-after-v1.txt.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-generational-after-v1.txt",
+      "uncompressedSha256": "a149fe9652b37c9ae1b2acfa07f871a6ff17a3281ac729361dee2a55510286c7"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-time-cpu-counters-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "uncompressedSha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-selfbuild-cpu-v2.py.gz",
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "uncompressedSha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-all-codegen-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-all-codegen-v1.log",
+      "uncompressedSha256": "f1d96246bebcdaf9d51a4a6f9287cb10bb4206f875947822e8d527272691a7fb"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-all-codegen-v2.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-all-codegen-v2.log",
+      "uncompressedSha256": "559d9dd23e5436757e02a05a47f9d191b9aedeb58c6498174530914398063779"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-integer-bank-red-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-integer-bank-red-v1.log",
+      "uncompressedSha256": "351425f89cbaac71a24b7558795138eef36f2a5bf2725cc714dfd46268b66f41"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-block-home-red-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-block-home-red-v1.log",
+      "uncompressedSha256": "ad402fc3d2bf0c3c8155c4b2c6978bf2b59d3fd9b87ce1963e9acb1c77335758"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporary-block-home-red-v2.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporary-block-home-red-v2.log",
+      "uncompressedSha256": "0a0d82cc2f1be6322707039ad9e1497f73e0fa541c0fd443df0e5efd6edd3a9d"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporaries-production-red-v1.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporaries-production-red-v1.log",
+      "uncompressedSha256": "7b948ec1e49ffdbc8abf7b77e1da2ec47e42544092b6edca7cff7f7f7063ce76"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporaries-production-red-v2.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporaries-production-red-v2.log",
+      "uncompressedSha256": "b6de260d5c266bdf695cac40f4cd4c013367339ecb9010622ee4d98575ef562b"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-reference-temporaries-production-red-v3.log.gz",
+      "source": ".tint-bootstrap/perf/reference-temporaries-production-red-v3.log",
+      "uncompressedSha256": "8eea0ce8e67fba58927206d947b8750cb0393d048a05af238cfb14edab81cdbf"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-check-reference-temporaries-integer-v1.log.gz",
+      "source": ".tint-bootstrap/perf/check-reference-temporaries-integer-v1.log",
+      "uncompressedSha256": "e2cf3e43fbdd8f4c75509858d0aa4e3ffb68f8d788be856d0166d7ba2fca37fc"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-check-reference-temporaries-integer-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/check-reference-temporaries-integer-v1-exit.json",
+      "uncompressedSha256": "8932e79c35661d27474f45c0147f9572ef09843db01005b63c61a5bd86ebfaf2"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-check-reference-temporaries-integer-v2.log.gz",
+      "source": ".tint-bootstrap/perf/check-reference-temporaries-integer-v2.log",
+      "uncompressedSha256": "318ebb7b4c2947a6d3195d859b9e58b72e2fb8cb17367fdfb0fd969cfc136f82"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-check-reference-temporaries-integer-v2-exit.json.gz",
+      "source": ".tint-bootstrap/perf/check-reference-temporaries-integer-v2-exit.json",
+      "uncompressedSha256": "f130c3321d77d55824cbc4f9633bcd0c173894900c62ff8132bdeb508ce79afa"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-check-reference-temporaries-integer-v2-launcher.json.gz",
+      "source": ".tint-bootstrap/perf/check-reference-temporaries-integer-v2-launcher.json",
+      "uncompressedSha256": "6fe744d6effce5f58d927a17ce5ae8b2c4fbb214608682abea85ceb7fc8a1d3a"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v1.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v1.log",
+      "uncompressedSha256": "f9c8f8df3b5b0b03b8714289340b38d3c4df9fc972fc5a4b032c4a43ce68238c"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v1-exit.json",
+      "uncompressedSha256": "d090431e05babbeb285b5fa86e8c3112f4ec0428c0350c550f796a127ad35c65"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v2.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v2.log",
+      "uncompressedSha256": "a104f5af7bb446d88a1803f0ce4f25b7a7d763e4c971181a3431aff944ad9ded"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v2-exit.json.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v2-exit.json",
+      "uncompressedSha256": "6666c7cbb0f7376b9f34c49c044dea27e1cb6c78dccdc6e6a94cd40b75153b8b"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v3.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v3.log",
+      "uncompressedSha256": "c0729195f15c32ae490499a5ca33526971c2c449e4df16563a07ff4fe279c4da"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v3-exit.json.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v3-exit.json",
+      "uncompressedSha256": "72dcb679c1c5aa6925d7816d2de7b20674dcd105e83b866cd2f1a2089176cb0f"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v4.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v4.log",
+      "uncompressedSha256": "a76093582760c71d43ada8c54c56eb0e46e54614d02a5b0dd426614c35ce43b5"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v4.ts.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v4.ts",
+      "uncompressedSha256": "15aad876cb71f82bef973579557e25d97b0d25fe045cf5b9d57fb196dffd842a"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-selfbuild-reference-temporaries-matched-v4-exit.json.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-reference-temporaries-matched-v4-exit.json",
+      "uncompressedSha256": "2019315bab9044e4dabe5bea11308ff466db0bff339db44734294f117b7f18a8"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-temporary-fixtures-v2.log.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-temporary-fixtures-v2.log",
+      "uncompressedSha256": "c31037803640ed51bab34c149205b1f09ceb5d9232966ed0bec8e4d5a9217d80"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-prepare-reference-temporary-fixtures-v3.log.gz",
+      "source": ".tint-bootstrap/perf/prepare-reference-temporary-fixtures-v3.log",
+      "uncompressedSha256": "42141106fa51eb889320e4adf4c3330f580d96704d0a5be4c2b95cacf6c4b02e"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-fp-cpu-v1.mjs.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-fp-cpu-v1.mjs",
+      "uncompressedSha256": "85e5118c0486e0913da4e0e58ed37304334ccccc03f944e6e3e264dca13515de"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-integer-cpu-v1.mjs.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-integer-cpu-v1.mjs",
+      "uncompressedSha256": "93b203c961748b45a161cbb6e73094e269229aa499f88130af0956e195c0a8f3"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-fp-cpu-v1--after-0--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-fp-cpu-v1/after-0/cpu.json",
+      "uncompressedSha256": "d6e451fbc0533eab8c90b05d5e358b88eca5fd73e7f8fe8f40d03c95cbec181f"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-fp-cpu-v1--after-1--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-fp-cpu-v1/after-1/cpu.json",
+      "uncompressedSha256": "09bc3ae5d669d8d2804341ee2118ce89a0959de5ea2d3501ae0020caba693f3c"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-integer-cpu-v1--after-0--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-integer-cpu-v1/after-0/cpu.json",
+      "uncompressedSha256": "f1f42f6fcb18911411d31f0dc315138c050dfe77aa6a0e60d0062ac330f6af95"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-observe-reference-temporary-integer-cpu-v1--after-1--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-reference-temporary-integer-cpu-v1/after-1/cpu.json",
+      "uncompressedSha256": "c820c3181afc81992cd8bd78fdffef567d6a7b6f3653e48e92db762f4cb71707"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--observations.json.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/observations.json",
+      "uncompressedSha256": "6a95ecd38837aa5c44d4b67637d91c1b1874cda45cefedafa8f97bd0d8f433ff"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-150000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-150000.txt",
+      "uncompressedSha256": "6c70085101bd179cb1c70d7b9acb698fd655d165f5c86a3f3a68993b706f6761"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-210000.txt",
+      "uncompressedSha256": "23b543e822383ebddd62366f561defbc52eb4f840eb076e6de2b12b126c36214"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-270000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-270000.txt",
+      "uncompressedSha256": "75a4462afd010fd1e404917d5dccdbffbf97a82c42ccd785c3879c1ae30880e8"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-330000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-330000.txt",
+      "uncompressedSha256": "5102f9cd9d1f8402c070105ecca14555740fe48ec2114ab2edb5d9bdd14ab7bf"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-390000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-390000.txt",
+      "uncompressedSha256": "259f73bd988db4f684403632f25566d504b38427372b703b624822d298ee3790"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--after-90000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/after-90000.txt",
+      "uncompressedSha256": "ecc84539f049cdf616b7c5267e8e441206cd3a66810ac5bcc154a3deaec32863"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-150000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-150000.txt",
+      "uncompressedSha256": "bfb97827c23ca4d8249cb144c0e41968eb936fbf890cdc78b121d27fa978f517"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-210000.txt",
+      "uncompressedSha256": "73133f3e78d33fe65a95f116099485e453be2fe3e56428af34edbfc0306a3fbc"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-270000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-270000.txt",
+      "uncompressedSha256": "50920eebce7fe43681b43f4a493c0da1fb2af33c69b97499d133567a974f3ae2"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-330000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-330000.txt",
+      "uncompressedSha256": "f0efe8958797c2b785adefb61156b8eb33d8bcb3a077a62ea6e40c36fbd2ae97"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-390000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-390000.txt",
+      "uncompressedSha256": "225eb8fccae68a8bd78f7c96e9eebd85da22b29d57dd8d8dfbfb4b0a97a88463"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-450000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-450000.txt",
+      "uncompressedSha256": "2556733da5a63648dcde33ad7b392a7be071a512ea5b217230f9dc64db32ada5"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-v4--before-90000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-v4/before-90000.txt",
+      "uncompressedSha256": "8dda1a3c513a4d180d5b38d168ad0256e2544c1e852a720d1f125e41f43d6bad"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--observations.json.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/observations.json",
+      "uncompressedSha256": "e2797bfe67ab1b37857e56b4dd95e6d9046a25375294c7e6180dad01b23065f5"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--after-150000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/after-150000.txt",
+      "uncompressedSha256": "b708b763afa75db7be3423bdaa335c1045f7e59a914d55a02e5292bf02eb1913"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--after-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/after-210000.txt",
+      "uncompressedSha256": "2d259c94afe92a9dbaacf28bec1a916dfbae31555ecd7c0dbcfb4841d306c936"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--after-270000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/after-270000.txt",
+      "uncompressedSha256": "e63840f2d6de6d285d8520e215f53375c2231a99de39f188158ef74e8be51a63"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--after-330000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/after-330000.txt",
+      "uncompressedSha256": "370f4d9a0109c2413492bc41cbecf1a67733ec021164ba86496886f454204965"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--after-90000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/after-90000.txt",
+      "uncompressedSha256": "dccd0e4b708d1afc0dbb1896be9d6395d67c0c5b7227484726ce66e44085a836"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--before-150000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/before-150000.txt",
+      "uncompressedSha256": "ff8bf246daefcdbf5b25a83231e2464e728fdd7b4b18da487de58c760ba9feeb"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--before-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/before-210000.txt",
+      "uncompressedSha256": "6722594ad431eb289498a99d8f4853c3d58f90bdbbcbcd27453ecb1132296b00"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--before-270000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/before-270000.txt",
+      "uncompressedSha256": "d2d6b8a9a10e40f18782b1c77cbf6d22b9da3f7f5940585898d875de43bf6172"
+    },
+    {
+      "path": "docs/results/native-reference-temporaries-throughput-v1-profile-reference-temporaries-integer-v1--before-90000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-reference-temporaries-integer-v1/before-90000.txt",
+      "uncompressedSha256": "9704ad775c9954fa03a3e34480b5fc8c7e798add78deae5fe0ea705f87c34939"
+    }
+  ]
+}
