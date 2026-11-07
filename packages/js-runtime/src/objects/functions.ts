@@ -23,7 +23,12 @@ import { makeMethod } from "./methods.ts";
 import { constructObject } from "./call.ts";
 import { viewObjectValue } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-import { functionMetadata, builtinProperty } from "./intrinsics.ts";
+import {
+  functionMetadata,
+  builtinProperty,
+  builtinAccessor,
+  builtinFunction,
+} from "./intrinsics.ts";
 
 type IntrinsicPrototype =
   | "function"
@@ -153,6 +158,15 @@ export type SourceFunctionCall = (
   newTarget: unknown,
 ) => unknown;
 
+/** Internal body carriers do not add an ECMAScript invocation. Only ordinary
+ * non-strict functions may expose their own legacy caller accessor. */
+export type SourceCallerPolicy = "none" | "opaque" | "visible" | "legacy";
+export interface SourceCallFrame {
+  readonly callee: unknown;
+  readonly visible: boolean;
+  readonly previous: SourceCallFrame | undefined;
+}
+
 /** A request belongs to one synchronous source invocation. Nested ordinary
  * calls install separate frames and restore their parent on every exit. */
 export interface SourceTailCallFrame {
@@ -207,6 +221,7 @@ export function createSourceFunction(
   name: string = "",
   length: number = 0,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  callerPolicy: SourceCallerPolicy = "opaque",
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   return sourceFunction(
     implementation,
@@ -217,6 +232,7 @@ export function createSourceFunction(
     length,
     home,
     false,
+    callerPolicy,
   );
 }
 
@@ -230,6 +246,7 @@ export function createTailSourceFunction(
   name: string = "",
   length: number = 0,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  callerPolicy: SourceCallerPolicy = "opaque",
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   return sourceFunction(
     implementation,
@@ -240,6 +257,7 @@ export function createTailSourceFunction(
     length,
     home,
     true,
+    callerPolicy,
   );
 }
 
@@ -252,25 +270,41 @@ function sourceFunction(
   length: number,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
   tailCalls: boolean,
+  callerPolicy: SourceCallerPolicy,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   // Published only after initialization; the cell closes the function identity
   // cycle without relying on a mutable source-level name or ambient call state.
   const identity: { value: unknown } = { value: undefined };
-  const context = createSourceExecutionContext(realm, name);
+  const execute: SourceFunctionCall = (receiver, args, callee, newTarget) => {
+    if (callerPolicy === "none")
+      return implementation(receiver, args, callee, newTarget);
+    const agent = realm.agent;
+    const previous = agent.activeSourceCall;
+    agent.activeSourceCall = {
+      callee,
+      visible: callerPolicy !== "opaque",
+      previous,
+    };
+    try {
+      return implementation(receiver, args, callee, newTarget);
+    } finally {
+      agent.activeSourceCall = previous;
+    }
+  };
+  const context = createSourceExecutionContext(realm, name, false);
   const metadata = tailCalls ? createFunctionRealmContext(realm) : context;
   const invoke: ObjectCall<unknown> = tailCalls
     ? (receiver, args): unknown =>
         finishSourceTailCall(
           runSourceTailCallStep(
-            (): unknown =>
-              implementation(receiver, args, identity.value, undefined),
+            (): unknown => execute(receiver, args, identity.value, undefined),
             context,
             realm,
           ),
           realm,
         )
     : (receiver, args): unknown =>
-        implementation(receiver, args, identity.value, undefined);
+        execute(receiver, args, identity.value, undefined);
   const fn = constructible
     ? createConstructorObject<ScriptPropertyKey, unknown>(
         realm.functionPrototype,
@@ -283,13 +317,13 @@ function sourceFunction(
             ? finishSourceTailCall(
                 runSourceTailCallStep(
                   (): unknown =>
-                    implementation(instance, args, identity.value, targetValue),
+                    execute(instance, args, identity.value, targetValue),
                   context,
                   realm,
                 ),
                 realm,
               )
-            : implementation(instance, args, identity.value, targetValue);
+            : execute(instance, args, identity.value, targetValue);
           return viewObjectValue(returned, realm.objectPrototype) === undefined
             ? instance
             : returned;
@@ -304,14 +338,29 @@ function sourceFunction(
   if (tailCalls)
     fn.internalTailDispatch = (receiver, args) =>
       runSourceTailCallStep(
-        (): unknown =>
-          implementation(receiver, args, identity.value, undefined),
+        (): unknown => execute(receiver, args, identity.value, undefined),
         context,
         realm,
       );
   if (home !== undefined) makeMethod<ScriptPropertyKey, unknown>(fn, home);
   identity.value = fn;
   functionMetadata(fn, name, length, hooks);
+  if (callerPolicy === "legacy") {
+    const getter = builtinFunction(
+      realm.functionPrototype,
+      "get caller",
+      0,
+      (_receiver, _args): unknown => {
+        let frame = realm.agent.activeSourceCall;
+        while (frame !== undefined && frame.callee !== fn)
+          frame = frame.previous;
+        const caller = frame === undefined ? undefined : frame.previous;
+        return caller === undefined || !caller.visible ? null : caller.callee;
+      },
+      hooks,
+    );
+    builtinAccessor(fn, "caller", getter, undefined, hooks);
+  }
   if (constructible) {
     const prototype = createObject<ScriptPropertyKey, unknown>(
       realm.objectPrototype,

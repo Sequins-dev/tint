@@ -415,7 +415,16 @@ export function createDynamicFunctionCompiler(
     };
     const fn =
       kind === "normal"
-        ? createSourceFunction(execute, true, realm, hooks, "anonymous", length)
+        ? createSourceFunction(
+            execute,
+            true,
+            realm,
+            hooks,
+            "anonymous",
+            length,
+            undefined,
+            strict ? "opaque" : "legacy",
+          )
         : kind === "async"
           ? createSourceAsyncDispatchFunction(
               (receiver, args, callee) => {

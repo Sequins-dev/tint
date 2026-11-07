@@ -1,4 +1,4 @@
-import type { SourceTailCallFrame } from "./functions.ts";
+import type { SourceTailCallFrame, SourceCallFrame } from "./functions.ts";
 import type { LoadedModuleRequest } from "../modules/records.ts";
 import type { TemplateSite } from "./templates.ts";
 import { enqueueFinalizationCleanupJobs } from "./finalization-registry.ts";
@@ -61,6 +61,7 @@ export interface ScriptAgent {
   readonly executionContextNames: (string | undefined)[];
   executionContextDepth: number;
   activeTailCallFrame: SourceTailCallFrame | undefined;
+  activeSourceCall: SourceCallFrame | undefined;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
   readonly jobs: JobQueue<QueuedScriptJob>;
@@ -77,6 +78,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     executionContextNames: [],
     executionContextDepth: 0,
     activeTailCallFrame: undefined,
+    activeSourceCall: undefined,
     moduleAsyncEvaluationCount: 0,
     jobs: createJobQueue<QueuedScriptJob>(),
   };
@@ -157,6 +159,7 @@ export function drainScriptJobs(
 export function createSourceExecutionContext(
   realm: ErrorRealm,
   traceName: string = "",
+  callerBarrier: boolean = true,
 ): ObjectExecutionContext<unknown> {
   const agent = realm.agent;
   const active = agent.activeContext;
@@ -169,10 +172,19 @@ export function createSourceExecutionContext(
     run: (action): unknown => {
       const depth = agent.executionContextDepth;
       agent.executionContextNames[depth] = traceName;
+      const previous = agent.activeSourceCall;
+      // Raw class and suspended-body drivers form a caller privacy barrier.
+      if (callerBarrier)
+        agent.activeSourceCall = {
+          callee: undefined,
+          visible: false,
+          previous,
+        };
       try {
         return runScriptContext<unknown>(agent, context, action);
       } finally {
         agent.executionContextNames[depth] = undefined;
+        if (callerBarrier) agent.activeSourceCall = previous;
       }
     },
   };

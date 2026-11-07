@@ -2098,6 +2098,16 @@ function lowerScriptEntry(
           ),
           { ...at(span), kind: "number", value: length, raw: "" + length },
           homeObject ?? id("undefined"),
+          text(
+            options.packed
+              ? "none"
+              : codeStrict
+                ? "opaque"
+                : canConstruct
+                  ? "legacy"
+                  : "visible",
+            span,
+          ),
         ],
         typeArguments: [],
       },
