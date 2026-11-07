@@ -8,8 +8,13 @@ unchanged conformance reruns are running. The frozen v9 survey keeps its earlier
 adapter, sources and resource policy.
 
 Development images use one uniform budget: 256 MiB managed heap, 8 Mi allocation
-metadata capacity, 16,384 roots, 16 MiB stack and a shared 4 MiB executable arena.
+metadata capacity, 16,384 roots, 16 MiB stack and a 4 MiB executable arena per agent.
 Scripts have a 256 KiB per-compilation code limit; dynamic `Function` retains 64 KiB.
+The shared registry retains up to 2,048 blocks and 32 MiB of page-rounded payload
+reservations through engine shutdown. The unchanged shared conversion matrix
+creates 1,120 four-byte blocks, reserving 17.5 MiB with 16 KiB native pages. Its
+original failures under the 1,024-block / 16 MiB profile remain preserved. Each
+new report records the uniform profile used for that run.
 These match an observed native evaluator pass, not proven minimum requirements.
 Set `TINT_TEST262_CONTAINMENT_MS` once per run and retain it in the report; initial
 integration fixtures use 300,000 ms. Host faults are crashes (exits 13–17); supported

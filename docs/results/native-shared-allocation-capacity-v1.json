@@ -1,0 +1,127 @@
+{
+  "kind": "native-shared-allocation-capacity-fixture",
+  "scope": "Bespoke Script workload allocates 1120 four-byte SABs; first block remains live with value42. Two fresh processes under LLDB; old profile must throw RangeError and new profile complete. Not unchanged Test262 conformance.",
+  "observations": [
+    {
+      "profile": "1024 blocks / 16 MiB",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "RangeError",
+        "message": "native Script threw"
+      },
+      "accepted": true,
+      "buildManifest": {
+        "kind": "native-script-fixture",
+        "schemaVersion": 1,
+        "sourceSnapshot": {
+          "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+          "files": 600
+        },
+        "imageSha256": "79f6793af704a8d3de9db328b50da629f060cb4c6ed7c6f2bc8d9b69af105eea",
+        "asynchronous": false,
+        "nodeReference": true,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "cases": [
+          {
+            "index": 0,
+            "source": "var first=new Uint8Array(new SharedArrayBuffer(4));first[0]=42;\nfor(var i=1;i<1120;i++)new SharedArrayBuffer(4);\nif(first[0]!==42)throw new Error(\"shared block reclaimed while live\");",
+            "sha256": "573539d4653614e98cc77ccbad1b91b5f71e10ad3484902388de957d19705c60"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "2048 blocks / 32 MiB",
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": true,
+      "buildManifest": {
+        "kind": "native-script-fixture",
+        "schemaVersion": 1,
+        "sourceSnapshot": {
+          "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+          "files": 600
+        },
+        "imageSha256": "2e357dae1223ca80e052ff42918adbc4244f1b2e1f665ee500fc17c6d8b51420",
+        "asynchronous": false,
+        "nodeReference": true,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "cases": [
+          {
+            "index": 0,
+            "source": "var first=new Uint8Array(new SharedArrayBuffer(4));first[0]=42;\nfor(var i=1;i<1120;i++)new SharedArrayBuffer(4);\nif(first[0]!==42)throw new Error(\"shared block reclaimed while live\");",
+            "sha256": "573539d4653614e98cc77ccbad1b91b5f71e10ad3484902388de957d19705c60"
+          }
+        ]
+      }
+    }
+  ]
+}

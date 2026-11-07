@@ -1,0 +1,68 @@
+{
+  "kind": "cluster-k-shared-capacity-validation",
+  "createdAt": "2026-11-07T19:46:11.357248+00:00",
+  "cause": "Unchanged TypedArray set shared conversion matrix creates1120 tiny SharedArrayBuffers. The old process-lifetime registry profile rejects allocation1025; page rounding requires18350080 reserved bytes. No managed or raw shared block lifetime changes.",
+  "change": {
+    "maxBlocks": 2048,
+    "maxReservedBytes": 33554432,
+    "pageBytes": 16384,
+    "scope": "Uniform Node-hosted Test262 tooling policy; portable compiler and runtime unchanged."
+  },
+  "referenceObservation": {
+    "scope": "Node reference allocation trace, not native conformance",
+    "rows": [
+      {
+        "variant": "sloppy",
+        "blocks": 1120,
+        "payload": 4480,
+        "reservedBytes": 18350080,
+        "outcome": "completed"
+      },
+      {
+        "variant": "strict",
+        "blocks": 1120,
+        "payload": 4480,
+        "reservedBytes": 18350080,
+        "outcome": "completed"
+      }
+    ]
+  },
+  "redSemantic": {
+    "command": "node --test --test-concurrency=2 tools/native-shared-test-resources.test.ts",
+    "exitStatus": 1,
+    "assertion": "shared allocation1025/1120",
+    "log": ".tint-bootstrap/cluster-k/shared-resource-red-v1.log"
+  },
+  "greenSemantic": {
+    "command": "node --test --test-concurrency=2 tools/native-shared-test-resources.test.ts tools/shared-block-service.test.ts",
+    "exitStatus": 0,
+    "passed": 7,
+    "log": ".tint-bootstrap/cluster-k/shared-resource-green-v1.log"
+  },
+  "generatedHostComparison": {
+    "oldRuntimeSha256": "9a544f16fb7a75b06d5883b1a60077fd302dc55e6ac77e5b53f21343486ca564",
+    "newRuntimeSha256": "e308243f82fa9f09b9c5f8505832b04e70b9753c8a3a10860d065073e0be0185",
+    "oldBatchSha256": "dba4351300b171b3753653747035a41401743ad57bc6ff853eb2052164427b31",
+    "newBatchSha256": "f4f45fd4e3d84bf822a81f73a4f3261c598b3306ee737a98c535f9a2f63d0a74",
+    "difference": "Only maxBlocks1024->2048 and maxReservedBytes16777216->33554432, including raw/value AST numeric literals; all other runtime text and AST fields identical."
+  },
+  "nativeControls": "docs/results/native-shared-allocation-capacity-v1.json",
+  "frozenSources": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "selfBuild": "Not required for this Node-only tooling policy change. Portable code unchanged.",
+  "conformance": "Old218/220 complete set report preserved. Two affected unchanged variants queued using TINT_TEST262_VARIANTS; running parent survey retains its frozen old profile.",
+  "focusedGeneratorRecheck": {
+    "passed": 13,
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/cluster-k/shared-resource-generator-recheck-v1.log"
+  },
+  "initialGeneratorCheck": {
+    "passed": 59,
+    "failed": 1,
+    "exitStatus": 1,
+    "reason": "Intentional quota literal changes altered the v9 generated-host hash; exact text and AST comparison verified only two quota literals changed before updating the pin.",
+    "log": ".tint-bootstrap/cluster-k/shared-resource-generator-tests-v1.log"
+  }
+}

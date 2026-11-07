@@ -82,7 +82,7 @@ test("module resolution exits preserve negative-test phases and host faults stay
   });
 });
 
-test("the v9 Script runtime text and batch remain byte-identical without the module gate", async () => {
+test("the v9 Script runtime text and batch retain their structure under the shared quota profile", async () => {
   const { createHash } = await import("node:crypto");
   const { executionPlan } = await import("./test262-execution.ts");
   assert.equal(
@@ -154,13 +154,14 @@ test("the v9 Script runtime text and batch remain byte-identical without the mod
   );
   const hash = (text: string) =>
     createHash("sha256").update(text).digest("hex");
+  // This profile changes only the shared registry quota literals (2,048 / 32 MiB).
   assert.equal(
     hash(native.nativeTestRuntimeSource(evaluation, ...v9)),
-    "9a544f16fb7a75b06d5883b1a60077fd302dc55e6ac77e5b53f21343486ca564",
+    "e308243f82fa9f09b9c5f8505832b04e70b9753c8a3a10860d065073e0be0185",
   );
   assert.equal(
     hash(canonical),
-    "dba4351300b171b3753653747035a41401743ad57bc6ff853eb2052164427b31",
+    "f4f45fd4e3d84bf822a81f73a4f3261c598b3306ee737a98c535f9a2f63d0a74",
   );
 });
 

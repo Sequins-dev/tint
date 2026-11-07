@@ -99,8 +99,10 @@ export const nativeTestResources = Object.freeze({
   maxScriptCodeBytes: 262144,
   managedBytes: 268435456,
   arrayBufferBytes: 16777216,
-  sharedMemoryBytes: 16777216,
-  sharedMemoryBlocks: 1024,
+  // Shared mappings remain live through engine shutdown. The conversion matrix
+  // alone needs 1,120 tiny blocks, or 17.5 MiB after native page rounding.
+  sharedMemoryBytes: 33554432,
+  sharedMemoryBlocks: 2048,
   sharedMemoryPageBytes: 16384,
   atomicCapabilities: { lockFree1: true, lockFree2: true, lockFree8: true },
   agentLimits: { maxAgents: 256, maxWaiters: 1024 },
