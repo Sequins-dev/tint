@@ -1,0 +1,3795 @@
+{
+  "kind": "historical-gap-classification",
+  "conformance": false,
+  "date": "2026-11-07T23:35:33.706012+00:00",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "candidateCommit": "efaae87497bba84be58bb0a3174672b924049862",
+  "sourceLedger": "docs/results/test262-coverage-ledger-v18.json",
+  "sourceLedgerSha256": "f005c2dba408e5bb392e5ab718d32516cd4b1cfca2cacd1aca9ca0cf4f5aea9e",
+  "moduleRemainder": {
+    "latestCompleteModuleReports": [
+      "docs/results/test262-module-code-a3-native-v2.json",
+      "docs/results/test262-language-import-a3-native-v2.json",
+      "docs/results/test262-dynamic-import-a3-native-v2.json"
+    ],
+    "remaining": {
+      "text": 7,
+      "bytes": 5
+    },
+    "classification": "The original module remainder is now twelve text/bytes variants. Source-phase, AbstractModuleSource, deferred imports and ambiguous exports have already passed complete reports on main. Candidate adds raw file bytes, type-keyed module identities and SyntheticModule defaults; full affected reruns pending."
+  },
+  "groups": [
+    {
+      "root": "language/eval-code/indirect",
+      "observed": 118,
+      "nonpass": 114,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "language/eval-code/indirect/always-non-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/block-decl-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/block-decl-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-block.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-block.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-do-while.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-do-while.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-empty.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-empty.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-for.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-for.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-if.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-if.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-switch.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-switch.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-var.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-var.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-while.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-empty-while.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-expr-obj.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-expr-obj.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/cptn-nrml-expr-prim.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-catch.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-catch.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-eval.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-eval.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-fun.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-fun.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec-with.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/global-env-rec.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-cls.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-const.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-distinct-let.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-heritage.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-heritage.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-cls.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-cls.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-const.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-const.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-let.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/lex-env-no-init-let.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/new.target.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/new.target.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-function-with-function.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-function-with-function.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-function-with-variable.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-function-with-variable.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-function.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-function.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-generator.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-generator.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-var.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/non-definable-global-var.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/parse-failure-6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/realm.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/realm.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/super-call.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/super-call.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/super-prop.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/super-prop.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/switch-case-decl-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/switch-case-decl-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/switch-dflt-decl-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/switch-dflt-decl-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/this-value-func.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/this-value-func.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/this-value-global.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/this-value-global.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-new.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-new.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-update-configurable.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-update-configurable.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-update-non-configurable.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-global-update-non-configurable.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-multi.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-init-multi.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-non-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-non-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-func-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-global-lex-non-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-global-lex-non-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-global-lex-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-global-lex-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-lower-lex-non-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-lower-lex-non-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-lower-lex-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-lower-lex-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-init-global-exstng.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-init-global-exstng.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-init-global-new.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-init-global-new.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-non-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-non-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-strict.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/var-env-var-strict.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          }
+        ],
+        "unsupported:native module execution is not implemented": [
+          {
+            "path": "language/eval-code/indirect/export.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          },
+          {
+            "path": "language/eval-code/indirect/import.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-indirect-eval-baseline-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "Historical native host lacked general runtime Script compilation and module entry wiring. All 510 extended cases now prepare on the candidate; current frozen-main full rerun in progress, with no non-pass so far. Preparation is not native coverage."
+    },
+    {
+      "root": "built-ins/Function",
+      "observed": 893,
+      "nonpass": 167,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "built-ins/Function/15.3.5.4_2-10gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-11gs.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-12gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-13gs.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-14gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-57gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-58gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-59gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-76gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-77gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-78gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-7gs.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-8gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-95gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-9gs.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.2.1_A2_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A2_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A2_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A2_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A2_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A3_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A3_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A3_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3.5_A3_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/S15.3_A3_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/proto-from-ctor-realm-prototype.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/proto-from-ctor-realm-prototype.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T10.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T9.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A3_T9.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T8.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A5_T8.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T10.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T10.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T8.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T8.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T9.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T9.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A8_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/S15.3.4.3_A8_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T10.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T9.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A3_T9.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T8.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A5_T8.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T1.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T10.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T10.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T2.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T3.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T8.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T8.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T9.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T9.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/call/S15.3.4.4_A7_T6.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/caller/prop-desc.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/caller/prop-desc.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/AsyncFunction.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/AsyncFunction.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/AsyncGenerator.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/AsyncGenerator.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/Function.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/Function.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/GeneratorFunction.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/GeneratorFunction.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-function-tostring-native-v1.jsonl"
+          }
+        ],
+        "fail:TypeError": [
+          {
+            "path": "built-ins/Function/15.3.5.4_2-75gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-79gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-80gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-81gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-82gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-83gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-84gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-85gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-86gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-87gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-88gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-89gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-90gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-91gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-92gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/Function/15.3.5.4_2-93gs.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "TypeError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-function-managed-globals-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "151 historical unsupported outcomes concern runtime compilation/general dynamic-function or realm-host paths; capable-main remeasurement required. The 16 TypeError failures read ordinary sloppy functions caller and inherit the strict poison accessor. Candidate installs restricted legacy accessors and tracks invocation identity, recursion, abrupt unwinding, raw strict barriers and transparent dynamic-body carriers."
+    },
+    {
+      "root": "built-ins/eval",
+      "observed": 20,
+      "nonpass": 2,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "built-ins/eval/private-identifiers-not-empty.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-eval-family-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/eval/private-identifiers-not-empty.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-eval-family-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "Two historical private-identifiers-not-empty variants depend on private-name eval compilation. Current preparation succeeds; C2/private-eval host improvements are on main. Native remeasurement required before deciding a further fix."
+    },
+    {
+      "root": "language/statements/with",
+      "observed": 182,
+      "nonpass": 61,
+      "causes": {
+        "fail:": [
+          {
+            "path": "language/statements/with/12.10.1-10-s.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/12.10.1-12-s.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.11_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          }
+        ],
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "language/statements/with/12.10.1-4-s.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/12.10.1-5-s.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/12.10.1-8-s.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          }
+        ],
+        "fail:ReferenceError": [
+          {
+            "path": "language/statements/with/S12.10_A1.10_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.10_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.10_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.11_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.11_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.12_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.12_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.12_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.1_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.1_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.2_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.2_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.2_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.3_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.3_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.3_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.4_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.4_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.4_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.5_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.5_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.5_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.6_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.6_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.7_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.7_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.7_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.8_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.8_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.8_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.9_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A1.9_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A4_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T1.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T2.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T3.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T4.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T5.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/S12.10_A5_T6.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/cptn-abrupt-empty.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/cptn-nrml.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/get-binding-value-call-with-proxy-env.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/get-binding-value-idref-with-proxy-env.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/has-binding-call-with-proxy-env.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/has-binding-idref-with-proxy-env.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/has-property-err.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/scope-var-open.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/set-mutable-binding-binding-deleted-with-typed-array-in-proto-chain-strict-mode.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/set-mutable-binding-binding-deleted-with-typed-array-in-proto-chain.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          },
+          {
+            "path": "language/statements/with/set-mutable-binding-idref-with-proxy-env.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "error",
+              "phase": "runtime",
+              "type": "ReferenceError",
+              "message": "native Script threw"
+            },
+            "report": "docs/results/test262-with-native-v1.json"
+          }
+        ]
+      },
+      "classification": "55 ReferenceError and 3 other thrown failures involve global-object/with binding resolution; three unsupported outcomes use runtime compilation. Current main includes dynamic global binding lookup and Script hash fixes. Reproduce against current native output before changing the environment algorithms."
+    },
+    {
+      "root": "built-ins/ShadowRealm",
+      "observed": 0,
+      "nonpass": 0,
+      "causes": {},
+      "classification": "124 unmeasured variants require a new runtime intrinsic, fresh realms, fresh callable wrappers in both directions, copied exceptions, eval lexical/variable environments, syntax-error separation and realm-local module instantiation. Candidate implements these using existing realm/context, native evaluator, module loader and intrinsic Promise primitives. Native wrapping/import fixture passes; unchanged full native selection still required."
+    },
+    {
+      "root": "language/statements/using",
+      "observed": 154,
+      "nonpass": 26,
+      "causes": {
+        "unsupported:test: {\"start\":354,\"end\":384,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}": [
+          {
+            "path": "language/statements/using/block-local-closure-get-before-initialization.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":354,\"end\":384,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "language/statements/using/cptn-value.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/cptn-value.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/syntax/using-not-allowed-at-top-level-of-eval.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/syntax/using-not-allowed-at-top-level-of-eval.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":350,\"end\":380,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}": [
+          {
+            "path": "language/statements/using/global-closure-get-before-initialization.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":350,\"end\":380,\"code\":\"UNSUPPORTED\",\"message\":\"sloppy block functions require Annex B binding\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3908,\"end\":4020,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-asyncfunctionbody.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3908,\"end\":4020,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3922,\"end\":4034,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-asyncfunctionbody.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3922,\"end\":4034,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3627,\"end\":3700,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-asyncgeneratorbody.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3627,\"end\":3700,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3641,\"end\":3714,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-asyncgeneratorbody.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3641,\"end\":3714,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":1896,\"end\":1915,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-forstatement.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":1896,\"end\":1915,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":1910,\"end\":1929,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-forstatement.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":1910,\"end\":1929,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3542,\"end\":3580,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-generatorbody.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3542,\"end\":3580,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":3556,\"end\":3594,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-generatorbody.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":3556,\"end\":3594,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal across suspension is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:native module execution is not implemented": [
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-imported-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/initializer-disposed-at-end-of-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/syntax/using-allowed-at-top-level-of-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          },
+          {
+            "path": "language/statements/using/syntax/using.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":2007,\"end\":2047,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-if-subsequent-initializer-throws-in-forstatement-head.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":2007,\"end\":2047,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":2021,\"end\":2061,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/initializer-disposed-if-subsequent-initializer-throws-in-forstatement-head.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":2021,\"end\":2061,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":313,\"end\":328,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/syntax/using-for-statement.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":313,\"end\":328,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":327,\"end\":342,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/syntax/using-for-statement.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":327,\"end\":342,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":473,\"end\":488,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/syntax/using-invalid-assignment-next-expression-for.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":473,\"end\":488,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":487,\"end\":502,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}": [
+          {
+            "path": "language/statements/using/syntax/using-invalid-assignment-next-expression-for.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":487,\"end\":502,\"code\":\"UNSUPPORTED\",\"message\":\"resource declaration has no supported disposal scope\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":466,\"end\":525,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal is not implemented\"}": [
+          {
+            "path": "language/statements/using/syntax/using-invalid-assignment-statement-body-for-of.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":466,\"end\":525,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ],
+        "unsupported:test: {\"start\":480,\"end\":539,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal is not implemented\"}": [
+          {
+            "path": "language/statements/using/syntax/using-invalid-assignment-statement-body-for-of.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "test: {\"start\":480,\"end\":539,\"code\":\"UNSUPPORTED\",\"message\":\"resource disposal is not implemented\"}"
+            },
+            "report": "docs/results/test262-using-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "26 historical unsupported variants group into Annex B block functions, generator/async suspension and disposal scopes, module source execution, and eval declaration/completion paths. Current preparation succeeds for each. Existing main features cover these paths; fresh native outcomes will determine remaining semantic gaps."
+    },
+    {
+      "root": "language/statements/await-using",
+      "observed": 188,
+      "nonpass": 8,
+      "causes": {
+        "unsupported:native module execution is not implemented": [
+          {
+            "path": "language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-imported-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-imported-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/syntax/await-using-allowed-at-top-level-of-module.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/syntax/await-using.js",
+            "variant": "module",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native module execution is not implemented"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          }
+        ],
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "language/statements/await-using/syntax/await-using-not-allowed-at-top-level-of-eval.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          },
+          {
+            "path": "language/statements/await-using/syntax/await-using-not-allowed-at-top-level-of-eval.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-await-using-native-v2.jsonl"
+          }
+        ]
+      },
+      "classification": "Eight historical unsupported variants use module/TLA execution (six) and eval (two). Current preparation succeeds. Recheck through native module and evaluator hosts, retaining original unsupported reports."
+    },
+    {
+      "root": "built-ins/SuppressedError",
+      "observed": 44,
+      "nonpass": 4,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "built-ins/SuppressedError/newtarget-proto-fallback.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-suppressed-error-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/SuppressedError/newtarget-proto-fallback.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-suppressed-error-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/SuppressedError/proto-from-ctor-realm.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-suppressed-error-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/SuppressedError/proto-from-ctor-realm.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-suppressed-error-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "Four historical unsupported variants cover newTarget prototype fallback and constructor-realm lookup. Current getFunctionRealm/constructorPrototype paths and capable createRealm/Function host are implemented. Native remeasurement required."
+    },
+    {
+      "root": "built-ins/DisposableStack",
+      "observed": 186,
+      "nonpass": 2,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "built-ins/DisposableStack/proto-from-ctor-realm.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-disposable-stack-native-v2.jsonl"
+          },
+          {
+            "path": "built-ins/DisposableStack/proto-from-ctor-realm.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-disposable-stack-native-v2.jsonl"
+          }
+        ]
+      },
+      "classification": "Two historical unsupported constructor-realm prototype-fallback variants depend on capable foreign Function construction; prototype selection already uses getFunctionRealm. Native remeasurement required."
+    },
+    {
+      "root": "built-ins/AsyncDisposableStack",
+      "observed": 208,
+      "nonpass": 2,
+      "causes": {
+        "unsupported:native runtime reached an unsupported operation": [
+          {
+            "path": "built-ins/AsyncDisposableStack/proto-from-ctor-realm.js",
+            "variant": "sloppy",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-async-disposable-stack-native-v1.jsonl"
+          },
+          {
+            "path": "built-ins/AsyncDisposableStack/proto-from-ctor-realm.js",
+            "variant": "strict",
+            "outcome": {
+              "kind": "unsupported",
+              "reason": "native runtime reached an unsupported operation"
+            },
+            "report": "docs/results/test262-async-disposable-stack-native-v1.jsonl"
+          }
+        ]
+      },
+      "classification": "Two historical unsupported constructor-realm prototype-fallback variants share the DisposableStack root. Native remeasurement required."
+    }
+  ],
+  "preparationOnly": {
+    "requested": 510,
+    "nonprepared": 0,
+    "nativeConformanceOutcomesAdded": 0
+  }
+}
