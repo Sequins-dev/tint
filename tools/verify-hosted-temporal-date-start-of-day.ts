@@ -18,7 +18,13 @@ export function run():number{
  return 42;
 }`,
   "temporal-date-start-of-day",
-  [["objects", "packages/js-runtime/src/objects/index.ts"]],
+  [
+    ["objects", "packages/js-runtime/src/objects/index.ts"],
+    [
+      "zone-ids",
+      "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+    ],
+  ],
   [],
   [
     {
