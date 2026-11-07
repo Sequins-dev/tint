@@ -1,0 +1,149 @@
+{
+  "kind": "native-survey-bootstrap-performance-diagnostic",
+  "conformance": false,
+  "at": "2026-11-07T14:20:29.499184+00:00",
+  "selection": "built-ins/Object",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "phase": "compiling batch72 (64 variants)",
+  "observations": 4546,
+  "outcomes": {
+    "pass": 4544,
+    "timeout": 2
+  },
+  "bootstrapPid": 66567,
+  "sourceSnapshotSha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+  "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+  "capture": {
+    "method": "Verified localhost Node inspector PID66567; Profiler enabled, sampled during existing compilation, stopped and disabled; client disconnected. No frozen files, journal outcomes, source or execution settings changed.",
+    "requestedSeconds": 10,
+    "profileSpanSeconds": 14.740791,
+    "samples": 1880,
+    "nodes": 69,
+    "profile": "docs/results/g-object-compile72-cpu-profile-v1.cpuprofile",
+    "sha256": "eb7569f8bb73b780858437122c209fd331ac5b1d722818b14af770de02cfc3e1",
+    "caution": "Sample counts are diagnostic; first time delta includes capture startup delay, so weighted wall-time attribution is not used as a benchmark."
+  },
+  "topSelfSamples": [
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "line": 0,
+      "samples": 560,
+      "sampleFraction": 0.2978723404255319
+    },
+    {
+      "function": "emitModule",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/codegen/dist/aarch64/scalar/index.js",
+      "line": 72,
+      "samples": 503,
+      "sampleFraction": 0.2675531914893617
+    },
+    {
+      "function": "forwardLocalLoads",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/optimization/forward-loads.js",
+      "line": 7,
+      "samples": 181,
+      "sampleFraction": 0.09627659574468085
+    },
+    {
+      "function": "compileArm64Program",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/compiler/dist/native/index.js",
+      "line": 21,
+      "samples": 125,
+      "sampleFraction": 0.06648936170212766
+    },
+    {
+      "function": "summarizeEffects",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/effects.js",
+      "line": 99,
+      "samples": 89,
+      "sampleFraction": 0.04734042553191489
+    },
+    {
+      "function": "grow",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/foundation/dist/collections/key-index.js",
+      "line": 164,
+      "samples": 52,
+      "sampleFraction": 0.027659574468085105
+    },
+    {
+      "function": "initializationSlots",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/initialization-slots.js",
+      "line": 4,
+      "samples": 45,
+      "sampleFraction": 0.023936170212765957
+    },
+    {
+      "function": "instructionEffects",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/effects.js",
+      "line": 14,
+      "samples": 37,
+      "sampleFraction": 0.019680851063829788
+    },
+    {
+      "function": "visitInstructionOperands",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/operands.js",
+      "line": 2,
+      "samples": 34,
+      "sampleFraction": 0.018085106382978722
+    },
+    {
+      "function": "substituteInstructionValues",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/substitution.js",
+      "line": 33,
+      "samples": 32,
+      "sampleFraction": 0.01702127659574468
+    },
+    {
+      "function": "verify",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/index.js",
+      "line": 101,
+      "samples": 30,
+      "sampleFraction": 0.015957446808510637
+    },
+    {
+      "function": "createNumberIndex",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/foundation/dist/collections/key-index.js",
+      "line": 162,
+      "samples": 21,
+      "sampleFraction": 0.011170212765957447
+    },
+    {
+      "function": "instructionMayThrow",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/index.js",
+      "line": 31,
+      "samples": 14,
+      "sampleFraction": 0.007446808510638298
+    },
+    {
+      "function": "successors",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/ir/dist/scalar/index.js",
+      "line": 79,
+      "samples": 14,
+      "sampleFraction": 0.007446808510638298
+    },
+    {
+      "function": "intersectBits",
+      "file": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-v4/packages/foundation/dist/collections/bit-vector.js",
+      "line": 21,
+      "samples": 12,
+      "sampleFraction": 0.006382978723404255
+    }
+  ],
+  "processEvidence": {
+    "at14_05": "CPU233:42.56,29.5%CPU,R,RSS3558448KiB",
+    "at14_11": "CPU235:39.37,39.7%CPU,R,RSS3558448KiB",
+    "at14_14": "CPU236:55.81,41.2%CPU,R"
+  },
+  "interpretation": "The frozen bootstrap was actively executing code generation and optimizer work with GC, under separately recorded host CPU contention. No native inferior was executing during this compilation. This is not a conformance report or a proof of a compiler defect. Preserve for cluster P; continue original frozen measurement.",
+  "resolution": {
+    "at": "2026-11-07T14:26:05Z",
+    "compilationFinished": true,
+    "subsequentObservedVariants": 4600,
+    "subsequentOutcomes": {
+      "pass": 4598,
+      "timeout": 2
+    },
+    "inspectorCleanup": "Profiler disabled and frontend disconnected; inspector.close validated on disposable same-version Node process, then executed on verified PID66567. Close event received; lsof confirmed no9229listener. Frozen original run continued without restart or retries."
+  }
+}
