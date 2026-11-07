@@ -1,0 +1,85 @@
+{
+  "kind": "native-cross-toolchain-resolution-comparison",
+  "conformance": false,
+  "at": "2026-11-07T17:46:21.881401+00:00",
+  "historicalReport": "docs/results/test262-array-family-historical-extract-native-v1.json",
+  "historicalReportSha256": "afe464cba288ef4e5d30ae8876c47b91fedafaafa8d74b04b4835b4fa8711a0a",
+  "currentReport": "docs/results/test262-array-at-current-native-v1.json",
+  "currentReportSha256": "722761a6e5cfb8c47755b645e527860598a772d03c955420f27a661b5e8a5a1f",
+  "currentCompleteSelection": "built-ins/Array/prototype/at",
+  "currentTotals": {
+    "total": 26,
+    "passed": 26,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "resolvedHistoricalUnsupportedVariants": 4,
+  "sourceSnapshot": {
+    "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+    "files": 595
+  },
+  "frozenToolchainSha256": "7c5616c125be290c8f785e9bfcb20fe4e63ab13bc9910c7e751761f3749439f2",
+  "variants": [
+    {
+      "path": "built-ins/Array/prototype/at/coerced-index-resize.js",
+      "variant": "sloppy",
+      "sha256": "80716d5a07ff0a427b647167fb427456b7f7287e6c4def8530eba9008b1d838e",
+      "historicalStatus": "unsupported",
+      "historicalOutcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "currentStatus": "pass",
+      "currentOutcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Array/prototype/at/coerced-index-resize.js",
+      "variant": "strict",
+      "sha256": "80716d5a07ff0a427b647167fb427456b7f7287e6c4def8530eba9008b1d838e",
+      "historicalStatus": "unsupported",
+      "historicalOutcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "currentStatus": "pass",
+      "currentOutcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Array/prototype/at/typed-array-resizable-buffer.js",
+      "variant": "sloppy",
+      "sha256": "dd5631552811c09019a873d0a0fd3a820f4e31b0d63a0ff681faa76d3fba224a",
+      "historicalStatus": "unsupported",
+      "historicalOutcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "currentStatus": "pass",
+      "currentOutcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "path": "built-ins/Array/prototype/at/typed-array-resizable-buffer.js",
+      "variant": "strict",
+      "sha256": "dd5631552811c09019a873d0a0fd3a820f4e31b0d63a0ff681faa76d3fba224a",
+      "historicalStatus": "unsupported",
+      "historicalOutcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "currentStatus": "pass",
+      "currentOutcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "scope": "Four unchanged source/variant identities that reached unsupported runtime operations in the historical Array report now pass on the fresh measured toolchain. Current complete at26/26 source/harness/fixture identities were verified by the strict extractor. Original report remains unchanged. Attribution is to the newer toolchain as a whole; this comparison does not isolate individual upstream changes."
+}
