@@ -1,0 +1,56 @@
+{
+  "kind": "native-preentry-timeout-followup",
+  "conformance": false,
+  "at": "2026-11-07T00:48:16.186259+00:00",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "originalObservation": {
+    "kind": "observation",
+    "path": "built-ins/Object/create/15.2.3.5-4-48.js",
+    "sha256": "4f8d9e4c472696fb6cec6b7af2d455a66f7d8645b521574fb98212133dd5f649",
+    "variant": "sloppy",
+    "metadata": {
+      "flags": [],
+      "features": [],
+      "includes": []
+    },
+    "canSuspend": true,
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      }
+    ],
+    "outcome": {
+      "kind": "timeout",
+      "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0oLcRP/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+    },
+    "status": "timeout",
+    "elapsedMs": 840588.7973330002,
+    "batch": 11
+  },
+  "liveDiagnostic": "docs/results/g-object-direct-preentry-stall-v1.json",
+  "samplerInterruption": "docs/results/g-object-preentry-sampler-interruption-v1.json",
+  "preservedImage": {
+    "capturedAt": "2026-11-07T00:47:51.228057+00:00",
+    "sourceImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-1qqHI0/test",
+    "sha256": "6351e4e10cbf48d457090cbe0a13753cfb574cd46329bf528332dddabbc35cd8",
+    "bytes": 170603135,
+    "sourceSnapshot": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "journal": "docs/results/test262-object-family-native-v2.jsonl",
+    "batch": 11,
+    "purpose": "Preserve the image for the pre-entry launch-stall diagnostic; no new native execution."
+  },
+  "ownedProcessesExited": {
+    "24202": true,
+    "24205": true,
+    "24206": true,
+    "33406": true,
+    "33407": true
+  },
+  "interpretation": "The native image remained stopped with zero CPU, with no initial-stop or connection record. The 300000 ms budget expired before native execution was established. Preserve this timeout and recheck the file separately after the complete family; continue breadth.",
+  "nextStep": "Continue Object; keep this infrastructure failure in every complete affected report. Recheck the unchanged file on the then-current direct toolchain after the full family."
+}

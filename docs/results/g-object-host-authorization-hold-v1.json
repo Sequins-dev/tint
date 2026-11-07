@@ -1,0 +1,38 @@
+{
+  "kind": "native-host-authorization-interruption",
+  "conformance": false,
+  "stoppedAt": "2026-11-07T00:55:06.135549+00:00",
+  "selection": "built-ins/Object",
+  "totalVariants": 6802,
+  "observedVariants": 706,
+  "unobservedVariants": 6096,
+  "outcomes": {
+    "pass": 704,
+    "timeout": 2
+  },
+  "reason": "User/coordinator-directed hold: developer mode disabled and SecurityAgent Developer Tools prompt active since approximately 00:42Z; wait for HOST AUTHORIZATION RESTORED in ~/.t3/tint-briefs/load-events.md.",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "immutablePrefix": "docs/results/g-object-host-authorization-prefix-v1.jsonl",
+  "prefixSha256": "bb2303ad09f819e6083c4e28f2794dce809aab7b2ecefb0cff5431cb729a35d6",
+  "prefixBytes": 392017,
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-builtins-object-v4.json",
+  "phaseAtStop": "2026-11-07T00:54:41.332Z [Test262] selection=\"built-ins/Object\" phase=\"executing built-ins/Object/create/15.2.3.5-4-49.js [sloppy; flags=] (launching debugger / awaiting LLDB)\" elapsed=123111ms done=706/6802 pass=704 fail=0 unsupported=0 infra=2",
+  "nativeExecutionActiveAtStop": false,
+  "stopProof": "Freeze only the owned LLDB, then confirm its native inferior is stopped with zero CPU and no initial-stop record; terminate the driver and only its owned stopped debugger processes.",
+  "ownedProcessesAtStop": [
+    "49894 44318 S 66:25.77 0.0 02:04:27",
+    "67932 49894 T 0:00.36 0.0 02:28",
+    "68135 67932 S 0:00.01 0.0 02:23",
+    "68136 68135 T 0:00.00 0.0 02:23"
+  ],
+  "ownerPid": 44312,
+  "runnerPid": 49894,
+  "observerPid": 44314,
+  "readinessDiagnostic": "docs/results/g-object-direct-preentry-timeout-v1.json",
+  "resumePolicy": "Resume the original journal with TINT_TEST262_RESUME=1 on the original frozen toolchain and original direct-mode resources, after HOST AUTHORIZATION RESTORED. No observed variant is retried or overwritten. Recheck stalled variants separately with TINT_TEST262_VARIANTS on a freshly frozen current toolchain."
+}

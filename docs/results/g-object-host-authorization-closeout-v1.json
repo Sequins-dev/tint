@@ -1,0 +1,23 @@
+{
+  "kind": "native-authorization-hold-closeout",
+  "conformance": false,
+  "closedAt": "2026-11-07T00:57:52.792413+00:00",
+  "holdReport": "docs/results/g-object-host-authorization-hold-v1.json",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "immutablePrefix": "docs/results/g-object-host-authorization-prefix-v1.jsonl",
+  "prefixSha256": "bb2303ad09f819e6083c4e28f2794dce809aab7b2ecefb0cff5431cb729a35d6",
+  "prefixUnchangedAfterStop": true,
+  "driverExitStatus": 143,
+  "allOwnedProcessesExited": true,
+  "observed": 706,
+  "passed": 704,
+  "preentryTimeouts": 2,
+  "unobserved": 6096,
+  "completeFamily": false,
+  "recheckManifest": "docs/results/g-object-host-authorization-recheck-variants-v1.json",
+  "recheckPolicy": "Use TINT_TEST262_VARIANTS on a freshly frozen current-main direct toolchain after restoration; keep original timeout outcomes intact.",
+  "knownGoodAvailabilityProbe": "docs/results/g-native-launch-availability-v1.json",
+  "knownGoodAvailabilityProbeExitStatus": 1,
+  "restorationGate": "HOST AUTHORIZATION RESTORED in ~/.t3/tint-briefs/load-events.md, after the latest HOST AUTHORIZATION STALL",
+  "coordinatorDirective": "Keep G stopped pending host repair; stay on this host; resume original journal on original frozen toolchain after restoration; use the hold for triage, tests and evidence."
+}

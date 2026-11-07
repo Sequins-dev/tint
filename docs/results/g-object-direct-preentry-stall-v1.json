@@ -1,0 +1,35 @@
+{
+  "kind": "native-debugger-preentry-stall-diagnostic",
+  "conformance": false,
+  "observedAt": "2026-11-07T00:45:44.707604+00:00",
+  "selection": "built-ins/Object",
+  "case": {
+    "path": "built-ins/Object/create/15.2.3.5-4-48.js",
+    "variant": "sloppy",
+    "batch": 11,
+    "batchIndex": 0
+  },
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "sourceSnapshot": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+  "debuggerLaunch": "debugserver-direct",
+  "runnerPid": 49894,
+  "debuggerPid": 24202,
+  "debugserverPid": 24205,
+  "inferiorPid": 24206,
+  "initialStopRecordExists": false,
+  "nativeExecutionEstablished": false,
+  "processes": [
+    "24202 49894 S 0:00.29 0.0 03:06",
+    "24205 24202 S 0:00.01 0.0 03:06",
+    "24206 24205 T 0:00.00 0.0 03:06",
+    "33406 54703 Ss 0:00.01 0.0 00:59",
+    "33407 54703 Ss 0:00.01 0.0 00:59",
+    "39150 54703 Ss 0:00.00 0.0 00:00",
+    "49894 44318 S 66:25.75 0.0 01:55:05"
+  ],
+  "logs": {
+    "debugserver.log": "",
+    "state.log": ""
+  },
+  "interpretation": "Inferior stopped with zero CPU and no initial-stop/connection record. Native semantics have not executed. Retain the impending containment outcome; recheck separately later. Manual sample attempts are also slow."
+}

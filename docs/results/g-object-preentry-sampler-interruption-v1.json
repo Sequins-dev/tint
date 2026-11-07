@@ -1,0 +1,21 @@
+{
+  "kind": "diagnostic-utility-interruption",
+  "conformance": false,
+  "at": "2026-11-07T00:46:41.264940+00:00",
+  "stopped": [
+    {
+      "pid": 33406,
+      "target": 24202,
+      "command": "sample 24202 1 -file .tint-bootstrap/object-direct-preentry-stall-24202-v1.txt",
+      "reason": "More than 60 seconds with no sample output; stop this diagnostic utility only."
+    },
+    {
+      "pid": 33407,
+      "target": 24205,
+      "command": "sample 24205 1 -file .tint-bootstrap/object-direct-preentry-stall-24205-v1.txt",
+      "reason": "More than 60 seconds with no sample output; stop this diagnostic utility only."
+    }
+  ],
+  "nativeDebuggerAndInferiorUntouched": true,
+  "parentDiagnostic": "docs/results/g-object-direct-preentry-stall-v1.json"
+}
