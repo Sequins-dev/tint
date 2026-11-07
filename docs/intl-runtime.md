@@ -230,6 +230,17 @@ ASCII alternates when available; explicit padding remains a minimum.
 passes 53 focused and its original 4786-test workspace gate. The restored native
 validation records its completed fixture and compiler stage comparison. Temporal-object formatting and locale forwarding are the next slice.
 
+`date-time-format-options.ts` preserves raw component options and applies model
+defaults without mutation. `date-time-temporal-pattern.ts` caches model-specific
+formats and adjusts styles only when fields conflict. `intl-date-time-value.ts`
+uses Temporal brands, checks calendar/type compatibility, keeps plain coordinates
+zone-independent and converts Instant nanoseconds exactly before rendering.
+Temporal locale methods use this private service; ZonedDateTime supplies its own
+zone and rejects a defined timeZone option. Date's locale methods share the same
+formatter defaults and validation. [Integration validation](results/temporal-date-time-format-native-resume-h-v54.md)
+passes 224 focused and 4813 workspace tests. Native fixtures and compiler images
+remain compiled only while authorization is pending.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
