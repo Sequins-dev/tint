@@ -1,0 +1,95 @@
+{
+  "kind": "native-runtime-timeout-triage",
+  "generatedAt": "2026-11-07T15:19:59.303345+00:00",
+  "observation": {
+    "kind": "observation",
+    "path": "language/expressions/property-accessors/S11.2.1_A1.1.js",
+    "sha256": "f64ab519c9d2e0cbd969296ad150f0b00c953e0b7e4761be1f59c588aec016de",
+    "variant": "sloppy",
+    "metadata": {
+      "flags": [],
+      "features": [],
+      "includes": []
+    },
+    "canSuspend": true,
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      }
+    ],
+    "outcome": {
+      "kind": "timeout",
+      "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-WbvGQv/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-WbvGQv/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-WbvGQv/test\\\",\\\"22\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rOJx47/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 72245 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010e08c9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10e08c9c0 <+0>:  mov    x0, sp\n    0x10e08c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10e08c9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10e08c9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: )...\n<lldb.process.internal-state(pid=72245)>         Process::ShouldBroadcastEvent (0xb1f46fca0) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=72245)>         Process::HandlePrivateEvent (pid = 72245) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=72245)>         timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = stopped, stop_id = 12\n<lldb.process.internal-state(pid=72245)>         Process::ShouldBroadcastEvent: should_resume: 1 state: stopped was_restarted: 0 report_stop_vote: -1.\n<lldb.process.internal-state(pid=72245)>         Process::ShouldBroadcastEvent (0xb1f46fca0) Restarting process from state: stopped\n<lldb.process.internal-state(pid=72245)>         Process::PrivateResume() m_stop_id = 12, public state: running private state: stopped\n<lldb.process.internal-state(pid=72245)>         Process::PrivateResume WillResume direction=0\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = running)\n<lldb.process.internal-state(pid=72245)>         Process::PrivateResume thinks the process has resumed.\n<lldb.process.internal-state(pid=72245)>         Process::ShouldBroadcastEvent (0xb1f46fca0) => new state: stopped, last broadcast state: running - NO\n<lldb.process.internal-state(pid=72245)>         Process::HandlePrivateEvent (pid = 72245) suppressing state stopped (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=72245)>         timeout = <infinite>, event_sp)...\n<lldb.process.internal-state(pid=72245)>         Process::ShouldBroadcastEvent (0xb1f46fc00) => new state: running, last broadcast state: running - NO\n<lldb.process.internal-state(pid=72245)>         Process::HandlePrivateEvent (pid = 72245) suppressing state running (old state running): should_broadcast == false\n<lldb.process.internal-state(pid=72245)>         timeout = <infinite>, event_sp)...\n\nRemote packets: orResponse () got packet: T05thread:1d111aa;threads:1d111aa;thread-pcs:1878174ac;00:0000000000000000;01:2c00000000000000;02:480435f401000000;03:0000000000000000;04:0000000000000000;05:0000000000000000;06:0000000000000000;07:0000000000000000;08:804360f401000000;09:cc52818701000000;0a:0000000000000000;0b:7007000000000000;0c:0000020000000000;0d:c0097e8701000000;0e:0100000000000000;0f:7000000000000000;10:d052818701000000;11:a00235f401000000;12:0000000000000000;13:2c00000000000000;14:a00135f401000000;15:0000000000000000;16:6b3e9847c0070000;17:480435f401000000;18:0000000000000000;19:e0aa7e6d01000000;1a:40b37e6d01000000;1b:1800000000000000;1c:98e4dce302000000;1d:90aa7e6d01000000;1e:ac74818701000000;1f:50a97e6d01000000;20:ac74818701000000;21:00000080;a1:0000000000000000;a2:220000cb;a3:00000000;metype:6;mecount:2;medata:1;medata:0;memory:0x16d7eaa90=60ab7e6d01000000807c818701000000;memory:0x16d7eab60=60b57e6d010000008ccc808701000000;\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 72245) listener.WaitForEvent (NULL, event_sp)...\n<lldb.process.internal-state(pid=72245)>         <  23> send packet: $pd6;thread:1d111aa;#1c\n<lldb.process.internal-state(pid=72245)>         <   7> read packet: $E97#00\n<lldb.process.internal-state(pid=72245)>         Check if need to update ignored signals\n<lldb.process.internal-state(pid=72245)>         < 115> send packet: $jMultiBreakpoint:{\"breakpoint_requests\":[\"Z0,1878152cc,4\",\"z0,187bc2c08,4\",\"z0,187bc3d9c,4\",\"z0,187bc7bd0,4\"]}]#61\n<lldb.process.internal-state(pid=72245)>         <  38> read packet: ${\"results\":[\"OK\",\"OK\",\"OK\",\"OK\"]}]#00\n<lldb.process.internal-state(pid=72245)>         ProcessGDBRemote::Resume()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 72245) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 72245) got eBroadcastBitAsyncContinue: c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with c\n<lldb.process.gdb-remote.async>  <   5> send packet: $c#63\n"
+    },
+    "status": "timeout",
+    "elapsedMs": 581349.5070420001,
+    "batch": 10
+  },
+  "containmentMs": 300000,
+  "cpuEvidence": "docs/results/cluster-a2-property-eval-timeout-cpu-v1.jsonl.gz",
+  "lastSample": {
+    "kind": "cpu-sample",
+    "time": "2026-11-07T15:17:55.485153+00:00",
+    "load": [28.0400390625, 24.1689453125, 30.1142578125],
+    "phase": "2026-11-07T15:17:52.827Z [Test262 STALL] selection=\"language/expressions\" phase=\"executing language/expressions/property-accessors/S11.2.1_A1.1.js [sloppy; flags=] (launching debugger / awaiting LLDB)\" elapsed=275752ms done=604/783 pass=597 fail=0 unsupported=0 infra=7 waiting runner=37676 child/inferior=72221,72244,72245",
+    "processes": [
+      {
+        "pid": 37676,
+        "parent": 34054,
+        "cpuPercent": 0.0,
+        "rssKiB": 3744176,
+        "elapsed": "02:34:29",
+        "cpuTime": "48:20.54",
+        "state": "S",
+        "role": "runner"
+      },
+      {
+        "pid": 72221,
+        "parent": 37676,
+        "cpuPercent": 0.0,
+        "rssKiB": 120144,
+        "elapsed": "04:38",
+        "cpuTime": "0:00.40",
+        "state": "S",
+        "role": "debugger"
+      },
+      {
+        "pid": 72244,
+        "parent": 72221,
+        "cpuPercent": 0.0,
+        "rssKiB": 8928,
+        "elapsed": "04:38",
+        "cpuTime": "0:00.05",
+        "state": "S",
+        "role": "debugserver"
+      },
+      {
+        "pid": 72245,
+        "parent": 72244,
+        "cpuPercent": 87.7,
+        "rssKiB": 416752,
+        "elapsed": "04:38",
+        "cpuTime": "3:55.23",
+        "state": "RX",
+        "role": "inferior"
+      }
+    ]
+  },
+  "lastSampleInferiorCpuSeconds": 235.23,
+  "lastSampleInferiorWallSeconds": 278,
+  "classification": "Post-entry timeout with material CPU competition. Last sample received235.23CPU-seconds over278wall-seconds, below the250CPU-second full-core threshold. Some early intervals received96%CPU, while later CPU share fell. Isolated quiet-load current-main recheck is required before assigning a pure compiler-slowness blocker; no semantic mismatch or authorization failure established.",
+  "nativeSample": "docs/results/cluster-a2-property-eval-native-sample-v1.txt.gz",
+  "nativeSampleUncompressedSha256": "fa8c0cf47405b570fa5e5b437841379e7cecde51e7f8e05ea944818b9bccaa15",
+  "sampleExitStatus": 0,
+  "sampleInterpretation": "Identity-checked live native inferior sampled before deadline; generated-code names unresolved, so exact compiler substage remains open. The unchanged test contains ten eval calls.",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "recheckManifest": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v6.json",
+  "nextStep": "Finish original parent and recheck each retained variant separately at unchanged300s budget, freshly frozen current main and direct launch; profile again if CPU-bound. Shared eval/JIT preparation belongs to P if persistent.",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false
+}
