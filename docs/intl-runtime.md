@@ -175,6 +175,17 @@ have semantic tests and compiled native fixtures. Native execution and compiler
 stage comparison remain held for host Developer Tools authorization. These
 internal services do not yet install the public DateTimeFormat constructor.
 
+`date-time-zone-data.ts` resolves localized zone/metazone names, reference regions,
+exact metazone history bounds and flexible day-period rules for the same 860
+locales. CLDR naming aliases remain separate from public IANA primary identity.
+Zone home territories determine location names; reference-zone membership can
+serve another territory without moving the city. Missing explicit display names
+remain inputs to the formatter's fallback rules. TZif/POSIX seasonal flags are
+available independently of offsets, including negative or equal-offset seasons.
+[Time-zone service validation](results/intl-date-time-zone-data-native-resume-h-v33.md)
+passes 43 focused tests and 4726 workspace tests; native images are compiled only
+while host authorization remains pending.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
