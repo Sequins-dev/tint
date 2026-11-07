@@ -39,7 +39,10 @@ ordinary selection argument. For example:
 
 ```json
 [
-  { "path": "language/statements/for-await-of/head-let-init.js", "variant": "strict" }
+  {
+    "path": "language/statements/for-await-of/head-let-init.js",
+    "variant": "strict"
+  }
 ]
 ```
 
@@ -530,3 +533,10 @@ Under saturation, use repeated inferior CPU measurements and emitted instruction
 call and allocation counts; a timeout or wall-time ratio alone cannot establish
 a generated-code regression or improvement. Bespoke fixtures and longer profile
 diagnostics remain separate from unchanged Test262 selection totals.
+
+When debugserver stalls in `task_for_pid` before the initial stop, retain the
+launch as infrastructure and check the host's Developer Tools authorization.
+The [retained A1 recheck](results/test262-addition-post-C2-correct-budget-v3-audit.json)
+completed with two pre-entry crashes during a confirmed authorization stall.
+It provides no native execution timing. Recheck into a new report after host
+authorization is restored; preserve the original report and journal.

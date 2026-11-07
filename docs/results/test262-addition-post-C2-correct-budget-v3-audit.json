@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "kind": "retained-pre-entry-native-infrastructure",
+  "canonicalReport": "test262-addition-post-C2-correct-budget-v3.json",
+  "canonicalJournal": "test262-addition-post-C2-correct-budget-v3.jsonl",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 2,
+    "passFraction": 0
+  },
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-connected",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "sourceSnapshot": {
+    "sha256": "21a5c50dd2a49261ba2adcea4452b26af8686fed8e673f2cd928db0d96c46f3b",
+    "files": 568
+  },
+  "frozenRunIdentity": "42db3c4664c0530ede954a72c1b054414349d07c220d45ce493614e36b736f84",
+  "frozenNodeToolchainManifestSha256": "b7129f82bd3888e88987d57fcea785120fa8dff442d99277fc64fe4daa3ab1d8",
+  "frozenFilesVerified": 2435,
+  "nativeInitialStops": 0,
+  "nativeSemanticObservations": 0,
+  "reason": "Both canonical crashes explicitly report initial state 4 with pid 0. Coordinator confirmed disabled Developer Tools authorization and SecurityAgent prompt while launches stalled in task_for_pid. Schema outcome classification is preserved.",
+  "recheck": "After host authorization is restored, use a current frozen toolchain and explicit debugserver-direct launch, original selection/harnesses/resources, and a fresh report. This completed infrastructure run is not resumed as native evidence.",
+  "exit": {
+    "startedUTC": "2026-11-06T22:55:40.738Z",
+    "endedUTC": "2026-11-07T00:59:08.293Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "args": [
+      "runner",
+      "8",
+      "--",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/tools/test262-native-run.ts",
+      "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+      "language/expressions/addition/S11.6.1_A1.js",
+      "64"
+    ],
+    "status": 0,
+    "signal": null
+  },
+  "launcher": {
+    "pid": 73220,
+    "utc": "2026-11-06T22:55:40.685Z",
+    "frozenToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/source-snapshot.json",
+      "sha256": "b7129f82bd3888e88987d57fcea785120fa8dff442d99277fc64fe4daa3ab1d8"
+    },
+    "environment": {
+      "TINT_TEST262_SOURCES": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/source-snapshot.json",
+      "TINT_TEST262_JOURNAL": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/inline-unions-post-C2-addition-a1-v3.jsonl",
+      "TINT_TEST262_CONTAINMENT_MS": "300000",
+      "TINT_TEST262_HEARTBEAT_MS": "30000",
+      "TINT_TEST262_STALL_MS": "150000"
+    },
+    "modules": "unset",
+    "timeoutMs": 300000,
+    "args": [
+      "runner",
+      "8",
+      "--",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-dense-production-toolchain-v9/tools/test262-native-run.ts",
+      "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+      "language/expressions/addition/S11.6.1_A1.js",
+      "64"
+    ]
+  }
+}
