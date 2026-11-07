@@ -226,7 +226,7 @@ export interface OwnedCell {
   readonly local: number;
   readonly record: number;
   readonly incoming?: number | undefined;
-  /** Proven initialized, never reassigned numeric parameter; store its payload. */
+  /** Proven initialized, never reassigned word parameter; retain its traced payload. */
   readonly byValue?: boolean;
   readonly perIteration?: boolean | undefined;
   readonly scope?: Span | undefined;
@@ -7240,7 +7240,8 @@ export function lowerFunction(
       const slot =
         cell.byValue === true ? cell.local : cellPointers[cell.local];
       if (slot === undefined) throw "incoming cell invariant";
-      const type = cell.byValue === true ? slots[cell.local] : "reference";
+      const type: ScalarType | undefined =
+        cell.byValue === true ? slots[cell.local] : "reference";
       if (type === undefined) throw "incoming capture type invariant";
       recordAccess(
         pointer,
