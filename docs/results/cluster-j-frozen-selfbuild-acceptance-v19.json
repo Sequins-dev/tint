@@ -1,0 +1,48 @@
+{
+  "kind": "cluster-j-frozen-native-selfbuild",
+  "at": "2026-11-07T12:31:37.273463+00:00",
+  "sourceSnapshot": {
+    "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+    "files": 587
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "bootstrapExit": 0,
+  "bootstrapSeconds": 54.66833479097113,
+  "nativeExit": 0,
+  "nativeSeconds": 284.82106862496585,
+  "initial": {
+    "state": "stopped",
+    "pid": 58887
+  },
+  "final": {
+    "state": "exited",
+    "exitStatus": 0
+  },
+  "stageComparisonExit": 0,
+  "signatureExits": [
+    0,
+    0
+  ],
+  "dwarfExit": 0,
+  "images": [
+    {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-string-stage1-v19",
+      "bytes": 54201922,
+      "sha256": "6cb43fbfaa426827c307a53cdd5fc41898f5a2128214463d3edd4d5e76ca92ed"
+    },
+    {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-string-stage2-v19",
+      "bytes": 54201922,
+      "sha256": "6cb43fbfaa426827c307a53cdd5fc41898f5a2128214463d3edd4d5e76ca92ed"
+    }
+  ],
+  "basis": "Explicit-stack parser source graph; independent initial stopped and final exited0 checks, byte comparison, signatures and DWARF all passed. Superseded fixed-capacity v18 is separate.",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-cluster-j-v19.json",
+  "logs": [
+    "docs/results/cluster-j-iterative-selfbuild-v19-bootstrap.log",
+    "docs/results/cluster-j-iterative-selfbuild-v19-native.log",
+    "docs/results/cluster-j-iterative-selfbuild-v19-dwarf.log"
+  ]
+}

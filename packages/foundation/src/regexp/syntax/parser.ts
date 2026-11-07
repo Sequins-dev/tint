@@ -86,6 +86,31 @@ function disjointPaths(
   }
   return false;
 }
+interface SetFrame {
+  readonly inverted: boolean;
+  readonly operands: ClassSetExpression[];
+  operator: string;
+  strings: boolean;
+}
+type GroupPrefix =
+  | { readonly kind: "group"; readonly capture: number }
+  | {
+      readonly kind: "lookaround";
+      readonly behind: boolean;
+      readonly negative: boolean;
+    }
+  | {
+      readonly kind: "modifiers";
+      readonly enable: string;
+      readonly disable: string;
+    };
+interface PatternFrame {
+  readonly group: GroupPrefix | undefined;
+  readonly id: number;
+  branch: number;
+  terms: PatternNode[];
+  readonly alternatives: PatternNode[];
+}
 export function parseRegExp(
   pattern: string,
   flagText: string,
@@ -98,7 +123,6 @@ export function parseRegExp(
     abort = {};
   let index = 0,
     captures = 0,
-    depth = 0,
     nodes = 0;
   const names: NamedCapture[] = [],
     occurrences: NamedOccurrence[] = [],
@@ -422,7 +446,6 @@ export function parseRegExp(
   }
   function setOperand(): SetOperand {
     if (++nodes > 1000000) fail("pattern atom limit", "limit");
-    if (eat("[")) return setClass();
     if (peek() === "\\") {
       const next = pattern.charAt(index + 1);
       if (next === "q") {
@@ -441,8 +464,7 @@ export function parseRegExp(
     const value = setCharacter();
     return setEntry({ kind: "range", from: value, to: value }, value);
   }
-  function setUnionItem(): SetOperand {
-    const left = setOperand();
+  function setRange(left: SetOperand): SetOperand {
     if (peek() !== "-" || pattern.charAt(index + 1) === "-") return left;
     index++;
     const from = left.character;
@@ -460,47 +482,71 @@ export function parseRegExp(
     const pair = pattern.slice(index, index + 2);
     return pair === "&&" || pair === "--" ? pair : "";
   }
+  function setFrame(): SetFrame {
+    return { inverted: eat("^"), operands: [], operator: "", strings: false };
+  }
   function setClass(): SetOperand {
-    if (++depth > 128) fail("pattern nesting limit", "limit");
-    const inverted = eat("^");
-    const operands: ClassSetExpression[] = [];
-    let kind: "union" | "intersection" | "subtraction" = "union";
-    let strings = false;
-    if (peek() !== "]") {
-      const first = setUnionItem();
-      operands.push(first.body);
-      strings = first.strings;
-      const operator = setOperator();
-      if (operator !== "") {
-        if (first.range)
-          fail("set range cannot be an intersection or subtraction operand");
-        kind = operator === "&&" ? "intersection" : "subtraction";
-        while (setOperator() === operator) {
-          index += 2;
-          if (operator === "&&" && peek() === "&")
-            fail("invalid set intersection");
-          const right = setOperand();
-          operands.push(right.body);
-          if (kind === "intersection") strings = strings && right.strings;
-        }
-      } else {
-        while (index < pattern.length && peek() !== "]") {
-          const item = setUnionItem();
-          operands.push(item.body);
-          strings = strings || item.strings;
-        }
+    const frames: SetFrame[] = [setFrame()];
+    let operand: SetOperand | undefined;
+    while (frames.length > 0) {
+      const frame = frames[frames.length - 1];
+      if (frame === undefined) throw "REGEXP_SET_FRAME_INVARIANT";
+      if (operand !== undefined) {
+        const first = frame.operands.length === 0;
+        if (first || frame.operator === "") operand = setRange(operand);
+        frame.operands.push(operand.body);
+        if (first) {
+          frame.strings = operand.strings;
+          frame.operator = setOperator();
+          if (frame.operator !== "" && operand.range)
+            fail("set range cannot be an intersection or subtraction operand");
+        } else if (frame.operator === "")
+          frame.strings = frame.strings || operand.strings;
+        else if (frame.operator === "&&")
+          frame.strings = frame.strings && operand.strings;
+        operand = undefined;
       }
+      let read = frame.operands.length === 0 && peek() !== "]";
+      if (frame.operands.length > 0) {
+        if (frame.operator !== "" && setOperator() === frame.operator) {
+          index += 2;
+          if (frame.operator === "&&" && peek() === "&")
+            fail("invalid set intersection");
+          read = true;
+        } else if (
+          frame.operator === "" &&
+          peek() !== "]" &&
+          index < pattern.length
+        )
+          read = true;
+      }
+      if (read) {
+        if (eat("[")) {
+          if (++nodes > 1000000) fail("pattern atom limit", "limit");
+          frames.push(setFrame());
+        } else operand = setOperand();
+        continue;
+      }
+      if (!eat("]")) fail("unterminated or mixed set expression");
+      if (frame.inverted && frame.strings)
+        fail("cannot complement a set containing strings");
+      const kind =
+        frame.operator === "&&"
+          ? "intersection"
+          : frame.operator === "--"
+            ? "subtraction"
+            : "union";
+      const body: ClassSetExpression = { kind, operands: frame.operands };
+      operand = {
+        body: frame.inverted ? { kind: "complement", body } : body,
+        character: undefined,
+        strings: frame.strings,
+        range: false,
+      };
+      frames.pop();
     }
-    if (!eat("]")) fail("unterminated or mixed set expression");
-    if (inverted && strings) fail("cannot complement a set containing strings");
-    depth--;
-    const body: ClassSetExpression = { kind, operands };
-    return {
-      body: inverted ? { kind: "complement", body } : body,
-      character: undefined,
-      strings,
-      range: false,
-    };
+    if (operand === undefined) throw "REGEXP_SET_FRAME_INVARIANT";
+    return operand;
   }
   function characterClass(): PatternNode {
     const inverted = eat("^"),
@@ -590,6 +636,49 @@ export function parseRegExp(
     if (!eat(":")) fail("group modifiers require a colon");
     return { enable, disable };
   }
+  function groupPrefix(): GroupPrefix {
+    let modifiers:
+      { readonly enable: string; readonly disable: string } | undefined;
+    let capture = 0,
+      look = false,
+      negative = false,
+      behind = false;
+    if (eat("?")) {
+      if (eat(":")) {
+      } else if (eat("=")) look = true;
+      else if (eat("!")) {
+        look = true;
+        negative = true;
+      } else if (eat("<")) {
+        behind = true;
+        look = true;
+        if (eat("=")) {
+        } else if (eat("!")) negative = true;
+        else {
+          look = false;
+          behind = false;
+          const name = groupName();
+          captures++;
+          capture = captures;
+          registerName(name, capture);
+        }
+      } else if ("ims-".includes(peek()) && peek() !== "")
+        modifiers = groupModifiers();
+      else fail("invalid group prefix");
+    } else {
+      captures++;
+      capture = captures;
+    }
+    if (modifiers !== undefined)
+      return {
+        kind: "modifiers",
+        enable: modifiers.enable,
+        disable: modifiers.disable,
+      };
+    return look
+      ? { kind: "lookaround", behind, negative }
+      : { kind: "group", capture };
+  }
   function atom(): PatternNode {
     if (++nodes > 1000000) fail("pattern node limit", "limit");
     const c = peek();
@@ -602,52 +691,6 @@ export function parseRegExp(
     if (c === ".") return { kind: "dot" };
     if (c === "^" || c === "$")
       return { kind: "assertion", assertion: c === "^" ? "start" : "end" };
-    if (c === "(") {
-      let modifiers:
-        { readonly enable: string; readonly disable: string } | undefined;
-      let capture = 0,
-        look = false,
-        negative = false,
-        behind = false;
-      if (eat("?")) {
-        if (eat(":")) {
-        } else if (eat("=")) look = true;
-        else if (eat("!")) {
-          look = true;
-          negative = true;
-        } else if (eat("<")) {
-          behind = true;
-          look = true;
-          if (eat("=")) {
-          } else if (eat("!")) negative = true;
-          else {
-            look = false;
-            behind = false;
-            const name = groupName();
-            captures++;
-            capture = captures;
-            registerName(name, capture);
-          }
-        } else if ("ims-".includes(peek()) && peek() !== "")
-          modifiers = groupModifiers();
-        else fail("invalid group prefix");
-      } else {
-        captures++;
-        capture = captures;
-      }
-      const body = disjunction();
-      if (!eat(")")) fail("unterminated group");
-      if (modifiers !== undefined)
-        return {
-          kind: "modifiers",
-          enable: modifiers.enable,
-          disable: modifiers.disable,
-          body,
-        };
-      return look
-        ? { kind: "lookaround", body, behind, negative }
-        : { kind: "group", body, capture };
-    }
     if (c === "*" || c === "+" || c === "?")
       fail("nothing to repeat", "syntax", index - 1);
     if (c === "{") {
@@ -661,50 +704,91 @@ export function parseRegExp(
     index--;
     return character(readCharacter());
   }
-  function alternative(): PatternNode {
-    const terms: PatternNode[] = [];
-    while (index < pattern.length && peek() !== "|" && peek() !== ")") {
-      let term = atom();
-      const repeat = quantifier();
-      if (repeat !== undefined) {
-        if (
-          term.kind === "assertion" ||
-          (term.kind === "lookaround" && (unicode || term.behind))
-        )
-          fail("assertion cannot be quantified");
-        term = {
-          kind: "repeat",
-          body: term,
-          min: repeat.min,
-          max: repeat.max,
-          greedy: repeat.greedy,
-        };
-      }
-      terms.push(term);
-    }
-    const first = terms[0];
-    return terms.length === 1 && first !== undefined
-      ? first
-      : { kind: "sequence", terms };
+  function patternFrame(group: GroupPrefix | undefined): PatternFrame {
+    const id = nextDisjunction++;
+    path.push({ id, alternative: 0 });
+    return { group, id, branch: 0, terms: [], alternatives: [] };
+  }
+  function finishAlternative(frame: PatternFrame): void {
+    const terms = frame.terms,
+      first = terms[0];
+    frame.alternatives.push(
+      terms.length === 1 && first !== undefined
+        ? first
+        : { kind: "sequence", terms },
+    );
+    frame.terms = [];
+  }
+  function quantified(term: PatternNode): PatternNode {
+    const repeat = quantifier();
+    if (repeat === undefined) return term;
+    if (
+      term.kind === "assertion" ||
+      (term.kind === "lookaround" && (unicode || term.behind))
+    )
+      fail("assertion cannot be quantified");
+    return {
+      kind: "repeat",
+      body: term,
+      min: repeat.min,
+      max: repeat.max,
+      greedy: repeat.greedy,
+    };
   }
   function disjunction(): PatternNode {
-    if (++depth > 128) fail("pattern nesting limit", "limit");
-    const id = nextDisjunction++;
-    let branch = 0;
-    path.push({ id, alternative: branch });
-    const alternatives: PatternNode[] = [alternative()];
-    while (eat("|")) {
-      branch++;
-      path[path.length - 1] = { id, alternative: branch };
-      alternatives.push(alternative());
+    const frames: PatternFrame[] = [patternFrame(undefined)];
+    while (frames.length > 0) {
+      const frame = frames[frames.length - 1];
+      if (frame === undefined) throw "REGEXP_PATTERN_FRAME_INVARIANT";
+      if (eat("(")) {
+        if (++nodes > 1000000) fail("pattern node limit", "limit");
+        frames.push(patternFrame(groupPrefix()));
+        continue;
+      }
+      if (eat("|")) {
+        finishAlternative(frame);
+        frame.branch++;
+        path[path.length - 1] = { id: frame.id, alternative: frame.branch };
+        continue;
+      }
+      if (index < pattern.length && peek() !== ")") {
+        frame.terms.push(quantified(atom()));
+        continue;
+      }
+      finishAlternative(frame);
+      const alternatives = frame.alternatives,
+        first = alternatives[0];
+      if (first === undefined) throw "REGEXP_ALTERNATIVE_INVARIANT";
+      const body: PatternNode =
+        alternatives.length === 1
+          ? first
+          : { kind: "alternation", alternatives };
+      frames.pop();
+      path.pop();
+      const group = frame.group;
+      if (group === undefined) return body;
+      if (!eat(")")) fail("unterminated group");
+      const parent = frames[frames.length - 1];
+      if (parent === undefined) throw "REGEXP_PATTERN_FRAME_INVARIANT";
+      const term: PatternNode =
+        group.kind === "group"
+          ? { kind: "group", capture: group.capture, body }
+          : group.kind === "lookaround"
+            ? {
+                kind: "lookaround",
+                behind: group.behind,
+                negative: group.negative,
+                body,
+              }
+            : {
+                kind: "modifiers",
+                enable: group.enable,
+                disable: group.disable,
+                body,
+              };
+      parent.terms.push(quantified(term));
     }
-    path.pop();
-    depth--;
-    const first = alternatives[0];
-    if (first === undefined) throw "REGEXP_ALTERNATIVE_INVARIANT";
-    return alternatives.length === 1
-      ? first
-      : { kind: "alternation", alternatives };
+    throw "REGEXP_PATTERN_FRAME_INVARIANT";
   }
   try {
     const body = disjunction();

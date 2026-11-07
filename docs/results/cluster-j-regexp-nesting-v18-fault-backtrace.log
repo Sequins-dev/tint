@@ -1,0 +1,83 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-Y6xWPa/regexp-nesting"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-Y6xWPa/regexp-nesting' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess, time\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(60)\nport_socket.bind(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/port\",\"--\",\"127.0.0.1:0\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-Y6xWPa/regexp-nesting\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(60)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); assert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0; open('/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/pid','w').write(str(p.GetProcessID())); open('/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-nesting-fault-debug-v18/initial.json','w').write(json.dumps({'state':'stopped','pid':p.GetProcessID()}))
+5
+34
+(lldb) continue
+Process 35081 resuming
+Process 35081 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x102a901e0)
+       frame #0: 0x0000000102a901e0 regexp-nesting`program:__tint_reference_list_write$520 + 1296
+Target 0: (regexp-nesting) stopped.
+(lldb) bt 30
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x102a901e0)
+   * frame #0: 0x0000000102a901e0 regexp-nesting`program:__tint_reference_list_write$520 + 1296
+     frame #1: 0x0000000102821f60 regexp-nesting`program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_11$168] at sparse-list.ts:135:3
+     frame #2: 0x0000000102a7abe0 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #3: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #4: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #5: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #6: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #7: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #8: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #9: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #10: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #11: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #12: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #13: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #14: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #15: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #16: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #17: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #18: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #19: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #20: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #21: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #22: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #23: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #24: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #25: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #26: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+     frame #27: 0x0000000102a76040 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:atom [@35:value:64$460] at parser.ts:641:20
+     frame #28: 0x0000000102a7889c regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:alternative [@35:value:65$461] at parser.ts:670:18
+     frame #29: 0x0000000102a7ab90 regexp-nesting`program:packages/foundation/src/regexp/syntax/parser.ts:disjunction [@35:value:66$462] at parser.ts:698:42
+(lldb) register read x9 x10 x11 x12 x13 x14 x15 x19 x20 x21 x22
+      x9 = 0x0000000000000000
+     x10 = 0x0000000108d2be60
+     x11 = 0x0000000000000000
+     x12 = 0x0000000000000001
+     x13 = 0x0000000000000001
+     x14 = 0x0000000000000020
+     x15 = 0x0000000000000029
+     x19 = 0x000000016d70e620
+     x20 = 0x00000001076f0000
+     x21 = 0x0000000107928000
+     x22 = 0x0000000107d28000
+(lldb) disassemble --frame --count 24
+regexp-nesting`program:__tint_reference_list_write$520:
+    0x102a8fcd0 <+0>:  stp    x29, x30, [sp, #-0x10]!
+    0x102a8fcd4 <+4>:  mov    x29, sp
+    0x102a8fcd8 <+8>:  sub    sp, sp, #0x160
+    0x102a8fcdc <+12>: str    d8, [sp, #0x128]
+    0x102a8fce0 <+16>: str    d9, [sp, #0x130]
+    0x102a8fce4 <+20>: str    d10, [sp, #0x138]
+    0x102a8fce8 <+24>: str    d11, [sp, #0x140]
+    0x102a8fcec <+28>: str    d12, [sp, #0x148]
+    0x102a8fcf0 <+32>: str    d13, [sp, #0x150]
+    0x102a8fcf4 <+36>: str    x0, [sp, #0x20]
+    0x102a8fcf8 <+40>: str    x3, [sp, #0x28]
+    0x102a8fcfc <+44>: str    xzr, [sp, #0x58]
+    0x102a8fd00 <+48>: str    xzr, [sp, #0x68]
+    0x102a8fd04 <+52>: str    xzr, [sp, #0x70]
+    0x102a8fd08 <+56>: str    xzr, [sp, #0x88]
+    0x102a8fd0c <+60>: str    xzr, [sp, #0xa8]
+    0x102a8fd10 <+64>: str    xzr, [sp, #0xb0]
+    0x102a8fd14 <+68>: str    xzr, [sp, #0xb8]
+    0x102a8fd18 <+72>: str    xzr, [sp, #0xc0]
+    0x102a8fd1c <+76>: str    xzr, [sp, #0xc8]
+    0x102a8fd20 <+80>: str    xzr, [sp, #0xd0]
+    0x102a8fd24 <+84>: str    xzr, [sp, #0xd8]
+    0x102a8fd28 <+88>: str    xzr, [sp, #0xe0]
+    0x102a8fd2c <+92>: str    xzr, [sp, #0xe8]

@@ -1,0 +1,143 @@
+{
+  "kind": "cluster-j-regexp-iterative-parser-native-regression",
+  "at": "2026-11-07T12:30:29.474956+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+    "files": 587
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "red": {
+    "artifact": {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-ud1Qbd/regexp-nesting",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+          "files": 587
+        },
+        "imageSha256": "ab0b53ab93562752c5c4375ddb7f5778bff6549a88e9f41bd8b1b71e3f8f9c6d",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-ud1Qbd/regexp-nesting.source.ts",
+        "fixtureSha256": "5d47c4381f77635028fd770dadcae9f00c557b84121bab8dcee84d6b234d0d49",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/tools/verify-hosted-regexp-nesting.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 4194304,
+          "allocationCapacity": 65536,
+          "stackBytes": 16777216
+        },
+        "debugSymbols": false
+      },
+      "manifestSha256": "4f1bb56508ddb37231c5a15a89ab4db0e4e3630209c334e36364d6d939e4e9ce"
+    },
+    "nativeOutcome": {
+      "kind": "crash",
+      "detail": "unexpected native exit status 1"
+    },
+    "expected": "Controlled fixture return1 because compileRegExp rejects200nestedgroups at128parserdepth. The Test262 helper labels nonprotocol fixture exit1 as a crash; this was an ordinary exit, not a processor fault."
+  },
+  "green": {
+    "artifact": {
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-7InE0l/regexp-nesting",
+      "manifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+          "files": 587
+        },
+        "imageSha256": "e4da84f1f8cce9ac65a461fa057e88fa9a0f8ad68804552bd365773b1415bc17",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-nesting-7InE0l/regexp-nesting.source.ts",
+        "fixtureSha256": "6ad9d620e12c27bd87562a2b731bf4b7b69afcb81188c610df3ca1787a649ddd",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v19/tools/verify-hosted-regexp-nesting.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 268435456,
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216
+        },
+        "debugSymbols": true
+      },
+      "manifestSha256": "14978408f56b9b651220bb88c897b2962ff0a763fc32884187a9a8732ffba10d"
+    },
+    "nativeOutcome": {
+      "kind": "completed"
+    },
+    "expectedExit": 42,
+    "cases": [
+      "every capture at200and511nestedcapturinggroups",
+      "200and511noncapturinggroups",
+      "511nestedUnicode-setmatching",
+      "200groupsaroundaUnicode-set",
+      "4096capturinggroupparsing",
+      "4096Unicode-setparsing",
+      "4096-levelmalformedgroupproducesSyntaxError diagnostic"
+    ]
+  },
+  "validationContract": "Standard executeNativeFile independently validates positive-PID initial stopped state before continuing. Only independently recorded final exited42 maps to completed. No authorization failure occurred. The green fixture uses uniform Test262 memory/root/stack budgets; red baseline used earlier smaller fixture defaults. This is semantic evidence, not a controlled performance comparison or a complete Test262 selection.",
+  "logs": {
+    "hostRed": {
+      "path": "docs/results/cluster-j-regexp-iterative-host-red-v1b.log",
+      "sha256": "825bb6b58cbad9e7753d38816eacf7ceb58976d331eb108793f645c839f0fba8",
+      "bytes": 2761
+    },
+    "hostGreen": {
+      "path": "docs/results/cluster-j-regexp-iterative-all-host-v19.log",
+      "sha256": "52c909e360720ff5b168a6c966d23267214c43a88f9d4647a3bb79b0310f9391",
+      "bytes": 21847
+    },
+    "nativeRed": {
+      "path": "docs/results/cluster-j-regexp-nesting-native-red-v1.execute.log",
+      "sha256": "2f8ece677b21e0b80b2bca83483649f8892ac205fd2f3360c97ded66b6624785",
+      "bytes": 110
+    },
+    "nativeGreen": {
+      "path": "docs/results/cluster-j-regexp-iterative-native-v19.execute.log",
+      "sha256": "be082efd8e350dba3d472c8480ed2ca891deec32520100b6ed1e9b901e8089cc",
+      "bytes": 71
+    },
+    "supersededNativeFault": {
+      "path": "docs/results/cluster-j-regexp-nesting-native-green-v18.execute.log",
+      "sha256": "5d0bfc600b055a0dbd09e32b5455d404f88b2e3a37449e621bd63cec4ac34f29",
+      "bytes": 3715
+    },
+    "supersededSymbolizedFault": {
+      "path": "docs/results/cluster-j-regexp-nesting-native-green-v18-debug.execute.log",
+      "sha256": "1003827add39d83da5b369e95d12819e5805de281986eca4528bf8de32ee025e",
+      "bytes": 3588
+    },
+    "supersededBacktrace": {
+      "path": "docs/results/cluster-j-regexp-nesting-v18-fault-backtrace.log",
+      "sha256": "1c4c44cbfb0c51651af434551b4a486811bdd2570528475462a7a6d7cc41bf64",
+      "bytes": 9352
+    },
+    "setupMissingMemory": {
+      "path": "docs/results/cluster-j-regexp-nesting-native-red-v1.build.log",
+      "sha256": "b856d6811207a2dd28bdc31d26e56d2e34aca42e169f2f58b8cb41dae9ef83ef",
+      "bytes": 851
+    },
+    "setupMethodCheck": {
+      "path": "docs/results/cluster-j-regexp-nesting-native-red-v1b.build.log",
+      "sha256": "c6d359577d20a4469f1b1a4f7ef98850fae35c68bf27203735b7ae19166e2f1b",
+      "bytes": 795
+    }
+  },
+  "fixtureSetupFailures": [
+    {
+      "exit": 1,
+      "cause": "Initial fixture override omitted required managedBytes/allocationCapacity; corrected before native build."
+    },
+    {
+      "exit": 1,
+      "cause": "Implicit literal-array element type did not admit repeat in strict compiler; fixture uses explicit string[] and indexed iteration."
+    }
+  ],
+  "supersededExperiment": "docs/results/cluster-j-superseded-capacity-selfbuild-v18.json",
+  "pending": "Four unchanged Test262 variants are prepared for standard manifest recheck after the broad runner reaches a safe boundary."
+}

@@ -1,6 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { compileRegExp, executeRegExp } from "../src/regexp/engine/index.ts";
+test("two hundred nested groups preserve every capture", () => {
+  for (const opening of ["(", "(?:"]) {
+    const program = compileRegExp(
+      opening.repeat(200) + "hello" + ")".repeat(200),
+      "",
+    );
+    assert.ok(program.ok);
+    const result = executeRegExp(program.value, "hello");
+    assert.equal(result.kind, "match");
+    if (result.kind !== "match") throw new Error("expected a match");
+    assert.equal(result.match.start, 0);
+    assert.equal(result.match.end, 5);
+    assert.equal(result.match.captures.length, opening === "(" ? 201 : 1);
+    for (const capture of result.match.captures)
+      assert.deepEqual(capture, { start: 0, end: 5 });
+  }
+});
 const cases: readonly (readonly [string, string, string])[] = [
   [String.raw`\p{Script=Han}+`, "u", "a𠮷中"],
   [String.raw`\p{scx=Hira}`, "u", "ー"],

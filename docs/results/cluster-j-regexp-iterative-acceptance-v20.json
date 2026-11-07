@@ -1,0 +1,49 @@
+{
+  "kind": "cluster-j-iterative-regexp-parser-acceptance",
+  "at": "2026-11-07T12:40:20.195547+00:00",
+  "sourceSnapshot": {
+    "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+    "files": 587
+  },
+  "implementation": "Nested groups and Unicode sets use growable explicit frame stacks. The one-million-node construction work budget remains; there is no fixed nesting-depth cap. Capture numbering, alternative paths for named groups, quantifiers, modifier prefixes, set operators and syntax diagnostics keep their existing AST contracts.",
+  "unchangedTest262": {
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "passed": 4,
+    "total": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "infrastructureErrors": 0,
+    "debuggerLaunch": "debugserver-direct",
+    "batchSize": 64,
+    "explicitVariantManifest": "docs/results/cluster-j-regexp-nesting-recheck-manifest-v1.json",
+    "reports": [
+      {
+        "path": "docs/results/test262-cluster-j-regexp-nesting-recheck-v19.json",
+        "sha256": "e03d00f9e41036fa27d31cff484a17ae0b634214c86e9d9e85ae195e86ea6b67"
+      },
+      {
+        "path": "docs/results/test262-cluster-j-current-built-ins-RegExp-S15.10.2.8_A3_T15-v19.json",
+        "sha256": "947684ed0d5467782f0d7f458ce1492e881783fe74b73f127ce34de463136d2c"
+      },
+      {
+        "path": "docs/results/test262-cluster-j-current-built-ins-RegExp-S15.10.2.8_A3_T16-v19.json",
+        "sha256": "c9a8cb2226b985ce299ea283bef24722668534664133a336840a57b5eb29850d"
+      }
+    ],
+    "scope": "Complete strict and sloppy variants of the two affected legacy files; not a complete RegExp-family rerun. Original four unsupported observations are retained in the v17 broad journal and published baseline file reports."
+  },
+  "hostTests": {
+    "passed": 472,
+    "failed": 0,
+    "log": "docs/results/cluster-j-regexp-iterative-all-host-v19.log"
+  },
+  "nativeFixture": "docs/results/cluster-j-regexp-iterative-native-acceptance-v19.json",
+  "workspaceGate": {
+    "passed": 4727,
+    "failed": 0,
+    "report": "docs/results/cluster-j-workspace-acceptance-v19.json"
+  },
+  "selfbuild": "docs/results/cluster-j-frozen-selfbuild-acceptance-v19.json",
+  "supersededExperiment": "docs/results/cluster-j-superseded-capacity-selfbuild-v18.json",
+  "breadth": "Original frozen-v17 full RegExp journal resumed after the focused recheck; its existing outcomes and toolchain remain unchanged."
+}

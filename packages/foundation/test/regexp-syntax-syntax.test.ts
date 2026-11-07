@@ -131,11 +131,38 @@ test("AST decodes Unicode pairs and legacy octal without changing capture counts
     );
   }
 });
+test("explicit parser stacks preserve deeply nested groups and sets", () => {
+  for (const depth of [200, 4096]) {
+    for (const [opening, closing, flags] of [
+      ["(", ")", ""],
+      ["(?:", ")", "u"],
+      ["(?=", ")", "u"],
+      ["(?i:", ")", ""],
+      ["[", "]", "v"],
+    ] as const) {
+      const parsed = parseRegExp(
+        opening.repeat(depth) + "x" + closing.repeat(depth),
+        flags,
+      );
+      assert.ok(parsed.ok);
+      assert.equal(parsed.value.captures, opening === "(" ? depth : 0);
+    }
+  }
+  assert.ok(parseRegExp("(".repeat(200) + "[x]" + ")".repeat(200), "v").ok);
+  for (const [opening, closing, flags] of [
+    ["(", ")", ""],
+    ["[", "]", "v"],
+  ] as const) {
+    const malformed = parseRegExp(
+      opening.repeat(4096) + "x" + closing.repeat(4095),
+      flags,
+    );
+    assert.equal(malformed.ok, false);
+    if (!malformed.ok) assert.equal(malformed.error.kind, "syntax");
+  }
+});
 test("resource exhaustion is distinct from invalid grammar", () => {
-  for (const pattern of [
-    "(".repeat(130) + "x" + ")".repeat(130),
-    "a{9007199254740992}",
-  ]) {
+  for (const pattern of ["a".repeat(1000001), "a{9007199254740992}"]) {
     const result = parseRegExp(pattern, "");
     assert.equal(result.ok, false);
     if (!result.ok) assert.equal(result.error.kind, "limit");

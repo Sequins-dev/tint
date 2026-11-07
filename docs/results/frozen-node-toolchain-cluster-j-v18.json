@@ -1,0 +1,28 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T12:14:13.033Z",
+  "sourceSnapshot": {
+    "sha256": "a240eb30a20038eebd8153bb778e0df833d27dd745b87397cf8ddaf3fb85d97c",
+    "files": 587
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v18",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v18/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v18/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v18/source-snapshot.json",
+    "sha256": "c113d9f3f26064f118940afe27c3834c85b3baa0110cc65b1d1b32033871b109"
+  },
+  "base": "ca47672bf88e7f31235dc8e7018ff505d80de838",
+  "head": "f1c4e96083efb44c9318920c9d9ab3febc07e05b",
+  "debuggerLaunch": "debugserver-direct",
+  "portableChangesFromV17": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/foundation/src/regexp/syntax/parser.ts",
+    "packages/ir/src/optimization/index.ts",
+    "packages/ts-native/src/closure/lowering/index.ts",
+    "packages/ts-native/src/closure/lowering/planning.ts",
+    "packages/ts-native/src/scalar.ts",
+    "packages/typescript/src/binding/index.ts"
+  ],
+  "basis": "Fresh main build plus J bounded RegExp nesting capacity candidate. Host regressions318/318 pass; native green and selfbuild remain pending at freeze time. Active breadth run stays on originalv17. Includes P numeric operand and value capture changes merged sincev17."
+}

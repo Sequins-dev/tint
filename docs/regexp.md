@@ -17,6 +17,14 @@ library.
 
 ## Current behavior and limits
 
+The parser keeps nested groups and Unicode sets on growable explicit frame stacks.
+Depth no longer consumes recursive parser calls or hits the former 128-level cap;
+the existing one-million-node work budget still bounds pathological patterns.
+The [native regression](results/cluster-j-regexp-iterative-native-acceptance-v19.json)
+checks every capture in 200- and 511-level groups, nested-set matching, 4,096-level
+parsing and malformed deep patterns. The [frozen self-build](results/cluster-j-frozen-selfbuild-acceptance-v19.json)
+produces identical stage images on its recorded iterative-parser source graph.
+
 The native Script fixture covers construction/copying, fresh literals, `exec`,
 `test`, `toString`, source/flag accessors, species, captures and named groups,
 match indices, global/sticky `lastIndex`, overridden `exec`, and observable

@@ -1,0 +1,24 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T12:25:44.498Z",
+  "sourceSnapshot": {
+    "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+    "files": 587
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v19",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v19/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v19/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v19/source-snapshot.json",
+    "sha256": "f2b0045fa9ba917802cf68244d9350775580b925c52cb94b5fc96c6947ac79b0"
+  },
+  "base": "2e66bc943869da2067444eeeb2a9d983a92bf564",
+  "head": "ad31c3d4c46d8ad8bb6ebecf7c95ca30420c2128",
+  "debuggerLaunch": "debugserver-direct",
+  "portableChangesFromV18": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/codegen/src/aarch64/scalar/temporary-registers.ts",
+    "packages/foundation/src/regexp/syntax/parser.ts"
+  ],
+  "basis": "Fresh main graph plus J explicit-stack RegExp group and Unicode-set parser. No fixed nesting cap; existing one-million-node work budget retained. All472 RegExp host tests pass, including4096levels and work exhaustion. Native fixture, workspace gate and selfbuild pending at freeze. Supersedes uncommitted fixed-capacity v18 candidate; its observations remain separate. Active full breadth runner remains originalv17."
+}

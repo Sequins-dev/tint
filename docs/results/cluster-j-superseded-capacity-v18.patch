@@ -1,0 +1,30 @@
+--- parser-before.ts
++++ superseded-parser-capacity-v18.ts
+@@ -10,6 +10,9 @@
+   RegExpPattern,
+   RegExpResult,
+ } from "./model.ts";
++// Bound recursive stack use across groups and Unicode sets. The root
++// disjunction occupies one level of this shared capacity.
++const patternNestingLimit = 512;
+ function decimal(c: number): boolean {
+   return c >= 48 && c <= 57;
+ }
+@@ -461,7 +464,7 @@
+     return pair === "&&" || pair === "--" ? pair : "";
+   }
+   function setClass(): SetOperand {
+-    if (++depth > 128) fail("pattern nesting limit", "limit");
++    if (++depth > patternNestingLimit) fail("pattern nesting limit", "limit");
+     const inverted = eat("^");
+     const operands: ClassSetExpression[] = [];
+     let kind: "union" | "intersection" | "subtraction" = "union";
+@@ -688,7 +691,7 @@
+       : { kind: "sequence", terms };
+   }
+   function disjunction(): PatternNode {
+-    if (++depth > 128) fail("pattern nesting limit", "limit");
++    if (++depth > patternNestingLimit) fail("pattern nesting limit", "limit");
+     const id = nextDisjunction++;
+     let branch = 0;
+     path.push({ id, alternative: branch });

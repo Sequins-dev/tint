@@ -101,10 +101,9 @@ for (const c of [
     assert.equal(result.ok, false);
     if (!result.ok) assert.equal(result.error.kind, "syntax");
   });
-test("set nesting has an explicit capacity diagnostic", () => {
-  const result = parseRegExp("[".repeat(130) + "a" + "]".repeat(130), "v");
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.kind, "limit");
+test("deep set nesting uses the work budget instead of a depth cap", () => {
+  const result = parseRegExp("[".repeat(4096) + "a" + "]".repeat(4096), "v");
+  assert.ok(result.ok);
 });
 
 test("set AST preserves operation boundaries and decoded string alternatives", () => {
