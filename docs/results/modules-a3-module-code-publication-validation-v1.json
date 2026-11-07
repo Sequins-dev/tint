@@ -1,0 +1,58 @@
+{
+  "kind": "native-selection-publication-validation",
+  "conformance": false,
+  "implementationCommit": "3885618608c5ec25d5816bfe725893f06dbe618c",
+  "implementationOnMain": true,
+  "validatedAt": "2026-11-07T19:20:56.430Z",
+  "report": "docs/results/test262-module-code-a3-native-v1.json",
+  "reportSha256": "9729e3bdbbc009e52aeda2f81b44a0f20095eddd96affb379706f32d9da30e0c",
+  "journalSha256": "5dc307d23a7c7fc187e96697884e8fcd4a0268ad8eae04afd5681e15098f8385",
+  "terminalComplete": true,
+  "frozenFilesVerified": true,
+  "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9",
+  "totals": {
+    "total": 602,
+    "passed": 597,
+    "failed": 0,
+    "unsupported": 5,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9916943521594684
+  },
+  "ledgerAccepted": 1,
+  "ledgerRejected": [],
+  "measuredVariants": 602,
+  "fixtureVerification": {
+    "command": "node tools/test262-native-extract.ts <pinned checkout> <completed journal> language/module-code <new report>",
+    "exitStatus": 0,
+    "expectedVariants": 602
+  },
+  "workspaceGate": {
+    "commit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+    "passed": 4829,
+    "total": 4829,
+    "exitStatus": 0,
+    "source": "~/.t3/tint-briefs/main-gates.txt",
+    "reuse": "docs-only; all code in publication base is covered"
+  },
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "logSha256": "c172448ee6860efaed701fb84d81024a4655f523ff49e9f1af4f1625a30adfe2"
+  },
+  "retainedPreEntryCrashes": [
+    {
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named.js",
+      "variant": "module",
+      "previousStatus": "crash",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "language/module-code/eval-export-cls-semi.js",
+      "variant": "module",
+      "previousStatus": "crash",
+      "currentStatus": "pass"
+    }
+  ]
+}
