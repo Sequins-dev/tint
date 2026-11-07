@@ -1,0 +1,1573 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/Array/prototype/findLastIndex",
+  "sourceSnapshot": {
+    "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+    "files": 595
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-array-v1/source-snapshot.json",
+  "frozenToolchainSha256": "7c5616c125be290c8f785e9bfcb20fe4e63ab13bc9910c7e751761f3749439f2",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/g-array-findlastindex-parent-prefix-v1.jsonl",
+    "journalSha256": "499462b39017a49f2d3bf5c9c5d86c4e22ddf9196e1bf2937521076866131db5",
+    "journalBytes": 1198056,
+    "observedVariants": 1984
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 29,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 169016.14041700028,
+        "outcome": "compiled"
+      },
+      {
+        "id": 30,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 197901.8141660001,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 46,
+    "passed": 46,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/array-altered-during-loop.js",
+      "sha256": "357010e81ef9602acb8aa7142140d72301f723c4ecac3267f80d23c70a060f39",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 578123.8984169997,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/array-altered-during-loop.js",
+      "sha256": "357010e81ef9602acb8aa7142140d72301f723c4ecac3267f80d23c70a060f39",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 578608.3142080009,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/call-with-boolean.js",
+      "sha256": "9590591f058e321c738e86c5040e91316f9e55cc82fa0ee0f0ad655a350d56e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 579034.5892500002,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/call-with-boolean.js",
+      "sha256": "9590591f058e321c738e86c5040e91316f9e55cc82fa0ee0f0ad655a350d56e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 579469.6408750005,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/callbackfn-resize-arraybuffer.js",
+      "sha256": "a9501263e648ed3d904dcb942721ac5db0e50b341c9833eadd835da1f35b6198",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 579894.9044170007,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/callbackfn-resize-arraybuffer.js",
+      "sha256": "a9501263e648ed3d904dcb942721ac5db0e50b341c9833eadd835da1f35b6198",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 580323.1399580017,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/length.js",
+      "sha256": "1e1284c1a615411d3df2f1e8cebbbce0f1cab7b5e2caea505e5206617a6b4657",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 580740.3587079998,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/length.js",
+      "sha256": "1e1284c1a615411d3df2f1e8cebbbce0f1cab7b5e2caea505e5206617a6b4657",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 581178.3765000012,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/maximum-index.js",
+      "sha256": "90dc39cb2f67a38dfa19fdddfd01d2f47db89a9b55b3403959e97a9cfeb2813f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 581604.3800409995,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/maximum-index.js",
+      "sha256": "90dc39cb2f67a38dfa19fdddfd01d2f47db89a9b55b3403959e97a9cfeb2813f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 582035.9624999985,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/name.js",
+      "sha256": "96a7ed7f893ae93f3e36610bd8bc64104f7d8710a93dbe154a19d375746e373d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 582450.4229589999,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/name.js",
+      "sha256": "96a7ed7f893ae93f3e36610bd8bc64104f7d8710a93dbe154a19d375746e373d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 582951.1836669985,
+      "batch": 29
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/not-a-constructor.js",
+      "sha256": "99124edeeefd76d98939fce032634c438f28c4764092d2dd447d49d9b7ddd34d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function",
+          "array-find-from-last"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 203131.57587500103,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/not-a-constructor.js",
+      "sha256": "99124edeeefd76d98939fce032634c438f28c4764092d2dd447d49d9b7ddd34d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect.construct",
+          "arrow-function",
+          "array-find-from-last"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 203626.65362500027,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-call-parameters.js",
+      "sha256": "8a65910f0d22d9b4ace192c76dc3bd39ecd4a91124b238bd0ae64547be68ceaa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 204119.25770900026,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-call-parameters.js",
+      "sha256": "8a65910f0d22d9b4ace192c76dc3bd39ecd4a91124b238bd0ae64547be68ceaa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 204668.58754200116,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-call-this-non-strict.js",
+      "sha256": "4a95475011ba8d17a0ba29a3d1ca3c23ac7975168f710bd32dd20cdd60de127d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 205174.62970899977,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-call-this-strict.js",
+      "sha256": "13c9ec8bbddefae918f42faa61cc1932c7a6fbdf96547a2274f29584ee71a84e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "onlyStrict"
+        ],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 205666.1752919983,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-called-for-each-array-property.js",
+      "sha256": "6b46f0f9a2c6169a25966695bcb3dbb67a9ee2863e14777c42b3646bc48faf9a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 206202.16491699964,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-called-for-each-array-property.js",
+      "sha256": "6b46f0f9a2c6169a25966695bcb3dbb67a9ee2863e14777c42b3646bc48faf9a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 206693.54254099913,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-is-not-callable-throws.js",
+      "sha256": "c230aaa4074207422934054b7d5a05a9e937bf43c8aa651c3dc246a442dcf544",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 207231.80495800078,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-is-not-callable-throws.js",
+      "sha256": "c230aaa4074207422934054b7d5a05a9e937bf43c8aa651c3dc246a442dcf544",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 207716.03674999997,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-not-called-on-empty-array.js",
+      "sha256": "df2ae2f350d496eb581bf67285fd349d4b9dcbc1b7c3a04b2d0c140a3612639f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 208195.68712499924,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/predicate-not-called-on-empty-array.js",
+      "sha256": "df2ae2f350d496eb581bf67285fd349d4b9dcbc1b7c3a04b2d0c140a3612639f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 208748.6615830008,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/prop-desc.js",
+      "sha256": "491642578273eaa49d149dd6fbe63215b148d4fd9f437b5f94897273af74edf5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 209392.52841700055,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/prop-desc.js",
+      "sha256": "491642578273eaa49d149dd6fbe63215b148d4fd9f437b5f94897273af74edf5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 209882.38800000027,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer-grow-mid-iteration.js",
+      "sha256": "d23f8af00c29147037f36f7250c19514ec839117b286464dd77d9cf0afb5f796",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js",
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 289970.59574999847,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer-grow-mid-iteration.js",
+      "sha256": "d23f8af00c29147037f36f7250c19514ec839117b286464dd77d9cf0afb5f796",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js",
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 362586.7540830001,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer-shrink-mid-iteration.js",
+      "sha256": "2e66ebfbb6558807917579c9628441d6c235c2b02eb40d734575329f31c58ec0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js",
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 430769.6604999993,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer-shrink-mid-iteration.js",
+      "sha256": "2e66ebfbb6558807917579c9628441d6c235c2b02eb40d734575329f31c58ec0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "compareArray.js",
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 509515.2348330002,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer.js",
+      "sha256": "294606b537e04d31a00968e9ebc01fc2e83e2a5893e4e11371db5db2b6fb1d3a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 582409.8951660004,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/resizable-buffer.js",
+      "sha256": "294606b537e04d31a00968e9ebc01fc2e83e2a5893e4e11371db5db2b6fb1d3a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "resizableArrayBufferUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "resizableArrayBufferUtils.js",
+          "sha256": "029aa552050861eb85fe9d848a52716dfd24747dcaf06f2a8937cb510ab31f50"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 648822.9832499996,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-predicate-call.js",
+      "sha256": "c0df6e682bf8ac2dd0741d418b57970b4769886950f9bca4879b24d60bfd2a56",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 649198.4598329999,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-predicate-call.js",
+      "sha256": "c0df6e682bf8ac2dd0741d418b57970b4769886950f9bca4879b24d60bfd2a56",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 649578.302375,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-property.js",
+      "sha256": "e9a9ee126517fee37018405e29d57651f8edc957c78ef0e17bea6505bf88221e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 650003.8432909995,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-property.js",
+      "sha256": "e9a9ee126517fee37018405e29d57651f8edc957c78ef0e17bea6505bf88221e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 650391.3785410002,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this-length-as-symbol.js",
+      "sha256": "4292bafe56d086c5dd170ff5a5f330e22b9cb1b0c0333081b8362a06fc328a72",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 650780.0857500006,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this-length-as-symbol.js",
+      "sha256": "4292bafe56d086c5dd170ff5a5f330e22b9cb1b0c0333081b8362a06fc328a72",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 651137.2559580002,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this-length.js",
+      "sha256": "51decdc0f8e1bdc631c44ec4eb0d3787e22e8f0e0cf69688f3ea02b1a52c3852",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 651489.0237499997,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this-length.js",
+      "sha256": "51decdc0f8e1bdc631c44ec4eb0d3787e22e8f0e0cf69688f3ea02b1a52c3852",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 651839.9875830002,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this.js",
+      "sha256": "0e327642965cdb8a8aba17ef330ddaa2b01099dd9d21954d48b16a6b8ff5dc20",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 652194.0367909987,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-abrupt-from-this.js",
+      "sha256": "0e327642965cdb8a8aba17ef330ddaa2b01099dd9d21954d48b16a6b8ff5dc20",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 652551.4287080001,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-index-predicate-result-is-true.js",
+      "sha256": "1c3083249adb690209883f4b538e6110d9ad5a72aa45011ed998eaa6154d91c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 652913.7274580002,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-index-predicate-result-is-true.js",
+      "sha256": "1c3083249adb690209883f4b538e6110d9ad5a72aa45011ed998eaa6154d91c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 653275.4780000001,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-negative-one-if-predicate-returns-false-value.js",
+      "sha256": "3454342aab96cf259d64a3029cca429b2082197958836ad466b95bf1f654d601",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 653639.3567079995,
+      "batch": 30
+    },
+    {
+      "path": "built-ins/Array/prototype/findLastIndex/return-negative-one-if-predicate-returns-false-value.js",
+      "sha256": "3454342aab96cf259d64a3029cca429b2082197958836ad466b95bf1f654d601",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "array-find-from-last"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 654010.3292919993,
+      "batch": 30
+    }
+  ]
+}
