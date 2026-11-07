@@ -1,0 +1,11 @@
+{
+  "kind": "deterministic-index-collision-regression",
+  "conformance": false,
+  "time": "2026-11-07T11:55:55.143Z",
+  "nodes": 16384,
+  "oldEqualityComparisons": 4194679,
+  "newEqualityComparisons": 16400,
+  "allLookupsIdentical": true,
+  "profile": "Packed64 Node profile places about37percent of sample time in key-index set/get/position; primary callers are merged closure checking/lowering with per-traversal syntax hashes.",
+  "scopeException": "Minimal compiler syntax hash fix needed for Intl generated-data regression; equality remains object identity and traversal order remains insertion order. Native compiler stages and batch footprint recheck pending."
+}

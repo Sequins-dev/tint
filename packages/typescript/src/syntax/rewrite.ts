@@ -14,7 +14,11 @@ import type {
 } from "./model.ts";
 /** Hashes may collide; copied syntax must never be identified by source span alone. */
 export function syntaxHash(node: Span): number {
-  return (node.nodeHash ?? node.start) >>> 0;
+  // Traversal ordinals repeat across modules; retain source-range entropy when
+  // nodes from independent rewrites share a checker or lowering index.
+  let hash = Math.imul((node.nodeHash ?? 0) ^ node.start, 0x9e3779b1);
+  hash = Math.imul(hash ^ node.end, 0x85ebca6b);
+  return (hash ^ (hash >>> 16)) >>> 0;
 }
 export interface SyntaxRewrite {
   /** Assign fresh per-traversal hashes without changing source locations or input nodes. */
