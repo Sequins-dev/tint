@@ -1,0 +1,2500 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/TypedArrayConstructors/internals/HasProperty",
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/breadth-v4/source-snapshot.json",
+  "frozenToolchainSha256": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/cluster-k/typedarrayconstructors-v1.jsonl",
+    "journalSha256": "dfdbe87ec0ffe26db8805dc55275eb1bd894671be14ed34ccbcb9c666bdeb066",
+    "journalBytes": 845743,
+    "observedVariants": 1152
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 16,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 98067.69849999994,
+        "outcome": "compiled"
+      },
+      {
+        "id": 17,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 137934.12595799984,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 62,
+    "passed": 62,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/abrupt-from-ordinary-has-parent-hasproperty.js",
+      "sha256": "a4bbf330460559610467a9898a982d3917b58e1358b8bcc581114815a7bff6cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "Proxy",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 119920.19466699986,
+      "batch": 16
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/abrupt-from-ordinary-has-parent-hasproperty.js",
+      "sha256": "a4bbf330460559610467a9898a982d3917b58e1358b8bcc581114815a7bff6cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "Proxy",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120315.14845800027,
+      "batch": 16
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-key-is-not-number.js",
+      "sha256": "e0a1ad5607659f474c457880045e6eb7986ffe440cfff88d88520d8fc285cf08",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 120701.70854100026,
+      "batch": 16
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-key-is-not-number.js",
+      "sha256": "e0a1ad5607659f474c457880045e6eb7986ffe440cfff88d88520d8fc285cf08",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 121082.16354199965,
+      "batch": 16
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-key-is-symbol.js",
+      "sha256": "3142d437d19c76130d91c3b8071efd80b87457f1648bfe4b527805b61e8a1dd8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 140708.29066700023,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-key-is-symbol.js",
+      "sha256": "3142d437d19c76130d91c3b8071efd80b87457f1648bfe4b527805b61e8a1dd8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141085.36349999998,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-realm.js",
+      "sha256": "c1c647ad58580b252501e6399857e2a701676d4f981440df859033c33d0a52a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "cross-realm",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141439.57675,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer-realm.js",
+      "sha256": "c1c647ad58580b252501e6399857e2a701676d4f981440df859033c33d0a52a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "cross-realm",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141829.15620800015,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer.js",
+      "sha256": "1da719f440ba9c98fb2f46285045f670727639a4c00c1fd6f652e15f0e55e4e8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142220.41470900038,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/detached-buffer.js",
+      "sha256": "1da719f440ba9c98fb2f46285045f670727639a4c00c1fd6f652e15f0e55e4e8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142603.9810829996,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/indexed-value.js",
+      "sha256": "0a4c11f0a66300ccaa491bf2ca9816871ffda388fab305ca7a09993c7f16a8f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142987.5771250003,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/indexed-value.js",
+      "sha256": "0a4c11f0a66300ccaa491bf2ca9816871ffda388fab305ca7a09993c7f16a8f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143377.21441699984,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/infinity-with-detached-buffer.js",
+      "sha256": "cb3e3c410cd3f74abdbba6764c1b9c62733d16110fadaad713c2049727bec81e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143763.75220800005,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/inherited-property.js",
+      "sha256": "1477589410566a00621d6dd4d1e6480318ac30d9688d363f20a5017f9e7a3361",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144223.24912499962,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/inherited-property.js",
+      "sha256": "1477589410566a00621d6dd4d1e6480318ac30d9688d363f20a5017f9e7a3361",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144627.78820900014,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-greater-than-last-index.js",
+      "sha256": "e0163b201d9f7c2bfa68ba50a352a0c36528845b2c6984960a42a2cc86ebb306",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145034.53274999978,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-greater-than-last-index.js",
+      "sha256": "e0163b201d9f7c2bfa68ba50a352a0c36528845b2c6984960a42a2cc86ebb306",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145423.97816699976,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-lower-than-zero.js",
+      "sha256": "1be0e2f8f6c2bc24fc2d670e3c22b51185bf80d79b7f492fc0b2a20a33834567",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145823.73316599987,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-lower-than-zero.js",
+      "sha256": "1be0e2f8f6c2bc24fc2d670e3c22b51185bf80d79b7f492fc0b2a20a33834567",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146221.11995900003,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-minus-zero.js",
+      "sha256": "4303d2c0e0c68f6612468fc80ce6de4d5c28b631ec7476a90c714f6d1f3b447f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146616.9235419999,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-minus-zero.js",
+      "sha256": "4303d2c0e0c68f6612468fc80ce6de4d5c28b631ec7476a90c714f6d1f3b447f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147012.25875000004,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-canonical-index.js",
+      "sha256": "c0ccdb63098f8892f758da35e85714cc79aa4f9e29018dceb74998bb66e71668",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147420.80045899982,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-canonical-index.js",
+      "sha256": "c0ccdb63098f8892f758da35e85714cc79aa4f9e29018dceb74998bb66e71668",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147828.13416599995,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-integer.js",
+      "sha256": "1e7506be39efc7d97668646acfee880c54c723943e81fdaa3b24107b2717e582",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148219.15404199995,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-integer.js",
+      "sha256": "1e7506be39efc7d97668646acfee880c54c723943e81fdaa3b24107b2717e582",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148642.75520800008,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-numeric-index.js",
+      "sha256": "ec7276eb0ce9d34cb4c32a5e2a6c8ffae2c2531a36a221aeb1a5649c2c104cab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149089.39000000013,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-not-numeric-index.js",
+      "sha256": "ec7276eb0ce9d34cb4c32a5e2a6c8ffae2c2531a36a221aeb1a5649c2c104cab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149551.2038329998,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-symbol.js",
+      "sha256": "05d8383bc3553d042aa30beb759289c3ccb60c99acc90b567343be2bb9d8a9de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150000.0210409998,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/BigInt/key-is-symbol.js",
+      "sha256": "05d8383bc3553d042aa30beb759289c3ccb60c99acc90b567343be2bb9d8a9de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150444.9076659996,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/abrupt-from-ordinary-has-parent-hasproperty.js",
+      "sha256": "fbf41e51785638926228982e33e0058c62ccca17bc8ae734b06b762052db9935",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "Proxy",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150904.11862500012,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/abrupt-from-ordinary-has-parent-hasproperty.js",
+      "sha256": "fbf41e51785638926228982e33e0058c62ccca17bc8ae734b06b762052db9935",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "Proxy",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151353.07191700023,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-key-is-not-number.js",
+      "sha256": "b9e11731801988a958bf06fbd399e6ada282c7c00336cd22d065906ff9cfb8e1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151775.36108399974,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-key-is-not-number.js",
+      "sha256": "b9e11731801988a958bf06fbd399e6ada282c7c00336cd22d065906ff9cfb8e1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152175.34087500023,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-key-is-symbol.js",
+      "sha256": "0bc4120c8819b02541aff06757d3ada086ba36692be59bf5e5016d4cab317aa7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152528.20699999994,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-key-is-symbol.js",
+      "sha256": "0bc4120c8819b02541aff06757d3ada086ba36692be59bf5e5016d4cab317aa7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152948.47287499998,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-realm.js",
+      "sha256": "6a027d214bcb1266429f32fc5b8b9145c1a13d6b066bd95887938218ff8fd281",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "cross-realm",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153435.79224999994,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer-realm.js",
+      "sha256": "6a027d214bcb1266429f32fc5b8b9145c1a13d6b066bd95887938218ff8fd281",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "cross-realm",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153876.53341699997,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer.js",
+      "sha256": "d0011f8faa8612805a6dda8ea2632c794d11222216aae4716a4db69724cb617c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154298.81141700037,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/detached-buffer.js",
+      "sha256": "d0011f8faa8612805a6dda8ea2632c794d11222216aae4716a4db69724cb617c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154757.24558300013,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/indexed-value.js",
+      "sha256": "cb1f7d3f1f4cbe34cfc7dd2a7ff5505d5ceb5783ce7d320561563a66e439d221",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155236.11354199983,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/indexed-value.js",
+      "sha256": "cb1f7d3f1f4cbe34cfc7dd2a7ff5505d5ceb5783ce7d320561563a66e439d221",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155691.45204200037,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/infinity-with-detached-buffer.js",
+      "sha256": "604baa219890b001671ea244bf30a1422074a4cb4b4464e87acbafc347851e19",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "noStrict"
+        ],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js",
+          "detachArrayBuffer.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        },
+        {
+          "name": "detachArrayBuffer.js",
+          "sha256": "d487a9c3c7d51b7e9d66c5fce89929ab3d09a6341d21a833e38f9caba6bf2e0e"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156148.29483299982,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/inherited-property.js",
+      "sha256": "39e40ce3078c05239a0667e286525d126b50ab266f675c77ea189595b2eb55e5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156694.687041,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/inherited-property.js",
+      "sha256": "39e40ce3078c05239a0667e286525d126b50ab266f675c77ea189595b2eb55e5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157177.14166700002,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-greater-than-last-index.js",
+      "sha256": "16e0384e319c20e56390ab092d79236fb13575193a13b483ab9d1685dc06a0b9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157612.05137500027,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-greater-than-last-index.js",
+      "sha256": "16e0384e319c20e56390ab092d79236fb13575193a13b483ab9d1685dc06a0b9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158072.38604100002,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-lower-than-zero.js",
+      "sha256": "4b93a5e605d1af65024557b2b1b6e39b3ca4526d6e3ace78ca865cb6300e23f8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158516.8727500001,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-lower-than-zero.js",
+      "sha256": "4b93a5e605d1af65024557b2b1b6e39b3ca4526d6e3ace78ca865cb6300e23f8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158915.27895799978,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-minus-zero.js",
+      "sha256": "b7723bd9c786fed91575337da6f40f8e4ff356993b91d7b4f7bd4352681b80dc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159341.03858299972,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-minus-zero.js",
+      "sha256": "b7723bd9c786fed91575337da6f40f8e4ff356993b91d7b4f7bd4352681b80dc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "align-detached-buffer-semantics-with-web-reality",
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159775.2669589999,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-canonical-index.js",
+      "sha256": "928cc56df5ba5cf22884110d6db033101c0e37310b0b0261cbd4fa02d9b5d3ab",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160213.92116699973,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-canonical-index.js",
+      "sha256": "928cc56df5ba5cf22884110d6db033101c0e37310b0b0261cbd4fa02d9b5d3ab",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160657.67137499992,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-integer.js",
+      "sha256": "d2d5e0bf82a3f96f0c632e8c2a7c29c0a2c269b0a40826c40a389ae83c8c645f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161158.71341699967,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-integer.js",
+      "sha256": "d2d5e0bf82a3f96f0c632e8c2a7c29c0a2c269b0a40826c40a389ae83c8c645f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161623.24887500005,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-numeric-index.js",
+      "sha256": "c0dd4c8592dd2895ce9623356f03b795c2a28382665688612a082137f3e9c352",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162068.96400000015,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-not-numeric-index.js",
+      "sha256": "c0dd4c8592dd2895ce9623356f03b795c2a28382665688612a082137f3e9c352",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162565.27795800008,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-symbol.js",
+      "sha256": "c05c67bb513319b5ec54c5b3b2b3ce0a35e4e1e82f94fd16d8a804f7df44a855",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163022.34829100035,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/key-is-symbol.js",
+      "sha256": "c05c67bb513319b5ec54c5b3b2b3ce0a35e4e1e82f94fd16d8a804f7df44a855",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "Symbol",
+          "TypedArray"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163467.7013749997,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/resizable-array-buffer-auto.js",
+      "sha256": "5203d365c5c46484d79b7cfdeaae6a677a61f631db94991e1e1b6e3b3d8fbabf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163910.0603339998,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/resizable-array-buffer-auto.js",
+      "sha256": "5203d365c5c46484d79b7cfdeaae6a677a61f631db94991e1e1b6e3b3d8fbabf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164342.76583399996,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/resizable-array-buffer-fixed.js",
+      "sha256": "eb8d62ca14f812c34c814239dfd1266d51da7eba6d9ebbd0d7fdcd575b3f11c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164785.1082080002,
+      "batch": 17
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/internals/HasProperty/resizable-array-buffer-fixed.js",
+      "sha256": "eb8d62ca14f812c34c814239dfd1266d51da7eba6d9ebbd0d7fdcd575b3f11c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect",
+          "TypedArray",
+          "resizable-arraybuffer"
+        ],
+        "includes": [
+          "testTypedArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165206.74858300015,
+      "batch": 17
+    }
+  ]
+}
