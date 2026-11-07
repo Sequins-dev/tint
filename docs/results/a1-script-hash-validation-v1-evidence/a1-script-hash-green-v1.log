@@ -1,0 +1,112 @@
+✔ generated Script references keep linking work linear when source spans repeat (23.676458ms)
+✔ Script value calls lower callee and arguments before callable dispatch (3.6365ms)
+✔ Script blocks lower lexical environments and hoisted functions (3.072042ms)
+✔ Script logical negation accepts general values and retains operand effects (1.289125ms)
+✔ Script if statements lower selected branches and nested conditions (0.900917ms)
+✔ Script branching expressions lower without eagerly evaluating either arm (1.470291ms)
+✔ Script lowering produces an explicit runtime entry and source-level global names (0.896542ms)
+✔ Script lowering preserves early errors and reports unsupported execution explicitly (0.564625ms)
+✔ binding resource limits are not reported as JavaScript early errors (1.500917ms)
+✔ Script comparisons and sequencing lower without imposing TypeScript overlap restrictions (1.393791ms)
+✔ Script typeof distinguishes identifier references from other expressions (1.069584ms)
+✔ Script property reads and grouped method calls preserve references (1.099ms)
+✔ Script strict property assignments lower without reading the target property (1.047916ms)
+✔ Script throw statements use native exceptions and preserve the thrown value at the entry (0.984ms)
+✔ Script catch and finally lower lexical catch bindings and completion preservation (1.4555ms)
+✔ Script source functions lower parameters, local declarations and captured scopes (2.572083ms)
+✔ Script object literals allocate ordinary objects and define properties in order (1.386667ms)
+✔ Script construction distinguishes ordinary functions from arrows and methods (1.626416ms)
+✔ Script ordinary instanceof lowers prototype checks after both operand effects (0.823333ms)
+✔ Script in lowers general operands through property membership (0.837541ms)
+✔ Script arithmetic lowers general operands through runtime conversion (1.560417ms)
+✔ Script switch lowers ordered case selection, fallthrough and shared lexical scope (0.889542ms)
+✔ Script updates and compound assignments capture references and preserve result semantics (1.253459ms)
+✔ Script relational operators lower captured general operands (0.502333ms)
+✔ Script loops lower iteration environments and native abrupt control flow (1.961958ms)
+✔ Script computed references share property reads writes and receiver calls (1.543ms)
+✔ base class declarations and expressions lower to native class runtime operations (1.825834ms)
+✔ strict Script lowering refuses explicitly sloppy input (0.323208ms)
+✔ mode-aware Script lowering accepts sloppy globals and duplicate parameters (0.970292ms)
+✔ array literals lower through array-object construction (0.263209ms)
+✔ array elisions preserve absent elements and trailing length (0.27325ms)
+✖ object methods and accessors capture the literal home while function properties do not (1.866ms)
+✔ class heritage lowers through validated constructor and prototype parents (1.167542ms)
+✔ new.target lowers through ordinary, derived and lexical function contexts (1.623834ms)
+✔ static blocks lower alongside static fields with independent lexical scopes (1.44725ms)
+✔ private fields and brand checks lower with per-class identities (1.372208ms)
+✔ private methods and paired accessors lower as class initialization elements (0.878917ms)
+✔ optional chains lower short-circuiting references, calls and deletion (1.836584ms)
+✔ Script rest parameters lower fresh arrays and non-simple argument environments (0.967375ms)
+✔ Script template substitutions lower ordered string-hint coercion (0.477167ms)
+✔ tagged templates lower persistent source sites and receiver-preserving calls (0.522209ms)
+✔ object binding declarations lower ordered property reads, defaults and rest (1.074834ms)
+✔ catch object patterns lower bindings before ordered initialization (0.322708ms)
+✔ for-in object bindings lower per-iteration initialization (1.174417ms)
+✔ object parameters lower leaves and parameter expression environments (2.2585ms)
+✔ object assignments lower captured targets, defaults and rest (1.040708ms)
+✔ Script for-of lowers iterator acquisition, per-iteration bindings and abrupt cleanup (2.638542ms)
+✔ array spread lowers through iterator acquisition (0.308125ms)
+✔ array declaration bindings share recursive iterator lowering (0.753584ms)
+✔ array assignments lower nested patterns, defaults and rest through iterators (0.768833ms)
+✔ call and constructor spread lower through shared argument collection (0.844291ms)
+✔ generator calls separate eager initialization from lazy non-suspending bodies (4.55525ms)
+✔ sequential yields lower into native continuations (2.669125ms)
+✔ branch and block suspensions preserve their continuation (1.624125ms)
+✔ loop suspensions use transfer targets for iteration and exits (1.86025ms)
+✔ catch scopes retain their handler across generator suspension (2.204ms)
+✔ finally scopes route pending completions through suspension (2.178166ms)
+✔ switch suspension preserves clause selection and fallthrough (0.943125ms)
+✔ labelled suspension routes named exits and loop backedges (1.450792ms)
+✔ Script entries enter their realm and retain a distinct source identity (0.127125ms)
+✔ async declarations and expressions lower through the Promise call boundary (3.975375ms)
+✔ async generators lower through distinct await and yield native segments (1.893083ms)
+✔ for-await lowers next and cleanup through native suspension (1.008834ms)
+✔ async yield delegation acquires an async iterator and uses native continuation steps (0.69575ms)
+✔ regexp literal lowering creates a fresh object without a global constructor lookup (0.728583ms)
+✔ sloppy for-in initializers lower before enumeration (0.3155ms)
+✔ sloppy call assignment targets lower runtime reference failures (0.741458ms)
+✔ var object destructuring resolves its destination before reading the property and default (0.384084ms)
+✔ var array destructuring resolves destinations before advancing or collecting the iterator (0.515291ms)
+✔ function source retention preserves comments, Unicode and method prefixes (0.976875ms)
+✔ resource scopes lower loop headers and suspended cleanup (2.384375ms)
+✔ labelled sloppy block functions are instantiated before block statements (0.633ms)
+✔ suspending callbacks enter their driver through a transfer record (0.863542ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 72
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 219.697125
+
+✖ failing tests:
+
+test at packages/js-engine/test/lowering.test.ts:436:1
+✖ object methods and accessors capture the literal home while function properties do not (1.866ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      end: 44,
+      kind: 'identifier',
+      name: '$value1',
+  +   nodeHash: 155,
+  -   nodeHash: 257,
+      start: 1
+    }
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/packages/js-engine/test/lowering.test.ts:456:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { start: 1, end: 44, kind: 'identifier', name: '$value1', nodeHash: 155 },
+    expected: { start: 1, end: 44, kind: 'identifier', name: '$value1', nodeHash: 257 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
