@@ -1,0 +1,9 @@
+{
+  "kind": "native-compiler-bootstrap-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-native-service-h-v100.json",
+  "nativeEntry": false,
+  "diagnostic": "index.ts:17555:17567 invalid property read: method call invalidates prior optional-element narrowing",
+  "fix": "Perform imported-set lookup before narrowing the optional signature candidate; full pipeline profile check v101 is green.",
+  "gate": "v3 queue cancelled before acquisition after finding the profile failure; no workspace gate ran."
+}
