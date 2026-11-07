@@ -1,0 +1,25 @@
+{
+  "kind": "docs-only-workspace-gate",
+  "generatedAt": "2026-11-07T12:53:32.169559+00:00",
+  "command": "PATH=/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH ~/.t3/tint-slots/tint-check",
+  "testedHead": "282a70e69a37ae08ba6589211d95b0a57716b8bb",
+  "baseAtRecording": "2a63316766a5cca43461144b248f9ea477352a13",
+  "exitStatus": 0,
+  "passedTests": 4727,
+  "tests": 4727,
+  "gates": [
+    "typecheck",
+    "tests (concurrency 4)",
+    "workspace boundaries",
+    "format:check"
+  ],
+  "log": "docs/results/cluster-a2-function-workspace-check-v1.log.gz",
+  "uncompressedLogSha256": "d2323e643cb7296e3af235738ced52eee5fc7af621dbc344f0d90a0384809bd7",
+  "reasonForOwnGate": "Latest registered main gate preceded newly merged J regex parser code, and no workspace gate was active. One slotted full gate was run on a fixed branch base.",
+  "codeChangesBetweenTestedHeadAndBase": [],
+  "portableCodeChangedByA2": false,
+  "selfBuildRequiredForA2Slice": false,
+  "nativeFunctionReport": "docs/results/test262-function-a2-native-v1.json",
+  "nativeFunctionValidation": "docs/results/cluster-a2-function-validation-v1.json",
+  "scope": "Gate validates the branch code base; native reports retain their own immutable frozen toolchain identities."
+}
