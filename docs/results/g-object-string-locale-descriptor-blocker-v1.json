@@ -1,0 +1,248 @@
+{
+  "kind": "native-failure-root-cause-triage",
+  "conformance": false,
+  "at": "2026-11-07T15:37:24.934987+00:00",
+  "selection": "built-ins/Object/getOwnPropertyDescriptor",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+  "failures": [
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+      "sha256": "8828845dc79a24a724fdac0e1e2b38e32c52944e36b595799358fbf4d03f2826",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 240060.71533299983,
+      "batch": 80
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+      "sha256": "8828845dc79a24a724fdac0e1e2b38e32c52944e36b595799358fbf4d03f2826",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 240681.7391670011,
+      "batch": 80
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+      "sha256": "289fac53a645338a80e4e8a8394275d5f7ef9132603a9afe3986d7e335d2a1e0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 242608.22358400002,
+      "batch": 80
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+      "sha256": "289fac53a645338a80e4e8a8394275d5f7ef9132603a9afe3986d7e335d2a1e0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 243332.81020899862,
+      "batch": 80
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js",
+      "sha256": "6997be726e39a0da724b35df7ac2a01f0daa604a26b0d45e220dd41496ce95c1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 243950.14424999803,
+      "batch": 80
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js",
+      "sha256": "6997be726e39a0da724b35df7ac2a01f0daa604a26b0d45e220dd41496ce95c1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 244702.8678749986,
+      "batch": 80
+    }
+  ],
+  "rootCause": "Missing own String.prototype bindings for toLocaleLowerCase, toLocaleUpperCase and localeCompare. Object.getOwnPropertyDescriptor correctly returns undefined for these absent properties; the unchanged tests then read desc.value and throw TypeError. Other String method descriptor checks pass.",
+  "portableRegistrationProbe": {
+    "kind": "portable-intrinsic-registration-triage",
+    "conformance": false,
+    "nodeVersion": "v24.12.0",
+    "scope": "Tint frozen intrinsic installation executed on Node; not native conformance evidence. Native unchanged Test262 failures are preserved in original Object journal.",
+    "sourceSnapshotSha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "observations": [
+      {
+        "name": "toLowerCase",
+        "present": true,
+        "writable": true,
+        "enumerable": false,
+        "configurable": true
+      },
+      {
+        "name": "toUpperCase",
+        "present": true,
+        "writable": true,
+        "enumerable": false,
+        "configurable": true
+      },
+      {
+        "name": "toLocaleLowerCase",
+        "present": false
+      },
+      {
+        "name": "toLocaleUpperCase",
+        "present": false
+      },
+      {
+        "name": "localeCompare",
+        "present": false
+      }
+    ]
+  },
+  "ownership": "String APIs, intl402/Collator and localeCompare collation belong to J under the current shared ownership map. G must not replace missing APIs with metadata-only stubs or change correct descriptor lookup behavior.",
+  "blocker": "Implement complete String locale casing and localeCompare APIs with required internationalization services in J, then recheck these six pinned Object variants on a fresh current-main toolchain. Original observations remain unchanged.",
+  "currentMainSourceInspection": {
+    "head": "55e30efdd57101a5c4430779006444037a52300d",
+    "methodNamesAbsentFromPackagesSource": true
+  },
+  "relatedJReadyEvidence": "ready-J.txt 2026-11-07T15:26:04Z: localeCompare2/26,24failures attributed to missing Collator; J/I dependency remains separate from this old frozen Object source. Current ownership transfers Collator from I to J.",
+  "recheckSubsetValidation": {
+    "rootSelection": "built-ins/Object",
+    "requestedVariants": 6,
+    "variantSubsetSha256": "ad7c83f30b3dc5fba3315142c14286ebb225d291b56b9623fafccd3483b7cf78"
+  }
+}
