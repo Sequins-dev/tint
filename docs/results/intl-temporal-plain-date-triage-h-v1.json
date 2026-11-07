@@ -1,0 +1,77 @@
+{
+  "kind": "native-selection-triage",
+  "conformance": false,
+  "completeFileIndex": "docs/results/intl-temporal-plain-date-complete-observed-files-h-v1.json",
+  "parentSelection": "intl402/Temporal/PlainDate",
+  "familyComplete": false,
+  "debuggerLaunch": "debugserver-direct",
+  "sourceSnapshot": {
+    "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+  "counts": {
+    "total": 64,
+    "passed": 4,
+    "failed": 4,
+    "unsupported": 56,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "groups": [
+    {
+      "outcome": "fail",
+      "variants": 4,
+      "paths": [
+        "intl402/Temporal/PlainDate/canonicalize-calendar.js",
+        "intl402/Temporal/PlainDate/from/canonicalize-calendar.js"
+      ],
+      "rootCause": "canonicalTemporalCalendar rejects islamicc and ethiopic-amete-alem aliases with RangeError. The PlainDate constructor also requires ISO calendar algorithms before creating the object; canonicalization alone will not complete non-ISO conversion.",
+      "source": "packages/js-runtime/src/objects/temporal-coercion.ts",
+      "nextStep": "Canonicalize calendar aliases; implement calendar-bearing storage/conversion/accessors before claiming these unchanged selections pass."
+    },
+    {
+      "outcome": "unsupported",
+      "variants": 56,
+      "paths": [
+        "intl402/Temporal/PlainDate/compare/exhaustive.js",
+        "intl402/Temporal/PlainDate/compare/infinity-throws-rangeerror.js",
+        "intl402/Temporal/PlainDate/from/basic-hebrew.js",
+        "intl402/Temporal/PlainDate/from/calc-epoch-year-hebrew.js",
+        "intl402/Temporal/PlainDate/from/calendar-invalid-era-with-era-year.js",
+        "intl402/Temporal/PlainDate/from/calendar-invalid-era.js",
+        "intl402/Temporal/PlainDate/from/calendar-not-supporting-eras.js",
+        "intl402/Temporal/PlainDate/from/calendarresolvefields-error-ordering-chinese.js",
+        "intl402/Temporal/PlainDate/from/calendarresolvefields-error-ordering-gregory.js",
+        "intl402/Temporal/PlainDate/from/calendarresolvefields-error-ordering-japanese.js",
+        "intl402/Temporal/PlainDate/from/canonicalize-era-codes-non-gregorian.js",
+        "intl402/Temporal/PlainDate/from/canonicalize-era-codes.js",
+        "intl402/Temporal/PlainDate/from/constrain-day-hebrew.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-ethiopic.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-gregory.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-islamic-civil.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-islamic-tbla.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-islamic-umalqura.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-japanese.js",
+        "intl402/Temporal/PlainDate/from/era-boundary-roc.js",
+        "intl402/Temporal/PlainDate/from/era-japanese.js",
+        "intl402/Temporal/PlainDate/from/extreme-dates.js",
+        "intl402/Temporal/PlainDate/from/hebrew-keviah.js",
+        "intl402/Temporal/PlainDate/from/infinity-throws-rangeerror.js",
+        "intl402/Temporal/PlainDate/from/invalid-month-codes-hebrew.js",
+        "intl402/Temporal/PlainDate/from/islamic-rgsa.js",
+        "intl402/Temporal/PlainDate/from/islamic.js",
+        "intl402/Temporal/PlainDate/from/japanese-pre-meiji.js"
+      ],
+      "rootCause": "Only ISO calendar conversion and date arithmetic are implemented. requireISOCalendar rejects non-ISO date conversion; the old frozen snapshot also rejects Gregorian/Japanese property bags before era field preparation.",
+      "source": [
+        "packages/js-runtime/src/objects/temporal-coercion.ts",
+        "packages/js-runtime/src/objects/temporal-date-fields.ts",
+        "packages/js-runtime/src/objects/temporal-plain-date-conversion.ts"
+      ],
+      "nextStep": "Era coercion ordering has red/green native proof on frozen v10. Rerun these full files after the active family; non-ISO calendar conversion/arithmetic remains a concrete missing algorithm."
+    }
+  ],
+  "note": "Every listed file was extracted with all pinned strictness variants and source/harness identities verified. No retries or toolchain mixing. The parent family continues on its original frozen inputs."
+}
