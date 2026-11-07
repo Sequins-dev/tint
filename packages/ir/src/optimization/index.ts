@@ -121,37 +121,31 @@ export interface OptimizationOptions {
  * unfinished output is discarded. Prioritize independent scalar cleanup and
  * retain each completed function/pass checkpoint, without increasing the bound.
  * The per-function allowance leaves work for later functions after a large one. */
-function cleanupFunctions(
+interface LocalCleanup {
+  readonly module: ModuleIR;
+  readonly visited: number;
+  readonly rewritten: number;
+  readonly skipped: number;
+  readonly pending: Uint8Array;
+}
+function cleanupFunctionsPass(
   module: ModuleIR,
   budget: number,
-  directCalls: boolean,
-): Optimization {
-  // Keep the same total bound. A bounded prefix of small, nonallocating callers
-  // can retain completed inlining without funding the whole optimization graph.
-  const inlineBudget = directCalls ? Math.floor(budget / 4) : 0,
-    inlining =
-      inlineBudget === 0
-        ? undefined
-        : inlineSmallFunctions(module, inlineBudget, false, true),
-    inlineVisited = inlining?.visited ?? inlineBudget,
-    input = inlining?.module ?? module,
-    passes: PassStatistics[] = [];
-  if (inlineBudget > 0)
-    passes.push({
-      phase: "scalar",
-      pass: "inline-small-functions",
-      visited: inlineVisited,
-      rewritten: inlining?.inlined ?? 0,
-    });
+  effects: Uint32Array | undefined,
+  selected?: Uint8Array,
+): LocalCleanup {
   const functions: FunctionIR[] = [],
-    effects = summarizeEffects(input, budget - inlineVisited);
-  let visited = inlineVisited,
+    pending = new Uint8Array(module.functions.length);
+  let visited = 0,
     rewritten = 0,
     skipped = 0,
     changed = false;
-  for (const fn of input.functions) {
+  for (const fn of module.functions) {
     if (fn === undefined) throw "optimizer cleanup function invariant";
-    if (fn.import === true) {
+    if (
+      fn.import === true ||
+      (selected !== undefined && selected[fn.id] !== 1)
+    ) {
       functions.push(fn);
       continue;
     }
@@ -184,9 +178,9 @@ function cleanupFunctions(
         }
       }
       if (next === undefined) {
-        // An unfinished attempt publishes no changes and consumes its allowance.
         spent = allowance;
         skipped++;
+        pending[fn.id] = 1;
         break;
       }
       current = next;
@@ -197,17 +191,70 @@ function cleanupFunctions(
     if (current !== fn) changed = true;
     functions.push(current);
   }
+  return {
+    module: changed ? { ...module, functions } : module,
+    visited,
+    rewritten,
+    skipped,
+    pending,
+  };
+}
+function cleanupFunctions(
+  module: ModuleIR,
+  budget: number,
+  directCalls: boolean,
+): Optimization {
+  // Reserve inlining work without increasing the total bound. Removing local
+  // copies first exposes small helpers hidden by their unoptimized IR size.
+  const reserve = directCalls ? Math.floor(budget / 4) : 0,
+    effects = summarizeEffects(module, budget),
+    first = cleanupFunctionsPass(module, budget - reserve, effects);
+  const passes: PassStatistics[] = [
+    {
+      phase: "scalar",
+      pass: "function-local-cleanup",
+      visited: first.visited,
+      rewritten: first.rewritten,
+      skipped: first.skipped,
+    },
+  ];
+  if (!directCalls)
+    return { module: first.module, passes, budgetExhausted: first.skipped > 0 };
+  const inlining =
+      reserve === 0
+        ? undefined
+        : inlineSmallFunctions(first.module, reserve, false, true),
+    inlineVisited = inlining?.visited ?? reserve,
+    inlined = inlining?.module ?? first.module;
+  passes.push({
+    phase: "scalar",
+    pass: "inline-small-functions",
+    visited: inlineVisited,
+    rewritten: inlining?.inlined ?? 0,
+  });
+  const selected = first.pending.slice();
+  for (let id = 0; id < inlined.functions.length; id++)
+    if (inlined.functions[id] !== first.module.functions[id]) selected[id] = 1;
+  // These transforms only remove effects or inline the existing nonallocating
+  // leaf bodies. The original effect summary remains a conservative upper bound.
+  // Return unused reserve to incomplete functions and new inline expansions.
+  const last = cleanupFunctionsPass(
+    inlined,
+    budget - first.visited - inlineVisited,
+    effects,
+    selected,
+  );
   passes.push({
     phase: "scalar",
     pass: "function-local-cleanup",
-    visited: visited - inlineVisited,
-    rewritten,
-    skipped,
+    visited: last.visited,
+    rewritten: last.rewritten,
+    skipped: last.skipped,
   });
   return {
-    module: changed ? { ...input, functions } : input,
+    module: last.module,
     passes,
-    budgetExhausted: skipped > 0 || inlining?.budgetExhausted === true,
+    budgetExhausted: last.skipped > 0 || inlining?.budgetExhausted === true,
   };
 }
 /** Consume verified scalar IR; the publisher must verify transformed IR before

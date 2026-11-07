@@ -37,6 +37,13 @@ export function run():number {
  if(totalWork>60000||inlines!==1)return 10;
  const inlinedCaller=inlined.module.functions[0];if(inlinedCaller===undefined)return 11;
  for(const block of inlinedCaller.blocks){if(block===undefined)return 12;for(const op of block.instructions){if(op===undefined||op.kind==="call")return 13;}}
+ const referenceInstructions:Instruction[]=[{kind:"load",id:0,slot:0,start:0,end:0}];
+ for(let id=0;id<35;id++){referenceInstructions.push({kind:"store",slot:1,value:id,start:0,end:0});referenceInstructions.push({kind:"load",id:id+1,slot:1,start:0,end:0});}
+ const referenceCaller:FunctionIR={id:0,name:"referenceCaller",exported:true,parameters:[0],slots:["reference"],returnType:"reference",entry:0,blocks:[{id:0,instructions:[{kind:"load",id:0,slot:0,start:0,end:0},{kind:"call",id:1,target:1,arguments:[0],start:0,end:0}],terminator:{kind:"return",value:1,start:0,end:0}}]};
+ const referenceHelper:FunctionIR={id:1,name:"referenceCopies",exported:false,parameters:[0],slots:["reference","reference"],returnType:"reference",entry:0,blocks:[{id:0,instructions:referenceInstructions,terminator:{kind:"return",value:35,start:0,end:0}}]};
+ const ordered=optimizeModule({functions:[referenceCaller,referenceHelper,{...large,id:2}]},60000);
+ if(!verify(ordered.module).ok)return 14;let orderedWork=0;for(const pass of ordered.passes){if(pass===undefined)return 15;orderedWork+=pass.visited;}if(orderedWork>60000)return 16;
+ const orderedCaller=ordered.module.functions[0];if(orderedCaller===undefined)return 17;for(const block of orderedCaller.blocks){if(block===undefined)return 18;for(const op of block.instructions){if(op===undefined||op.kind==="call")return 19;}}
  return 42;
 }`,
   "optimization-budget",

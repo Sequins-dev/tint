@@ -252,3 +252,83 @@ test("large graphs retain bounded call inlining before local cleanup", () => {
   );
   assert.deepEqual(input, snapshot);
 });
+
+test("copy cleanup exposes bounded reference helpers before large-graph inlining", () => {
+  const instructions: import("@tint/ir/scalar").Instruction[] = [
+    { kind: "load", id: 0, slot: 0, ...span },
+  ];
+  for (let i = 0; i < 35; i++)
+    instructions.push(
+      { kind: "store", slot: 1, value: i, ...span },
+      { kind: "load", id: i + 1, slot: 1, ...span },
+    );
+  const input: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "copies",
+        exported: false,
+        parameters: [0],
+        slots: ["reference", "reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions,
+            terminator: { kind: "return", value: 35, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "large",
+        exported: true,
+        parameters: [],
+        slots: [],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: Array.from({ length: 500 }, (_, id) => ({
+              kind: "constant" as const,
+              id,
+              value: id,
+              ...span,
+            })),
+            terminator: { kind: "return", value: 499, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const result = optimizeModule(input, 2000);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.ok(result.passes.reduce((n, p) => n + p.visited, 0) <= 2000);
+  assert.ok(
+    result.module.functions[0]!.blocks.every((b) =>
+      b.instructions.every((op) => op.kind !== "call"),
+    ),
+  );
+});
