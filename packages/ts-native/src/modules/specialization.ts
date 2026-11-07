@@ -175,7 +175,14 @@ export function specializeModule(
     const existing = keys.get(identity);
     if (existing !== undefined) return existing;
     if (instances.length >= maxSpecializations)
-      return fail(node, "generic specialization limit exceeded");
+      return fail(
+        node,
+        "generic specialization limit exceeded (" +
+          String(maxSpecializations) +
+          " instantiations; " +
+          template.name +
+          ")",
+      );
     let name = "__tint_specialized_" + String(instances.length);
     while (names.has(name)) name += "_";
     names.set(name, 1);

@@ -1,0 +1,11 @@
+{
+  "kind": "native-service-specialization-budget-triage",
+  "conformance": false,
+  "sourceToolchain": "frozen-node-toolchain-temporal-h-v105.json",
+  "nativeExecution": false,
+  "correction": "Earlier103/105 triage incorrectly assumed the host budget was4096. projectBuildRequest already sets16384, so the attempted8192 Math.max override was a no-op and has been removed. Original outcomes/logs are retained.",
+  "diagnostic": "16384 instantiations; sparse-list.balance;806 list,14 set,103 map demands and7720 roots",
+  "evidence": "date-time-service-budget-diagnosis-h-v4.json",
+  "next": "Compare exact-main control, then address host collection specialization requirements without weakening managed contracts.",
+  "intlReports": "frozen69/80 formatter reports remain attached to the feature code and must not credit main until feature acceptance; coordinator merged only PlainYearMonth at83484d10."
+}

@@ -56,6 +56,7 @@ test("specialization rejects escapes, missing arguments, arity errors and expand
   );
   assert.ok(!r.ok);
   assert.match(r.error.message, /limit/);
+  assert.match(r.error.message, /5.*grow/);
   const invalid = prepare(
     'function id<T>(x:T):T{return x;}function run():number{return id<number>("x");}',
   );

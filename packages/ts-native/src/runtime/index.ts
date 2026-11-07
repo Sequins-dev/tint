@@ -255,7 +255,21 @@ function prepareCollectionPass(
       globals,
       maxSpecializations,
     );
-    if (!specialized.ok) return { ok: false, error: specialized.error.message };
+    if (!specialized.ok)
+      return {
+        ok: false,
+        error:
+          specialized.error.message +
+          " (runtime demand: " +
+          String(demand.lists.length) +
+          " lists, " +
+          String(demand.sets.length) +
+          " sets, " +
+          String(demand.maps.length) +
+          " maps, " +
+          String(requests.length) +
+          " roots)",
+      };
     const specializedValue = specialized.value;
     const control =
       transform === undefined

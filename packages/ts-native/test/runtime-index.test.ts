@@ -513,7 +513,10 @@ test("transitive runtime discovery retains the specialization budget", () => {
     1,
   );
   assert.equal(prepared.ok, false);
-  if (!prepared.ok) assert.match(prepared.error, /specialization.*limit/i);
+  if (!prepared.ok) {
+    assert.match(prepared.error, /specialization.*limit/i);
+    assert.match(prepared.error, /runtime demand:.*lists.*maps.*roots/);
+  }
 });
 
 test("prepares boolean Map values and Set members with their native encodings", () => {
