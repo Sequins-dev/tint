@@ -1,0 +1,40 @@
+{
+  "kind": "native-selection-publication-validation",
+  "conformance": false,
+  "implementationCommit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+  "implementationOnMain": true,
+  "validatedAt": "2026-11-07T19:31:20.195Z",
+  "report": "docs/results/test262-import-meta-a3-native-v1.json",
+  "reportSha256": "1f8354950e9283935e1e2857f0118d002e43b4cc5f5359c75cd82e52a393d4de",
+  "journalSha256": "79502ca45e8026c0541406debf8aaf7cd98f42512671576a96b49ab59def5401",
+  "terminalComplete": true,
+  "frozenFilesVerified": true,
+  "fixturesChecked": 1,
+  "absentChecked": 0,
+  "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "totals": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "ledgerAccepted": 1,
+  "ledgerRejected": [],
+  "measuredVariants": 27,
+  "fixtureVerification": {
+    "command": "node tools/test262-native-extract.ts <pinned checkout> <completed journal> language/expressions/import.meta <new report>",
+    "exitStatus": 0,
+    "expectedVariants": 27
+  },
+  "workspaceGate": {
+    "commit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+    "passed": 4829,
+    "total": 4829,
+    "exitStatus": 0,
+    "reuse": "docs-only; all code in publication base is covered"
+  }
+}
