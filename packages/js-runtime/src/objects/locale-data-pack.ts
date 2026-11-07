@@ -1,7 +1,4 @@
-import {
-  createUTF8Decoder,
-  decodeUTF8,
-} from "./date-time-service-helpers.ts";
+import { createUTF8Decoder, decodeUTF8 } from "./date-time-service-helpers.ts";
 
 const maximumDataBytes = 33554432;
 interface PackedReader {
