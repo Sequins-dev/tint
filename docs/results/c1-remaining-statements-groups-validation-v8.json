@@ -1,0 +1,44 @@
+{
+  "kind": "c1-statement-breadth-checkpoint-validation",
+  "conformance": true,
+  "checkpoint": "docs/results/c1-remaining-statements-breadth-completed-groups-v8.json",
+  "newCompleteDirectories": [
+    {
+      "selection": "language/statements/class/subclass",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-subclass-v1.json",
+      "totals": {
+        "total": 217,
+        "passed": 217,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "completeFileCheckpoint": "docs/results/c1-statements-completed-files-v11.json",
+  "completeFiles": 558,
+  "completeFileVariants": 1064,
+  "completeFilePasses": 1043,
+  "completeFileUnsupported": 21,
+  "fileSelectionAndObservationIdentitiesVerified": true,
+  "parentObservedVariants": 1065,
+  "incompleteFileVariantsNotClaimed": 1,
+  "sourceJournalSnapshots": [
+    "docs/results/c1-remaining-statements-breadth-completed-groups-prefix-v8.jsonl",
+    "docs/results/c1-statements-completed-files-prefix-v11.jsonl"
+  ],
+  "parentVariants": 1074,
+  "parentComplete": false,
+  "extractor": "tools/test262-native-extract.ts",
+  "extractorExitStatus": 0,
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v19.json",
+  "referenceMainGate": "43274f23bb61b7ad4e6077a4973642b8ae618c61",
+  "gateTestsPassed": 4725,
+  "gateExitStatus": 0,
+  "executableChangesSinceGate": [],
+  "blocker": "docs/results/c1-class-decorator-blocker-v2.json",
+  "scope": "Complete files and directory only; all21 unsupported statement decorators retained. Cumulative file checkpoints, directories and parent overlap. Never sum."
+}
