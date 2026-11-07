@@ -1,0 +1,79 @@
+{
+  "kind": "complete-native-child-family-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T16:23:59.482410+00:00",
+  "scope": "Only the listed complete disjoint child families, extracted from byte-exact prefixes of one frozen journal. Parent explicit subset remains active; no whole-language claim.",
+  "rootSelection": "language",
+  "requestedParentVariants": 654,
+  "parentSubsetComplete": false,
+  "parentJournalPrefix": "docs/results/cluster-f-small-language-complete-families-prefix-v2.jsonl",
+  "prefixSha256": "505babe6a8ba0e56b26bc770c8e747472aca7209bf5202c7e6d846eb42662100",
+  "continuesOriginalPrefixByteExactly": true,
+  "sourceSnapshot": {
+    "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+    "files": 595
+  },
+  "frozenToolchainSha256": "0991bdfa99c553aa307f2f657bed6177946447b0984fcee6a7e6c569eacafa5b",
+  "selections": [
+    {
+      "selection": "language/expressions/async-arrow-function",
+      "report": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-arrow-function.json",
+      "totals": {
+        "total": 110,
+        "passed": 108,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9818181818181818
+      },
+      "sourceHarnessFixtureAndVariantValidationExitStatus": 0,
+      "keyedObservationValidationExitStatus": 0
+    },
+    {
+      "selection": "language/expressions/async-function",
+      "report": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-function.json",
+      "totals": {
+        "total": 161,
+        "passed": 161,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceHarnessFixtureAndVariantValidationExitStatus": 0,
+      "keyedObservationValidationExitStatus": 0
+    },
+    {
+      "selection": "language/expressions/await",
+      "report": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-await.json",
+      "totals": {
+        "total": 44,
+        "passed": 44,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceHarnessFixtureAndVariantValidationExitStatus": 0,
+      "keyedObservationValidationExitStatus": 0
+    }
+  ],
+  "totals": {
+    "total": 315,
+    "passed": 313,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "launcherExitStatus": null,
+  "completePinnedSourceHarnessFixtureAndVariantValidationExitStatus": 0,
+  "nonpassTriage": "docs/results/cluster-f-intrinsic-enumeration-native-timeouts-v1.json"
+}
