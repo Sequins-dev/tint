@@ -1,0 +1,23 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v17.json",
+  "sourceSnapshot": {
+    "sha256": "94717c7438235b6e59bbfd8597a4b4475bf9eb1cebc04e752dd0f025cc59adf9",
+    "files": 580
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "Every pinned syntax variant in files explicitly named for Indian calendar. A complete named-file subset, not whole-calendar coverage.",
+  "selections": [
+    {
+      "calendar": "indian",
+      "path": "docs/results/temporal-indian-variant-input-h-v1.json",
+      "files": 74,
+      "variants": 148
+    }
+  ],
+  "afterRestore": "Resume held ISO journal first. Use standard runner with TINT_TEST262_VARIANTS; one H runner maximum."
+}
