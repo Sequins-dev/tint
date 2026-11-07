@@ -224,7 +224,9 @@ function monthText(
       width < 3 ? "numeric" : context + "." + textWidth(width),
     );
     if (pattern === undefined) return undefined;
-    return pattern.replaceAll("{0}", value);
+    const marker = pattern.indexOf("{0}");
+    if (marker < 0 || pattern.indexOf("{0}", marker + 3) >= 0) return undefined;
+    return pattern.slice(0, marker) + value + pattern.slice(marker + 3);
   }
   return value;
 }
