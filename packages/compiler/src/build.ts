@@ -6,6 +6,7 @@ import {
   linkNativeServiceModules,
   type NativeServiceUnit,
   type NativeServiceBinding,
+  type NativeServiceLink,
   type NativeHostBinding,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -288,7 +289,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   if ((request.nativeServices?.length ?? 0) !== 0) {
     const services = request.nativeServices ?? [],
       hostBindings: NativeServiceBinding[] = [];
-    const links = [];
+    const links: NativeServiceLink[] = [];
     for (let index = 0; index < services.length; index++) {
       const service = services[index];
       if (service === undefined) throw "native service invariant";
