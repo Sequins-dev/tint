@@ -694,6 +694,7 @@ function sharedFacade(
     now: () => number,
   ): SharedBlockWaiting {
     return {
+      registryId: active.registry.base,
       register: (handle, offset, width, lo, hi, zeroTimeout) => {
         const grant = waiterLocation(handle, offset, width);
         return grant.ok
@@ -701,6 +702,7 @@ function sharedFacade(
           : grant;
       },
       poll: (ticket) => active.poll(ticket),
+      order: (ticket) => active.order(ticket),
       expire: (ticket) => active.expire(ticket),
       take: (ticket) => active.take(ticket),
       park: (ticket, timeout) => active.park(ticket, timeout),
@@ -711,6 +713,12 @@ function sharedFacade(
     active: NativeWaitRegistry,
   ): SharedBlockNotifications {
     return {
+      notifyOrdered: (handle, offset, width, count) => {
+        const grant = waiterLocation(handle, offset, width);
+        return grant.ok
+          ? active.notifyOrdered(grant.value.blockId, offset, width, count)
+          : grant;
+      },
       notify: (handle, offset, width, count) => {
         const grant = waiterLocation(handle, offset, width);
         return grant.ok

@@ -1110,3 +1110,111 @@ test("a rejected host clock releases its registration before another wait", asyn
   bad = false;
   assert.equal(f.invoke("wait", [view, 0, 0, 1]), "ok");
 });
+
+async function asynchronousWaitFixture() {
+  const { NodeSharedMemoryHost } = await import("./node-shared-memory-host.ts");
+  const { createNativeSharedBlockService } =
+    await import("@tint/native-runtime/shared-blocks");
+  const host = new NodeSharedMemoryHost();
+  let now = 0;
+  const created = createNativeSharedBlockService(
+    host,
+    { pageSize: 16384, maxBlocks: 8, maxReservedBytes: 262144 },
+    host,
+    {
+      parking: { park: () => 0, wake: () => 0 },
+      now: () => now,
+      maxWaiters: 8,
+    },
+  );
+  assert.ok(created.ok);
+  const f = await memoryFixture(true, 16, 16, "little", false, created.value);
+  o.installPromiseIntrinsics(f.root, f.realm, f.hooks, () => {});
+  return {
+    ...f,
+    service: created.value,
+    setNow: (value: number) => {
+      now = value;
+    },
+  };
+}
+test("positive waitAsync installs an owner-local intrinsic Promise and same-agent notify resolves it synchronously", async () => {
+  const f = await asynchronousWaitFixture(),
+    view = f.view("Int32Array");
+  const result = f.invoke("waitAsync", [view, 0, 0, Infinity]) as ObjectValue;
+  assert.equal(f.get(result, "async"), true);
+  const promise = f.get(result, "value") as ObjectValue;
+  assert.equal(promise.prototype, f.realm.promisePrototype);
+  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.equal(f.invoke("notify", [view, 0, 1]), 1);
+  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+  assert.equal(promise.internalPromiseData?.result, "ok");
+});
+test("an unrelated same-agent notify does not synchronously resolve an externally notified Promise", async () => {
+  const f = await asynchronousWaitFixture(),
+    view = f.view("Int32Array");
+  const result = f.invoke("waitAsync", [view, 0, 0, Infinity]) as ObjectValue;
+  const promise = f.get(result, "value") as ObjectValue;
+  assert.deepEqual(f.service.notifications?.notify(1, 0, 4, 1), {
+    ok: true,
+    value: 1,
+  });
+  assert.equal(f.invoke("notify", [view, 2, 1]), 0);
+  assert.equal(promise.internalPromiseData?.state, "pending");
+  const { processAtomicWaitEvents } =
+    await import("../packages/js-runtime/src/objects/atomics-wait.ts");
+  assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
+  assert.equal(promise.internalPromiseData?.state, "fulfilled");
+});
+test("external waitAsync completions preserve notification order across locations and enqueue reactions on the owner", async () => {
+  const f = await asynchronousWaitFixture(),
+    view = f.view("Int32Array"),
+    events: string[] = [];
+  const a = f.invoke("waitAsync", [view, 0, 0, Infinity]) as ObjectValue;
+  const b = f.invoke("waitAsync", [view, 2, 0, Infinity]) as ObjectValue;
+  for (const [name, result] of [
+    ["a", a],
+    ["b", b],
+  ] as const) {
+    const promise = f.get(result, "value") as ObjectValue;
+    const callback = o.createCallableObject<objects.ScriptPropertyKey, unknown>(
+      f.realm.functionPrototype,
+      () => {
+        events.push(name);
+        return undefined;
+      },
+    );
+    const called = o.callObject(
+      f.get(promise, "then") as ObjectValue,
+      promise,
+      [callback],
+      undefined,
+    );
+    assert.equal(called.error, "none");
+  }
+  f.service.notifications?.notify(1, 8, 4, 1);
+  f.service.notifications?.notify(1, 0, 4, 1);
+  const { processAtomicWaitEvents } =
+    await import("../packages/js-runtime/src/objects/atomics-wait.ts");
+  assert.equal(processAtomicWaitEvents(f.realm.agent, true), 2);
+  assert.deepEqual(events, []);
+  o.drainScriptJobs(f.realm.agent, (error) => {
+    throw error;
+  });
+  assert.deepEqual(events, ["b", "a"]);
+});
+test("owner timeout processing settles once and removes the waiter before a later notification", async () => {
+  const f = await asynchronousWaitFixture(),
+    view = f.view("Int32Array");
+  const result = f.invoke("waitAsync", [view, 0, 0, 0.5]) as ObjectValue,
+    promise = f.get(result, "value") as ObjectValue;
+  const { processAtomicWaitEvents } =
+    await import("../packages/js-runtime/src/objects/atomics-wait.ts");
+  assert.equal(processAtomicWaitEvents(f.realm.agent, true), 0);
+  f.setNow(1);
+  assert.equal(processAtomicWaitEvents(f.realm.agent, true), 1);
+  assert.equal(promise.internalPromiseData?.result, "timed-out");
+  assert.equal(f.invoke("notify", [view, 0, 1]), 0);
+  assert.equal(processAtomicWaitEvents(f.realm.agent, true), 0);
+  assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);
+});

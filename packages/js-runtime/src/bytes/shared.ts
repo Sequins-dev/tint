@@ -53,12 +53,23 @@ export interface SharedBlockAtomics {
  * plus absolute byte offset. Count is already converted, nonnegative or Infinity.
  * Even count zero follows the host's waiter-list critical section. */
 export interface SharedBlockNotifications {
+  notifyOrdered?(
+    handle: number,
+    offset: number,
+    width: 4 | 8,
+    count: number,
+  ): SharedResult<SharedNotificationBatch>;
   notify(
     handle: number,
     offset: number,
     width: 4 | 8,
     count: number,
   ): SharedResult<number>;
+}
+export interface SharedNotificationBatch {
+  readonly count: number;
+  readonly first: number;
+  readonly last: number;
 }
 
 /** Owner-agent waiter protocol. Tickets are opaque scalar capabilities. Kernel
@@ -69,6 +80,7 @@ export interface SharedWaitRegistration {
   readonly ticket: number;
 }
 export interface SharedBlockWaiting {
+  readonly registryId?: number;
   register(
     handle: number,
     offset: number,
@@ -78,6 +90,8 @@ export interface SharedBlockWaiting {
     zeroTimeout: boolean,
   ): SharedResult<SharedWaitRegistration>;
   poll(ticket: number): SharedResult<SharedWaitState>;
+  /** Terminal sequence shared across waiter locations; zero while pending. */
+  order?(ticket: number): SharedResult<number>;
   expire(ticket: number): SharedResult<boolean>;
   take(ticket: number): SharedResult<SharedWaitState>;
   park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;

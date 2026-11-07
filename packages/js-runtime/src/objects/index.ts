@@ -249,6 +249,7 @@ export { createBoundFunction } from "./bound-functions.ts";
 export { installFunctionIntrinsics } from "./function-intrinsics.ts";
 
 export { stringValue, numberValue } from "./coercion.ts";
+export { processAtomicWaitEvents } from "./atomics-wait.ts";
 export {
   getTemplateObject,
   getScriptTemplateSite,

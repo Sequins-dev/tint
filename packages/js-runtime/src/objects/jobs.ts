@@ -4,6 +4,7 @@ import type { TemplateSite } from "./templates.ts";
 import { enqueueFinalizationCleanupJobs } from "./finalization-registry.ts";
 import type { WeakStorageService, WeakRegistryEntry } from "./weak-storage.ts";
 import type { AtomicCapabilities } from "./atomics.ts";
+import type { PendingAtomicWait } from "./atomics-wait.ts";
 import {
   createJobQueue,
   enqueueJob,
@@ -47,6 +48,7 @@ interface QueuedScriptJob {
   readonly scriptOrModule: unknown;
 }
 export interface ScriptAgent {
+  readonly pendingAtomicWaits: PendingAtomicWait[];
   /** Immutable host policy for this agent; other realms share the same agent. */
   readonly canSuspend: boolean;
   /** Stable target flags shared by every realm using this agent. */
@@ -62,6 +64,7 @@ export interface ScriptAgent {
 }
 export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
   return {
+    pendingAtomicWaits: [],
     canSuspend,
     atomicsCapabilities: undefined,
     weakStorage: undefined,

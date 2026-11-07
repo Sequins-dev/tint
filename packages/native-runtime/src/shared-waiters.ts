@@ -1,4 +1,7 @@
-import type { SharedResult } from "@tint/js-runtime/bytes/shared";
+import type {
+  SharedResult,
+  SharedNotificationBatch,
+} from "@tint/js-runtime/bytes/shared";
 import { parkNativeWord, wakeNativeWord } from "./intrinsics/memory.ts";
 import {
   integer,
@@ -38,6 +41,12 @@ export interface NativeWaitRegistration {
   readonly ticket: number;
 }
 export interface NativeWaitRegistry {
+  notifyOrdered(
+    blockId: number,
+    offset: number,
+    width: 4 | 8,
+    count: number,
+  ): SharedResult<SharedNotificationBatch>;
   readonly registry: NativeSharedBlockRegistry;
   register(
     location: NativeWaitLocation,
@@ -52,6 +61,7 @@ export interface NativeWaitRegistry {
     count: number,
   ): SharedResult<number>;
   poll(ticket: number): SharedResult<NativeWaitState>;
+  order(ticket: number): SharedResult<number>;
   expire(ticket: number): SharedResult<boolean>;
   take(ticket: number): SharedResult<NativeWaitState>;
   park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;
@@ -65,11 +75,13 @@ const LOCK = 0,
   MAGIC_AT = 8,
   CAPACITY = 16,
   NEXT = 24,
-  ENGINE = 32;
+  ENGINE = 32,
+  NEXT_COMPLETION = 40;
 const STATE = 0,
   TICKET = 8,
   BLOCK = 16,
-  OFFSET = 24;
+  OFFSET = 24,
+  COMPLETION = 32;
 function word(value: number): boolean {
   return integer(value) && value <= 4294967295;
 }
@@ -234,6 +246,7 @@ function facade(
           writeNumber(host, registry, free + TICKET, ticket);
           writeNumber(host, registry, free + BLOCK, location.blockId);
           writeNumber(host, registry, free + OFFSET, location.byteOffset);
+          writeNumber(host, registry, free + COMPLETION, 0);
           writeNumber(host, registry, free + STATE, 1);
         }
       }
@@ -243,12 +256,12 @@ function facade(
     if (full) return { ok: false, error: "allocation-limit" };
     return { ok: true, value: { state: result, ticket } };
   }
-  function notify(
+  function notifyOrdered(
     block: number,
     offset: number,
     width: 4 | 8,
     count: number,
-  ): SharedResult<number> {
+  ): SharedResult<SharedNotificationBatch> {
     if (!integer(block) || block === 0)
       return { ok: false, error: "invalid-handle" };
     if (width !== 4 && width !== 8)
@@ -259,6 +272,8 @@ function facade(
       return { ok: false, error: "invalid-value" };
     const scratch = new Uint32Array(2);
     lock(scratch);
+    const firstCompletion =
+      readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
     let notified = 0;
     while (notified < count) {
       let row = -1,
@@ -278,12 +293,30 @@ function facade(
         }
       }
       if (row < 0) break;
+      complete(row, scratch);
       writeNumber(host, registry, row + STATE, 2);
       parking.wake(registry.base + row + STATE);
       notified++;
     }
+    const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
     unlock();
-    return { ok: true, value: notified };
+    return {
+      ok: true,
+      value: {
+        count: notified,
+        first: notified === 0 ? 0 : firstCompletion,
+        last: notified === 0 ? 0 : last,
+      },
+    };
+  }
+  function notify(
+    block: number,
+    offset: number,
+    width: 4 | 8,
+    count: number,
+  ): SharedResult<number> {
+    const result = notifyOrdered(block, offset, width, count);
+    return result.ok ? { ok: true, value: result.value.count } : result;
   }
   function inspect(
     ticket: number,
@@ -310,12 +343,30 @@ function facade(
     const won =
       row >= 0 && readNumber(host, registry, row + STATE, scratch) === 1;
     if (won) {
+      complete(row, scratch);
       writeNumber(host, registry, row + STATE, 3);
       parking.wake(registry.base + row + STATE);
     }
     unlock();
     if (row < 0) return { ok: false, error: "invalid-handle" };
     return { ok: true, value: won };
+  }
+  function complete(row: number, scratch: Uint32Array): void {
+    const sequence = readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
+    writeNumber(host, registry, NEXT_COMPLETION, sequence);
+    writeNumber(host, registry, row + COMPLETION, sequence);
+  }
+  function order(ticket: number): SharedResult<number> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    const row = find(ticket, scratch);
+    const sequence =
+      row < 0 ? 0 : readNumber(host, registry, row + COMPLETION, scratch);
+    unlock();
+    return row < 0
+      ? { ok: false, error: "invalid-handle" }
+      : { ok: true, value: sequence };
   }
   function park(ticket: number, timeout: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
@@ -333,7 +384,9 @@ function facade(
   return {
     registry,
     register,
+    order,
     notify,
+    notifyOrdered,
     poll: (ticket) => inspect(ticket, false),
     take: (ticket) => inspect(ticket, true),
     expire,

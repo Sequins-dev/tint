@@ -4,7 +4,12 @@ import {
   readWord64,
   writeWord64,
 } from "@tint/foundation/binary/bytes";
-import { blockingAtomicWait } from "./atomics-wait.ts";
+import {
+  blockingAtomicWait,
+  asynchronousAtomicWait,
+  atomicWaitResult,
+  processAtomicWaitEvents,
+} from "./atomics-wait.ts";
 import type { StorageAccess } from "../bytes/index.ts";
 import { bufferIndex } from "./array-buffer.ts";
 import type { BufferStorageWindow } from "./buffer-storage.ts";
@@ -17,12 +22,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import { readNumericElement, writeNumericElement } from "./numeric-element.ts";
-import {
-  createObject,
-  createDataProperty,
-  type ObjectHooks,
-} from "./operations.ts";
-import type { ScriptPropertyKey } from "./symbols.ts";
+import type { ObjectHooks } from "./operations.ts";
 import {
   requireTypedArray,
   typedArrayWindow,
@@ -340,6 +340,29 @@ export function notifyAtomicWaiters(
   const notifications = storage.service.notifications;
   if (notifications === undefined) return rejectUnsupportedExecution(realm);
   const width = data.kind === "Int32" ? 4 : 8;
+  const waiting = storage.service.waiting;
+  const notifyOrdered = notifications.notifyOrdered;
+  const registryId = waiting === undefined ? undefined : waiting.registryId;
+  if (
+    notifyOrdered !== undefined &&
+    waiting !== undefined &&
+    registryId !== undefined
+  ) {
+    const batch = notifyOrdered(
+      storage.handle,
+      data.byteOffset + access.index * width,
+      width,
+      converted,
+    );
+    if (!batch.ok) throw "ATOMIC_NOTIFY_INVARIANT";
+    if (batch.value.count > 0)
+      processAtomicWaitEvents(realm.agent, false, {
+        registryId,
+        first: batch.value.first,
+        last: batch.value.last,
+      });
+    return batch.value.count;
+  }
   const result = notifications.notify(
     storage.handle,
     data.byteOffset + access.index * width,
@@ -396,11 +419,15 @@ export function prepareAtomicWait(
   if (!equalBytes(observed, expectedBytes)) result = "not-equal";
   else if (converted.value <= 0) result = "timed-out";
   else {
-    if (asynchronous) return rejectUnsupportedExecution(realm);
     const storage = data.storage;
     if (storage.kind !== "shared") throw "ATOMIC_WAIT_STORAGE_INVARIANT";
     const waiting = storage.service.waiting;
     if (waiting === undefined) return rejectUnsupportedExecution(realm);
+    if (
+      asynchronous &&
+      storage.service.notifications?.notifyOrdered === undefined
+    )
+      return rejectUnsupportedExecution(realm);
     const width = data.kind === "Int32" ? 4 : 8;
     const narrow = readUnsigned(expectedBytes, 0, 4, data.endian);
     const wide =
@@ -409,6 +436,18 @@ export function prepareAtomicWait(
       throw "ATOMIC_WAIT_EXPECTED_INVARIANT";
     const lo = wide !== undefined && wide.ok ? wide.value.lo : narrow.value;
     const hi = wide !== undefined && wide.ok ? wide.value.hi : 0;
+    if (asynchronous)
+      return asynchronousAtomicWait(
+        waiting,
+        storage.handle,
+        data.byteOffset + access.index * width,
+        width,
+        lo,
+        hi,
+        converted.value,
+        realm,
+        hooks,
+      );
     result = blockingAtomicWait(
       waiting,
       storage.handle,
@@ -421,23 +460,5 @@ export function prepareAtomicWait(
     );
   }
   if (!asynchronous) return result;
-  const object = createObject<ScriptPropertyKey, unknown>(
-    realm.objectPrototype,
-  );
-  if (
-    !createDataProperty<ScriptPropertyKey, unknown>(
-      object,
-      "async",
-      false,
-      hooks,
-    ) ||
-    !createDataProperty<ScriptPropertyKey, unknown>(
-      object,
-      "value",
-      result,
-      hooks,
-    )
-  )
-    throw "ATOMIC_WAIT_RESULT_INVARIANT";
-  return object;
+  return atomicWaitResult(false, result, realm, hooks);
 }

@@ -109,3 +109,16 @@ test("independent managed facades share only the raw registry and enforce engine
     { ok: false, error: "invalid-handle" },
   );
 });
+test("terminal completion order follows notifications across different locations rather than registration order", async () => {
+  const f = await fixture(),
+    r = f.registry;
+  const first = value(r.register(f.location, 7, 0, false));
+  const other = value(
+    r.register({ ...f.location, byteOffset: 8 }, 0, 0, false),
+  );
+  assert.equal(value(r.order(first.ticket)), 0);
+  value(r.notify(1, 8, 4, 1));
+  value(r.notify(1, 0, 4, 1));
+  assert.ok(value(r.order(other.ticket)) < value(r.order(first.ticket)));
+  assert.ok(value(r.order(other.ticket)) > 0);
+});
