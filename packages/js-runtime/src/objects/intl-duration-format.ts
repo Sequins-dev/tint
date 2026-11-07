@@ -197,8 +197,11 @@ export function installDurationFormatIntrinsic(
           options = optionsObject(args[1], realm, hooks);
         matcher(options, realm, hooks);
         const supported: string[] = [];
-        for (const tag of requested)
+        for (const tag of requested) {
+          if (tag === undefined)
+            throw "DURATION_FORMAT_SUPPORTED_LOCALE_INVARIANT";
           if (lookupNumberFormatLocale(tag) !== undefined) supported.push(tag);
+        }
         return createStringArrayFromList(supported, realm, hooks);
       },
       hooks,
