@@ -1,0 +1,35 @@
+{
+  "kind": "native-survey-interruption-audit",
+  "conformance": false,
+  "completedAt": "2026-11-07T21:26:22.213449+00:00",
+  "selection": "built-ins/Array",
+  "expectedVariants": 6119,
+  "observedVariants": 2944,
+  "outcomes": {
+    "pass": 2944
+  },
+  "complete": false,
+  "terminalCompleteRecords": 0,
+  "compilationRecords": 46,
+  "lastCompletedBatch": 45,
+  "journal": "docs/results/test262-array-family-current-native-v1.jsonl",
+  "journalSha256": "67f4493b150406d20a5b3d13ddc04d1a14d47826d542d5a81b66fc2c019800a8",
+  "journalBytes": 1741894,
+  "safeStop": "docs/results/g-array-scope-redirect-safe-stop-v1.json",
+  "wrapperExitStatus": 143,
+  "exitClassification": "Authorized SIGTERM after current batch execution, while next batch46 was synchronously compiling. No debugger/inferior active.",
+  "sourceSnapshot": {
+    "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+    "files": 595
+  },
+  "frozenToolchainSha256": "7c5616c125be290c8f785e9bfcb20fe4e63ab13bc9910c7e751761f3749439f2",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-builtins-array-v1.json",
+  "latestCompleteChildIndex": "docs/results/g-array-complete-selections-v19.json",
+  "stderr": {
+    "archive": "docs/results/g-array-scope-redirect-stderr-v1.log.gz",
+    "uncompressedSha256": "95f8f6a892bb9d363d1f921edf8d881b8e943146449463536b02c811934a2b81",
+    "bytes": 2032140
+  },
+  "resumePolicy": "Preserved but not queued. Do not resume broad passing Array remeasurement; measure only ledger nonpasses not resolved by this prefix, on fresh main.",
+  "scope": "Interrupted prefix is not a complete Array report. Completed child/file reports are separate canonical evidence. Original historical Array outcomes are unchanged."
+}
