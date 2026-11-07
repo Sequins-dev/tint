@@ -108,9 +108,21 @@ For-await-of has [passing native observations for 2,431/2,431 pinned variant key
 
 The complete [`language/statements/for-of` selection](results/test262-cluster-f-for-of-statements-v1.json) passes **1,442/1,442**, with zero failures, unsupported variants or infrastructure errors. The [validation record](results/cluster-f-for-of-complete-validation-v1.json) verifies all pinned variants and source identities; the runner and slot launcher exited 0.
 
-Builtin subset checkpoint: [four complete family reports](results/cluster-f-builtins-complete-families-v1.json) record AsyncGeneratorPrototype 96/96, AsyncFromSyncIteratorPrototype 76/76, AsyncGeneratorFunction 44/46 and AsyncFunction 34/36. The [four retained after-entry timeouts](results/cluster-f-builtins-intrinsic-timeouts-v1.json) each consumed over 250 native CPU seconds; shared eval/Function profiling is the next step (D/P). The encompassing 448-variant subset is still running.
+These complete generator and async builtin families retain all variants and non-passes; each was extracted with all pinned variants and source/harness identities from one frozen subset run.
 
-ScriptRecord host migration passes the complete
+| Selection | Pass/total | Report |
+| --- | ---: | --- |
+| `built-ins/GeneratorPrototype` | 122/122 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-GeneratorPrototype.json) |
+| `built-ins/GeneratorFunction` | 44/46 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-GeneratorFunction.json) |
+| `built-ins/AsyncGeneratorPrototype` | 96/96 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorPrototype.json) |
+| `built-ins/AsyncGeneratorFunction` | 44/46 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorFunction.json) |
+| `built-ins/AsyncFunction` | 34/36 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFunction.json) |
+| `built-ins/AsyncIteratorPrototype` | 26/26 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncIteratorPrototype.json) |
+| `built-ins/AsyncFromSyncIteratorPrototype` | 76/76 | [Report](results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFromSyncIteratorPrototype.json) |
+
+The [6 retained constructor timeouts](results/cluster-f-builtins-intrinsic-timeouts-v2.json) occurred after the initial stop during CPU-intensive native execution; all same-image controls pass. Shared eval/Function profiling remains the next step (D/P); the exact internal hotspot is not established.
+
+The historical ScriptRecord host migration records the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
 with **27/28** native passes: one pre-entry timeout, no semantic failures or
 unsupported variants. The [Script host fixture](results/native-script-record-host-v1.json)
