@@ -1,0 +1,47 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T21:52:38.107Z",
+  "head": "fd13ffa2fee4176525153e95f849b04218688f6d",
+  "mainAtFreeze": "fd13ffa2fee4176525153e95f849b04218688f6d",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+    "files": 601
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-small-gap-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-small-gap-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-small-gap-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-small-gap-v1/source-snapshot.json",
+    "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+  },
+  "runIdentity": "9a4f731fb6bd08a7b5a130c60d538cc3b6ddfaccdf15809fdd297cb47bb9a014",
+  "selection": "built-ins",
+  "expectedVariants": 572,
+  "variantSubset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 572,
+    "variantSubsetSha256": "05f11ecb0ce687d26ecfdd2cb228be6334bcc7cd1976509973dc32cc33111217"
+  },
+  "variantManifest": "docs/results/g-small-ledger18-gap-variants-v1.json",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/small-builtins-breadth-build-v2.log",
+    "inputFile": ".tint-bootstrap/small-builtins-breadth-build-v2.input.json",
+    "head": "fd13ffa2fee4176525153e95f849b04218688f6d",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Measure 570 previously unmeasured G small-built-in variants and two Error unsupported cases from ledger18. The22 previously passing Error variants remain separate. ShadowRealm and disposal families are owned by A3 and excluded."
+}

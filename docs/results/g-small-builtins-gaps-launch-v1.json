@@ -1,0 +1,51 @@
+{
+  "kind": "native-explicit-gap-subset-launch",
+  "conformance": false,
+  "at": "2026-11-07T21:53:13.554153+00:00",
+  "selection": "built-ins",
+  "expectedVariants": 572,
+  "previouslyUnmeasuredVariants": 570,
+  "priorUnsupportedErrorVariants": 2,
+  "previouslyPassingErrorVariantsNotRemeasured": 22,
+  "ownedFamilies": [
+    "Error",
+    "NativeErrors",
+    "global",
+    "isFinite",
+    "isNaN",
+    "ThrowTypeError",
+    "MapIteratorPrototype",
+    "SetIteratorPrototype",
+    "undefined",
+    "Infinity",
+    "NaN"
+  ],
+  "batchSize": 64,
+  "ownerPid": 86673,
+  "observerPid": 86674,
+  "command": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "8",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-small-gap-v1/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins",
+    "64"
+  ],
+  "subset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 572,
+    "variantSubsetSha256": "05f11ecb0ce687d26ecfdd2cb228be6334bcc7cd1976509973dc32cc33111217"
+  },
+  "variantManifest": "docs/results/g-small-ledger18-gap-variants-v1.json",
+  "journal": "docs/results/test262-small-builtins-gaps-native-v1.jsonl",
+  "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/small-builtins-gap-native-v1.stdout.json",
+  "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/small-builtins-gap-native-v1.stderr.log",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "debuggerLaunch": "debugserver-direct",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-builtins-small-gap-v1.json",
+  "scopeDirective": "Exact G builtins gaps from ledger18; passing keys, ShadowRealm and disposal families excluded."
+}
