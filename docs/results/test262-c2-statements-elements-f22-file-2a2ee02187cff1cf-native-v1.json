@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/elements/multiple-definitions-rs-static-privatename-identifier.js",
+  "sourceSnapshot": {
+    "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+    "files": 600
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v22/source-snapshot.json",
+  "frozenToolchainSha256": "4358a09b5327f8f481a8993c8e2dc3858ead45ea6887f8266222dbcdd4c25a44",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/c2/statements-elements-f22-harvest-prefix-v4.jsonl",
+    "journalSha256": "5d86cf7059eac59ba85d5ef46478ffa42217e48db8347c0e9d978decaff8ebb8",
+    "journalBytes": 1617713,
+    "observedVariants": 2258
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 28,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 199879.25195900025,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/multiple-definitions-rs-static-privatename-identifier.js",
+      "sha256": "ff0275bb7ba121c86ecaf147b0e08ce1b4d9e6fd85f9bf12f42c06f975e90be6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-static-fields-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 219336.08145900024,
+      "batch": 28
+    },
+    {
+      "path": "language/statements/class/elements/multiple-definitions-rs-static-privatename-identifier.js",
+      "sha256": "ff0275bb7ba121c86ecaf147b0e08ce1b4d9e6fd85f9bf12f42c06f975e90be6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-static-fields-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 219629.5760839996,
+      "batch": 28
+    }
+  ],
+  "startedAt": "2026-11-07T20:48:58.891Z",
+  "completedAt": "2026-11-07T22:32:54.993Z",
+  "observationTiming": {
+    "policy": "Complete files from a frozen-v22 prefix; capture time is an upper bound. Includes syntax-negative and positive-runtime observations; previously published complete files are skipped. No new native execution; parent remains incomplete.",
+    "source": ".tint-bootstrap/c2/statements-elements-f22-harvest-prefix-v4.jsonl"
+  }
+}
