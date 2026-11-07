@@ -1,0 +1,74 @@
+{
+  "kind": "cluster-j-verified-complete-file-interleave",
+  "at": "2026-11-07T22:42:53.087686+00:00",
+  "scopePriority": "Shared21:20Z directive assigns language/literals/regexp480 to J. Compact family is ready; property sweep resumes after it.",
+  "ack": {
+    "pid": 37914,
+    "state": "between-variants"
+  },
+  "noChildOrInferior": true,
+  "signalOnlyAfterAck": "SIGTERM idle Node host",
+  "prefixUnchanged": true,
+  "prefixSha256": "f95dacfde5d22664cb933220bafe3249150f77a20a937204da29d5783fd82b01",
+  "preservedObserved": 6,
+  "preservedPass": 6,
+  "completeFiles": 3,
+  "parentExpected": 790,
+  "parentComplete": false,
+  "resumeGraph": {
+    "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+    "files": 601
+  },
+  "resumeToolchain": ".tint-bootstrap/cluster-j-toolchain-v38",
+  "resumeJournal": ".tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl",
+  "resumeManifest": "docs/results/cluster-j-property-remaining-manifest-v38.json",
+  "resumePolicy": "TINT_TEST262_RESUME=1; exact same frozen38 source/manifest/300000 budget. Remove stale pause marker and acknowledgement only after old host gone. Prefix copy is immutable; journal may append on resume. Do not resume on frozen39.",
+  "literalToolchain": ".tint-bootstrap/cluster-j-toolchain-v39",
+  "literalSelection": "language/literals/regexp",
+  "literalExpected": 480,
+  "literalJournal": ".tint-bootstrap/cluster-j-regexp-literals-v39.jsonl",
+  "wrapperExpectedExit": 143,
+  "literalStarted": true,
+  "literalSourceSnapshot": {
+    "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+    "files": 601
+  },
+  "literalStartBudgetMs": 300000,
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/hold-at-boundary.py",
+      "bytes": 3218,
+      "sha256": "f4f597a5b0ce42926fc0028634785bb24b21449983ba2633b0ae27b4a2bc23bd"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/literal-start-header.json",
+      "bytes": 1912,
+      "sha256": "f1803f59fee32d33742124fbe0eac49b9c0a04319220d6c1abfe7da2fa7e5272"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/processes-at-boundary.json",
+      "bytes": 636,
+      "sha256": "860a21ea168420b1535ff05dd0b94a914664f0e912dec23d2dbd624b5a7dc81d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/property-journal-prefix.jsonl",
+      "bytes": 6166,
+      "sha256": "f95dacfde5d22664cb933220bafe3249150f77a20a937204da29d5783fd82b01"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/property-pause-ack.json",
+      "bytes": 41,
+      "sha256": "d38e6d62dfc37b690148fad8d3e760a3974e36ce64accf4c9d870b67f5ef5bc4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/property-pause-request.txt",
+      "bytes": 170,
+      "sha256": "e84f985f68f6c5403d9a8db1c61df989d97dadfedaa7407681f9b9a543f88d0b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-literal-interleave-v39-evidence/property-stderr-prefix.log",
+      "bytes": 8842,
+      "sha256": "e0bc4bc0e84df0ad4953dbb51d553e77da71950e1c693c6936bb7bb5544ccc5f"
+    }
+  ]
+}

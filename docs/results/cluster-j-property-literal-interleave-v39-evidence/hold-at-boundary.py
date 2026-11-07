@@ -1,0 +1,16 @@
+from pathlib import Path
+import subprocess,json,os,signal,time,shutil,hashlib,datetime
+root=Path.cwd();stem='.tint-bootstrap/cluster-j-property-remaining-v38-r1';p=root/(stem+'.pause');ack=Path(str(p)+'.ack');a=json.loads(ack.read_text());assert a=={'pid':37914,'state':'between-variants'}
+rows=[line.split(None,3) for line in subprocess.check_output(['ps','-axo','pid=,ppid=,comm=,args='],text=True).splitlines()];host=next(x for x in rows if x[0]=='37914');assert host[1]=='37870' and host[3].startswith('node .tint-bootstrap/cluster-j-toolchain-v38/tools/test262-native-run.ts');assert not [x for x in rows if x[1]=='37914'];j=root/(stem+'.jsonl');before=j.read_bytes();records=[json.loads(x) for x in before.splitlines()];obs=[x for x in records if x['kind']=='observation'];assert len(obs)==6 and all(x['status']=='pass' for x in obs);assert len({x['path'] for x in obs})==3
+out=root/'docs/results/cluster-j-property-literal-interleave-v39-evidence';out.mkdir();(out/'property-pause-ack.json').write_bytes(ack.read_bytes());(out/'property-pause-request.txt').write_bytes(p.read_bytes());owned=[x for x in rows if x[0] in ['37914','37870','38587']];(out/'processes-at-boundary.json').write_text(json.dumps(owned,indent=2)+'\n');os.kill(37914,signal.SIGTERM)
+for _ in range(50):
+ check=subprocess.run(['ps','-p','37914','-o','state='],capture_output=True,text=True)
+ if check.returncode or not check.stdout.strip() or check.stdout.strip().startswith('Z'):break
+ time.sleep(.1)
+else:raise RuntimeError('property host remains')
+assert j.read_bytes()==before
+for x in owned:
+ if x[0]=='38587':assert x[3]=='node .tint-bootstrap/j-observe-property-remaining-v38-r1.ts';os.kill(38587,signal.SIGTERM)
+for suffix,target in [('.jsonl','property-journal-prefix.jsonl'),('.stderr','property-stderr-prefix.log')]:shutil.copyfile(root/(stem+suffix),out/target)
+for f in out.iterdir():f.chmod(0o444)
+r={'kind':'cluster-j-verified-complete-file-interleave','at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scopePriority':'Shared21:20Z directive assigns language/literals/regexp480 to J. Compact family is ready; property sweep resumes after it.','ack':a,'noChildOrInferior':True,'signalOnlyAfterAck':'SIGTERM idle Node host','prefixUnchanged':True,'prefixSha256':hashlib.sha256(before).hexdigest(),'preservedObserved':6,'preservedPass':6,'completeFiles':3,'parentExpected':790,'parentComplete':False,'resumeGraph':records[0]['sourceSnapshot'],'resumeToolchain':'.tint-bootstrap/cluster-j-toolchain-v38','resumeJournal':stem+'.jsonl','resumeManifest':'docs/results/cluster-j-property-remaining-manifest-v38.json','resumePolicy':'TINT_TEST262_RESUME=1; exact same frozen38 source/manifest/300000 budget. Remove stale pause marker and acknowledgement only after old host gone. Prefix copy is immutable; journal may append on resume. Do not resume on frozen39.','literalToolchain':'.tint-bootstrap/cluster-j-toolchain-v39','literalSelection':'language/literals/regexp','literalExpected':480,'literalJournal':'.tint-bootstrap/cluster-j-regexp-literals-v39.jsonl','wrapperExpectedExit':143};(root/'docs/results/cluster-j-property-literal-interleave-v39.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r))
