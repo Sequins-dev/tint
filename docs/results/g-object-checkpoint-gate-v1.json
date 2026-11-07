@@ -1,0 +1,21 @@
+{
+  "kind": "workspace-gate-validation",
+  "conformance": false,
+  "at": "2026-11-07T10:18:21.357703+00:00",
+  "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+  "testedHead": "f7dad5a4dc1bb18744572531364d2e0a6e19d1ef",
+  "base": "2c8ffbba98188753374e6b65afd670d20f38cbd6",
+  "exitStatus": 0,
+  "tests": {
+    "tests": 4624,
+    "pass": 4624,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "log": "docs/results/g-object-checkpoint-gate-v1.log",
+  "logSha256": "5f6909cb39a044efb70a7b9538f7dabf73f2c0b7befcd0dfdec4c5a5a008b008",
+  "gates": ["typecheck", "tests (concurrency4)", "boundaries", "format:check"],
+  "scope": "Object continuation checkpoint and launch/saturation evidence. No portable source changed in G slice; frozen native continuation remains independent."
+}
