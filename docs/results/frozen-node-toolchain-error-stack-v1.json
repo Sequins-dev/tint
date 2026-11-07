@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T22:34:08.792Z",
+  "head": "739cbaa5d67bdd6126c90c177ed7d8a2f77af27a",
+  "mainAtFreeze": "549c0d5ee837ac42c16dd16c59253e31d13be24a",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "2d2865e975565a8b707d11730079cfe1beb852f2f5d5069d69d131476a5148db",
+    "files": 601
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-error-stack-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-error-stack-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-error-stack-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-error-stack-v1/source-snapshot.json",
+    "sha256": "f142f80c0821c71807df919d004c494b0be0a96bace39be7e430a68bd14db25e"
+  },
+  "runIdentity": "ca425282f839958c2f7688fa0dfa8d8bea74f136bed6fe71f33a83387820e882",
+  "purpose": "Own Error stack accessor implementation on rebased main; full Error186 native rerun and frozen native self-build. Evidence must merge with this feature, not as an independent docs-only slice.",
+  "ownPortableChanges": [
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/functions.ts",
+    "packages/js-runtime/src/objects/jobs.ts",
+    "packages/js-runtime/src/objects/operations.ts"
+  ],
+  "selection": "built-ins/Error",
+  "expectedVariants": 186,
+  "batchSize": 64,
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "runner": 8,
+    "selfbuild": 2,
+    "concurrentClusterRunners": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "immutable-native-source-reconstruction",
+  "conformance": false,
+  "createdAt": "2026-11-07T22:34:07.657Z",
+  "featureCommit": "739cbaa5d67bdd6126c90c177ed7d8a2f77af27a",
+  "frozenBaseline": "docs/results/frozen-node-toolchain-builtins-small-gap-v1.json",
+  "replacementSourcesFromCommit": [
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/functions.ts",
+    "packages/js-runtime/src/objects/jobs.ts",
+    "packages/js-runtime/src/objects/operations.ts"
+  ],
+  "reconstructedIdentity": {
+    "sha256": "2a028e4ad83493b167a33c33efb3760b163835c3f78e39aaa88f79303442e7c1",
+    "files": 601
+  },
+  "actualBuildManifest": "docs/results/error-stack-native-fixture-evidence-v1/fixture.json",
+  "actualBuildSourceIdentity": {
+    "sha256": "2a028e4ad83493b167a33c33efb3760b163835c3f78e39aaa88f79303442e7c1",
+    "files": 601
+  },
+  "identitiesEqual": true,
+  "scope": "Cryptographic reconstruction from a previously frozen immutable baseline plus four committed feature sources. This matches the actual build-time manifest; it does not attribute a later mutable workspace fingerprint to an older image."
+}
