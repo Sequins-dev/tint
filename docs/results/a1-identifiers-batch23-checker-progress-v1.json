@@ -1,0 +1,250 @@
+{
+  "kind": "node-host-compiler-progress-diagnosis",
+  "conformance": false,
+  "newNativeObservations": 0,
+  "selection": "language/identifiers",
+  "batch": 23,
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "method": "Owned compiler inspector Debugger.pause, read-only evaluateOnCallFrame, Debugger.resume acknowledged, Debugger.disable and disconnect; no native inferior active. Both probes under one second.",
+  "finding": "Finite source traversal continues within function12951. Expression start7973794→7994570, narrowed76924→84342, present12593→20010 over67 seconds; bindings200374, functions21866. Profile shows repeated growing fact-set scans in closure checker. No claim of native outcome or compiler speedup.",
+  "snapshots": [
+    {
+      "at": "2026-11-07T20:11:25.834Z",
+      "frames": [
+        {
+          "name": "invalidateCalls",
+          "url": "",
+          "line": 1565
+        },
+        {
+          "name": "expression",
+          "url": "",
+          "line": 3170
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3756
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3763
+        },
+        {
+          "name": "sequence",
+          "url": "",
+          "line": 3621
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3651
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3704
+        },
+        {
+          "name": "sequence",
+          "url": "",
+          "line": 3621
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3651
+        },
+        {
+          "name": "checkFunction",
+          "url": "",
+          "line": 1706
+        },
+        {
+          "name": "expression",
+          "url": "",
+          "line": 2250
+        },
+        {
+          "name": "",
+          "url": "",
+          "line": 3166
+        }
+      ],
+      "locals": [
+        {
+          "frame": "invalidateCalls",
+          "line": 1565,
+          "value": {
+            "presentSize": 12593,
+            "narrowedCount": 76924,
+            "bindingCount": 200374
+          }
+        },
+        {
+          "frame": "expression",
+          "line": 3170,
+          "value": {
+            "kind": "call",
+            "start": 7973794,
+            "end": 7973805,
+            "owner": 12951,
+            "presentSize": 12593,
+            "narrowedCount": 76924,
+            "bindingCount": 200374
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3756,
+          "value": {
+            "error": "ReferenceError: Cannot access 'node' from debugger"
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3763,
+          "value": {
+            "kind": "if",
+            "start": 7973794,
+            "end": 7973805,
+            "owner": 12951,
+            "presentSize": 12593,
+            "narrowedCount": 76924,
+            "bindingCount": 200374
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3651,
+          "value": {
+            "error": "ReferenceError: Cannot access 'node' from debugger"
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-11-07T20:12:32.863Z",
+      "frames": [
+        {
+          "name": "invalidateCalls",
+          "url": "",
+          "line": 1565
+        },
+        {
+          "name": "expression",
+          "url": "",
+          "line": 3170
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3675
+        },
+        {
+          "name": "sequence",
+          "url": "",
+          "line": 3621
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3651
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3704
+        },
+        {
+          "name": "sequence",
+          "url": "",
+          "line": 3621
+        },
+        {
+          "name": "statement",
+          "url": "",
+          "line": 3651
+        },
+        {
+          "name": "checkFunction",
+          "url": "",
+          "line": 1706
+        },
+        {
+          "name": "expression",
+          "url": "",
+          "line": 2250
+        },
+        {
+          "name": "",
+          "url": "",
+          "line": 3166
+        },
+        {
+          "name": "expression",
+          "url": "",
+          "line": 3166
+        }
+      ],
+      "locals": [
+        {
+          "frame": "invalidateCalls",
+          "line": 1565,
+          "value": {
+            "presentSize": 20010,
+            "narrowedCount": 84342,
+            "bindingCount": 200374,
+            "functionCount": 21866
+          }
+        },
+        {
+          "frame": "expression",
+          "line": 3170,
+          "value": {
+            "kind": "call",
+            "start": 7994570,
+            "end": 7994581,
+            "owner": 12951,
+            "presentSize": 20010,
+            "narrowedCount": 84342,
+            "bindingCount": 200374,
+            "functionCount": 21866
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3675,
+          "value": {
+            "kind": "variable",
+            "start": 7994570,
+            "end": 7994581,
+            "owner": 12951,
+            "presentSize": 20010,
+            "narrowedCount": 84342,
+            "bindingCount": 200374,
+            "functionCount": 21866
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3651,
+          "value": {
+            "error": "ReferenceError: Cannot access 'node' from debugger"
+          }
+        },
+        {
+          "frame": "statement",
+          "line": 3704,
+          "value": {
+            "error": "ReferenceError: Cannot access 'node' from debugger"
+          }
+        }
+      ]
+    }
+  ]
+}
