@@ -193,7 +193,7 @@ export function nonAllocatingBlocks(
   const result = new Uint8Array(maximum + 1);
   for (const block of fn.blocks) {
     if (block === undefined) throw "temporary root block invariant";
-    let safe = true;
+    let safe: boolean = true;
     switch (block.terminator.kind) {
       case "return":
       case "jump":

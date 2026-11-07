@@ -1668,7 +1668,7 @@ export function emitModule(
         const poolWords = temporaryRoots.length + temporaryGenerals.length * 2;
         let originalStores = poolWords,
           deferredStores = 0,
-          directStores = true;
+          directStores: boolean = true;
         for (const offset of temporaryRoots)
           if (offset > 32760) directStores = false;
         for (const offset of temporaryGenerals)
