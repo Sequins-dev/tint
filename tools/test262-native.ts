@@ -817,7 +817,7 @@ ${tableLoading} try {
        ? 'if(!request.specifier.startsWith("./")){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}'
        : 'if(!request.specifier.startsWith("./"))rejectUnsupportedExecution(realm);'
    }
-   const index=names.indexOf(request.specifier.slice(2));if(index<0){${sourcePhases ? 'if(absent.indexOf(request.specifier.slice(2))>=0){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}' : ""}rejectUnsupportedExecution(realm);}
+   const index=names.indexOf(request.specifier.slice(2));${sourcePhases ? 'if(index<0){if(absent.indexOf(request.specifier.slice(2))>=0){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}rejectUnsupportedExecution(realm);}' : "if(index<0)rejectUnsupportedExecution(realm);"}
    finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));
   };
   const loading=loadRequestedModules(root,hooks,undefined);
