@@ -1665,6 +1665,7 @@ export function emitModule(
           ? nonAllocatingBlocks(fn, noSafepoints)
           : undefined;
       if (deferredRootBlocks !== undefined) {
+        const candidateBlocks: Uint8Array = deferredRootBlocks;
         const poolWords = temporaryRoots.length + temporaryGenerals.length * 2;
         let originalStores = poolWords,
           deferredStores = 0,
@@ -1682,7 +1683,7 @@ export function emitModule(
           originalStores +=
             (incomingReferences[block.id] ?? 0) +
             (incomingGenerals[block.id] ?? 0) * 2;
-          if (deferredRootBlocks[block.id] !== 1) deferredStores += poolWords;
+          if (candidateBlocks[block.id] !== 1) deferredStores += poolWords;
         }
         // Each accepted store is one scaled-immediate STR. Never multiply a
         // large initializer's root pool across its allocating CFG blocks, or
@@ -1690,6 +1691,7 @@ export function emitModule(
         if (!directStores || deferredStores > originalStores)
           deferredRootBlocks = undefined;
       }
+      const rootClearBlocks = deferredRootBlocks;
       if (transientRegisters !== undefined) {
         const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
         if (preserved !== undefined)
@@ -1797,7 +1799,7 @@ export function emitModule(
       frameStart = instructions.length * 4;
       for (let i = 0; i < rootSlots.length; i++) {
         if (
-          deferredRootBlocks !== undefined &&
+          rootClearBlocks !== undefined &&
           i >= rootSlots.length - temporaryRoots.length
         )
           continue;
@@ -1807,7 +1809,7 @@ export function emitModule(
       }
       for (let i = 0; i < generalSlots.length; i++) {
         if (
-          deferredRootBlocks !== undefined &&
+          rootClearBlocks !== undefined &&
           i >= generalSlots.length - temporaryGenerals.length
         )
           continue;
@@ -2618,15 +2620,15 @@ export function emitModule(
         // that may collect; a predecessor prefix is insufficient after deferral.
         // Without a complete closed-IR proof, preserve predecessor cleanup.
         const referenceClears =
-          deferredRootBlocks === undefined
+          rootClearBlocks === undefined
             ? (incomingReferences[b.id] ?? 0)
-            : deferredRootBlocks[b.id] === 1
+            : rootClearBlocks[b.id] === 1
               ? 0
               : temporaryRoots.length;
         const generalClears =
-          deferredRootBlocks === undefined
+          rootClearBlocks === undefined
             ? (incomingGenerals[b.id] ?? 0)
-            : deferredRootBlocks[b.id] === 1
+            : rootClearBlocks[b.id] === 1
               ? 0
               : temporaryGenerals.length;
         for (let i = 0; i < referenceClears; i++) {
