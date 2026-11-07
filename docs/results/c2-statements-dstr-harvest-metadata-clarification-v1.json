@@ -1,0 +1,18 @@
+{
+  "kind": "c2-native-report-metadata-clarification",
+  "generatedAt": "2026-11-07T14:49:42.312195+00:00",
+  "affectedManifests": [
+    "docs/results/c2-statements-dstr-complete-file-harvest-v1.json",
+    "docs/results/c2-statements-dstr-complete-file-harvest-v2.json"
+  ],
+  "affectedReports": 496,
+  "incorrectText": "Excludes the already-published complete444-variant early-errors directory.",
+  "correction": "The statements/dstr extractor includes both syntax-negative and positive-runtime observations. It skips files already published on the same frozen toolchain; no early-errors directory exclusion is applied. The quoted sentence was copied from an expressions/elements helper.",
+  "unchangedEvidence": {
+    "completeFiles": 496,
+    "variants": 992,
+    "passed": 992,
+    "rejectedByCanonicalLedger": 0
+  },
+  "preservation": "Original immutable reports remain unchanged. This clarification affects descriptive observationTiming.policy text only, not the selections, sources, harnesses, variants or judgments."
+}
