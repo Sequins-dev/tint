@@ -1,0 +1,15 @@
+--- a/slot
++++ b/slot
+@@ -5,10 +5,10 @@
+ set -u
+ cls=$1; max=$2; shift 2; [ "$1" = "--" ] && shift
+ root=$HOME/.t3/tint-slots/$cls; mkdir -p $root
+-# A coordinator-set cap in $root/max overrides the caller-supplied max.
+-[ -f $root/max ] && max=$(cat $root/max)
+ start=$(date +%s); last=0; held=""
+ while [ -z "$held" ]; do
++  # Refresh the coordinator cap while queued; running jobs keep their slot.
++  [ -f $root/max ] && max=$(cat $root/max)
+   for i in $(seq 1 $max); do
+     d=$root/slot-$i
+     if mkdir $d 2>/dev/null; then echo $$ > $d/pid; echo "$PWD $*" > $d/cmd; held=$d; break; fi

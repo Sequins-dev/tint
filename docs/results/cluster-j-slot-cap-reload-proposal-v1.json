@@ -1,0 +1,47 @@
+{
+  "kind": "cluster-j-slot-cap-reload-proposal",
+  "at": "2026-11-07T10:25:48.548532+00:00",
+  "status": "Proposal only; shared limiter not modified. No policy or cap changed.",
+  "problem": "slot reads central max once before its queue loop. Already queued jobs ignore later increases and decreases. J reproduced both against the exact current wrapper in isolated temporary directories.",
+  "patch": "docs/results/cluster-j-slot-cap-reload-proposal-v1.patch",
+  "originalWrapperSha256": "171551603ecb7d58f9db18279d17275f34a2ef7fbeede2321904dafab54ab858",
+  "proposedWrapperSha256": "0e1ab0e53fb968961425045584c453859643f1e21b8209a4e4a465e22abc7312",
+  "tests": {
+    "raise1to2": {
+      "baselineExit": 1,
+      "proposalExit": 0
+    },
+    "lower2to1": {
+      "baselineExit": 1,
+      "proposalExit": 0
+    }
+  },
+  "scope": "Move existing cap-file read into existing wait loop. Running jobs retain their acquired slots and are never killed. No new queue/lease/controller. Tests only read real wrapper; all test slots and cap files live in temporary directories.",
+  "deployment": "For coordinator review. Installing it would affect future wrapper invocations; existing queued shells would need a safe queued-only replacement to load new script. No running native process should be restarted.",
+  "evidence": [
+    {
+      "path": "docs/results/cluster-j-slot-cap-reload.test-v1.mjs",
+      "sha256": "69eb7681ee92ee2d70ab1514a083f889c494aeaa8034c3cb8c0ce874e0a1b59c"
+    },
+    {
+      "path": "docs/results/cluster-j-slot-cap-lower.test-v1.mjs",
+      "sha256": "69f315ddbf3d7b0fe27ef4bf3c6c43d535a07254fbec10e78511c7e9572c0909"
+    },
+    {
+      "path": "docs/results/cluster-j-slot-cap-reload-red-v1.log",
+      "sha256": "7b1dfe909a552bd2854f3c9989c24cb791efa708eb663686a5e5c696a6cb1899"
+    },
+    {
+      "path": "docs/results/cluster-j-slot-cap-reload-green-v1.log",
+      "sha256": "398305f2b4c0f9cab4c050fe78201bd8178a6f3023643c00f0ad87a8217d7f6e"
+    },
+    {
+      "path": "docs/results/cluster-j-slot-cap-lower-red-v1.log",
+      "sha256": "efb10f94c5353bbb90b0ed05c5ddcd7a8ef8eb07abbfde5283a99e8e3bba1c43"
+    },
+    {
+      "path": "docs/results/cluster-j-slot-cap-lower-green-v1.log",
+      "sha256": "03a989a37a9fc7929b52186aeea4bf4c44d6d65f50b8ffd8e2d3317b3dba8824"
+    }
+  ]
+}

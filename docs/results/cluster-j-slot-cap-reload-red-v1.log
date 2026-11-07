@@ -1,0 +1,15 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: queued wrapper did not observe raised central cap
+    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-slot-cap-reload.test.mjs:21:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'timeout',
+  expected: 'timeout',
+  operator: 'notStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.12.0
