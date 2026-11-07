@@ -1853,6 +1853,16 @@ export function emitModule(
         if (register !== 0) emit({ op: "fmov-d-d", rd: register, rn: rt });
         else emit({ op: "str-d", rt, rn: "sp", offset });
       }
+      /** Ordinary numeric ALU operands may name their existing FP homes. Only
+       * stack-backed values need a scratch load; no conversion or guard changes. */
+      function floatOperand(id: number, scratch: number): number {
+        const storage = scalarRegisters,
+          offset = value(id).offset,
+          register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
+        if (register !== 0) return register;
+        floatLoad(scratch, id);
+        return scratch;
+      }
       function rawValue(rt: number, id: number): void {
         rawLoad(rt, value(id).offset);
       }
@@ -5245,16 +5255,16 @@ export function emitModule(
                 break;
               }
               if (["+", "-", "*", "/"].includes(op.operator)) {
-                floatLoad(0, op.left);
-                floatLoad(1, op.right);
+                const left = floatOperand(op.left, 0),
+                  right = floatOperand(op.right, 1);
                 emit(
                   op.operator === "+"
-                    ? { op: "fadd", rd: 0, rn: 0, rm: 1 }
+                    ? { op: "fadd", rd: 0, rn: left, rm: right }
                     : op.operator === "-"
-                      ? { op: "fsub", rd: 0, rn: 0, rm: 1 }
+                      ? { op: "fsub", rd: 0, rn: left, rm: right }
                       : op.operator === "*"
-                        ? { op: "fmul", rd: 0, rn: 0, rm: 1 }
-                        : { op: "fdiv", rd: 0, rn: 0, rm: 1 },
+                        ? { op: "fmul", rd: 0, rn: left, rm: right }
+                        : { op: "fdiv", rd: 0, rn: left, rm: right },
                 );
                 floatStore(0, op.id);
               } else if (op.operator === "%") {
@@ -5348,9 +5358,9 @@ export function emitModule(
                   break;
                 }
                 if (value(op.left).type === "number") {
-                  floatLoad(0, op.left);
-                  floatLoad(1, op.right);
-                  emit({ op: "fcmp", rn: 0, rm: 1 });
+                  const left = floatOperand(op.left, 0),
+                    right = floatOperand(op.right, 1);
+                  emit({ op: "fcmp", rn: left, rm: right });
                 } else {
                   rawValue(9, op.left);
                   rawValue(10, op.right);
