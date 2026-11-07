@@ -1,0 +1,26 @@
+{
+  "kind": "post-selfbuild-integration-scope",
+  "at": "2026-11-07T22:51:08.492815+00:00",
+  "frozenImplementationCommit": "b3644277016ad3510dd20bda4e1aed1397b27675",
+  "sourceSnapshot": {
+    "sha256": "245ec37936b09a3f8304ca42c70e8587468f3448c0190ff8b4cf9c2bd67425dc",
+    "files": 601
+  },
+  "currentImplementationCommit": "8eff2566b84092d4e5064e176c7e6a78f4ae45b8",
+  "changedPaths": [
+    "packages/js-engine/test/dynamic-function-lowering.test.ts",
+    "packages/js-engine/test/eval-guard.test.ts",
+    "packages/js-engine/test/eval-lowering.test.ts",
+    "packages/js-engine/test/import-call-lowering.test.ts",
+    "packages/js-engine/test/runtime-imports.test.ts",
+    "packages/js-engine/test/runtime-surface.test.ts",
+    "packages/js-engine/test/syntax-shape.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date.ts",
+    "packages/js-runtime/test/ordinary-object-temporal-partial-date.test.ts",
+    "tools/verify-test262-native-temporal-partial-locale.ts"
+  ],
+  "unchangedFeatureProduction": [
+    "packages/js-engine/src/lowering/index.ts"
+  ],
+  "explanation": "After the frozen native proof, main gained independently validated Temporal fallback code; A1 only updated tests to ignore identity hashes. Script lowering production bytes remain identical to the native-validated snapshot. The final workspace gate covers the integration."
+}
