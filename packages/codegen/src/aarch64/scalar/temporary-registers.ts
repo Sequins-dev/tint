@@ -147,12 +147,14 @@ export function temporaryRegisters(
     heads = new Uint32Array(16),
     tails = new Uint32Array(16);
   for (const block of fn.blocks) {
+    if (block === undefined) throw "reference temporary block invariant";
     for (let r = 0; r < 16; r++) {
       heads[r] = 0;
       tails[r] = 0;
       occupied[r] = 0;
     }
     for (const op of block.instructions) {
+      if (op === undefined) throw "reference temporary instruction invariant";
       if (++work > maxWork) return registers;
       const id = instructionResult(op);
       if (id === undefined) continue;
@@ -165,6 +167,7 @@ export function temporaryRegisters(
       tails[r] = id + 1;
     }
     for (const op of block.instructions) {
+      if (op === undefined) throw "reference temporary instruction invariant";
       if (++work > maxWork) return registers;
       const id = instructionResult(op);
       if (id === undefined || valid[id] !== 2) continue;
