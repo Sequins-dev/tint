@@ -1,0 +1,32 @@
+{
+  "kind": "linked-formatting-native-api-validation",
+  "conformance": false,
+  "time": "2026-11-07T17:26:15.016307+00:00",
+  "baseMain": "269a22589232b81325e14e845e25797ad8b6d331",
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v110.json",
+  "sourceSnapshot": {
+    "sha256": "5876293c682c5015307f3d484cbefe9d5db3b00a6c7fe6d91b1585854e00b668",
+    "files": 621
+  },
+  "fixtures": [
+    {
+      "report": "date-time-api-linked-native-h-v110.json",
+      "initialStop": true,
+      "expectedExit": 42,
+      "actual": "completed"
+    },
+    {
+      "report": "temporal-date-time-linked-native-h-v110.json",
+      "initialStop": true,
+      "expectedExit": 42,
+      "actual": "completed"
+    },
+    {
+      "report": "duration-format-linked-native-h-v110.json",
+      "initialStop": true,
+      "expectedExit": 42,
+      "actual": "completed"
+    }
+  ],
+  "claims": "Native API integration only; full Test262 equivalence and compile CPU acceptance remain pending."
+}

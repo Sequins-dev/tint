@@ -1,0 +1,66 @@
+{
+  "kind": "hosted-native-observation",
+  "conformance": false,
+  "time": "2026-11-07T17:24:11.912Z",
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v110.json",
+  "manifestSummary": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "5876293c682c5015307f3d484cbefe9d5db3b00a6c7fe6d91b1585854e00b668",
+      "files": 621
+    },
+    "imageSha256": "2bfae1d085edd124f1e8409facb65858a29b5bd1c3244ceeb0231843dddfa054",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-date-time-format-api-v9g2Gz/date-time-format-api.source.ts",
+    "fixtureSha256": "bfcb0404b94f1f7546c5f9ab5aba42f7ddea3a52bac0609cab445fb67f33a123",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/build-date-time-api-h-v110.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 268435456,
+      "allocationCapacity": 8388608,
+      "stackBytes": 16777216,
+      "rootCapacity": 16384,
+      "nativeServiceIdentity": {
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "b5b06401a9157ae096b9df71c7aa7ea5ed1959f7f67c83849ac785f3af9991c5"
+      },
+      "nativeServices": [
+        {
+          "bind": {
+            "module": "date-time-service-facade",
+            "name": "instantiate"
+          },
+          "unit": {
+            "version": 1,
+            "profile": "managed-factory-v1",
+            "factoryContract": "tint.service.factory.v1/dateTime/6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+            "surface": {
+              "name": "dateTime",
+              "digest": "6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+              "frame": "Frame"
+            },
+            "entryOffset": 0,
+            "counts": {
+              "signatures": 39,
+              "memberOnly": 4,
+              "records": 40,
+              "functions": 59
+            },
+            "codeBytes": 4511824,
+            "codeSha256": "35598ad525e833609ff969469172a89adf474c9e121bb6012778aded0cc82bc5"
+          }
+        }
+      ]
+    },
+    "nativeServiceSourceProjectionSha256": "68bfa290c8e6c5e29f473b52bc2d5c0bd972e59bc86eaaea20e7f6e73e9f8627",
+    "debugSymbols": false
+  },
+  "fullManifestSha256": "238c7531259b6503b8a769cae3a55a046db00c3fe2c382fe54004efc2c520e86",
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExpectedExit42ValidatedBy": "executeNativeFile",
+  "outcome": {
+    "kind": "completed"
+  }
+}
