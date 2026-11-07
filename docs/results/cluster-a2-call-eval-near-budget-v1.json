@@ -1,0 +1,50 @@
+{
+  "kind": "native-performance-observation",
+  "generatedAt": "2026-11-07T13:00:18.246640+00:00",
+  "scope": "Passing case with near-budget native execution; not a new complete selection or additional conformance observation.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "path": "language/expressions/call/S11.2.3_A1.js",
+  "variant": "sloppy",
+  "sourceSha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16",
+  "observation": {
+    "kind": "observation",
+    "path": "language/expressions/call/S11.2.3_A1.js",
+    "sha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16",
+    "variant": "sloppy",
+    "metadata": {
+      "flags": [],
+      "features": [],
+      "includes": []
+    },
+    "canSuspend": true,
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      }
+    ],
+    "outcome": {
+      "kind": "completed"
+    },
+    "status": "pass",
+    "elapsedMs": 550953.372333,
+    "batch": 3
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "containmentMs": 300000,
+  "lastSampleCpuSeconds": 263.0,
+  "lastSampleInferiorWall": "04:40",
+  "cpuEvidence": "docs/results/cluster-a2-call-eval-near-budget-cpu-v1.jsonl.gz",
+  "nativeStackSample": "docs/results/cluster-a2-call-eval-native-sample-v1.txt.gz",
+  "sampleSha256": "08257ccae80a9a1d41d889baaa99603750dfba5ae3a10280cc668265efae4e19",
+  "samplerExitStatus": 0,
+  "finding": "Inferior was CPU-bound and ultimately passed. Original source contains ten direct eval calls of Number() with different whitespace. Last sample was at 263 CPU seconds and about 280 wall seconds.",
+  "attribution": "Repeated managed eval/JIT preparation is the likely shared cost, inferred from source and similar single-eval timings. Sample has unresolved native code addresses, so exact compiler substage attribution is not established.",
+  "reproductionManifest": "docs/results/cluster-a2-call-eval-performance-variants-v1.json",
+  "nextStep": "Cluster P can profile this existing official-runner workload with a fresh current-main frozen toolchain and TINT_TEST262_VARIANTS. A2 continues its original immutable run.",
+  "portableCodeChanged": false
+}
