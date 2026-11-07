@@ -1,0 +1,75 @@
+{
+  "kind": "c1-complete-directory-breadth-plan",
+  "conformance": false,
+  "rootSelection": "language/statements/class",
+  "manifest": "docs/results/c1-remaining-statements-breadth-variants-v1.json",
+  "populations": [
+    {
+      "selection": "language/statements/class/subclass",
+      "files": 109,
+      "variants": 217
+    },
+    {
+      "selection": "language/statements/class/async-gen-method",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/statements/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/statements/class/subclass-builtins",
+      "files": 36,
+      "variants": 72
+    },
+    {
+      "selection": "language/statements/class/async-method",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/async-method-static",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/statements/class/gen-method",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/gen-method-static",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/statements/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/accessor-name-static",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/statements/class/method",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/method-static",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "files": 12,
+      "variants": 21
+    }
+  ],
+  "totalVariants": 1074,
+  "policy": "Every variant in each listed complete directory, unchanged pinned source hashes; excludes C2 elements/dstr. Standard explicit-variant runner,64-variant batches. Extract each complete directory with the shared native extractor. Parent subset and extracted reports overlap and must be deduplicated."
+}

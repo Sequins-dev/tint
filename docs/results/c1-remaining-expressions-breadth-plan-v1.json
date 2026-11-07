@@ -1,0 +1,65 @@
+{
+  "kind": "c1-complete-directory-breadth-plan",
+  "conformance": false,
+  "rootSelection": "language/expressions/class",
+  "manifest": "docs/results/c1-remaining-expressions-breadth-variants-v1.json",
+  "populations": [
+    {
+      "selection": "language/expressions/class/async-gen-method-static",
+      "files": 99,
+      "variants": 191
+    },
+    {
+      "selection": "language/expressions/class/subclass-builtins",
+      "files": 36,
+      "variants": 72
+    },
+    {
+      "selection": "language/expressions/class/async-method",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/async-method-static",
+      "files": 32,
+      "variants": 59
+    },
+    {
+      "selection": "language/expressions/class/gen-method",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/gen-method-static",
+      "files": 31,
+      "variants": 55
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-static",
+      "files": 21,
+      "variants": 42
+    },
+    {
+      "selection": "language/expressions/class/method",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/method-static",
+      "files": 20,
+      "variants": 35
+    },
+    {
+      "selection": "language/expressions/class/decorator",
+      "files": 8,
+      "variants": 13
+    }
+  ],
+  "totalVariants": 658,
+  "policy": "Every variant in each listed complete directory, unchanged pinned source hashes; excludes C2 elements/dstr. Standard explicit-variant runner,64-variant batches. Extract each complete directory with the shared native extractor. Parent subset and extracted reports overlap and must be deduplicated."
+}
