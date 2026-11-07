@@ -1,0 +1,29 @@
+{
+  "kind": "initialization-proof-pruning-final-integration",
+  "sourceSnapshot": {
+    "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+    "files": 601
+  },
+  "nativeValidation": "docs/results/a1-initialization-proof-pruning-validation-v1.json",
+  "portableSourceBytesUnchanged": true,
+  "mainAtGate": "80729c85bb96554d13a7a9f48af6b999db6b46a4",
+  "gate": {
+    "code": 0,
+    "childPid": 90918,
+    "log": "docs/results/a1-initialization-proof-pruning-final-tint-check-v3.log",
+    "at": "2026-11-07T23:52:36.996Z",
+    "passed": 4902
+  },
+  "postNativeChangedPaths": [
+    "tools/build-native-agent-child-failure-fixture.ts",
+    "tools/build-native-agent-wait-resource-fixture.ts",
+    "tools/native-agent-test-resources.test.ts",
+    "tools/native-agent-wait-workloads.ts",
+    "tools/test262-dynamic-import-host.test.ts",
+    "tools/test262-module-host.test.ts",
+    "tools/test262-native.ts",
+    "tools/test262-script-service.test.ts",
+    "tools/test262-top-level-await.test.ts"
+  ],
+  "scope": "Rebased over main native-agent tooling changes after the native proof. All601portable source bytes still match the successful frozen native selfbuild; the final workspace gate covers current integration. Active identifiers conformance output files remain untracked and outside this code slice."
+}
