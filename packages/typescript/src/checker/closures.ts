@@ -754,8 +754,8 @@ export function checkClosureModule(module: Module): ClosureResult {
   const pendingParameters = new Set<number>();
   const narrowed: { binding: number; type: number; property?: string }[] = [],
     narrowKeys = createStringIndex<number>();
-  // Interned tokens remain valid across branch snapshots; writes need only
-  // invalidate tokens belonging to the binding being assigned.
+  // Interned tokens outlive branch snapshots. This index limits queries and
+  // invalidation by binding; each snapshot still decides active membership.
   const narrowingTokens = new Map<number, number[]>();
   function forgetNarrowed(binding: number): void {
     const tokens = narrowingTokens.get(binding);
@@ -768,18 +768,32 @@ export function checkClosureModule(module: Module): ClosureResult {
     declared: number,
     facts: Set<number>,
   ): number {
-    let type = declared;
-    for (const token of facts) {
-      const fact = narrowed[token - graph.bindings.length];
-      if (
-        fact !== undefined &&
-        fact.binding === binding &&
-        fact.property === undefined
-      ) {
-        type = fact.type;
-        break;
+    let type = declared,
+      matches = 0;
+    const tokens = narrowingTokens.get(binding);
+    if (tokens !== undefined)
+      for (const token of tokens) {
+        if (token === undefined || !facts.has(token)) continue;
+        const fact = narrowed[token - graph.bindings.length];
+        if (fact !== undefined && fact.property === undefined) {
+          type = fact.type;
+          if (++matches > 1) break;
+        }
       }
-    }
+    // A single active candidate has no ordering ambiguity. If there are several,
+    // preserve the fact set's original first-match order, not token creation order.
+    if (matches > 1)
+      for (const token of facts) {
+        const fact = narrowed[token - graph.bindings.length];
+        if (
+          fact !== undefined &&
+          fact.binding === binding &&
+          fact.property === undefined
+        ) {
+          type = fact.type;
+          break;
+        }
+      }
     return facts.has(binding) ? (presentType(type) ?? type) : type;
   }
   function narrowToken(
@@ -1283,16 +1297,18 @@ export function checkClosureModule(module: Module): ClosureResult {
           return true;
         }
         if (tag?.kind !== "literal") return false;
-        for (const token of facts) {
-          const fact = narrowed[token - graph.bindings.length];
-          if (
-            fact !== undefined &&
-            fact.binding === bindingId &&
-            fact.property === property &&
-            !system.assignable(tagId, fact.type)
-          )
-            return true;
-        }
+        const tokens = narrowingTokens.get(bindingId);
+        if (tokens !== undefined)
+          for (const token of tokens) {
+            if (token === undefined || !facts.has(token)) continue;
+            const fact = narrowed[token - graph.bindings.length];
+            if (
+              fact !== undefined &&
+              fact.property === property &&
+              !system.assignable(tagId, fact.type)
+            )
+              return true;
+          }
         variants.push({ type: id, tag: tagId, value: tag.value });
         return true;
       }

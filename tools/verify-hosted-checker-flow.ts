@@ -41,6 +41,37 @@ const cases = [
       "\n",
     ),
   ],
+  [
+    true,
+    Array.from(
+      { length: 512 },
+      (_, i) => `const v${i}:number=${i === 0 ? "0" : `v${i - 1}`};`,
+    ).join("\n"),
+  ],
+  [
+    true,
+    "type W=" +
+      Array.from(
+        { length: 64 },
+        (_, i) =>
+          `{readonly kind:'t${i}';readonly ${i === 0 ? "value:number" : "other:string"}}`,
+      ).join("|") +
+      ";function f(a:W):number{" +
+      Array.from({ length: 64 }, (_, i) => `const v${i}:number=${i};`).join(
+        "\n",
+      ) +
+      "if(a.kind==='t0')return a.value;return 0;}",
+  ],
+  [
+    true,
+    header +
+      "function f(a:R,b:R,flag:boolean):number{if(flag){if(a.ok)return a.value;}if(!a.ok)return 0;if(!b.ok)return 0;b={ok:false,error:'x'};return a.value;}",
+  ],
+  [
+    false,
+    header +
+      "function f(a:R,flag:boolean):number{if(flag){if(a.ok)return a.value;}return a.value;}",
+  ],
 ] as const;
 
 verifyHostedFixture(
