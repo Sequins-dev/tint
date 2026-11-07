@@ -138,6 +138,26 @@ test("append-item requests remain distinguishing attributes", () => {
     "second",
   );
 });
+test("an explicit alternate selector can read a short territory label", () => {
+  const root = parseCldrElements(
+    `<ldml><territories><territory type="GB">United Kingdom</territory><territory type="GB" alt="short">UK</territory></territories></ldml>`,
+  );
+  const resolver = createCldrLocaleResolver(
+    new Map([["root", root]]),
+    () => undefined,
+  );
+  assert.equal(
+    resolver.value("root", cldrPath("territories/territory[@type='GB']")),
+    "United Kingdom",
+  );
+  assert.equal(
+    resolver.value(
+      "root",
+      cldrPath("territories/territory[@type='GB'][@alt='short']"),
+    ),
+    "UK",
+  );
+});
 test("CLDR resolver rejects alias and parent cycles and allows bounded cache reuse", () => {
   const root = parseCldrElements(
     `<ldml><a><alias source="locale" path="../b"/></a><b><alias source="locale" path="../a"/></b></ldml>`,

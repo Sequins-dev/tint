@@ -98,7 +98,10 @@ export function createDateTimePartsFormatter(
     threeDigits,
   };
 }
-function numberText(formatter: DecimalNumberFormatter, value: number): string {
+export function dateTimeNumberText(
+  formatter: DecimalNumberFormatter,
+  value: number,
+): string {
   const parts = decimalNumberParts(formatter, decimalFromNumber(value));
   let text = "";
   for (let index = 0; index < parts.length; index++) {
@@ -113,7 +116,7 @@ function numericField(
   value: number,
   width: number,
 ): string {
-  return numberText(
+  return dateTimeNumberText(
     width === 2 ? formatter.twoDigits : formatter.numeric,
     width === 2 ? Math.abs(value) % 100 : value,
   );
@@ -323,7 +326,7 @@ export function dateTimePatternParts(
       );
     } else if (symbol === "r") {
       type = "relatedYear";
-      value = numberText(formatter.numeric, fields.year);
+      value = dateTimeNumberText(formatter.numeric, fields.year);
     } else if (symbol === "U") {
       type = "yearName";
       const cycle = ((((fields.year - 4) % 60) + 60) % 60) + 1;
@@ -386,7 +389,7 @@ export function dateTimePatternParts(
         input.millisecond / (width === 1 ? 100 : width === 2 ? 10 : 1),
       );
       type = "fractionalSecond";
-      value = numberText(
+      value = dateTimeNumberText(
         width === 3
           ? formatter.threeDigits
           : width === 2

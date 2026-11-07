@@ -1211,6 +1211,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/date-time-zone-name.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/date-time-zone.ts",
       packageId: "js-runtime",
     },

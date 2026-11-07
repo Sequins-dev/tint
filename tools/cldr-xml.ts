@@ -121,6 +121,7 @@ const distinguishingAttributes = [
   "type",
   "id",
   "request",
+  "alt",
   "count",
   "choice",
   "numberSystem",
@@ -229,7 +230,7 @@ export function cldrPath(expression: string): CldrPathStep[] {
   return resolveCldrAliasPath([], expression);
 }
 function matchesStep(node: CldrElement, wanted: CldrPathStep): boolean {
-  if (node.name !== wanted.name || node.attributes.has("alt")) return false;
+  if (node.name !== wanted.name) return false;
   const actual = elementStep(node).attributes;
   return (
     actual.length === wanted.attributes.length &&

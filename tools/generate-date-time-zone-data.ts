@@ -346,12 +346,18 @@ for (const locale of localeKeys) {
           zone + "." + width + "." + kind,
           `dates/timeZoneNames/metazone[@type='${zone}']/${width}/${kind}`,
         );
-  for (const country of [...countries].sort())
+  for (const country of [...countries].sort()) {
     add(
       "countries",
       country,
       `localeDisplayNames/territories/territory[@type='${country}']`,
     );
+    add(
+      "countries",
+      country + ".short",
+      `localeDisplayNames/territories/territory[@type='${country}'][@alt='short']`,
+    );
+  }
   const profile = ["formats", "zones", "metazones", "countries"]
     .map((group) => field(groups.get(group) ?? new Map()))
     .join(",");

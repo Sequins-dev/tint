@@ -17,6 +17,7 @@ function profile(locale: string) {
   return result;
 }
 test("time-zone names retain localized metazones and source aliases", () => {
+  assert.equal(dateTimeZoneValue(profile("en"), "countries", "GB.short"), "UK");
   const en = profile("en-US-u-nu-latn");
   assert.equal(en.locale, "en-US");
   assert.equal(
