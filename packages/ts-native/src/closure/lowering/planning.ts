@@ -12,6 +12,67 @@ import {
 export type PlanResult =
   | { readonly ok: true; readonly value: ClosureLayouts }
   | { readonly ok: false; readonly error: string };
+/** Simple strict parameters are initialized before body-created closures. A
+ * numeric binding with no syntactic writes, including in descendants, needs no
+ * shared cell. Defaults, sloppy code and dynamic binding exposure retain cells.
+ * This is a binding/dataflow proof, independent of readonly type assertions. */
+export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
+  const result = new Uint8Array(checked.bindings.bindings.length),
+    writes = new Uint8Array(checked.bindings.bindings.length);
+  if (
+    checked.module.strict === false ||
+    (checked.bindings.directEvalOwners?.length ?? 0) !== 0
+  )
+    return result;
+  for (const reference of checked.bindings.references) {
+    if (reference === undefined) throw "capture reference invariant";
+    if (reference.global === "arguments" || reference.global === "eval")
+      return result;
+    if (reference.binding !== undefined && reference.access !== "read")
+      writes[reference.binding] = 1;
+  }
+  // Redeclaration initializers are binding operations, not identifier
+  // references. Treat every alias conservatively, even a bare var redeclaration.
+  for (const alias of checked.bindings.aliases ?? []) {
+    if (alias === undefined) throw "capture alias invariant";
+    writes[alias.binding] = 1;
+  }
+  for (const operation of checked.operations) {
+    if (operation === undefined) throw "capture operation invariant";
+    if (operation.operation.kind === "write") writes[operation.binding] = 1;
+  }
+  for (const binding of checked.bindings.bindings) {
+    if (binding === undefined) throw "capture binding invariant";
+    const owner = binding.owner;
+    if (
+      binding.kind !== "parameter" ||
+      !binding.captured ||
+      owner === undefined ||
+      writes[binding.id] === 1
+    )
+      continue;
+    const fn = checked.bindings.functions[owner],
+      body = checked.bodies.get(owner),
+      type = checked.bindingTypes[binding.id];
+    if (
+      fn === undefined ||
+      checked.bindings.scopes[fn.scope]?.strict !== true ||
+      body === undefined ||
+      (fn.parameterCopies?.length ?? 0) !== 0 ||
+      body.parameters.some(
+        (parameter) =>
+          parameter.kind === "pattern-parameter" ||
+          parameter.initializer !== undefined ||
+          parameter.rest === true,
+      ) ||
+      type === undefined ||
+      scalarType(checked, type) !== "number"
+    )
+      continue;
+    result[binding.id] = 1;
+  }
+  return result;
+}
 /** Declarations proven never reassigned and used exclusively as direct callees need no runtime function cell. */
 export function directFunctions(
   checked: CheckedClosures,

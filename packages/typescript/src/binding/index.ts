@@ -25,6 +25,8 @@ export interface Scope {
   readonly id: number;
   readonly parent: number | undefined;
   readonly owner: number | undefined;
+  /** Binder-established mode. Missing metadata cannot authorize strict proofs. */
+  readonly strict?: boolean;
   readonly kind:
     "module" | "script" | "function" | "function-body" | "block" | "for";
   readonly node: Span;
@@ -1358,6 +1360,7 @@ function bindProgram(
       receiverReferences,
       aliases,
       scopes: scopes.map((s) => ({
+        strict: s.strict,
         id: s.id,
         parent: s.parent,
         owner: s.owner,

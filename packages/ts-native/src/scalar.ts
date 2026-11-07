@@ -226,6 +226,8 @@ export interface OwnedCell {
   readonly local: number;
   readonly record: number;
   readonly incoming?: number | undefined;
+  /** Proven initialized, never reassigned numeric parameter; store its payload. */
+  readonly byValue?: boolean;
   readonly perIteration?: boolean | undefined;
   readonly scope?: Span | undefined;
   readonly declaration: Span;
@@ -1045,6 +1047,7 @@ export function lowerFunction(
     ownedCells = owned?.cells ?? [];
   for (const cell of ownedCells) {
     if (cell === undefined) throw "owned cell invariant";
+    if (cell.byValue === true) continue;
     cellPointers[cell.local] = temporary("reference");
   }
   function cellAccess(
@@ -1054,6 +1057,10 @@ export function lowerFunction(
   ): void {
     const cell = ownedCells.find((c) => c !== undefined && c.local === local);
     if (cell === undefined) return;
+    if (cell.byValue === true) {
+      if (operation === "write") throw "write to captured value invariant";
+      return;
+    }
     const pointer = cellPointers[local];
     if (pointer === undefined) throw "owned cell pointer invariant";
     const success = block(),
@@ -1112,7 +1119,12 @@ export function lowerFunction(
   function allocateCells(scope: Span | undefined): void {
     for (const cell of ownedCells) {
       if (cell === undefined) throw "owned cell invariant";
-      if (cell.incoming !== undefined || cell.scope !== scope) continue;
+      if (
+        cell.byValue === true ||
+        cell.incoming !== undefined ||
+        cell.scope !== scope
+      )
+        continue;
       const pointer = cellPointers[cell.local];
       if (pointer === undefined) throw "owned cell allocation invariant";
       const id = nextValue++;
@@ -1132,6 +1144,7 @@ export function lowerFunction(
       if (cell === undefined) throw "owned cell invariant";
       if (
         cell.incoming !== undefined ||
+        cell.byValue === true ||
         cell.scope !== scope ||
         !cell.perIteration
       )
@@ -1164,6 +1177,8 @@ export function lowerFunction(
         record: construction.record,
         arguments: construction.locals.map((local): number => {
           if (local === undefined) throw "closure captured local invariant";
+          const cell = ownedCells.find((entry) => entry.local === local);
+          if (cell?.byValue === true) return load(local, node);
           const pointer = cellPointers[local];
           if (pointer === undefined) throw "closure captured cell invariant";
           return load(pointer, node);
@@ -7217,16 +7232,21 @@ export function lowerFunction(
       if (cell === undefined) throw "incoming cell invariant";
       const incoming = cell.incoming;
       if (incoming === undefined) continue;
-      const slot = cellPointers[cell.local];
+      const slot =
+        cell.byValue === true ? cell.local : cellPointers[cell.local];
       if (slot === undefined) throw "incoming cell invariant";
       recordAccess(
         pointer,
         slot,
         "read",
         {
-          type: "reference",
+          type: cell.byValue === true ? "number" : "reference",
           choices: [
-            { record: ownedRecord, field: incoming, type: "reference" },
+            {
+              record: ownedRecord,
+              field: incoming,
+              type: cell.byValue === true ? "number" : "reference",
+            },
           ],
         },
         cell.declaration,

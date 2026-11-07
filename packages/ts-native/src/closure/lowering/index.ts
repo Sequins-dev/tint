@@ -38,7 +38,11 @@ import {
   type RecordIdentityResolver,
 } from "./records.ts";
 import { createTypeSystem } from "@tint/typescript/types";
-import { directFunctions, scalarType } from "./planning.ts";
+import {
+  directFunctions,
+  scalarType,
+  valueParameterCaptures,
+} from "./planning.ts";
 import type {
   ScalarType as SourceScalarType,
   CheckedClosures,
@@ -1170,7 +1174,8 @@ function lowerEntries(
               };
             }),
           };
-    const ownedCells: (number | undefined)[] = [];
+    const ownedCells: (number | undefined)[] = [],
+      valueCaptures = valueParameterCaptures(checked);
     const ownedFunctions = new Map<
       number,
       { record: number; bindings: readonly number[] }
@@ -1221,9 +1226,9 @@ function lowerEntries(
           bindings,
           record: recordContracts.append({
             byteLength: Math.ceil((16 + bindings.length * 8) / 16) * 16,
-            fields: bindings.map((_, i) => ({
+            fields: bindings.map((binding, i) => ({
               offset: 16 + i * 8,
-              type: "reference",
+              type: valueCaptures[binding] === 1 ? "number" : "reference",
               mutable: false,
             })),
           }),
@@ -2674,6 +2679,7 @@ function lowerEntries(
           ownedLocalCells.push({
             local: local.id,
             record,
+            byValue: valueCaptures[bindingId] === 1,
             incoming: field === undefined || field < 0 ? undefined : field,
             perIteration: binding.kind === "let" && scope?.kind === "for",
             scope:
