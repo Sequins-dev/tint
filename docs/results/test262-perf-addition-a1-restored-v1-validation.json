@@ -1,0 +1,93 @@
+{
+  "kind": "native-recheck-evidence",
+  "utc": "2026-11-07T11:34:41.412337+00:00",
+  "canonicalReport": "test262-perf-addition-a1-restored-v1.json",
+  "journal": "test262-perf-addition-a1-restored-v1.jsonl",
+  "totals": {
+    "variants": 2,
+    "pass": 2,
+    "fail": 0,
+    "timeout": 0,
+    "infrastructure": 0
+  },
+  "cpu": [
+    {
+      "pid": 75452,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 6016749786,
+        "systemTicks": 54124079,
+        "instructions": 2127543343970,
+        "cycles": 766749936087
+      },
+      "cpuMsLowerBound": 252953.07770833335,
+      "finalUnobservedWallBoundMs": 100.235292,
+      "probes": 2505,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    },
+    {
+      "pid": 92883,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 6352380788,
+        "systemTicks": 48338541,
+        "instructions": 2126771745575,
+        "cycles": 770666937734
+      },
+      "cpuMsLowerBound": 266696.63870833337,
+      "finalUnobservedWallBoundMs": 100.716542,
+      "probes": 2649,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    }
+  ],
+  "compilations": [
+    {
+      "kind": "compilation",
+      "compilation": {
+        "id": 0,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 195690.66616599998,
+        "outcome": "compiled"
+      }
+    }
+  ],
+  "priorOutcomes": "native-capture-throughput-v1.json retains the earlier complete 0/2 candidate report and CPU-limited after-entry timeouts. This report is separate and does not replace them.",
+  "scope": "Same sealed v16 candidate host, unchanged pinned A1 sources/harness, strict/sloppy variants, 300-second containment and process isolation. CPU 252.953/266.697 seconds; independent external rusage observers identify the exact inferior executable, not debugserver. Observation elapsedMs includes compilation and is not execution time. Node compile-phase STALL investigated: Node completed compilation and the inferiors ran with nonzero CPU; no authorization failure.",
+  "assets": [
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-restored-addition-normal-load-v1-launcher.json.gz",
+      "sha256": "f720807e914e94b5a8f74f657e2bdee812431a4af510ec8564f43cd9e2be47cf"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-restored-addition-normal-load-v1-exit.json.gz",
+      "sha256": "fc9212e47407e558d584ea48f75ee168efae056b6a0c94a4acf4fe050932b323"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-observe-canonical-a1-normal-load-v1.mjs.gz",
+      "sha256": "6e4fb5619831493bd55188fcdb7ad190b9cbe1d429eaca709ef9d89f0b6232fc"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-observe-canonical-a1-normal-load-v1--observations.json.gz",
+      "sha256": "447df5b4e863c616e656a593aa7a9b2296c1f60096a2b7eaab4e7327434a2680"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-observe-canonical-a1-normal-load-v1--after-0--cpu.json.gz",
+      "sha256": "560fcae9ff76a0c835f4b55be215ac4bb13e5d6de6c33d1ef17541e2c09b85ce"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-observe-canonical-a1-normal-load-v1--after-1--cpu.json.gz",
+      "sha256": "d05cb7ac29eb9fbc02faff9bf7a5960e1c390d1149eba64289a6fdb0a4e03905"
+    },
+    {
+      "path": "docs/results/test262-perf-addition-a1-restored-v1-addition-normal-load-compile-stall-v1.txt.gz",
+      "sha256": "05bd8ba83dd7e175e27171c735d095d49bed52bf5fe11472eeb86c9f20a5ca30"
+    }
+  ]
+}

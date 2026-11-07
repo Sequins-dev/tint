@@ -1,0 +1,1065 @@
+{
+  "kind": "rejected-native-performance-candidate",
+  "utc": "2026-11-07T11:34:04.992577+00:00",
+  "candidateBranch": "perf/test262-reference-registers",
+  "candidateHead": "6e66310145ac3abc619ec86418a2933588b19fb6",
+  "decision": "Do not merge the production promotion change. Full native workload does not validate the microbenchmark win. Continue with no-safepoint SSA temporaries, which avoid added callee-save costs.",
+  "operation": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": ".tint-bootstrap/perf/reference-callee-closed-v1/before",
+        "manifest": {
+          "kind": "closed-reference-callee-prototype",
+          "prototype": true,
+          "fixtureSha256": "eb2b2da5125af424eb80b1fd9243626ca8c61c31080e504fb72cc5d1456fe12a",
+          "imageSha256": "816fad67b0ed8156fa2378e41a050e1d21f1ebcc74731035ff43e5ce41628ebf",
+          "iterations": 50000000,
+          "functions": [
+            {
+              "id": 0,
+              "name": "reference-loop",
+              "exported": true,
+              "offset": 0,
+              "byteLength": 588,
+              "frameBytes": 160,
+              "signature": {
+                "parameters": [
+                  {
+                    "kind": "integer",
+                    "index": 4
+                  }
+                ],
+                "stackBytes": 0
+              }
+            },
+            {
+              "id": 1,
+              "name": "identity",
+              "exported": false,
+              "offset": 588,
+              "byteLength": 48,
+              "frameBytes": 64,
+              "signature": {
+                "parameters": [
+                  {
+                    "kind": "integer",
+                    "index": 4
+                  }
+                ],
+                "stackBytes": 0
+              }
+            }
+          ],
+          "roots": [],
+          "scope": "Same verified closed IR; no allocations or safepoints. Foreign wrapper creates a descriptor-tagged immutable stack record. Both images retain checked property reads and one direct call per iteration."
+        }
+      },
+      {
+        "binary": ".tint-bootstrap/perf/reference-callee-closed-v1/after",
+        "manifest": {
+          "kind": "closed-reference-callee-prototype",
+          "prototype": true,
+          "fixtureSha256": "eb2b2da5125af424eb80b1fd9243626ca8c61c31080e504fb72cc5d1456fe12a",
+          "imageSha256": "d24e3a21106c9b4cb8fd488a59fb266b6d46960d4c12192fe98edcf27bb20b4b",
+          "iterations": 50000000,
+          "functions": [
+            {
+              "id": 0,
+              "name": "reference-loop",
+              "exported": true,
+              "offset": 0,
+              "byteLength": 604,
+              "frameBytes": 176,
+              "signature": {
+                "parameters": [
+                  {
+                    "kind": "integer",
+                    "index": 4
+                  }
+                ],
+                "stackBytes": 0
+              }
+            },
+            {
+              "id": 1,
+              "name": "identity",
+              "exported": false,
+              "offset": 604,
+              "byteLength": 48,
+              "frameBytes": 64,
+              "signature": {
+                "parameters": [
+                  {
+                    "kind": "integer",
+                    "index": 4
+                  }
+                ],
+                "stackBytes": 0
+              }
+            }
+          ],
+          "roots": [],
+          "scope": "Same verified closed IR; no allocations or safepoints. Foreign wrapper creates a descriptor-tagged immutable stack record. Both images retain checked property reads and one direct call per iteration."
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          25.81005859375,
+          39.22705078125,
+          39.82373046875
+        ],
+        "loadAverageAfter": [
+          25.81005859375,
+          39.22705078125,
+          39.82373046875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 33673
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 466.516125,
+        "cpuLowerBoundMs": 232.76579166666664,
+        "unobservedCPUWallBoundMs": 0.03575,
+        "instructions": 4075851330,
+        "cycles": 609843086,
+        "probes": 239,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 6452,
+          "instructions": 422771,
+          "cycles": 693773
+        },
+        "lastCPU": {
+          "userTicks": 5350036,
+          "systemTicks": 242795,
+          "instructions": 4076274101,
+          "cycles": 610536859
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          25.81005859375,
+          39.22705078125,
+          39.82373046875
+        ],
+        "loadAverageAfter": [
+          25.8583984375,
+          38.7919921875,
+          39.662109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 34526
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 613.839584,
+        "cpuLowerBoundMs": 221.147,
+        "unobservedCPUWallBoundMs": 6.32125,
+        "instructions": 3873114925,
+        "cycles": 582686226,
+        "probes": 307,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4650,
+          "instructions": 273945,
+          "cycles": 479950
+        },
+        "lastCPU": {
+          "userTicks": 5113934,
+          "systemTicks": 198244,
+          "instructions": 3873388870,
+          "cycles": 583166176
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          25.8583984375,
+          38.7919921875,
+          39.662109375
+        ],
+        "loadAverageAfter": [
+          25.8583984375,
+          38.7919921875,
+          39.662109375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 34647
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 533.774459,
+        "cpuLowerBoundMs": 221.56029166666664,
+        "unobservedCPUWallBoundMs": 0.035042,
+        "instructions": 3875329071,
+        "cycles": 586508973,
+        "probes": 264,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2555,
+          "instructions": 124033,
+          "cycles": 282195
+        },
+        "lastCPU": {
+          "userTicks": 5105377,
+          "systemTicks": 214625,
+          "instructions": 3875453104,
+          "cycles": 586791168
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          25.8583984375,
+          38.7919921875,
+          39.662109375
+        ],
+        "loadAverageAfter": [
+          26.18994140625,
+          38.64599609375,
+          39.60546875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 34830
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 350.228167,
+        "cpuLowerBoundMs": 231.06758333333335,
+        "unobservedCPUWallBoundMs": 0.063875,
+        "instructions": 4072354010,
+        "cycles": 604838954,
+        "probes": 193,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3061,
+          "instructions": 151193,
+          "cycles": 284870
+        },
+        "lastCPU": {
+          "userTicks": 5350910,
+          "systemTicks": 197773,
+          "instructions": 4072505203,
+          "cycles": 605123824
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          26.18994140625,
+          38.64599609375,
+          39.60546875
+        ],
+        "loadAverageAfter": [
+          26.18994140625,
+          38.64599609375,
+          39.60546875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 34992
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 484.158417,
+        "cpuLowerBoundMs": 233.28629166666667,
+        "unobservedCPUWallBoundMs": 0.034292,
+        "instructions": 4074954927,
+        "cycles": 611709871,
+        "probes": 283,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3344,
+          "instructions": 260136,
+          "cycles": 354571
+        },
+        "lastCPU": {
+          "userTicks": 5372934,
+          "systemTicks": 229281,
+          "instructions": 4075215063,
+          "cycles": 612064442
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          26.18994140625,
+          38.64599609375,
+          39.60546875
+        ],
+        "loadAverageAfter": [
+          26.09423828125,
+          38.41943359375,
+          39.51953125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 35106
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 451.216792,
+        "cpuLowerBoundMs": 221.21725,
+        "unobservedCPUWallBoundMs": 3.53425,
+        "instructions": 3871809231,
+        "cycles": 577463312,
+        "probes": 251,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2601,
+          "instructions": 126048,
+          "cycles": 287167
+        },
+        "lastCPU": {
+          "userTicks": 5122417,
+          "systemTicks": 189398,
+          "instructions": 3871935279,
+          "cycles": 577750479
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          26.09423828125,
+          38.41943359375,
+          39.51953125
+        ],
+        "loadAverageAfter": [
+          26.56689453125,
+          38.3125,
+          39.47509765625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 35210
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 394.253042,
+        "cpuLowerBoundMs": 220.73433333333335,
+        "unobservedCPUWallBoundMs": 0.01875,
+        "instructions": 3873766565,
+        "cycles": 578579162,
+        "probes": 163,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3528,
+          "instructions": 137536,
+          "cycles": 370185
+        },
+        "lastCPU": {
+          "userTicks": 5092970,
+          "systemTicks": 208182,
+          "instructions": 3873904101,
+          "cycles": 578949347
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          26.56689453125,
+          38.3125,
+          39.47509765625
+        ],
+        "loadAverageAfter": [
+          26.56689453125,
+          38.3125,
+          39.47509765625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 35328
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 355.33175,
+        "cpuLowerBoundMs": 234.157875,
+        "unobservedCPUWallBoundMs": 0.071209,
+        "instructions": 4075907237,
+        "cycles": 612120939,
+        "probes": 166,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2603,
+          "instructions": 127663,
+          "cycles": 287743
+        },
+        "lastCPU": {
+          "userTicks": 5380993,
+          "systemTicks": 241399,
+          "instructions": 4076034900,
+          "cycles": 612408682
+        }
+      }
+    ]
+  },
+  "operationSummary": [
+    {
+      "index": 0,
+      "cpuLowerBoundMs": {
+        "median": 233.02604166666666,
+        "min": 231.06758333333335,
+        "max": 234.157875
+      },
+      "inferiorWallMs": {
+        "median": 410.92393749999997,
+        "min": 350.228167,
+        "max": 484.158417
+      },
+      "instructions": {
+        "median": 4075403128.5,
+        "min": 4072354010,
+        "max": 4075907237
+      },
+      "cycles": {
+        "median": 610776478.5,
+        "min": 604838954,
+        "max": 612120939
+      }
+    },
+    {
+      "index": 1,
+      "cpuLowerBoundMs": {
+        "median": 221.18212499999998,
+        "min": 220.73433333333335,
+        "max": 221.56029166666664
+      },
+      "inferiorWallMs": {
+        "median": 492.49562549999996,
+        "min": 394.253042,
+        "max": 613.839584
+      },
+      "instructions": {
+        "median": 3873440745.0,
+        "min": 3871809231,
+        "max": 3875329071
+      },
+      "cycles": {
+        "median": 580632694.0,
+        "min": 577463312,
+        "max": 586508973
+      }
+    }
+  ],
+  "productionImageEquivalence": {
+    "observations": [
+      {
+        "label": "before",
+        "identical": true,
+        "sha256": "816fad67b0ed8156fa2378e41a050e1d21f1ebcc74731035ff43e5ce41628ebf"
+      },
+      {
+        "label": "after",
+        "identical": true,
+        "sha256": "d24e3a21106c9b4cb8fd488a59fb266b6d46960d4c12192fe98edcf27bb20b4b"
+      }
+    ],
+    "scope": "Current rebased v18 production emitter reproduces byte-identical previously measured eight-process native benchmark images. Both tested images remain exactly the same, including executable and signatures."
+  },
+  "selfbuild": {
+    "manifest": {
+      "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18/source-snapshot.json",
+        "sha256": "7d357cf66e1ff6af41f45520ac5ed01690b9ad353275ad1902163759c0f69e33"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "69f3ae6412b6b4b12d88f1ad0c74d10c0f68b825a92f21358a687d75b30378a2",
+        "files": 587
+      },
+      "scope": "Same current candidate implementation/source snapshot compiled by frozen numeric-operand baseline and reference-register emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 74880,
+          "monotonicNs": 6766694541
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 339368100250
+        },
+        "loadBefore": [
+          17.04443359375,
+          16.5703125,
+          16.55615234375
+        ],
+        "loadAfter": [
+          12.8701171875,
+          15.5849609375,
+          16.3330078125
+        ],
+        "cpu": {
+          "pid": 74880,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 7504028328,
+            "systemTicks": 78090758,
+            "instructions": 3023331343360,
+            "cycles": 949658576348
+          },
+          "cpuMsLowerBound": 315921.62858333334,
+          "finalUnobservedWallBoundMs": 110.069667,
+          "probes": 3096,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 332601.405709,
+        "outputSha256": "9d394ffda656bc711597eb22be33e155db9f4a454084835ee6aff9922ee5145b",
+        "outputBytes": 59947186,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 95015,
+          "monotonicNs": 1355982208
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 353696260208
+        },
+        "loadBefore": [
+          12.8701171875,
+          15.5849609375,
+          16.3330078125
+        ],
+        "loadAfter": [
+          11.98583984375,
+          15.16650390625,
+          16.10009765625
+        ],
+        "cpu": {
+          "pid": 95015,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 7974245656,
+            "systemTicks": 85369420,
+            "instructions": 3021558069591,
+            "cycles": 968422653611
+          },
+          "cpuMsLowerBound": 335817.2948333333,
+          "finalUnobservedWallBoundMs": 105.048083,
+          "probes": 3364,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 352340.278,
+        "outputSha256": "9d394ffda656bc711597eb22be33e155db9f4a454084835ee6aff9922ee5145b",
+        "outputBytes": 59947186,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 0.9407544919332573,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "staticDenseRead": {
+    "scope": "Full emitted dense read function, all paths, not retired instruction counts. Contiguous four-byte ARM64 disassembly. Same G18 compiler sources compiled with E13 baseline vs G18 emitter.",
+    "summaries": [
+      {
+        "label": "before",
+        "instructions": 143,
+        "loads": 42,
+        "stores": 24,
+        "calls": 1,
+        "stackLoads": 36,
+        "stackStores": 21
+      },
+      {
+        "label": "after",
+        "instructions": 150,
+        "loads": 47,
+        "stores": 24,
+        "calls": 1,
+        "stackLoads": 41,
+        "stackStores": 21
+      }
+    ]
+  },
+  "nativeSelection": {
+    "schemaVersion": 1,
+    "kind": "runtime-execution",
+    "engine": {
+      "name": "Tint",
+      "adapter": "native-script-v19-managed-templates",
+      "target": "macos-arm64",
+      "bootstrap": "v24.12.0",
+      "debugger": "/usr/bin/lldb",
+      "debuggerStdio": "disabled",
+      "debuggerLaunch": "debugserver-direct",
+      "debuggerTracing": false,
+      "executableWriteback": "atomic-rename-after-fsync",
+      "debuggerStartupTimeoutMs": 300000,
+      "debuggerEntitlement": "com.apple.security.get-task-allow"
+    },
+    "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+    "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+    "sourceSnapshot": {
+      "sha256": "69f3ae6412b6b4b12d88f1ad0c74d10c0f68b825a92f21358a687d75b30378a2",
+      "files": 587
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-register-toolchain-v18/source-snapshot.json",
+    "frozenToolchainSha256": "4c3b3620c04d3f8dbb53d1b31945d371f63c1174ed30819b147cbcdaf14251fa",
+    "resumption": {
+      "restoredVariants": 0,
+      "events": []
+    },
+    "diagnosticPauses": [],
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "compilation": {
+      "batchSize": 64,
+      "batches": [
+        {
+          "id": 0,
+          "variants": 6,
+          "kind": "execution",
+          "compileMs": 169222.893625,
+          "outcome": "compiled"
+        }
+      ],
+      "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+    },
+    "dirty": false,
+    "selection": "language/expressions [explicit variant subset]",
+    "rootSelection": "language/expressions",
+    "requestedVariants": 6,
+    "variantSubsetSha256": "5389f7b9bfbc8caece1a4b69a70910617cadd59f0f9398c29cd316a4ee19cff8",
+    "complete": true,
+    "totals": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "observations": [
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 171206.257709,
+        "batch": 0
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 171618.47154199998,
+        "batch": 0
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 171989.769958,
+        "batch": 0
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 172329.45891599997,
+        "batch": 0
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 172671.378417,
+        "batch": 0
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 173014.341833,
+        "batch": 0
+      }
+    ]
+  },
+  "nativeObservationsEqual": true,
+  "gate": {
+    "startedUTC": "2026-11-07T11:19:26.982Z",
+    "endedUTC": "2026-11-07T11:22:51.116Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 0,
+    "signal": null
+  },
+  "priorGateFailure": {
+    "startedUTC": "2026-11-07T11:17:34.066Z",
+    "endedUTC": "2026-11-07T11:17:46.783Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 2,
+    "signal": null
+  },
+  "scope": "Validated semantic candidate rejected for real-workload performance. No READY entry for production changes; this evidence-only branch contains no compiler modifications. Compiler sampled windows are separate phases, not matched whole-run shares.",
+  "assets": [
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-selfbuild-reference-registers-matched-v1.ts.gz",
+      "uncompressedSha256": "3f48c3645e126de3b3a09ff8aa0b60bf3350c3a1436f36bc16d230e194f17e4b"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-selfbuild-reference-registers-matched-v1.log.gz",
+      "uncompressedSha256": "7571e7b89ed3652e0ef99ea2e3464c3998d784a9064a85b30991a588323e0259"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-selfbuild-reference-registers-matched-v1-exit.json.gz",
+      "uncompressedSha256": "74fcc1c24d9f156c1bc9bbc08c460c19cb5f6c1ff8109a67b6d8d1f4b0c84e45"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-check-reference-registers-ready-v1.log.gz",
+      "uncompressedSha256": "ea1ca81ca3f3a7f064dd6be51ce2600f3b1eac6b73964e08d85ffcb264ca2e3e"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-check-reference-registers-ready-v1-exit.json.gz",
+      "uncompressedSha256": "71746a351297f17244e0acdec45667c5e0a5c05da4c17800ebb961a86b9f60b4"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-check-reference-registers-ready-v1-diagnosis.json.gz",
+      "uncompressedSha256": "613cc38239cfe2782024c00fabb69113c41bf4450b8c5ca719267c06e437aff0"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-check-reference-registers-ready-v2.log.gz",
+      "uncompressedSha256": "5fb2a1aeee08ddd0e5356d0943b8aba02a7c4db3be95e711ca48172575ea562c"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-check-reference-registers-ready-v2-exit.json.gz",
+      "uncompressedSha256": "277e57071f0862e360a9462335c25b885f6aeaeaba64feb7428853fd5cb3a0d3"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-v18-production-equivalence-v1.json.gz",
+      "uncompressedSha256": "4c50e1af5d9c31ff410781b158dd54f6703727c0fcb14ee995b2d22e693d3d2a"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-build-reference-callee-production-v2.mjs.gz",
+      "uncompressedSha256": "d438f035935c6a64d70851c361158b2d71d086a823531c3e406da415d6fbb510"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-dense-static-v1.json.gz",
+      "uncompressedSha256": "5fa71f4b21118174652206a01a7a1d50e589d4cc27955bf36cd7821b89840095"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-dense-before-disassembly-v1.txt.gz",
+      "uncompressedSha256": "b171e4f78acff9eff2603c7dcc8324a21bad80677907c1bbb926f8a1847c6247"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-dense-after-disassembly-v1.txt.gz",
+      "uncompressedSha256": "1e44a0261b21d608bfacd2a4ff8bbdd6231851ccbddd7eb398391c29038c3784"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-observe-selfbuild-cpu-v2.py.gz",
+      "uncompressedSha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-time-cpu-counters-v1.ts.gz",
+      "uncompressedSha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-operation-equivalence-v1.json.gz",
+      "uncompressedSha256": "92cce5b036dfa272c00c956e63fdcb929993669258ae1d211187ce6090679aeb"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-operation-equivalence-v1.jsonl.gz",
+      "uncompressedSha256": "f4ab0a8a17f1b1f0d4b349e2debe34a377fd2413c6ddea7e837b335c78b4a381"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-operation-equivalence-v1.log.gz",
+      "uncompressedSha256": "dac76d534999571a69e91a856a2be4f50c2f52c432bd6c5daf63334f9f2fb4bb"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-reference-register-operation-equivalence-v1-inputs.json.gz",
+      "uncompressedSha256": "950286834fe332818575fff37be46868ea4bfac845c6a324aab3c8806ed31d50"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--observations.json.gz",
+      "uncompressedSha256": "9e5081379c67f38654f83bf18a44e548d4d88929b2a10e6e07a092f2a10efc65"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--after-150000.txt.gz",
+      "uncompressedSha256": "80be22a692b772f145ce779d1fda25cc2d40ee316b785c82e43903ac55265bb4"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--after-210000.txt.gz",
+      "uncompressedSha256": "17f05e8c5f5e3fcefb71b0b8082e5e4eec18536f4ce139135c3d6d9d234f36c3"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--after-270000.txt.gz",
+      "uncompressedSha256": "9111ba861c013022d9c15bb189161061fc5afa6f4f289bc664970cd4022aac7a"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--after-330000.txt.gz",
+      "uncompressedSha256": "795cdbe3d59f57f65fb1043f09d083d5340bb778229e11c60dd15a79fb806f5b"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--after-90000.txt.gz",
+      "uncompressedSha256": "0060be909a74161d08ec0ca57fb4df0f8c4a0afa7ad65adb113c6c1f97f48cb2"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--before-150000.txt.gz",
+      "uncompressedSha256": "87d1a8a695074482eb1be0af905f9c5ad6aabc7cc255c040e0f944a28aa36462"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--before-210000.txt.gz",
+      "uncompressedSha256": "5edc0fecc6836ca2855fd4bdd3435dc09926ed510d646cac93c924ffb9e745f2"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--before-270000.txt.gz",
+      "uncompressedSha256": "3cc9e311ecaf6457a6278a888c2fe41d1961e81973183d8b54675f41c551e6be"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--before-330000.txt.gz",
+      "uncompressedSha256": "0dce536f498976fe78ce58b07c6607d641595ce4041849238c82ecef9ffe6707"
+    },
+    {
+      "path": "docs/results/native-reference-registers-rejected-v1-profile-reference-registers-v1--before-90000.txt.gz",
+      "uncompressedSha256": "a7a916d36d52fef5ebd6110911f2bee83ddfd44abaa1a5729162068ef9bdd66b"
+    }
+  ]
+}
