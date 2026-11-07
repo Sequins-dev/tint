@@ -1,0 +1,36 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T13:49:34.561Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-expressions-conditional-a2-native-v1.json",
+  "reportSha256": "282ba7d4aa7dce817040fdf553e1755b74e39bd98c933b027d9b22f368b1fa93",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/conditional",
+  "expectedVariants": 42,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 41,
+    "timeout": 1
+  },
+  "validationExitStatus": 0,
+  "selectionCompleteInParentPrefix": true,
+  "parentRunnerStillActiveAtExtraction": true,
+  "parentRootSelection": "language/expressions",
+  "parentRequestedVariants": 783,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "retainedTimeouts": 1,
+  "timeoutTriage": "docs/results/cluster-a2-conditional-timeout-triage-v1.json",
+  "focusedRecheckPending": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v1.json",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "registryRecord": "2026-11-07T13:48Z efa5249f tint-check 4746/4746 PASS (P-run gate at fca30d8f incl. leaf pointer registers; later main docs-only; FF-merged)",
+    "commit": "efa5249fc3e2bec8fdb7c4aa3cb932965c58328e",
+    "passedTests": 4746,
+    "exitStatus": 0,
+    "base": "efa5249fc3e2bec8fdb7c4aa3cb932965c58328e",
+    "codeChangesBetweenGateAndBase": []
+  }
+}
