@@ -71,7 +71,6 @@ try {
         source,
         sourceSnapshot: workspaceSourceIdentity(snapshot),
         fixtureFiles: prepared.fixtures,
-        compilations: built.compilations,
         imageSha256: createHash("sha256").update(built.bytes).digest("hex"),
         expectedExit: 42,
       },
