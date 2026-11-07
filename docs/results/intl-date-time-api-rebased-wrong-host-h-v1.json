@@ -1,0 +1,15 @@
+{
+  "kind": "workspace-gate-observation",
+  "conformance": false,
+  "host": {
+    "node": "26.0.0",
+    "unicode": "17.0"
+  },
+  "tests": 4789,
+  "passed": 4788,
+  "failed": 1,
+  "exit": 1,
+  "log": "intl-date-time-api-rebased-wrong-host-h-v1.log.gz",
+  "failure": "Unicode oracle test requires pinned Unicode16. Auxiliary login shell selected Homebrew Node26. No source changes.",
+  "next": "Pinned Node24.12.0 with Unicode16 selected explicitly for focused recheck and new complete gate."
+}

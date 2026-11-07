@@ -171,8 +171,8 @@ input hashes and the output hash.
 
 The [pattern core](results/intl-date-time-pattern-native-resume-h-v31.md) and
 [calendar presentation data](results/intl-date-time-calendar-native-resume-h-v32.md)
-have semantic tests and compiled native fixtures. Native execution and compiler
-stage comparison remain held for host Developer Tools authorization. The public DateTimeFormat adapter now composes these services.
+have semantic tests and completed native fixtures. The public DateTimeFormat
+adapter composes these services; the [restored native validation](results/intl-date-time-format-native-restored-h-v52.md) records direct-launch observations and the frozen compiler stage comparison.
 
 `date-time-zone-data.ts` resolves localized zone/metazone names, reference regions,
 exact metazone history bounds and flexible day-period rules for the same 860
@@ -182,31 +182,32 @@ serve another territory without moving the city. Missing explicit display names
 remain inputs to the formatter's fallback rules. TZif/POSIX seasonal flags are
 available independently of offsets, including negative or equal-offset seasons.
 [Time-zone service validation](results/intl-date-time-zone-data-native-resume-h-v33.md)
-passes 43 focused tests and 4726 workspace tests; native images are compiled only
-while host authorization remains pending.
+passes 43 focused tests and its original 4726-test workspace gate; its native
+fixture now completes with the required entry stop and exit42.
 
 `date-time-skeleton.ts` matches LDML skeleton fields, adapts widths with locale
 numeric/text overrides, composes date/time and append patterns and resolves style
 clock changes. Localized append labels share the calendar profiles. Calendar-year
 requests normalize week-year symbols found in locale patterns to ECMA-402's year
 component. [Skeleton validation](results/intl-date-time-skeleton-native-resume-h-v38.md)
-checks required subsets across all 860 locales and passes 4735 workspace tests;
-its native fixture and compiler are compiled only while authorization is pending.
+checks required subsets across all 860 locales and passes its original 4735-test
+workspace gate. Its native fixture now completes.
 
 `date-time-parts.ts` renders calendar fields through the private decimal service,
 preserving astral digits, era years, related/cyclic years, lunar leap labels and
 Hebrew Adar identities. Names and short weekdays come from calendar profiles;
 flexible periods use the shared day-period rules. Time-zone tokens require a label
 resolved for the exact input by the zone-name service. [Parts validation](results/intl-date-time-parts-native-resume-h-v41.md)
-passes 39 focused and 4742 workspace tests. Its native fixture and compiler are
-compiled only while authorization is pending.
+passes 39 focused and its original 4742-test workspace gate. Its native fixture
+now completes.
 
 `date-time-zone-name.ts` renders specific/generic names, reference-zone qualifiers,
 location fallback and exact localized GMT offsets using the same zone models as
 Temporal. Type fallback checks the full 184-day stability interval, including
 recorded and future flag changes with identical offsets. Short country labels use
 explicit CLDR alternate selectors. [Zone-name validation](results/intl-date-time-zone-name-native-resume-h-v42.md)
-passes 48 focused and 4751 workspace tests; native images remain compiled only.
+passes 48 focused and its original 4751-test workspace gate; its native fixture
+now completes.
 
 `date-time-range.ts` selects compact CLDR intervals and tags shared/start/end
 parts. It compares fields through the requested precision, preserves reversed
@@ -214,7 +215,8 @@ arguments and composes shared dates with time intervals or time-only fallback.
 Related and cyclic years retain their separate part identities. Structural
 date/time connector metadata avoids inferring composition from rendered text.
 [Range validation](results/intl-date-time-range-native-resume-h-v43.md) passes 57
-focused and 4760 workspace tests; native images remain compiled only.
+focused tests and its original 4760-test workspace gate; its native fixture
+now completes.
 
 `intl-date-time-format.ts` installs the constructor, supportedLocalesOf, bound
 format getter, parts, ranges and resolvedOptions. Configuration preserves
@@ -225,8 +227,8 @@ legacy inputs before local conversion and keeps local coordinates outside Date's
 bounds available to the parts engine. Two-digit clocks select inherited CLDR
 ASCII alternates when available; explicit padding remains a minimum.
 [Public API validation](results/intl-date-time-format-api-native-resume-h-v52.md)
-passes 53 focused and 4786 workspace tests. Its fixture and compiler are compiled
-only. Temporal-object formatting and locale forwarding are the next slice.
+passes 53 focused and its original 4786-test workspace gate. The restored native
+validation records its completed fixture and compiler stage comparison. Temporal-object formatting and locale forwarding are the next slice.
 
 ## List formatting
 
