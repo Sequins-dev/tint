@@ -43,6 +43,7 @@ import {
   nativeTopLevelAwaitCapability,
   nativeJSONModuleCapability,
   nativeSourcePhaseCapability,
+  nativeAssetModuleCapability,
   nativeDeferredModuleCapability,
   nativeDebuggerEntitlement,
 } from "./test262-native.ts";
@@ -115,6 +116,7 @@ try {
     moduleExecution && nativeTopLevelAwaitCapability(snapshot);
   const jsonModules = moduleExecution && nativeJSONModuleCapability(snapshot);
   const sourcePhases = moduleExecution && nativeSourcePhaseCapability(snapshot);
+  const assetModules = moduleExecution && nativeAssetModuleCapability(snapshot);
   const deferredModules =
     moduleExecution && nativeDeferredModuleCapability(snapshot);
   const scriptEvaluation = capturedScriptEvaluation(snapshot);
@@ -126,6 +128,7 @@ try {
     jsonModules,
     sourcePhases,
     deferredModules,
+    assetModules,
   );
   const nativeLinkingIdentity = {
     nativeLinkingMode: "monolithic",
@@ -314,6 +317,7 @@ try {
             filename,
             undefined,
             jsonModules,
+            assetModules,
           );
         } catch (error) {
           moduleProgram = { thrown: error };
@@ -333,6 +337,7 @@ try {
             undefined,
             jsonModules,
             scriptEvaluation?.dynamicImport === true,
+            assetModules,
           );
         } catch (error) {
           scriptProgram = { thrown: error };

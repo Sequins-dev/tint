@@ -225,7 +225,7 @@ test("Script adapter identity follows captured indirect evaluation capability", 
   );
   assert.match(
     source,
-    /engine = nativeScriptAdapter\(\s*scriptEvaluation,\s*moduleExecution,\s*dynamicImport,\s*topLevelAwait,\s*jsonModules,\s*sourcePhases,\s*deferredModules,?\s*\)/,
+    /engine = nativeScriptAdapter\(\s*scriptEvaluation,\s*moduleExecution,\s*dynamicImport,\s*topLevelAwait,\s*jsonModules,\s*sourcePhases,\s*deferredModules,\s*assetModules,?\s*\)/,
   );
   assert.match(source, /adapter: engine/);
   assert.equal(source.split("process.env.TINT_TEST262_MODULES").length, 2);

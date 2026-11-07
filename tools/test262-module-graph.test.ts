@@ -22,6 +22,24 @@ function hash(source: string) {
   return createHash("sha256").update(source).digest("hex");
 }
 
+test("discovery retains invalid UTF8 bytes and their original resource hash", async () => {
+  const discover = await graphTool(),
+    root = 'import data from "./image.png" with {type:"bytes"};';
+  const f = fixture({ "root.js": root });
+  const bytes = new Uint8Array([137, 80, 255]);
+  try {
+    writeFileSync(join(f.directory, "image.png"), bytes);
+    const graph = discover(join(f.directory, "root.js"), root, "module");
+    assert.deepEqual(graph.nodes[0]?.bytes, bytes);
+    assert.equal(
+      graph.nodes[0]?.sha256,
+      createHash("sha256").update(bytes).digest("hex"),
+    );
+  } finally {
+    f.close();
+  }
+});
+
 test("module discovery terminates cycles and retains sorted unique siblings", async () => {
   const discover = await graphTool(),
     root = 'import "./b.js";';

@@ -2,8 +2,57 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as native from "./test262-native.ts";
 import { workspaceSources } from "./workspace-sources.ts";
+import { parseModule } from "@tint/typescript/syntax";
+import { createSourceTextView } from "@tint/source/text";
 
 const specifier = "@tint/js-runtime/modules";
+test("resource adapter capability cannot bypass module host validation", () => {
+  assert.throws(
+    () =>
+      native.nativeScriptAdapter(
+        undefined,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true,
+      ),
+    /JSON host requires module execution/,
+  );
+});
+test("resource host keys use NUL-separated type identities", () => {
+  const evaluation = native.capturedScriptEvaluation(workspaceSources());
+  const source = native.nativeTestRuntimeSource(
+    evaluation,
+    true,
+    true,
+    false,
+    false,
+    undefined,
+    false,
+    undefined,
+    undefined,
+    undefined,
+    false,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    undefined,
+    true,
+    true,
+  );
+  assert.ok(
+    source.includes('resourceName="\\0"+attribute.value+"\\0"+resourceName;'),
+  );
+  assert.ok(source.includes('name.startsWith("\\0text\\0")'));
+  const parsed = parseModule(createSourceTextView(source));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+});
 test("module capability follows captured public exports including re-exports", () => {
   assert.equal(native.nativeModuleCapability(workspaceSources()), true);
 });

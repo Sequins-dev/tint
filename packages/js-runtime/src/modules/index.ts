@@ -70,3 +70,4 @@ export {
 } from "./synthetic.ts";
 
 export { parseJSONModule } from "./json.ts";
+export { createTextModule, createBytesModule } from "./assets.ts";

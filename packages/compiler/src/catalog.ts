@@ -871,6 +871,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/modules/assets.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/modules/dynamic-import.ts",
       packageId: "js-runtime",
     },

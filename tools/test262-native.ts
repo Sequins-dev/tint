@@ -306,6 +306,7 @@ function lowerNativeModuleEntry(
   name: string,
   text: string,
   jsonModules: boolean = false,
+  assetModules: boolean = false,
 ):
   | { ok: true; module: SourceModule; requests: readonly string[] }
   | { ok: false; outcome: ExecutionOutcome; earlyError?: true } {
@@ -325,6 +326,7 @@ function lowerNativeModuleEntry(
     );
   if (
     jsonModules &&
+    !assetModules &&
     parsed.value.imports.some((request) =>
       request.attributes?.some(
         (attribute) =>
@@ -375,12 +377,41 @@ function prepareNativeFixtureEntries(
   initial: readonly NativeModuleEntry[] = [],
   jsonModules: boolean = false,
   absent: readonly string[] = [],
+  assetModules: boolean = false,
 ):
   | { ok: true; entries: NativeModuleEntry[] }
   | { ok: false; outcome: ExecutionOutcome } {
   const entries = [...initial],
     requests = [...requested];
   for (const node of nodes) {
+    if (assetModules) {
+      const bytes = node.bytes ?? new TextEncoder().encode(node.source);
+      for (const type of ["text", "bytes"] as const) {
+        const body =
+          type === "text"
+            ? `return {ok:true,module:createTextModule(${JSON.stringify(new TextDecoder("utf-8").decode(bytes))},realm,hostDefined)};`
+            : `return createBytesModule(new Uint8Array(${JSON.stringify([...bytes])}),realm,global.hooks,hostDefined);`;
+        entries.push({
+          name: "\0" + type + "\0" + node.name,
+          json: true,
+          module: parsedNativeHost(
+            "test262-resource-" + type + "-" + node.name,
+            `import {createTextModule,createBytesModule,type ModuleCompletion} from "@tint/js-runtime/modules";
+import type {GlobalEnvironment} from "@tint/js-runtime/environments/global";
+import type {ErrorRealm,ScriptPropertyKey} from "@tint/js-runtime/objects";
+export function create(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown):ModuleCompletion {${body}}`,
+            new Map([
+              [
+                "@tint/js-runtime/modules",
+                "packages/js-runtime/src/modules/index.ts",
+              ],
+              ["@tint/js-runtime/environments/global", globalModule],
+              ["@tint/js-runtime/objects", objectModule],
+            ]),
+          ),
+        });
+      }
+    }
     if (node.name === skip) continue;
     if (node.kind !== "javascript") {
       if (!jsonModules)
@@ -409,12 +440,17 @@ export function create(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm
       continue;
     }
     const lowered = node.parsed
-      ? lowerNativeModuleEntry(node.name, node.source, jsonModules)
+      ? lowerNativeModuleEntry(
+          node.name,
+          node.source,
+          jsonModules,
+          assetModules,
+        )
       : undefined;
     if (lowered === undefined || (!lowered.ok && lowered.earlyError)) {
       // Bootstrap diagnostics select a native proof; only that proof can
       // establish a SyntaxError, and it never executes the fixture body.
-      const bytes = new TextEncoder().encode(node.source);
+      const bytes = node.bytes ?? new TextEncoder().encode(node.source);
       if (createHash("sha256").update(bytes).digest("hex") !== node.sha256)
         return unsupportedNativePreparation(
           "fixture bytes differ from discovery hash",
@@ -463,6 +499,7 @@ export function prepareNativeScriptProgram(
   discover: typeof discoverModuleGraph = discoverModuleGraph,
   jsonModules: boolean = false,
   runtimeImportCalls: boolean = false,
+  assetModules: boolean = false,
 ):
   | { ok: true; scripts: readonly SourceModule[]; root?: NativeScriptRoot }
   | {
@@ -512,6 +549,7 @@ export function prepareNativeScriptProgram(
     [],
     jsonModules,
     graph.absent,
+    assetModules,
   );
   if (!entries.ok)
     return {
@@ -534,6 +572,7 @@ export function prepareNativeModuleProgram(
   filename: string,
   discover: typeof discoverModuleGraph = discoverModuleGraph,
   jsonModules: boolean = false,
+  assetModules: boolean = false,
 ):
   | {
       readonly ok: true;
@@ -564,7 +603,12 @@ export function prepareNativeModuleProgram(
     return unsupported("harness inputs do not match the execution plan");
   const prepared = prepareNativeScriptInputs(harness);
   if (!prepared.ok) return prepared;
-  const root = lowerNativeModuleEntry(filename, plan.source, jsonModules);
+  const root = lowerNativeModuleEntry(
+    filename,
+    plan.source,
+    jsonModules,
+    assetModules,
+  );
   if (!root.ok) return { ok: false, outcome: root.outcome };
   const graph = discover(filename, plan.source, "module");
   const requested = [...root.requests];
@@ -589,6 +633,7 @@ export function prepareNativeModuleProgram(
     entries,
     jsonModules,
     graph.absent,
+    assetModules,
   );
   if (!preparedEntries.ok) return rejectedGraph(preparedEntries);
   return {
@@ -601,7 +646,7 @@ export function prepareNativeModuleProgram(
 }
 
 export interface NativeModuleEntry {
-  /** A native JSON parser factory returns a load completion, not a source record. */
+  /** A native JSON/text/bytes resource factory returns a load completion. */
   readonly json?: true;
   /** Native syntax data only; never a module factory or bootstrap verdict. */
   readonly verdict?: true;
@@ -648,6 +693,7 @@ export function nativeTestRuntimeSource(
   jsonModules: boolean = false,
   agentProvider?: string,
   sourcePhases: boolean = false,
+  assetModules: boolean = false,
 ): string {
   if (
     scriptEvaluation?.directEval === true &&
@@ -775,8 +821,7 @@ export function nativeTestRuntimeSource(
   const createJSON=jsonCreates[index],name=names[index];if(name===undefined)throw "NATIVE_MODULE_ENTRY_INVARIANT";
   let requestedType:string|undefined=undefined;
   for(const attribute of request.attributes){if(attribute===undefined)throw "MODULE_REQUEST_INVARIANT";if(attribute.key==="type")requestedType=attribute.value;}
-  if(requestedType==="text"||requestedType==="bytes")return rejectUnsupportedExecution(realm);
-  if(createJSON===undefined?requestedType!==undefined:requestedType!=="json")return {ok:false,error:createRuntimeError(realm,"type")};
+${assetModules ? '  const declaredType=name.startsWith("\\0text\\0")?"text":name.startsWith("\\0bytes\\0")?"bytes":createJSON===undefined?undefined:"json";\n  if(requestedType!==declaredType)return {ok:false,error:createRuntimeError(realm,"type")};' : '  if(requestedType==="text"||requestedType==="bytes")return rejectUnsupportedExecution(realm);\n  if(createJSON===undefined?requestedType!==undefined:requestedType!=="json")return {ok:false,error:createRuntimeError(realm,"type")};'}
   if(createJSON!==undefined){
    const previous=records.get(name);if(previous!==undefined)return {ok:true,module:previous};
    const completion=createJSON(global,realm,undefined);
@@ -794,6 +839,9 @@ export function nativeTestRuntimeSource(
   throw "NATIVE_FIXTURE_VERDICT_INVARIANT";
  }
 `;
+  const resourceName = assetModules
+    ? 'let resourceName=request.specifier.slice(2);for(const attribute of request.attributes){if(attribute===undefined)throw "MODULE_REQUEST_INVARIANT";if(attribute.key==="type"&&(attribute.value==="text"||attribute.value==="bytes"))resourceName="\\0"+attribute.value+"\\0"+resourceName;}'
+    : "";
   const moduleRunner = moduleExecution
     ? `
 type NativeModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleRecord;${jsonModules ? "\ntype NativeJSONModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleCompletion;" : ""}
@@ -819,7 +867,7 @@ ${tableLoading} try {
        ? 'if(!request.specifier.startsWith("./")){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}'
        : 'if(!request.specifier.startsWith("./"))rejectUnsupportedExecution(realm);'
    }
-   const index=names.indexOf(request.specifier.slice(2));${sourcePhases ? 'if(index<0){if(absent.indexOf(request.specifier.slice(2))>=0){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}rejectUnsupportedExecution(realm);}' : "if(index<0)rejectUnsupportedExecution(realm);"}
+   ${resourceName}const index=names.indexOf(${assetModules ? "resourceName" : "request.specifier.slice(2)"});${sourcePhases ? 'if(index<0){if(absent.indexOf(request.specifier.slice(2))>=0){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}rejectUnsupportedExecution(realm);}' : "if(index<0)rejectUnsupportedExecution(realm);"}
    finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));
   };
   const loading=loadRequestedModules(root,hooks,undefined);
@@ -860,7 +908,7 @@ ${
 ${tableLoading} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
   ${sourcePhases ? 'if(request.specifier==="<module source>"){finishLoadingImportedModule(referrer,request,payload,{ok:true,module:hostModuleSource()});return;}\n  ' : ""}if(referrer.realm!==realm)rejectUnsupportedExecution(realm);
   const specifier=request.specifier,name=specifier.startsWith("./")?specifier.slice(2):undefined;
-  const index=name===undefined?-1:names.indexOf(name);
+  ${resourceName}const index=name===undefined?-1:names.indexOf(${assetModules ? "resourceName" : "name"});
   if(index>=0){finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));return;}
   ${
     jsonModules
@@ -1131,6 +1179,7 @@ function nativeTestRuntime(
   jsonModules: boolean = false,
   agentProvider?: string,
   sourcePhases: boolean = false,
+  assetModules: boolean = false,
 ): SourceModule {
   const text = nativeTestRuntimeSource(
     scriptEvaluation,
@@ -1152,6 +1201,7 @@ function nativeTestRuntime(
     jsonModules,
     agentProvider,
     sourcePhases,
+    assetModules,
   );
   return parsedNativeHost(
     id,
@@ -1320,6 +1370,7 @@ export function prepareNativeBatch(
   jsonModules: boolean = false,
   agentProvider?: string,
   sourcePhases: boolean = false,
+  assetModules: boolean = false,
 ): SourceModule[] {
   if (cases.length === 0) throw new Error("empty native test batch");
   const scriptRoots = cases.some((item) => item.scriptRoot !== undefined);
@@ -1348,6 +1399,7 @@ export function prepareNativeBatch(
       jsonModules,
       agentProvider,
       sourcePhases,
+      assetModules,
     ),
   ];
   const hosts: string[] = [];
@@ -1627,7 +1679,10 @@ export function nativeScriptAdapter(
   jsonModules: boolean = false,
   sourcePhases: boolean = false,
   deferredModules: boolean = false,
+  assetModules: boolean = false,
 ): string {
+  if (assetModules && !jsonModules)
+    throw Error("resource modules require the captured JSON/synthetic host");
   if (sourcePhases && !moduleExecution)
     throw Error("source-phase host requires module execution");
   if (deferredModules && (!moduleExecution || !dynamicImport || !topLevelAwait))
@@ -1640,6 +1695,7 @@ export function nativeScriptAdapter(
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  if (assetModules) return "native-script-v22-resource-modules";
   if (deferredModules) return "native-script-v21-module-phases";
   if (sourcePhases) return "native-script-v20-source-phase";
   if (evaluation?.templateSites === true)
@@ -1708,6 +1764,23 @@ export function nativeTopLevelAwaitCapability(
 }
 
 /** Source-phase loading is enabled only by its complete frozen runtime contract. */
+export function nativeAssetModuleCapability(
+  snapshot: WorkspaceSourceSnapshot,
+): boolean {
+  const module = capturedPublicEntry(
+    snapshot.publicEntries ?? snapshot.mappings,
+    "@tint/js-runtime/modules",
+  );
+  if (module === undefined) return false;
+  const exports = capturedModuleExports(
+    workspaceModules([module], snapshot),
+  ).get(module);
+  return (
+    exports?.has("createTextModule") === true &&
+    exports.has("createBytesModule")
+  );
+}
+
 export function nativeSourcePhaseCapability(
   snapshot: WorkspaceSourceSnapshot,
 ): boolean {
@@ -2015,6 +2088,7 @@ export function createNativeBatchBuilder(
     moduleExecution && nativeTopLevelAwaitCapability(snapshot);
   const jsonModules = moduleExecution && nativeJSONModuleCapability(snapshot);
   const sourcePhases = moduleExecution && nativeSourcePhaseCapability(snapshot);
+  const assetModules = moduleExecution && nativeAssetModuleCapability(snapshot);
   const deferredModules =
     moduleExecution && nativeDeferredModuleCapability(snapshot);
   nativeScriptAdapter(
@@ -2025,6 +2099,7 @@ export function createNativeBatchBuilder(
     jsonModules,
     sourcePhases,
     deferredModules,
+    assetModules,
   );
   const capabilities = capturedNativeRuntimeCapabilities(snapshot);
   const agentProvider =
@@ -2077,6 +2152,7 @@ export function createNativeBatchBuilder(
         jsonModules,
         agentProvider,
         sourcePhases,
+        assetModules,
       ),
     );
 }

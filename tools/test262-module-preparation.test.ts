@@ -10,6 +10,37 @@ const plan = (source: string): ExecutionPlan => ({
   asynchronous: false,
   canSuspend: true,
 });
+
+test("resource preparation keeps JavaScript and text identities separate for a self import", () => {
+  const source = 'import value from "./root.js" with {type:"text"};';
+  const result = native.prepareNativeModuleProgram(
+    plan(source),
+    [],
+    "root.js",
+    () => ({
+      root: "root.js",
+      absent: [],
+      siblings: ["root.js"],
+      nodes: [
+        {
+          name: "root.js",
+          kind: "javascript",
+          source,
+          sha256: "hash",
+          parsed: true,
+          bytes: new TextEncoder().encode(source),
+        },
+      ],
+    }),
+    true,
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.deepEqual(
+    result.entries.map((entry) => entry.name),
+    ["root.js", "\0text\0root.js", "\0bytes\0root.js"],
+  );
+});
 const graph = (source: string): ModuleGraph => ({
   root: "root.js",
   absent: [],

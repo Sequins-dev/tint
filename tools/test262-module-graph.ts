@@ -1,8 +1,9 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { basename, dirname, resolve } from "node:path";
 import { parseModule } from "@tint/typescript/syntax";
 import { createSourceTextView } from "@tint/source/text";
-import { test262Source, within } from "./test262-checkout.ts";
+import { within } from "./test262-checkout.ts";
 export interface ModuleGraphNode {
   readonly name: string;
   readonly kind: "javascript" | "json";
@@ -10,6 +11,7 @@ export interface ModuleGraphNode {
   readonly sha256: string;
   /** Bootstrap parsing discovers edges; it never establishes a syntax verdict. */
   readonly parsed: boolean;
+  readonly bytes?: Uint8Array;
 }
 export interface ModuleGraph {
   readonly root: string;
@@ -66,10 +68,12 @@ export function discoverModuleGraph(
   for (let index = 0; index < pending.length; index++) {
     const name = pending[index];
     if (name === undefined) throw Error("module graph pending invariant");
-    const { source, sha256 } = test262Source(within(directory, name));
+    const bytes = new Uint8Array(readFileSync(within(directory, name)));
+    const source = new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
     const kind = name.endsWith(".json") ? "json" : "javascript";
     const parsed = kind === "javascript" ? discover(source, true) : false;
-    nodes.push({ name, kind, source, sha256, parsed });
+    nodes.push({ name, kind, source, sha256, parsed, bytes });
   }
   nodes.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return {
