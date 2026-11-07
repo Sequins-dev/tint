@@ -177,7 +177,7 @@ export function basicDateTimeFormatScore(
 ): number {
   let score = 0;
   // Table 16 order also supplies the stable tie policy used by the selector.
-  for (const name of [
+  const components: readonly string[] = [
     "weekday",
     "era",
     "year",
@@ -189,7 +189,10 @@ export function basicDateTimeFormatScore(
     "second",
     "fractionalSecondDigits",
     "timeZoneName",
-  ]) {
+  ];
+  for (let index = 0; index < components.length; index++) {
+    const name: string | undefined = components[index];
+    if (name === undefined) throw "DATE_TIME_COMPONENT_INVARIANT";
     const want = componentValue(requested, name),
       have = componentValue(offered, name);
     if (want === have) continue;
@@ -197,7 +200,7 @@ export function basicDateTimeFormatScore(
     else if (have === undefined) score -= 120;
     else if (name === "timeZoneName") score -= zonePenalty(want, have);
     else {
-      const values =
+      const values: readonly string[] =
         name === "fractionalSecondDigits"
           ? ["1", "2", "3"]
           : ["2-digit", "numeric", "narrow", "short", "long"];

@@ -1,0 +1,11 @@
+{
+  "kind": "native-build-only-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v30.json",
+  "phase": "check",
+  "exit": 1,
+  "message": "date-time-pattern.ts:6514:6545 invalid call because a for-of component literal binding lacked its string type",
+  "fix": "Use a typed string component array and checked indexed reads; type conditional width arrays explicitly.",
+  "log": "intl-date-time-pattern-native-build-h-v30.log.gz",
+  "nativeExecution": "not attempted; authorization hold"
+}
