@@ -2204,6 +2204,10 @@ function createNativeImageBuilder(
       rootCapacity: nativeTestResources.rootCapacity,
       stackBytes: nativeTestResources.stackBytes,
       nativeServices: serviceImage?.services ?? [],
+      maxSpecializations:
+        serviceImage === undefined
+          ? (request.maxSpecializations ?? 4096)
+          : Math.max(request.maxSpecializations ?? 4096, 8192),
       managedSurfaces: [
         ...(surface === undefined ? [] : [surface]),
         ...(serviceImage === undefined ? [] : [serviceImage.surface]),

@@ -1,0 +1,18 @@
+{
+  "kind": "native-compile-budget-observation",
+  "conformance": false,
+  "report": "test262-intl-date-time-format-unit-builtin-h-v1.json",
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v103.json",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "diagnostic": "runtime: generic specialization limit exceeded",
+  "triage": "The combined Script and DateTimeFormat surfaces exceed the existing4096 specialization cap. Raise only service-composed Test262 image builds to8192; preserve ordinary builds at their existing budget. Fresh unchanged constructor probe and full native runs pending."
+}
