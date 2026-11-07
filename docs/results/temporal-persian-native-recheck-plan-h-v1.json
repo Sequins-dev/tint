@@ -1,0 +1,23 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v18.json",
+  "sourceSnapshot": {
+    "sha256": "0bbd293d4b16dbf1e3ae975be624198b0b9a78564ae13b4e530322534b5dc245",
+    "files": 581
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "Every pinned syntax variant in files explicitly named for Persian calendar. A complete named-file subset, not whole-calendar coverage.",
+  "selections": [
+    {
+      "calendar": "persian",
+      "path": "docs/results/temporal-persian-variant-input-h-v1.json",
+      "files": 84,
+      "variants": 168
+    }
+  ],
+  "afterRestore": "Resume held ISO journal first, then standard runner with explicit-variant manifest; one H runner."
+}
