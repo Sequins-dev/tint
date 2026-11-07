@@ -1,0 +1,31 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v26.json",
+  "sourceSnapshot": {
+    "sha256": "8762a2312202eb6c5862f44cce6a5269d8349366beda7d90d8fcb5dc86f600da",
+    "files": 587
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "Every pinned syntax variant in files explicitly named for Chinese/Dangi calendars. Complete named-file subsets, no observations claimed. Shared multi-calendar files remain in the complete Intl family runs.",
+  "selections": [
+    {
+      "calendar": "chinese",
+      "path": "docs/results/temporal-chinese-variant-input-h-v1.json",
+      "files": 130,
+      "variants": 260,
+      "variantSubsetSha256": "c659e1dfc0e5ff65e27cbef9e64e5598f37cd6028316daa0ea31ab4dcd414ac1"
+    },
+    {
+      "calendar": "dangi",
+      "path": "docs/results/temporal-dangi-variant-input-h-v1.json",
+      "files": 124,
+      "variants": 248,
+      "variantSubsetSha256": "8b2c36c6b75df6c21e98c74ffa167f8cbf1a87611a7eadad3bb02a3a9ea0e1dd"
+    }
+  ],
+  "afterRestore": "Resume held ISO journal first. Use standard runner with explicit-variant manifest; at most one H runner."
+}
