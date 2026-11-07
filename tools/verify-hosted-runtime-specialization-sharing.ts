@@ -10,7 +10,7 @@ const numbers = readFileSync(
   );
 verifyHostedFixture(
   `import {createSourceTextView} from "source";
-import {parseModule,type Module} from "syntax";
+import {parseModule,syntaxHash,type Module,type Statement} from "syntax";
 import {bindModule} from "binding";
 import {checkClosureModule} from "checker";
 import {linkModules,specializeModule} from "modules";
@@ -29,7 +29,10 @@ function check(fields:string,sharing:boolean):boolean{
  const helpers=new Map<string,string>();for(const item of linked.value.exports){if(item===undefined)throw "EXPORT";if(item.namespace==="value")helpers.set((item.module==="numbers"?"number-list":"sparse-list")+":"+item.name,item.linkedName);}
  let equality:RuntimeTypeEquivalenceFactory|undefined=undefined;
  if(sharing)equality=(types:readonly Type[]):((left:number,right:number)=>boolean)=>{const index=createManagedTypeContractIndex(types);return(left:number,right:number):boolean=>{if(!index.ok)return false;const result=index.value.matches(left,right);return result.ok&&result.value;};};
- return prepareCollectionRuntimes(linked.value.module,checked.value,helpers,globals,undefined,24,equality).ok;
+ const added:Statement[]=[];for(let i=0;i<32;i++)added.push({start:0,end:0,kind:"function",name:"__lateHash"+i,exported:false,parameters:[],returnType:{start:0,end:0,kind:"named",name:"number"},body:{start:0,end:0,kind:"block",statements:[{start:0,end:0,kind:"return",expression:{start:0,end:0,kind:"number",value:i,raw:String(i)}}]}});
+ const prepared=prepareCollectionRuntimes(linked.value.module,checked.value,helpers,globals,(module)=>({ok:true,value:{...module,statements:[...module.statements,...added]}}),24,equality);
+ if(prepared.ok){const hashes=new Set<number>();let count=0;for(const statement of prepared.value.checked.module.statements){if(statement===undefined)throw "STATEMENT";if(statement.kind!=="function")continue;const name=statement.name,body=statement.body;if(!name.startsWith("__lateHash"))continue;if(body.kind!=="block")throw "BODY";const returned=body.statements[0];if(returned===undefined||returned.kind!=="return")throw "RETURN";const value=returned.expression;if(value===undefined||value.kind!=="number"||value.start!==0||value.end!==0||typeof value.nodeHash!=="number")throw "LATE_HASH";hashes.add(syntaxHash(value));count++;}if(count!==32||hashes.size!==32)throw "HASH_COLLISION";}
+ return prepared.ok;
 }
 export function run():number{
  const same="value:number;next:Right|undefined;";
