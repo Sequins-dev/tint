@@ -1,0 +1,77 @@
+{
+  "kind": "focused-native-timeout-triage",
+  "conformance": false,
+  "recordedAt": "2026-11-07T18:14:35.650790+00:00",
+  "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-1-v1.json",
+  "originalReport": "docs/results/test262-iterator-family-current-native-v1.json",
+  "originalTotalsUnchanged": true,
+  "explicitRecheckOfHistoricalTimeout": true,
+  "sourceSnapshot": {
+    "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+    "files": 595
+  },
+  "frozenToolchainSha256": "d1202b5cea479a07c22723df850292521514a7758d6c9d37eb9fd1922feb65e6",
+  "observations": [
+    {
+      "path": "built-ins/Iterator/zip/result-is-iterator.js",
+      "variant": "sloppy",
+      "sha256": "563e4e496f89525704e260ee82fbeb56a061e75930b5bce48ab202cfd42a7609",
+      "status": "timeout",
+      "batch": 0,
+      "pid": 85038,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T18:13:31.385901+00:00",
+      "lastCpuSeconds": 264.47,
+      "lastWallSeconds": 284.0,
+      "lastCpuSample": [
+        "85038",
+        "85037",
+        "97.9",
+        "4:24.47",
+        "04:44",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-iQXCwm/test 0"
+      ],
+      "blocker": "The unchanged pinned Iterator test plus intrinsic-enumeration harness exceeds300seconds containment after entering native execution despite over250CPU seconds. A shared native execution/preparation profile and fix is needed; the exact internal hotspot is not symbolized."
+    }
+  ],
+  "confirmed": "Direct-mode, singly measured current-main native execution exceeds containment with over250CPU seconds; not a pre-entry authorization block. No assertion failure or unsupported result observed.",
+  "hypothesis": "The unchanged wellKnownIntrinsicObjects.js harness eagerly constructs87Function bodies; repeated dynamic Function preparation is a source-based inference, not a symbolized internal root cause.",
+  "ownerHint": "D eval/Function and P shared native preparation/performance",
+  "nextStep": "Profile exact retained image/source snapshot with symbols, fix shared native bottleneck, then rerun unchanged affected selections. Preserve original timeout and this focused result.",
+  "retainedPrivateImage": {
+    "kind": "native-image-diagnostic-copy",
+    "conformance": false,
+    "at": "2026-11-07T18:10:35.854605+00:00",
+    "process": [
+      "85038",
+      "85037",
+      "96.8",
+      "1:40.41",
+      "01:44",
+      "RX",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-iQXCwm/test 0"
+    ],
+    "original": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-iQXCwm/test",
+    "copy": ".tint-bootstrap/cluster-f-iterator-timeout-recheck-1-v1-image",
+    "bytes": 143573071,
+    "sha256": "10c6b32efc2a0a3f89735104e311c3a4d802e59922bf66f07a0eee92955e2f27",
+    "sourceSnapshot": {
+      "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+      "files": 595
+    },
+    "frozenToolchainSha256": "d1202b5cea479a07c22723df850292521514a7758d6c9d37eb9fd1922feb65e6",
+    "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-iterator-timeout-recheck-1-v1.jsonl",
+    "signatureVerificationExitStatus": 0
+  },
+  "samples": [
+    "docs/results/cluster-f-iterator-timeout-recheck-1-v1-inferior-85038-sample-v1.txt.gz",
+    "docs/results/cluster-f-iterator-timeout-recheck-1-v1-inferior-85038-sample-v2.txt.gz"
+  ],
+  "cpuSnapshots": "docs/results/cluster-f-iterator-timeout-recheck-1-v1-cpu-observations.jsonl.gz",
+  "launcherExitStatus": 0,
+  "pinnedInputAndStatusValidation": "docs/results/cluster-f-iterator-timeout-recheck-1-v1-validation.json",
+  "sourcesChanged": false,
+  "automaticRetries": false,
+  "manualNativeKills": false
+}

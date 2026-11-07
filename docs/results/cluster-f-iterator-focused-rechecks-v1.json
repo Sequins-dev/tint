@@ -1,0 +1,41 @@
+{
+  "kind": "focused-native-variant-recheck-index",
+  "conformance": false,
+  "recordedAt": "2026-11-07T18:15:20.722655+00:00",
+  "completedRequestedVariants": 1,
+  "requestedVariants": 4,
+  "passed": 0,
+  "timeouts": 1,
+  "reports": [
+    {
+      "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-1-v1.json",
+      "validation": "docs/results/cluster-f-iterator-timeout-recheck-1-v1-validation.json",
+      "totals": {
+        "total": 1,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 1,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "sourceSnapshot": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "frozenToolchainSha256": "d1202b5cea479a07c22723df850292521514a7758d6c9d37eb9fd1922feb65e6",
+      "triage": "docs/results/cluster-f-iterator-timeout-recheck-1-v1-triage.json"
+    }
+  ],
+  "wholeFamilyRerun": false,
+  "originalReport": "docs/results/test262-iterator-family-current-native-v1.json",
+  "originalTotalsUnchanged": true,
+  "scope": "Bookkeeping of separate complete explicit single-variant native runs; original full-family and focused totals remain separate.",
+  "gate": {
+    "sha": "7fe6eecb963ead44f6666a8ecc80017486f74876",
+    "tests": 4805,
+    "record": "7fe6eecb: 4805/4805 (J locale casing + primitive protocol)"
+  },
+  "publicationBase": "29dd25bcb1b69451c33aa4a6a2fd9f920f34db4b"
+}
