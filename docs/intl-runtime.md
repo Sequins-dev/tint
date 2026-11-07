@@ -99,7 +99,6 @@ a handoff to H. The [acceptance record](results/cluster-j-collator-acceptance-v2
 links the native API fixture, byte-identical frozen self-build, semantic corpus,
 workspace gate and matched 64-variant non-Intl compile CPU measurements.
 
-
 ## Calendar algorithms
 
 `calendar.ts` is the shared portable calendar boundary. Identifier validation and
@@ -456,6 +455,7 @@ agent's stable primary-zone inventory.
 The shared duration-unit profiles now cover all 860 CLDR49 locales with plural
 patterns, inherited lists and digital time separators. NumberFormat consumes
 these profiles for the ten time units, including microseconds and nanoseconds;
-other measurement-unit support remains separate. This prerequisite has
-[compile-only evidence](results/unit-format-native-resume-h-v55.md); native
-execution remains held pending host authorization.
+other measurement-unit support remains separate. The initial [compile-only evidence](results/unit-format-native-resume-h-v55.md)
+predates restored host authorization. The integrated duration service now has
+[linked native API validation](results/duration-format-linked-native-h-v131.json);
+complete Test262 results remain in the coverage dashboard.
