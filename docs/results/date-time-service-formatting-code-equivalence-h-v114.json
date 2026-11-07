@@ -1,0 +1,44 @@
+{
+  "kind": "native-service-formatting-only-code-equivalence",
+  "conformance": false,
+  "before": {
+    "version": 1,
+    "profile": "managed-factory-v1",
+    "factoryContract": "tint.service.factory.v1/dateTime/6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+    "surface": {
+      "name": "dateTime",
+      "digest": "6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+      "frame": "Frame"
+    },
+    "entryOffset": 0,
+    "counts": {
+      "signatures": 39,
+      "memberOnly": 4,
+      "records": 40,
+      "functions": 59
+    },
+    "codeBytes": 4511824,
+    "codeSha256": "35598ad525e833609ff969469172a89adf474c9e121bb6012778aded0cc82bc5"
+  },
+  "after": {
+    "version": 1,
+    "profile": "managed-factory-v1",
+    "factoryContract": "tint.service.factory.v1/dateTime/6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+    "surface": {
+      "name": "dateTime",
+      "digest": "6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+      "frame": "Frame"
+    },
+    "entryOffset": 0,
+    "counts": {
+      "signatures": 39,
+      "memberOnly": 4,
+      "records": 40,
+      "functions": 59
+    },
+    "codeBytes": 4507680,
+    "codeSha256": "dd0372898fcc482f28d8b74706778807cd1b8cc006cf20de08e194a587d22eff"
+  },
+  "sameUnitCodeSha256": false,
+  "scope": "Two different native fixtures compose the same unit code. Captured source comparison identifies only import whitespace changes in the portable inputs; toolchain cache identities remain distinct."
+}
