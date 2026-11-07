@@ -1,0 +1,63 @@
+{
+  "kind": "workspace-gate-observation",
+  "conformance": false,
+  "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "stages": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "format": 0
+  },
+  "tests": {
+    "total": 4610,
+    "passed": 4610,
+    "failed": 0
+  },
+  "input": {
+    "at": "2026-11-07T00:25:46.226Z",
+    "base": "c35beec1e1712db129c78307c87cb1c203f0a770",
+    "head": "25db958d3534eed8809bc03c31ce29dd0fee027e",
+    "sourceSnapshot": {
+      "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+      "files": 569
+    }
+  },
+  "queueRebases": [
+    {
+      "at": "2026-11-07T00:28:35.250Z",
+      "base": "16ebd660cb17ccafeaf94616f64fd58f2ddd53a4",
+      "head": "498d586c89a82d3c0c3655f8d4d21b98669bbc10",
+      "processes": [
+        [
+          "48285",
+          "1",
+          "48285",
+          "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+        ],
+        [
+          "48288",
+          "48285",
+          "48285",
+          "/bin/zsh"
+        ],
+        [
+          "62478",
+          "48288",
+          "48285",
+          "sleep"
+        ]
+      ],
+      "reason": "Main advanced only docs/perf native attribution evidence. Inspected and stopped own queued group before execution, then rebased; frozen native inputs unchanged."
+    }
+  ],
+  "currentSourceSnapshot": {
+    "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+    "files": 569
+  },
+  "fixtureRecipeCorrection": "The hosted native fixture was corrected to narrow indexed components through local variables before gate execution. Portable source identity remained unchanged.",
+  "log": {
+    "path": "docs/results/temporal-calendar-check-h-v3.log",
+    "sha256": "a15efbee6e9790aa270f898011dd8c000f9cf8927ddc8c0f76f94a8af2487d5d"
+  }
+}

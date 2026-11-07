@@ -78,7 +78,11 @@ establish collation-service conformance. The unchanged [collation selection](res
 canonicalization reuse the pinned CLDR calendar vocabulary and Unicode type
 aliases already used by Locale. Temporal applies its primitive-string and error
 semantics around this pure operation. Calendar identity does not imply that
-non-ISO date conversion or arithmetic is implemented.
+non-ISO date conversion or arithmetic is implemented. The [corrected semantic
+regression record](results/temporal-calendar-alias-tdd-h-v2.json) passes 18 tests,
+and the [native primitive fixture](results/native-calendar-identifiers-green-h-v13.json)
+validates 19 identifier/alias pairs and seven rejection cases through direct LLDB
+launch. These are separate from Test262 selection results.
 
 ## List formatting
 
