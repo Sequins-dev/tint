@@ -20,6 +20,23 @@ Set `TINT_TEST262_CONTAINMENT_MS` once per run and retain it in the report; init
 integration fixtures use 300,000 ms. Host faults are crashes (exits 13–17); supported
 JavaScript throws stay language completions, and unsupported compilation stays sticky.
 
+## Native service linking identity
+
+Frozen toolchains that capture `date-time-service-factory.ts` default to cached
+AOT service composition. Set `TINT_TEST262_NATIVE_SERVICES=aot` to require this
+path or `monolithic` for the outcome-equivalence control. AOT composition requires
+an immutable frozen toolchain identity. `TINT_NATIVE_SERVICE_CACHE` selects the
+content-addressed cache directory; keep it outside the frozen toolchain tree.
+The default cache is `.tint-bootstrap/native-service-cache`.
+
+Reports and schema-2 journals record `nativeLinkingMode` and
+`nativeServiceUnitIndexSha256` alongside the compiler and source hashes. Resume
+rejects a different mode or unit index before skipping earlier observations.
+The monolithic mode records a null unit index. Public Intl installation remains
+identical in both modes; service units change compilation and composition only.
+Cache construction and preparation cost must be reported separately from warm
+batch compile CPU in performance comparisons.
+
 ## Run the adapters
 
 Use an explicit checkout and preserve source bytes:

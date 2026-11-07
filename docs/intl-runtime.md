@@ -228,7 +228,7 @@ bounds available to the parts engine. Two-digit clocks select inherited CLDR
 ASCII alternates when available; explicit padding remains a minimum.
 [Public API validation](results/intl-date-time-format-api-native-resume-h-v52.md)
 passes 53 focused and its original 4786-test workspace gate. The restored native
-validation records its completed fixture and compiler stage comparison. Temporal-object formatting and locale forwarding are the next slice.
+validation records its completed fixture and compiler stage comparison.
 
 `date-time-format-options.ts` preserves raw component options and applies model
 defaults without mutation. `date-time-temporal-pattern.ts` caches model-specific
@@ -238,8 +238,33 @@ zone-independent and converts Instant nanoseconds exactly before rendering.
 Temporal locale methods use this private service; ZonedDateTime supplies its own
 zone and rejects a defined timeZone option. Date's locale methods share the same
 formatter defaults and validation. [Integration validation](results/temporal-date-time-format-native-resume-h-v54.md)
-passes 224 focused and 4813 workspace tests. Native fixtures and compiler images
-remain compiled only while authorization is pending.
+passes its original 224 focused and 4813 workspace tests. The newer
+[linked native API fixtures](results/date-time-service-linked-api-acceptance-h-v110.json)
+complete DateTimeFormat, Temporal locale forwarding and DurationFormat with entry
+stops and exit42. Full selection equivalence and compile-cost acceptance remain
+separate gates for this feature branch.
+
+## DateTimeFormat native service boundary
+
+`date-time-service-contracts.ts` defines the shared records and nine-method
+service interface. Host Intl installation and Temporal callers use the thin
+`date-time-service.ts` facade. `date-time-service-instance.ts` retains one factory
+result per module context; ordinary monolithic compilation uses the same factory
+and methods. Realm constructors, brands, option access and result allocation stay
+in the host runtime.
+
+The AOT tooling projects formatter implementation bodies and packed CLDR tables
+into a [cached native service unit](native-service-units.md). Its exact contracts
+include private collection storage types; explicit host imports supply the shared
+locale, calendar, time-zone and numeric operations. Collector policy is part of
+the cache identity. Tint's composer prelinks the verified unit into each
+executable, and a checked factory adapter creates state in the current context.
+No runtime sidecar or platform linker is involved. Packing generators and pinned
+CLDR manifests remain the data source of truth and retain their license notices.
+
+The migration's native API fixtures pass. Same-toolchain monolithic equivalence,
+non-Intl batch compile cost and the final workspace gate remain acceptance work;
+the earlier feature-toolchain coverage reports do not establish main coverage.
 
 ## Duration formatting
 
@@ -258,8 +283,9 @@ and exact range validation.
 
 The [DurationFormat checkpoint](results/duration-format-native-resume-h-v62.md)
 passes all4831 workspace tests and compiles its fixture and frozen compiler.
-Execution, stage comparison and complete native selections remain held for host
-Developer Tools authorization.
+The [feature-toolchain selection](results/test262-intl-duration-format-family-h-v1.json)
+completes 220/220 variants; its implementation and evidence must merge together.
+The newer linked native API fixture is included in the validation above.
 
 ## List formatting
 
