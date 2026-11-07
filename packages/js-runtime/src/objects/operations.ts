@@ -1,6 +1,6 @@
 import type { DurationFormatter } from "./duration-format.ts";
 import type { WeakData } from "./weak-storage.ts";
-import type { DateTimeFormatter } from "./date-time-format.ts";
+import type { DateTimeFormatter } from "./date-time-service-contracts.ts";
 import type { RelativeTimeFormatter } from "./relative-time.ts";
 import type { DecimalNumberFormatter } from "./decimal-number-format.ts";
 import type { PluralFormatter } from "./plural-format.ts";

@@ -1,3 +1,5 @@
+import type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
+export type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 import {
   dateTimeCalendarEntries,
   dateTimeCalendarValue,
@@ -10,15 +12,7 @@ import {
   type DateTimePatternToken,
   type DateTimeFormatFields,
 } from "./date-time-pattern.ts";
-export interface ResolvedDateTimePattern {
-  readonly tokens: readonly DateTimePatternToken[];
-  readonly fields: DateTimeFormatFields;
-  readonly skeleton: string;
-  readonly dateTokens: readonly DateTimePatternToken[] | undefined;
-  readonly timeTokens: readonly DateTimePatternToken[] | undefined;
-  readonly connector: string | undefined;
-  readonly timeSlot: number;
-}
+
 function component(symbol: string): number {
   if (symbol === "y" || symbol === "u" || symbol === "r" || symbol === "U")
     return 0;

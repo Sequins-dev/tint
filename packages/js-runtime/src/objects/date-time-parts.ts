@@ -1,3 +1,13 @@
+import type {
+  DateTimeDisplayFields,
+  DateTimePart,
+  DateTimePartsFormatter,
+} from "./date-time-service-contracts.ts";
+export type {
+  DateTimeDisplayFields,
+  DateTimePart,
+  DateTimePartsFormatter,
+} from "./date-time-service-contracts.ts";
 import {
   epochDayFromGregorianCoordinate,
   type GregorianDate,
@@ -26,25 +36,7 @@ import {
 } from "./decimal-number-format.ts";
 import type { DateTimePatternToken } from "./date-time-pattern.ts";
 import type { DecimalNumberPart } from "./decimal-number-parts.ts";
-export interface DateTimeDisplayFields {
-  readonly date: GregorianDate;
-  readonly hour: number;
-  readonly minute: number;
-  readonly second: number;
-  readonly millisecond: number;
-}
-export interface DateTimePart {
-  readonly type: string;
-  readonly value: string;
-}
-export interface DateTimePartsFormatter {
-  readonly calendar: DateTimeCalendarProfile;
-  readonly gregorian: DateTimeCalendarProfile;
-  readonly periods: DateTimeZoneProfile;
-  readonly numeric: DecimalNumberFormatter;
-  readonly twoDigits: DecimalNumberFormatter;
-  readonly threeDigits: DecimalNumberFormatter;
-}
+
 function integerFormatter(
   locale: string,
   numberingSystem: string | undefined,

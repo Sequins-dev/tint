@@ -1,3 +1,13 @@
+import type {
+  DateTimeFormatConfiguration,
+  DateTimeFormatter,
+  DateTimeInput,
+} from "./date-time-service-contracts.ts";
+export type {
+  DateTimeFormatConfiguration,
+  DateTimeFormatter,
+  DateTimeInput,
+} from "./date-time-service-contracts.ts";
 import { resolveDateTimeFormatOptions } from "./date-time-format-options.ts";
 import { tzifOffsetSecondsAt } from "@tint/foundation/chrono/tzif";
 import type { TemporalTimeZone } from "./temporal-time-zone.ts";
@@ -31,24 +41,7 @@ import {
   type DateTimeRangePart,
 } from "./date-time-range.ts";
 import type { ResolvedDateTimeLocale } from "./date-time-locale.ts";
-export interface DateTimeFormatConfiguration {
-  readonly locale: ResolvedDateTimeLocale;
-  readonly timeZone: TemporalTimeZone;
-  readonly fields: DateTimeFormatFields;
-  readonly dateStyle: string | undefined;
-  readonly timeStyle: string | undefined;
-  readonly formatMatcher: string;
-}
-export interface DateTimeFormatter {
-  readonly configuration: DateTimeFormatConfiguration;
-  readonly pattern: ResolvedDateTimePattern;
-  readonly parts: DateTimePartsFormatter;
-  readonly zoneNames: DateTimeZoneNameFormatter;
-  readonly defaults: string;
-  readonly temporalPatterns: (ResolvedDateTimePattern | undefined)[];
-  temporalPatternMask: number;
-  boundFormat: unknown;
-}
+
 function textWidth(value: string): number {
   return value === "narrow"
     ? 5
@@ -265,10 +258,7 @@ export function createDateTimeFormatter(
     boundFormat: undefined,
   };
 }
-export interface DateTimeInput {
-  readonly fields: DateTimeDisplayFields;
-  readonly zoneName: string | undefined;
-}
+
 /** Seconds and subsecond fields are split exactly before entering the Number
  * coordinate domain. Only legacy callers apply TimeClip. */
 export function dateTimeEpochInput(

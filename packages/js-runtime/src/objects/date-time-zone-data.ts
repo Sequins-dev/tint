@@ -1,3 +1,5 @@
+import type { DateTimeZoneProfile } from "./date-time-service-contracts.ts";
+export type { DateTimeZoneProfile } from "./date-time-service-contracts.ts";
 import { localeTableValue } from "./locale-canonicalization.ts";
 import {
   lookupNumberFormatLocale,
@@ -15,11 +17,7 @@ import {
   dateTimeZonePrimaryZones,
   dateTimeDayPeriodRules,
 } from "./date-time-zone-format-data.ts";
-export interface DateTimeZoneProfile {
-  readonly locale: string;
-  readonly groups: readonly string[];
-  readonly dayPeriods: string;
-}
+
 export function createDateTimeZoneProfile(
   locale: string,
 ): DateTimeZoneProfile | undefined {

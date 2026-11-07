@@ -1,3 +1,5 @@
+import type { DateTimeZoneNameFormatter } from "./date-time-service-contracts.ts";
+export type { DateTimeZoneNameFormatter } from "./date-time-service-contracts.ts";
 import {
   tzifOffsetSecondsAt,
   tzifDaylightSavingAt,
@@ -21,12 +23,7 @@ import {
   parseDateTimePattern,
   type DateTimePatternToken,
 } from "./date-time-pattern.ts";
-export interface DateTimeZoneNameFormatter {
-  readonly data: DateTimeZoneProfile;
-  readonly numeric: DecimalNumberFormatter;
-  readonly twoDigits: DecimalNumberFormatter;
-  readonly region: string;
-}
+
 function substitute(
   pattern: string,
   zero: string,

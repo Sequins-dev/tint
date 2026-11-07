@@ -1,3 +1,5 @@
+import type { ResolvedDateTimeLocale } from "./date-time-service-contracts.ts";
+export type { ResolvedDateTimeLocale } from "./date-time-service-contracts.ts";
 import {
   parseLocaleId,
   type LocaleExtension,
@@ -12,14 +14,7 @@ import {
   numberFormatLocaleData,
 } from "./number-format-profile.ts";
 import { createDateTimeCalendarProfile } from "./date-time-calendar.ts";
-export interface ResolvedDateTimeLocale {
-  readonly locale: string;
-  readonly dataLocale: string;
-  readonly calendar: string;
-  readonly numberingSystem: string;
-  readonly hourCycle: string;
-  readonly region: string;
-}
+
 function keyword(tag: string, name: string): string | undefined {
   const parsed = parseLocaleId(tag);
   if (parsed === undefined) throw "DATE_TIME_LOCALE_TAG_INVARIANT";

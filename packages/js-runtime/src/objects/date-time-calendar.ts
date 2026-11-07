@@ -1,3 +1,11 @@
+import type {
+  DateTimeCalendarProfile,
+  DateTimeCalendarEntry,
+} from "./date-time-service-contracts.ts";
+export type {
+  DateTimeCalendarProfile,
+  DateTimeCalendarEntry,
+} from "./date-time-service-contracts.ts";
 import { localeTableValue } from "./locale-canonicalization.ts";
 import {
   lookupNumberFormatLocale,
@@ -11,15 +19,7 @@ import {
 } from "./date-time-format-data.ts";
 
 /** Resolved, inherited calendar presentation data. Arithmetic stays in calendar.ts. */
-export interface DateTimeCalendarProfile {
-  readonly locale: string;
-  readonly calendar: string;
-  readonly groups: readonly string[];
-}
-export interface DateTimeCalendarEntry {
-  readonly key: string;
-  readonly value: string;
-}
+
 export function createDateTimeCalendarProfile(
   locale: string,
   calendar: string,

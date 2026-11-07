@@ -1,3 +1,5 @@
+import type { DateTimeRangePart } from "./date-time-service-contracts.ts";
+export type { DateTimeRangePart } from "./date-time-service-contracts.ts";
 import { calendarFieldsFromISO, type CalendarDateFields } from "./calendar.ts";
 import {
   dateTimeCalendarEntries,
@@ -22,11 +24,7 @@ import {
   basicDateTimeFormatScore,
   type DateTimePatternToken,
 } from "./date-time-pattern.ts";
-export interface DateTimeRangePart {
-  readonly type: string;
-  readonly value: string;
-  readonly source: string;
-}
+
 interface RangeToken {
   readonly token: DateTimePatternToken;
   readonly source: string;
