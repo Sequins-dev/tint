@@ -1,0 +1,43 @@
+{
+  "kind": "native-selection-publication-validation",
+  "conformance": false,
+  "implementationCommit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+  "implementationOnMain": true,
+  "validatedAt": "2026-11-07T19:27:14.897Z",
+  "report": "docs/results/test262-language-import-a3-native-v1.json",
+  "reportSha256": "7bb0480c5f93fd18e7d839b7597eb03e364d98ab421d46997d791f10ba92c220",
+  "journalSha256": "51e21587900a2d0deafbbfbcc5af4483c1c9ab908ac0b23ca392345e6992fc8e",
+  "terminalComplete": true,
+  "frozenFilesVerified": true,
+  "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "totals": {
+    "total": 135,
+    "passed": 29,
+    "failed": 0,
+    "unsupported": 106,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.21481481481481482
+  },
+  "ledgerAccepted": 1,
+  "ledgerRejected": [],
+  "measuredVariants": 135,
+  "fixtureVerification": {
+    "command": "node tools/test262-native-extract.ts <pinned checkout> <completed journal> language/import <new report>",
+    "exitStatus": 0,
+    "expectedVariants": 135
+  },
+  "workspaceGate": {
+    "commit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+    "passed": 4829,
+    "total": 4829,
+    "exitStatus": 0,
+    "reuse": "docs-only; all code in publication base is covered"
+  },
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "logSha256": "c172448ee6860efaed701fb84d81024a4655f523ff49e9f1af4f1625a30adfe2"
+  }
+}
