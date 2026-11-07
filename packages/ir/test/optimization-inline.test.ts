@@ -704,3 +704,143 @@ test("direct immutable record reads retain their object and layout after cloning
     ),
   );
 });
+
+test("reference expansion leaves allocating callers at their existing call boundary", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 1, ...span },
+              {
+                kind: "array-new",
+                id: 1,
+                type: "Uint8Array",
+                length: 0,
+                ...span,
+              },
+              { kind: "load", id: 2, slot: 0, ...span },
+              { kind: "call", id: 3, target: 1, arguments: [2], ...span },
+            ],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "wrap",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "reference-wrap", id: 1, value: 0, ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 0);
+});
+
+test("existing scalar candidates retain their original size policy", () => {
+  const input = fixture();
+  let id = 0;
+  const callee: FunctionIR = {
+    ...input.functions[1]!,
+    blocks: Array.from({ length: 12 }, (_, block) => ({
+      id: block,
+      instructions:
+        block === 11
+          ? [{ kind: "load" as const, id: id++, slot: 0, ...span }]
+          : Array.from({ length: 5 }, () => ({
+              kind: "constant" as const,
+              id: id++,
+              value: 7,
+              ...span,
+            })),
+      terminator:
+        block === 11
+          ? { kind: "return" as const, value: id - 1, ...span }
+          : { kind: "jump" as const, target: block + 1, ...span },
+    })),
+  };
+  const module = { functions: [input.functions[0]!, callee] };
+  assert.deepEqual(verify(module), { ok: true });
+  assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 2);
+});
+
+test("new reference expansion has a fixed per-caller budget", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              ...Array.from({ length: 40 }, (_, i) => ({
+                kind: "call" as const,
+                id: i + 1,
+                target: 1,
+                arguments: [i],
+                ...span,
+              })),
+            ],
+            terminator: { kind: "return", value: 40, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "identity",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 32);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.equal(
+    result.module.functions[0]!.blocks[0]!.instructions.filter(
+      (op) => op.kind === "call",
+    ).length,
+    8,
+  );
+});

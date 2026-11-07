@@ -22,7 +22,7 @@ function scalar(type: ScalarType): boolean {
     type === "optional-boolean"
   );
 }
-function supported(op: Instruction): boolean {
+function supported(op: Instruction, references: boolean = true): boolean {
   switch (op.kind) {
     case "constant":
     case "load":
@@ -37,14 +37,15 @@ function supported(op: Instruction): boolean {
     case "boolean-wrap":
     case "boolean-present":
     case "boolean-value":
-    case "reference-none":
-    case "reference-wrap":
-    case "reference-value":
-    case "record-read":
     case "array-read":
     case "array-valid":
     case "array-length":
       return true;
+    case "reference-none":
+    case "reference-wrap":
+    case "reference-value":
+    case "record-read":
+      return references;
     case "host-call":
       return op.operation === "memory-read-word";
     default:
@@ -83,7 +84,11 @@ export function inlineSmallFunctions(
       // Charge actual expansion work: instructions, terminators, parameter
       // copies and the result slot. Empty jump/trap blocks do not need a
       // separate size heuristic that excludes otherwise small helpers.
-      cost = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
+      original =
+        (fn.returnType === "void" || scalar(fn.returnType)) &&
+        fn.blocks.length <= (guarded ? 32 : 12),
+      cost = 0,
+      overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
     for (let slot = 0; slot < fn.slots.length; slot++) {
       const type = fn.slots[slot];
@@ -104,7 +109,7 @@ export function inlineSmallFunctions(
       if (block === undefined) throw "inline block invariant";
       if (visited >= budget) return undefined;
       visited++;
-      cost++;
+      overhead++;
       if (block.exception !== undefined) good = false;
       const term = block.terminator;
       if (term.kind === "return") returns++;
@@ -120,6 +125,11 @@ export function inlineSmallFunctions(
         visited++;
         cost++;
         if (
+          !supported(op, false) ||
+          (op.kind === "store" && fn.parameters.includes(op.slot))
+        )
+          original = false;
+        if (
           !supported(op) ||
           (op.kind === "store" &&
             fn.blocks.length === 1 &&
@@ -128,9 +138,14 @@ export function inlineSmallFunctions(
           good = false;
       }
     }
+    const expansion = original ? cost : cost + overhead;
     eligible[fn.id] =
-      good && cost <= (guarded ? 128 : 64) && returns > 0 ? 1 : 0;
-    costs[fn.id] = cost;
+      good && expansion <= (guarded ? 128 : 64) && returns > 0
+        ? original
+          ? 1
+          : 2
+        : 0;
+    costs[fn.id] = expansion;
   }
   const functions: FunctionIR[] = [];
   for (const fn of module.functions) {
@@ -138,15 +153,29 @@ export function inlineSmallFunctions(
     let nextValue = 0,
       nextBlock = 0,
       originalCount = 0,
+      nonallocatingCaller = true,
       hasCandidate = false;
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
       nextBlock = Math.max(nextBlock, block.id + 1);
+      const term = block.terminator;
+      if (
+        (term.kind === "record" && term.operation !== "read") ||
+        term.kind === "record-cell" ||
+        term.kind === "cell"
+      )
+        nonallocatingCaller = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
         const id = instructionResult(op);
         if (id !== undefined) nextValue = Math.max(nextValue, id + 1);
         originalCount++;
+        if (
+          op.kind === "call"
+            ? !eligible[op.target] || op.environment !== undefined
+            : !supported(op)
+        )
+          nonallocatingCaller = false;
         if (
           op.kind === "call" &&
           eligible[op.target] &&
@@ -161,6 +190,7 @@ export function inlineSmallFunctions(
       continue;
     }
     let allowance = originalCount + 128,
+      referenceAllowance = 128,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [];
@@ -184,7 +214,9 @@ export function inlineSmallFunctions(
           !eligible[callee.id] ||
           callee.id === fn.id ||
           op.environment !== undefined ||
-          cost > allowance
+          cost > allowance ||
+          (eligible[callee.id] === 2 &&
+            (!nonallocatingCaller || cost > referenceAllowance))
         ) {
           instructions.push(op);
           continue;
@@ -500,6 +532,7 @@ export function inlineSmallFunctions(
             end: op.end,
           });
         allowance -= cost;
+        if (eligible[callee.id] === 2) referenceAllowance -= cost;
         inlined++;
         changed = true;
       }
