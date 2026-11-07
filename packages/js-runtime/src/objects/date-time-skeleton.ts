@@ -331,7 +331,7 @@ export function resolveDateTimeSkeleton(
   profile: DateTimeCalendarProfile,
   skeleton: string,
   decimal: string,
-  preferAscii = false,
+  preferAscii: boolean = false,
 ): ResolvedDateTimePattern | undefined {
   const parsed = parseDateTimePattern(skeleton);
   if (
