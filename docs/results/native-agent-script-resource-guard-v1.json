@@ -1,0 +1,77 @@
+{
+  "scope": "Two fresh native processes under LLDB, new2MiB entry/16MiB arena profile: trivial child realm succeeds; bounded256-statement child must retain caught host-fault containment. Not Test262.",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+      "files": 601
+    },
+    "imageSha256": "8e7f8b26350b33b654d759710d3c65c20b2f2d6c8bacbcf96d6465c0434f3e1e",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 16777216,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 2097152,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "$262.agent.start(\"var child=$262.createRealm();try{child.evalScript(\\\"0\\\");}catch(error){}$262.agent.leaving();\");",
+        "sha256": "b508e88ce5921a6e5aad3284e2f9e025f9e10c159f0ea7f826a61f93f5e730a9"
+      },
+      {
+        "index": 1,
+        "source": "$262.agent.start(\"var child=$262.createRealm();try{child.evalScript(\\\"var x=0;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;\\\");}catch(error){}$262.agent.leaving();\");",
+        "sha256": "9df8b1fe15c4a3aacc059e29bb3819790a3f8b00d24b888bdc963bb0e668f823"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": true
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "unexpected native exit status 70"
+      },
+      "accepted": true
+    }
+  ]
+}

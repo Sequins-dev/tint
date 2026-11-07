@@ -1,0 +1,89 @@
+{
+  "scope": "Three bespoke worker controls in separate native processes under LLDB, old256KiB/4MiB profile. Minimal immediate wait must complete; object coercion and clock workers must reproduce contained exit70. Not unchanged Test262 conformance.",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+      "files": 601
+    },
+    "imageSha256": "a21251c2f7f8dbe90fe8f8df2a5b0fe0da574b13f89a9f8dca2a23348e8cf76c",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "var memory=new SharedArrayBuffer(8);\n$262.agent.start(\"$262.agent.receiveBroadcast(function(buffer){var a=new BigInt64Array(buffer);$262.agent.report(Atomics.wait(a,0,0n,0));$262.agent.leaving();});\");\n$262.agent.broadcast(memory);\nvar value;while((value=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(value!==\"timed-out\")throw new Error(\"immediate control changed\");",
+        "sha256": "73ac0e415d90b8df3a0b786a9662f93062b18a8cfaef863a4084f5d7e6b91a1c"
+      },
+      {
+        "index": 1,
+        "source": "var memory=new SharedArrayBuffer(8);\n$262.agent.start(\"\\nconst ordinary={valueOf:function(){return false;}};\\nconst primitive={[Symbol.toPrimitive]:function(){return false;}};\\n$262.agent.receiveBroadcast(function(buffer){\\n const words=new BigInt64Array(buffer);\\n const a=Atomics.wait(words,0,0n,false);\\n const b=Atomics.wait(words,0,0n,ordinary);\\n const c=Atomics.wait(words,0,0n,primitive);\\n $262.agent.report(a);$262.agent.report(b);$262.agent.report(c);\\n $262.agent.leaving();\\n});\");\n$262.agent.broadcast(memory);\nfor(var i=0;i<3;i++){var value;while((value=$262.agent.getReport())===null)$262.agent.sleep(1);if(value!==\"timed-out\")throw new Error(\"timeout coercion changed\");}",
+        "sha256": "ea51458423d3ae86b86c41cd1488314ac7eba3efb7d86492b3a9e1867b11038e"
+      },
+      {
+        "index": 2,
+        "source": "var memory=new SharedArrayBuffer(8);\n$262.agent.start(\"\\n$262.agent.receiveBroadcast(function(buffer){\\n const words=new BigInt64Array(buffer);\\n const before=$262.agent.monotonicNow();\\n const result=Atomics.wait(words,0,0n,2);\\n const elapsed=$262.agent.monotonicNow()-before;\\n $262.agent.report(elapsed);$262.agent.report(result);\\n $262.agent.leaving();\\n});\");\n$262.agent.broadcast(memory);\nvar value;while((value=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(Number(value)<2)throw new Error(\"wait expired early\");\nwhile((value=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(value!==\"timed-out\")throw new Error(\"timed result changed\");",
+        "sha256": "bed84a4af06e258a452fbc8a80109980a894fe8ea8e724c3bcd8a31042d48161"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": true
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "unexpected native exit status 70"
+      },
+      "accepted": true
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": false
+    }
+  ]
+}

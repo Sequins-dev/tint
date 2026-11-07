@@ -1,0 +1,37 @@
+{
+  "scope": "Static emission diagnostic only. Exact worker template text with RUNNING=1,TIMEOUT=1000,WAIT_INDEX=0 substituted; sources are not executed. Dummy directory leaves are never dereferenced. Not Test262 conformance or native execution evidence.",
+  "observations": [
+    {
+      "name": "minimal bespoke wait control",
+      "sourceSha256": "c9c3b2ac82d19483878783d773d5f52079cbcfb4d9d9047395472aa2dcef0bc5",
+      "source": "$262.agent.receiveBroadcast(function(sab){var a=new BigInt64Array(sab);$262.agent.report(Atomics.wait(a,0,0n,0));$262.agent.leaving();});",
+      "ok": true,
+      "codeBytes": 220744,
+      "fits262144": true
+    },
+    {
+      "name": "built-ins/Atomics/wait/bigint/false-for-timeout-agent.js",
+      "sourceSha256": "71d147be8b53eb62234572b6c2ca63eaf78507361ea69155ceaa9c31aed755a4",
+      "source": "\n  const valueOf = {\n    valueOf: function() {\n      return false;\n    }\n  };\n\n  const toPrimitive = {\n    [Symbol.toPrimitive]: function() {\n      return false;\n    }\n  };\n\n  $262.agent.receiveBroadcast(function(sab) {\n    const i64a = new BigInt64Array(sab);\n    Atomics.add(i64a, 1, 1n);\n\n    const status1 = Atomics.wait(i64a, 0, 0n, false);\n    const status2 = Atomics.wait(i64a, 0, 0n, valueOf);\n    const status3 = Atomics.wait(i64a, 0, 0n, toPrimitive);\n\n    $262.agent.report(status1);\n    $262.agent.report(status2);\n    $262.agent.report(status3);\n    $262.agent.leaving();\n  });\n",
+      "ok": true,
+      "codeBytes": 662160,
+      "fits262144": false
+    },
+    {
+      "name": "built-ins/Atomics/wait/bigint/no-spurious-wakeup-no-operation.js",
+      "sourceSha256": "a14afd4418fa37c58e7ababe34c23363324349120a6b953295d7298cba5bfc1d",
+      "source": "\n  $262.agent.receiveBroadcast(function(sab) {\n    const i64a = new BigInt64Array(sab);\n    Atomics.add(i64a, 1, 1n);\n\n    const before = $262.agent.monotonicNow();\n    const unpark = Atomics.wait(i64a, 0, 0n, 1000);\n    const duration = $262.agent.monotonicNow() - before;\n\n    $262.agent.report(duration);\n    $262.agent.report(unpark);\n    $262.agent.leaving();\n  });\n",
+      "ok": true,
+      "codeBytes": 533256,
+      "fits262144": false
+    },
+    {
+      "name": "built-ins/Atomics/wait/bigint/no-spurious-wakeup-on-add.js",
+      "sourceSha256": "a14afd4418fa37c58e7ababe34c23363324349120a6b953295d7298cba5bfc1d",
+      "source": "\n  $262.agent.receiveBroadcast(function(sab) {\n    const i64a = new BigInt64Array(sab);\n    Atomics.add(i64a, 1, 1n);\n\n    const before = $262.agent.monotonicNow();\n    const unpark = Atomics.wait(i64a, 0, 0n, 1000);\n    const duration = $262.agent.monotonicNow() - before;\n\n    $262.agent.report(duration);\n    $262.agent.report(unpark);\n    $262.agent.leaving();\n  });\n",
+      "ok": true,
+      "codeBytes": 533256,
+      "fits262144": false
+    }
+  ]
+}

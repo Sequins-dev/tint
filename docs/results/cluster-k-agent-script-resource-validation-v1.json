@@ -1,0 +1,69 @@
+{
+  "kind": "cluster-k-agent-script-resource-validation",
+  "createdAt": "2026-11-07T23:37:38.142014+00:00",
+  "conformance": false,
+  "change": {
+    "scope": "Node-only uniform native Test262 resources, fixture workloads and generated-host tests; no portable compiler/runtime algorithm or host ABI change.",
+    "old": {
+      "maxScriptCodeBytes": 262144,
+      "executableMemoryBytes": 4194304
+    },
+    "new": {
+      "maxScriptCodeBytes": 2097152,
+      "executableMemoryBytes": 16777216
+    },
+    "unchanged": "Dynamic Function64KiB, managed heap256MiB, roots, stack, shared-block lifetime, managed isolation and wait/notify algorithms."
+  },
+  "cause": "More complex agent Script entries are rejected by the original development resource profile. Original unchanged Atomics observations exit70 after native entry; they remain immutable. The same bespoke coercion worker exits70 under the old profile and completes under the new profile.",
+  "staticDiagnostic": {
+    "report": "cluster-k-agent-worker-entry-diagnostic-v1.json",
+    "note": "Node-side emission with a dummy nonexecuted managed directory. Sizes are diagnostic, not exact native production-directory footprints or runtime/CPU measures.",
+    "originalCoercionWorkerBytes": 662160,
+    "originalClockWorkerBytes": 533256,
+    "bespokeCoercionBytes": 590544,
+    "rebasedBespokeCoercionBytes": 590584,
+    "rebasedBespokeClockBytes": 464928
+  },
+  "semanticRed": {
+    "exitStatus": 1,
+    "log": ".tint-bootstrap/cluster-k/agent-resources-red-v1.log",
+    "assertion": "agent entry590544bytes exceeds uniform budget262144"
+  },
+  "semanticGreenAndGenerator": {
+    "command": "node --test --test-concurrency=2 tools/native-agent-test-resources.test.ts tools/test262-native-config.test.ts tools/test262-native-batch.test.ts tools/test262-script-service.test.ts tools/test262-dynamic-import-host.test.ts tools/test262-module-host.test.ts tools/test262-top-level-await.test.ts",
+    "exitStatus": 0,
+    "passed": 62,
+    "log": ".tint-bootstrap/cluster-k/agent-resource-generator-rebased-v4.log"
+  },
+  "native": {
+    "oldControls": "native-agent-script-resources-old-v1.json",
+    "newControls": "native-agent-script-resources-new-v1.json",
+    "newAccepted": 3,
+    "newTotal": 3,
+    "guard": "native-agent-script-resource-guard-v1.json",
+    "guardAccepted": 2,
+    "guardTotal": 2,
+    "note": "Every execution is a fresh process under LLDB with initial-stop and terminal-state checks. Exit70 is contained process termination, not an OS exception.",
+    "rebasedControls": "native-agent-script-resources-rebased-v2.json",
+    "rebasedAccepted": 3,
+    "rebasedTotal": 3
+  },
+  "rejectedDiagnosticPrediction": {
+    "oldDriverExitStatus": 1,
+    "explanation": "The first driver predicted the smaller clock control would also fail. It completed under the old profile. That observation and accepted:false flag are preserved; the clock API itself was working. The coercion control alone establishes the old/new native admission difference."
+  },
+  "generatorVerification": {
+    "reports": [
+      "cluster-k-agent-resource-generator-diff-v1.json",
+      "cluster-k-agent-resource-module-generator-diff-v1.json"
+    ],
+    "moduleAstChanges": "Only raw/value fields for private arena4194304->16777216 and Script budget262144->2097152 changed. Historical baseline JSON was not edited; its test normalizes quota literals only.",
+    "observations": "Initial focused18tests had16pass/2hash failures; broader62had58pass/4hash failures. All were retained and compared before changing pins; targeted4/4 and rebased62/62 passed."
+  },
+  "selfBuild": "No new self-build required: this slice changes Node-only configuration/tests, with existing portable compiler/runtime code unchanged.",
+  "workspaceBuild": {
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/cluster-k/build-after-main-v13.log"
+  },
+  "pending": "Full wrapped workspace gate and full affected Atomics/waitAsync rerun remain pending."
+}
