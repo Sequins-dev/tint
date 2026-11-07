@@ -1,0 +1,18 @@
+{
+  "kind": "c2-post-run-slot-wrapper-error",
+  "conformance": false,
+  "generatedAt": "2026-11-07T13:02:39.112295+00:00",
+  "nativeReport": "docs/results/test262-c2-expressions-elements-native-v1.json",
+  "wrapperExitCode": 1,
+  "diagnostic": "slot:29 parse error near closing parenthesis",
+  "ordering": "All2943 observations, complete journal footer, valid complete JSON and final writing-report heartbeat precede the wrapper diagnostic.",
+  "currentSlotSyntaxCheck": {
+    "command": "zsh -n ~/.t3/tint-slots/slot",
+    "exitCode": 0,
+    "sha256": "43b4a2a25faf25f69068eca64f8a83b17e8398eb2e318f5d37cf1bc946e4d377",
+    "modifiedAt": "2026-11-07T10:32:27.073757+00:00",
+    "lines": 28
+  },
+  "inference": "Shared script was changed during the long-running shell. Resuming parsing at an old file offset after the child exits is a possible explanation, not an established root cause. Current syntax is valid; no central script edit made by C2.",
+  "nativeOutcomeImpact": "None. Original2941passes2unsupported retained; wrapper error is not hidden or reclassified as a native pass."
+}
