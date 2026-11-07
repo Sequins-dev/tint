@@ -1,15 +1,11 @@
-import {
-  unicodePropertyRanges,
-  containsUnicodeRangeSet,
-} from "../../unicode/properties/index.ts";
+import { containsUnicodeRangeSet } from "../../unicode/properties/index.ts";
 import {
   canonicalize,
   equalCharacter,
   foldedRange,
   foldedProperty,
 } from "./case-fold.ts";
-import type { ClassEntry } from "../syntax/index.ts";
-import type { CompiledClassSet } from "./model.ts";
+import type { CompiledClassEntry, CompiledClassSet } from "./model.ts";
 import {
   stringPropertyNames,
   stringPropertyValues,
@@ -66,7 +62,7 @@ export function wordCharacter(
   );
 }
 export function entryMatches(
-  entry: ClassEntry,
+  entry: CompiledClassEntry,
   value: number,
   ignoreCase: boolean = false,
   unicode: boolean = false,
@@ -78,8 +74,7 @@ export function entryMatches(
       : value >= entry.from && value <= entry.to;
   let member = false;
   if (entry.kind === "property") {
-    const ranges = unicodePropertyRanges(entry.property, entry.value);
-    if (ranges === undefined) throw "REGEXP_PROPERTY_INVARIANT";
+    const ranges = entry.ranges;
     if (ignoreCase) {
       if (entry.inverted && !unicodeSets)
         return foldedProperty(value, ranges, unicode, true);

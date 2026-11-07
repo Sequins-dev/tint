@@ -1,7 +1,20 @@
-import type { ClassEntry, NamedCapture, RegExpFlags } from "../syntax/index.ts";
+import type { NamedCapture, RegExpFlags } from "../syntax/index.ts";
+/** Immutable property ranges are resolved once, before the matching loop. */
+export type CompiledClassEntry =
+  | {
+      readonly kind: "property";
+      readonly ranges: string;
+      readonly inverted: boolean;
+    }
+  | { readonly kind: "range"; readonly from: number; readonly to: number }
+  | {
+      readonly kind: "category";
+      readonly category: "digit" | "space" | "word";
+      readonly inverted: boolean;
+    };
 /** Matching-only property references keep generated string tables out of the syntax AST. */
 export type CompiledClassSet =
-  | { readonly kind: "entry"; readonly entry: ClassEntry }
+  | { readonly kind: "entry"; readonly entry: CompiledClassEntry }
   | { readonly kind: "strings"; readonly alternatives: readonly string[] }
   | { readonly kind: "string-property"; readonly property: string }
   | {
@@ -21,7 +34,7 @@ export type Instruction =
   | {
       readonly kind: "class";
       readonly ignoreCase: boolean;
-      readonly entries: readonly ClassEntry[];
+      readonly entries: readonly CompiledClassEntry[];
       readonly inverted: boolean;
       readonly next: number;
     }

@@ -7,7 +7,12 @@ import {
   type ClassSetExpression,
   type RegExpResult,
 } from "../syntax/index.ts";
-import type { CompiledClassSet, Instruction, RegExpProgram } from "./model.ts";
+import type {
+  CompiledClassEntry,
+  CompiledClassSet,
+  Instruction,
+  RegExpProgram,
+} from "./model.ts";
 interface Options {
   readonly ignoreCase: boolean;
   readonly multiline: boolean;
@@ -87,18 +92,18 @@ export function compileRegExp(
     instructions.push(instruction);
     return index;
   }
-  function validateEntry(entry: ClassEntry): void {
-    if (
-      entry.kind === "property" &&
-      (entry.strings ||
-        unicodePropertyRanges(entry.property, entry.value) === undefined)
-    )
+  function compileEntry(entry: ClassEntry): CompiledClassEntry {
+    if (entry.kind !== "property") return entry;
+    if (entry.strings)
       reject("Unicode property membership tables are not implemented");
+    const ranges = unicodePropertyRanges(entry.property, entry.value);
+    if (ranges === undefined)
+      reject("Unicode property membership tables are not implemented");
+    return { kind: "property", ranges, inverted: entry.inverted };
   }
   function prepareEntry(entry: ClassEntry): CompiledClassSet {
     if (entry.kind !== "property" || !entry.strings) {
-      validateEntry(entry);
-      return { kind: "entry", entry };
+      return { kind: "entry", entry: compileEntry(entry) };
     }
     if (!stringPropertyNames.includes(entry.property))
       reject("Unicode string property tables are not implemented");
@@ -166,14 +171,15 @@ export function compileRegExp(
           next,
         });
       }
+      const entries: CompiledClassEntry[] = [];
       for (const entry of node.entries) {
         if (entry === undefined) throw "REGEXP_CLASS_INVARIANT";
-        validateEntry(entry);
+        entries.push(compileEntry(entry));
       }
       return push({
         kind: "class",
         ignoreCase: options.ignoreCase,
-        entries: node.entries,
+        entries,
         inverted: node.inverted,
         next,
       });
