@@ -83,7 +83,7 @@ The complete [`Intl.RelativeTimeFormat` family](results/test262-relative-time-na
 
 The complete weak-family selections pass [WeakMap **281/281**](results/test262-weak-map-native-v1.json), [WeakSet **169/170**](results/test262-weak-set-native-v1.json), [WeakRef **58/58**](results/test262-weak-ref-native-v1.json), and [FinalizationRegistry **93/94**](results/test262-finalization-registry-native-v1.json). WeakSet and FinalizationRegistry each retain one pre-entry launch failure, with no semantic failures or unsupported cases. The [real-GC lifetime fixture](results/native-weak-lifetimes-v2.json) also passes. These reports retain their own source snapshots.
 
-These complete generator-language selections have zero failures, unsupported variants or infrastructure errors. Each report retains its own frozen source snapshot.
+These complete iteration, generator and async language selections have zero failures, unsupported variants or infrastructure errors. Each report retains its own frozen source snapshot.
 
 | Selection | Pass/total | Report |
 | --- | ---: | --- |
@@ -91,8 +91,9 @@ These complete generator-language selections have zero failures, unsupported var
 | `language/expressions/yield` | 123/123 | [Report](results/test262-cluster-f-yield-expressions-v1.json) |
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
 | `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
+| `language/expressions/async-generator` | 1212/1212 | [Report](results/test262-cluster-f-async-generator-expressions-v1.json) |
 
-The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions have [1124/1124 native passes across 579 complete files](results/cluster-f-async-generator-expressions-completed-files-v9.json); the full 1,212-variant selection remains running.
+The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF.
 
 For-await-of has [passing native observations for 2,431/2,431 pinned variant keys](results/cluster-f-for-await-passing-variant-coverage-audit-v1.json), across three separate frozen snapshots. The fresh [61/61 direct recheck](results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json) covers all retained pre-entry failures; original [connected 570/626](results/cluster-f-for-await-connected-interruption-v1.json) and [direct unobserved 1,800/1,805](results/test262-cluster-f-for-await-unobserved-direct-v1.json) totals remain unchanged.
 
