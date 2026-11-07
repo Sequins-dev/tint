@@ -1,3 +1,4 @@
+import type { DecimalNumberPart } from "./decimal-number-parts.ts";
 import {
   durationFields,
   type Duration,
@@ -269,8 +270,11 @@ function numberParts(
   if (nf === undefined) throw "DURATION_NUMBER_FORMAT_INVARIANT";
   const result: DurationFormatPart[] = [],
     numericParts = decimalNumberParts(nf, value);
-  for (const part of numericParts)
+  for (let partIndex = 0; partIndex < numericParts.length; partIndex++) {
+    const part: DecimalNumberPart | undefined = numericParts[partIndex];
+    if (part === undefined) throw "DURATION_NUMBER_PART_INVARIANT";
     result.push({ type: part.type, value: part.value, unit });
+  }
   return result;
 }
 export function durationFormatParts(
