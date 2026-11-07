@@ -1,0 +1,23 @@
+{
+  "kind": "verified-budget-correction-boundary",
+  "at": "2026-11-07T22:36:17.860473+00:00",
+  "cause": "Launch command omitted TINT_TEST262_CONTAINMENT_MS; runner default60000 found by inspecting immutable header before first execution.",
+  "ack": {
+    "pid": 27481,
+    "state": "between-variants"
+  },
+  "noChildOrInferior": true,
+  "observedVariants": 0,
+  "noNativeVariantExecuted": true,
+  "hostStoppedAfterAck": true,
+  "journalUnchanged": true,
+  "journalReadOnly": true,
+  "journalSha256": "f42157f93858475fc5c11dda88e501da1ffc1e2645fe86bc28596970bda749e6",
+  "oldBudgetMs": 60000,
+  "replacementBudgetMs": 300000,
+  "sameFrozenGraph": true,
+  "sameManifest": true,
+  "oldGraphReport": "docs/results/cluster-j-property-toolchain-transition-v38.json",
+  "replacementJournal": ".tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl",
+  "wrapperExpectedExit": 143
+}

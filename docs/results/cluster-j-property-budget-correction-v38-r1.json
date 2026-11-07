@@ -1,0 +1,82 @@
+{
+  "kind": "verified-budget-correction-boundary",
+  "at": "2026-11-07T22:36:17.860473+00:00",
+  "cause": "Launch command omitted TINT_TEST262_CONTAINMENT_MS; runner default60000 found by inspecting immutable header before first execution.",
+  "ack": {
+    "pid": 27481,
+    "state": "between-variants"
+  },
+  "noChildOrInferior": true,
+  "observedVariants": 0,
+  "noNativeVariantExecuted": true,
+  "hostStoppedAfterAck": true,
+  "journalUnchanged": true,
+  "journalReadOnly": true,
+  "journalSha256": "f42157f93858475fc5c11dda88e501da1ffc1e2645fe86bc28596970bda749e6",
+  "oldBudgetMs": 60000,
+  "replacementBudgetMs": 300000,
+  "sameFrozenGraph": true,
+  "sameManifest": true,
+  "oldGraphReport": "docs/results/cluster-j-property-toolchain-transition-v38.json",
+  "replacementJournal": ".tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl",
+  "wrapperExpectedExit": 143,
+  "complete": true,
+  "ledgerEligible": false,
+  "replacementHeaderVerified": true,
+  "debuggerLaunch": "debugserver-direct",
+  "replacementSourceSnapshot": {
+    "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+    "files": 601
+  },
+  "requestedVariants": 790,
+  "remainingFiles": 395,
+  "manifest": "docs/results/cluster-j-property-remaining-manifest-v38.json",
+  "variantSubsetSha256": "936734ef5d4e8f77a4b847795902c032be46d421495ffbb9f0faa393b0c58d56",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/boundary.json",
+      "bytes": 879,
+      "sha256": "0d4b813faad5c791d4fb771a4ab796ffd9cdb8fda46ee3330fe4061f61396ba1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/correct-budget.py",
+      "bytes": 2774,
+      "sha256": "ab2fb6e69f4da90d8b5283cad1183feb6ea2a025abc84abe918415f4d04ccb5c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/initial-journal.jsonl",
+      "bytes": 1897,
+      "sha256": "f42157f93858475fc5c11dda88e501da1ffc1e2645fe86bc28596970bda749e6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/initial-stderr.log",
+      "bytes": 2980,
+      "sha256": "24228e07aa78cf6dd991e18774b1fe14803416c39a3e2dfa9ea506cbbb1004fc"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/initial-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/pause-ack.json",
+      "bytes": 41,
+      "sha256": "a8091c3e939bf9c47b9bb166013d2354024a6f2194b31624f2538302e345e6ec"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/pause-request.txt",
+      "bytes": 99,
+      "sha256": "aa7a66e7c84c569559a8e47e7ca470e334a2e9539854599a7f36e8ea0cdfccb0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/processes-at-boundary.json",
+      "bytes": 633,
+      "sha256": "5d8806f8e056ff36ec22ab58c3d96874c3f6133e1bc1f38d6c05ed65a578d1a8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-budget-correction-v38-r1-evidence/replacement-header.json",
+      "bytes": 2097,
+      "sha256": "2b5180de46201f9d93bbb92aa3786c494538f65bdee20649361705adaaf892fd"
+    }
+  ]
+}
