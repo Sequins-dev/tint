@@ -1,3 +1,4 @@
+import type { DateTimeSkeletonCandidate as Candidate } from "./date-time-service-contracts.ts";
 import type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 export type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 import {
@@ -150,10 +151,6 @@ export function combineDateTimePatterns(
     }
   }
   return result;
-}
-interface Candidate {
-  readonly skeleton: readonly DateTimePatternToken[];
-  readonly pattern: readonly DateTimePatternToken[];
 }
 function score(
   request: readonly (DateTimePatternToken | undefined)[],

@@ -3,8 +3,8 @@ import {
   dateTimeComponentSkeleton,
   resolveDateTimeComponentPattern,
   type DateTimeFormatter,
-} from "./date-time-format.ts";
-import type { ResolvedDateTimePattern } from "./date-time-skeleton.ts";
+} from "./date-time-service.ts";
+import type { ResolvedDateTimePattern } from "./date-time-service-contracts.ts";
 /** Slots follow the public formattable kinds: date, year-month, month-day, time,
  * date-time, instant. A mask distinguishes unsuitable formats from cache misses. */
 export function dateTimeTemporalPattern(

@@ -1,3 +1,7 @@
+import type {
+  DateTimeRangeToken as RangeToken,
+  DateTimeTemplateChunk as TemplateChunk,
+} from "./date-time-service-contracts.ts";
 import type { DateTimeRangePart } from "./date-time-service-contracts.ts";
 export type { DateTimeRangePart } from "./date-time-service-contracts.ts";
 import { calendarFieldsFromISO, type CalendarDateFields } from "./calendar.ts";
@@ -25,14 +29,6 @@ import {
   type DateTimePatternToken,
 } from "./date-time-pattern.ts";
 
-interface RangeToken {
-  readonly token: DateTimePatternToken;
-  readonly source: string;
-}
-interface TemplateChunk {
-  readonly literal: string;
-  readonly slot: number;
-}
 function literal(text: string): DateTimePatternToken {
   return { symbol: "", width: 0, literal: text };
 }

@@ -3,6 +3,7 @@ import type { TemporalTimeZone } from "./temporal-time-zone.ts";
 import type {
   DateTimeFormatFields,
   DateTimePatternToken,
+  DateTimePatternFormat,
 } from "./date-time-pattern.ts";
 import type { DecimalNumberFormatter } from "./decimal-number-format.ts";
 
@@ -103,4 +104,83 @@ export interface DateTimeFormatter {
 export interface DateTimeInput {
   readonly fields: DateTimeDisplayFields;
   readonly zoneName: string | undefined;
+}
+
+export interface DateTimeSkeletonCandidate {
+  readonly skeleton: readonly DateTimePatternToken[];
+  readonly pattern: readonly DateTimePatternToken[];
+}
+export interface DateTimeRangeToken {
+  readonly token: DateTimePatternToken;
+  readonly source: string;
+}
+export interface DateTimeTemplateChunk {
+  readonly literal: string;
+  readonly slot: number;
+}
+/** Exact collection element contracts used inside the service. This declaration
+ * supplies host-owned runtime metadata; no storage instance is constructed. */
+export interface DateTimeServiceStorage {
+  readonly formats: readonly DateTimePatternFormat[];
+  readonly tokenLists: readonly (readonly DateTimePatternToken[])[];
+  readonly candidates: readonly DateTimeSkeletonCandidate[];
+  readonly chunks: readonly DateTimeTemplateChunk[];
+  readonly rangeTokens: readonly DateTimeRangeToken[];
+  readonly rangeTokenLists: readonly (readonly DateTimeRangeToken[])[];
+  readonly mutableRangeTokenLists: readonly DateTimeRangeToken[][];
+  readonly patterns: readonly ResolvedDateTimePattern[];
+}
+
+export interface DateTimeService {
+  readonly createDateTimeFormatter: (
+    configuration: DateTimeFormatConfiguration,
+    required: string,
+    defaults: string,
+  ) => DateTimeFormatter | undefined;
+  readonly resolveDateTimeLocale: (
+    requested: readonly string[],
+    calendar: string | undefined,
+    system: string | undefined,
+    cycle: string | undefined,
+    hour12: boolean | undefined,
+  ) => ResolvedDateTimeLocale;
+  readonly dateTimeComponentSkeleton: (
+    fields: DateTimeFormatFields,
+    cycle: string,
+  ) => string;
+  readonly resolveDateTimeComponentPattern: (
+    parts: DateTimePartsFormatter,
+    fields: DateTimeFormatFields,
+    cycle: string,
+    matcher: string,
+  ) => ResolvedDateTimePattern | undefined;
+  readonly dateTimeEpochInput: (
+    formatter: DateTimeFormatter,
+    pattern: ResolvedDateTimePattern,
+    seconds: number,
+    fractionNanoseconds: number,
+  ) => DateTimeInput | undefined;
+  readonly dateTimeFormatParts: (
+    formatter: DateTimeFormatter,
+    value: number,
+  ) => DateTimePart[] | undefined;
+  readonly dateTimeFormatRangeParts: (
+    formatter: DateTimeFormatter,
+    first: number,
+    last: number,
+  ) => DateTimeRangePart[] | undefined;
+  readonly dateTimePatternParts: (
+    formatter: DateTimePartsFormatter,
+    tokens: readonly DateTimePatternToken[],
+    input: DateTimeDisplayFields,
+    zoneName: string | undefined,
+  ) => DateTimePart[] | undefined;
+  readonly dateTimeRangeParts: (
+    formatter: DateTimePartsFormatter,
+    pattern: ResolvedDateTimePattern,
+    first: DateTimeDisplayFields,
+    last: DateTimeDisplayFields,
+    firstZone: string | undefined,
+    lastZone: string | undefined,
+  ) => DateTimeRangePart[] | undefined;
 }

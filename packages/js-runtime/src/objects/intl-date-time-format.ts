@@ -36,7 +36,7 @@ import {
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import { lookupNumberFormatLocale } from "./number-format-profile.ts";
 import { resolveNumberingSystemOption } from "./intl-number-format.ts";
-import { resolveDateTimeLocale } from "./date-time-locale.ts";
+import { resolveDateTimeLocale } from "./date-time-service.ts";
 import {
   dateTimePatternFields,
   type DateTimeFormatFields,
@@ -44,9 +44,9 @@ import {
 import {
   createDateTimeFormatter,
   type DateTimeFormatter,
-} from "./date-time-format.ts";
-import type { DateTimePart } from "./date-time-parts.ts";
-import type { DateTimeRangePart } from "./date-time-range.ts";
+} from "./date-time-service.ts";
+import type { DateTimePart } from "./date-time-service.ts";
+import type { DateTimeRangePart } from "./date-time-service.ts";
 import {
   temporalTimeZone,
   type TemporalTimeZone,

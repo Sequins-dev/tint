@@ -221,7 +221,10 @@ test("Script adapter identity follows captured indirect evaluation capability", 
   assert.match(source, /adapter: engine/);
   assert.equal(source.split("process.env.TINT_TEST262_MODULES").length, 2);
   assert.equal(source.split("nativeModuleCapability(").length, 2);
-  assert.match(source, /createNativeBatchBuilder\(snapshot, moduleExecution\)/);
+  assert.match(
+    source,
+    /createNativeBatchBuilder\(\s*snapshot,\s*moduleExecution,\s*serviceImage,?\s*\)/,
+  );
   assert.match(
     source,
     /nativeVariantRoute\(metadata, variant, moduleExecution\)/,

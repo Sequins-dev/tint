@@ -30,10 +30,10 @@ import {
   type DateTimeZoneProfile,
 } from "./date-time-zone-data.ts";
 import {
-  createDecimalNumberFormatter,
   decimalNumberParts,
   type DecimalNumberFormatter,
 } from "./decimal-number-format.ts";
+import { createDecimalNumberFormatter } from "./date-time-service-helpers.ts";
 import type { DateTimePatternToken } from "./date-time-pattern.ts";
 import type { DecimalNumberPart } from "./decimal-number-parts.ts";
 

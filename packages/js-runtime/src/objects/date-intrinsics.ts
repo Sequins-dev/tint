@@ -2,7 +2,7 @@ import {
   configureDateTimeFormatter,
   dateTimePartsText,
 } from "./intl-date-time-format.ts";
-import { dateTimeFormatParts } from "./date-time-format.ts";
+import { dateTimeFormatParts } from "./date-time-service.ts";
 import { temporalEpochFromMilliseconds } from "./temporal-epoch.ts";
 import { createBigIntValue } from "./bigints.ts";
 import { createTemporalInstantObject } from "./temporal-instant-construction.ts";

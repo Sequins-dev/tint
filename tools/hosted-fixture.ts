@@ -4,6 +4,8 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
+import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
   workspaceModules,
   workspaceSources,
@@ -59,7 +61,31 @@ export function verifyHostedFixture(
   assert.ok(parsed.ok, JSON.stringify(parsed));
   const captured = workspaceSources();
   const sourceSnapshot = workspaceSourceIdentity(captured);
-  const modules = [
+  const serviceMode = process.env.TINT_HOSTED_NATIVE_SERVICES;
+  if (
+    serviceMode !== undefined &&
+    serviceMode !== "aot" &&
+    serviceMode !== "monolithic"
+  )
+    throw Error("TINT_HOSTED_NATIVE_SERVICES must be aot, monolithic or unset");
+  let serviceImage: ReturnType<typeof prepareDateTimeNativeService> | undefined;
+  if (serviceMode === "aot") {
+    const toolchain = frozenNativeRunIdentity(import.meta.url, sourceSnapshot);
+    assert.ok(toolchain, "freeze the service fixture before compiling");
+    serviceImage = prepareDateTimeNativeService(
+      captured,
+      toolchain,
+      process.env.TINT_NATIVE_SERVICE_CACHE ??
+        join(process.cwd(), ".tint-bootstrap/native-service-cache"),
+      {
+        generationalBarriers:
+          (options.runtimeEntry ??
+            projectBuildRequest([], () => {}).runtimeEntry) ===
+          "initializeGenerationalRuntime",
+      },
+    );
+  }
+  const capturedModules = [
     ...workspaceModules(
       [
         ...projectRoots(),
@@ -71,7 +97,7 @@ export function verifyHostedFixture(
     ),
     ...generatedModules,
   ];
-  modules.push({
+  capturedModules.push({
     id: "fixture",
     module: parsed.value,
     dependencies: new Map(dependencies),
@@ -80,17 +106,35 @@ export function verifyHostedFixture(
       return position.ok ? position.value : undefined;
     },
   });
+  const modules =
+    serviceImage === undefined
+      ? capturedModules
+      : serviceImage.transformModules(capturedModules);
   const request = projectBuildRequest(modules, () => {});
+  const nativeServices = [
+    ...(options.nativeServices ?? []),
+    ...(serviceImage?.services ?? []),
+  ];
   const built = buildMacOSProgram({
     ...request,
     threaded: options.threaded ?? false,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
-    runtimes: [...request.runtimes, ...additionalRuntimes],
-    recordBindings,
+    runtimes: [
+      ...request.runtimes,
+      ...additionalRuntimes,
+      ...(serviceImage?.runtimes ?? []),
+    ],
+    recordBindings: [
+      ...recordBindings,
+      ...(serviceImage?.recordBindings ?? []),
+    ],
     weakBindings: options.weakBindings ?? [],
-    managedSurfaces: options.managedSurfaces ?? [],
-    nativeServices: options.nativeServices ?? [],
+    managedSurfaces: [
+      ...(options.managedSurfaces ?? []),
+      ...(serviceImage === undefined ? [] : [serviceImage.surface]),
+    ],
+    nativeServices,
     hostBindings: [...request.hostBindings, ...(options.hostBindings ?? [])],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     runtimeEntry:
@@ -130,7 +174,48 @@ export function verifyHostedFixture(
         generatedModulesSha256: createHash("sha256")
           .update(JSON.stringify(generated))
           .digest("hex"),
-        options,
+        options: {
+          ...options,
+          ...(serviceImage === undefined
+            ? {}
+            : {
+                nativeServiceIdentity: serviceImage.identity,
+              }),
+          ...(nativeServices.length === 0
+            ? {}
+            : {
+                nativeServices: nativeServices.map((service) => ({
+                  bind: service.bind,
+                  unit: {
+                    version: service.unit.version,
+                    profile: service.unit.profile,
+                    factoryContract: service.unit.factoryContract,
+                    surface: service.unit.surface,
+                    entryOffset: service.unit.entryOffset,
+                    counts: service.unit.counts,
+                    codeBytes: service.unit.native.code.length,
+                    codeSha256: createHash("sha256")
+                      .update(service.unit.native.code)
+                      .digest("hex"),
+                  },
+                })),
+              }),
+        },
+        ...(serviceImage === undefined
+          ? {}
+          : {
+              nativeServiceSourceProjectionSha256: createHash("sha256")
+                .update(
+                  JSON.stringify(
+                    modules.map((module) => ({
+                      id: module.id,
+                      module: module.module,
+                      dependencies: [...module.dependencies],
+                    })),
+                  ),
+                )
+                .digest("hex"),
+            }),
         debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
       },
       null,

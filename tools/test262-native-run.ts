@@ -15,6 +15,7 @@ import {
   workspaceSourceIdentity,
 } from "./workspace-sources.ts";
 import { resolve } from "node:path";
+import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { test262Checkout, test262Source, within } from "./test262-checkout.ts";
 import {
   testMetadata,
@@ -127,14 +128,46 @@ try {
     sourcePhases,
     deferredModules,
   );
-  const nativeLinkingIdentity = {
-    nativeLinkingMode: "monolithic",
-    nativeServiceUnitIndexSha256: null,
-  } as const;
   const frozenToolchainSha256 = frozenNativeRunIdentity(
     import.meta.url,
     sourceSnapshot,
   );
+  const serviceMode = process.env.TINT_TEST262_NATIVE_SERVICES;
+  if (
+    serviceMode !== undefined &&
+    serviceMode !== "aot" &&
+    serviceMode !== "monolithic"
+  )
+    throw Error(
+      "TINT_TEST262_NATIVE_SERVICES must be aot, monolithic or unset",
+    );
+  const capturedDateTimeService = snapshot.inputs.some(
+    (input) =>
+      input.id ===
+      "packages/js-runtime/src/objects/date-time-service-factory.ts",
+  );
+  if (serviceMode === "aot" && !capturedDateTimeService)
+    throw Error("the captured runtime has no DateTimeFormat native service");
+  let serviceImage: ReturnType<typeof prepareDateTimeNativeService> | undefined;
+  if (capturedDateTimeService && serviceMode !== "monolithic") {
+    if (frozenToolchainSha256 === undefined)
+      throw Error("native service composition requires a frozen toolchain");
+    heartbeat.phase("preparing cached DateTimeFormat native service");
+    serviceImage = prepareDateTimeNativeService(
+      snapshot,
+      frozenToolchainSha256,
+      resolve(
+        process.env.TINT_NATIVE_SERVICE_CACHE ??
+          ".tint-bootstrap/native-service-cache",
+      ),
+    );
+  }
+  const nativeLinkingIdentity =
+    serviceImage?.identity ??
+    ({
+      nativeLinkingMode: "monolithic",
+      nativeServiceUnitIndexSha256: null,
+    } as const);
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
@@ -163,7 +196,11 @@ try {
     { resume: process.env.TINT_TEST262_RESUME === "1" },
   );
   diagnosticPauses.push(...checkpoint.diagnosticPauses);
-  const build = createNativeBatchBuilder(snapshot, moduleExecution);
+  const build = createNativeBatchBuilder(
+    snapshot,
+    moduleExecution,
+    serviceImage,
+  );
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
   const observations: NativeObservation[] = checkpoint.observations.slice();
   const batches: NativeCompilation[] = checkpoint.batches.slice();
