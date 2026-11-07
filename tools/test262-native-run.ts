@@ -338,6 +338,7 @@ try {
             jsonModules,
             scriptEvaluation?.dynamicImport === true,
             assetModules,
+            scriptEvaluation?.shadowRealm === true,
           );
         } catch (error) {
           scriptProgram = { thrown: error };

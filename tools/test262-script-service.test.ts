@@ -5,6 +5,11 @@ import { readFileSync } from "node:fs";
 import * as native from "./test262-native.ts";
 import { workspaceSources } from "./workspace-sources.ts";
 import { createScriptRuntimeRequest } from "./script-runtime-request.ts";
+function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
+  if (value === undefined) return undefined;
+  const { shadowRealm: _shadowRealm, ...legacy } = value;
+  return legacy;
+}
 const evaluation = {
   evaluation: "packages/js-engine/src/script-evaluation.ts",
   compile: "packages/js-engine/src/native/script-compile.ts",
@@ -35,6 +40,7 @@ test("Script service capture requires both public factories", () => {
     directEval: true,
     dynamicImport: true,
     templateSites: true,
+    shadowRealm: true,
   });
   const entries = snapshot.publicEntries!;
   const remove = (specifiers: string[]) => ({
@@ -345,7 +351,7 @@ test("function fallback remains enabled under the newer direct-eval adapter", ()
   assert.equal(captured?.functionFallback, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
 });
 test("function fallback reuses the realm evaluation host before constructing the compiler", () => {
@@ -379,7 +385,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(captured?.directEval, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
   function remove(id: string, name: string, input = snapshot) {
     return {
@@ -428,7 +434,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(native.capturedScriptEvaluation(legacy)?.directEval, undefined);
   assert.equal(
     native.nativeScriptAdapter(native.capturedScriptEvaluation(legacy)),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
 });
 test("direct eval shares the same per-realm service after indirect installation", () => {
@@ -477,7 +483,7 @@ test("managed template sites require the captured registry runtime and compiler 
       true,
       true,
     ),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
   const hide = (id: string, from: string, to: string) => ({
     ...snapshot,
@@ -500,7 +506,7 @@ test("managed template sites require the captured registry runtime and compiler 
   assert.equal(native.capturedScriptEvaluation(old)?.templateSites, undefined);
   assert.equal(
     native.nativeScriptAdapter(
-      native.capturedScriptEvaluation(old),
+      withoutShadowRealm(native.capturedScriptEvaluation(old)),
       true,
       true,
       true,

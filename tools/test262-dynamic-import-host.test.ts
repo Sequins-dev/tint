@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import * as native from "./test262-native.ts";
+import { executionPlan } from "./test262-execution.ts";
 import { workspaceSources } from "./workspace-sources.ts";
+function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
+  if (value === undefined) return undefined;
+  const { shadowRealm: _shadowRealm, ...legacy } = value;
+  return legacy;
+}
 function without(name: string) {
   const snapshot = workspaceSources();
   return {
@@ -60,7 +66,9 @@ test("module referrer image contracts retain exactly the two checked views", () 
   ]);
 });
 test("generated module loaders widen only with explicit dynamic import capability", () => {
-  const evaluation = native.capturedScriptEvaluation(workspaceSources());
+  const evaluation = withoutShadowRealm(
+    native.capturedScriptEvaluation(workspaceSources()),
+  );
   const old = native.nativeTestRuntimeSource(
     evaluation,
     true,
@@ -133,10 +141,11 @@ test("dynamic module runs have a distinct adapter while Script and old module la
   assert.equal(captured?.dynamicImport, true);
   assert.equal(
     native.nativeScriptAdapter(captured, true, true, true, true),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
   const {
     dynamicImport: _managedImport,
+    shadowRealm: _shadowRealm,
     templateSites: _templateSites,
     ...evaluation
   } = captured!;
@@ -257,7 +266,9 @@ test("plain Scripts keep the old preparation and do not trigger fixture discover
 });
 
 test("Script-root runtime text is enabled only for batches that need it", () => {
-  const evaluation = native.capturedScriptEvaluation(workspaceSources());
+  const evaluation = withoutShadowRealm(
+    native.capturedScriptEvaluation(workspaceSources()),
+  );
   const moduleOnly = native.nativeTestRuntimeSource(
     evaluation,
     true,
@@ -428,7 +439,7 @@ test("the current Script host rejects unresolved bare specifiers through the imp
   );
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true, true),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
   const old = native.nativeTestRuntimeSource(
     evaluation,
@@ -563,7 +574,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   };
   assert.equal(capturedScriptDynamicImport(snapshot), true);
   assert.equal(capturedScriptDynamicImport(old), false);
-  const evaluation = native.capturedScriptEvaluation(old);
+  const evaluation = withoutShadowRealm(native.capturedScriptEvaluation(old));
   assert.equal(evaluation?.dynamicImport, undefined);
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true, true),
@@ -580,4 +591,32 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   assert.ok(
     current.values.some((value) => value.name === "evaluateImportCall"),
   );
+});
+
+test("ShadowRealm programs retain a module graph for importValue and evaluated imports", () => {
+  const source =
+    "const realm=new ShadowRealm();realm.importValue('./entry.js','value');";
+  const plan = executionPlan(source, "sloppy", {
+    flags: [],
+    features: ["ShadowRealm"],
+    includes: [],
+  });
+  let discovered = false;
+  const prepared = native.prepareNativeScriptProgram(
+    plan,
+    "sloppy",
+    plan.harness.map((filename) => ({ filename, source: "" })),
+    "entry.js",
+    () => {
+      discovered = true;
+      return { root: "entry.js", nodes: [], siblings: [], absent: [] };
+    },
+    false,
+    true,
+    false,
+    true,
+  );
+  assert.ok(prepared.ok);
+  assert.equal(discovered, true);
+  if (prepared.ok) assert.ok(prepared.root);
 });

@@ -31,6 +31,7 @@ import {
 } from "./intrinsics.ts";
 
 type IntrinsicPrototype =
+  | "shadow-realm"
   | "function"
   | "async-function"
   | "generator-function"
@@ -77,6 +78,7 @@ function intrinsicPrototype(
   name: IntrinsicPrototype,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   if (name === "function") return realm.functionPrototype;
+  if (name === "shadow-realm") return realm.shadowRealmPrototype;
   if (name === "async-function") return realm.asyncFunctionPrototype;
   if (name === "generator-function") return realm.generatorFunctionPrototype;
   if (name === "async-generator-function")

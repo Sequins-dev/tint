@@ -417,3 +417,10 @@ export {
 } from "./decimal-number-parts.ts";
 
 export { currencySymbol } from "./currency-symbols.ts";
+
+export {
+  getShadowRealmWrappedValue,
+  installShadowRealmIntrinsics,
+  type ShadowRealmHost,
+  type ShadowRealmEvaluation,
+} from "./shadow-realm.ts";

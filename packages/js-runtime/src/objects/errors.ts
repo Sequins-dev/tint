@@ -83,6 +83,7 @@ export type DynamicFunctionCompiler = (
 /** Realm-local intrinsic identities and sticky embedding diagnostics. */
 export interface ErrorRealm {
   readonly objectHooks: ObjectHooks<unknown>;
+  readonly shadowRealmPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   abstractModuleSourceConstructor:
     OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   readonly abstractModuleSourcePrototype: OrdinaryObject<
@@ -354,6 +355,9 @@ export function createErrorRealm(
   }
   const realm: ErrorRealm = {
     objectHooks: hooks,
+    shadowRealmPrototype: createObject<ScriptPropertyKey, unknown>(
+      objectPrototype,
+    ),
     abstractModuleSourceConstructor: undefined,
     abstractModuleSourcePrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,

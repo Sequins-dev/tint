@@ -363,7 +363,11 @@ test("indirect eval selects eval declarations without a Script declaration impor
   );
   assert.ok(imports.includes("instantiateEvalDeclarations"));
   assert.ok(!imports.includes("instantiateGlobalDeclarations"));
-  assert.equal(f.frames[0]?.$argument1.hostDefined, undefined);
+  assert.equal(
+    (f.frames[0]?.$argument1 as { hostDefined: unknown } | undefined)
+      ?.hostDefined,
+    undefined,
+  );
 });
 test("cross-realm indirect eval carries the effective record through a real builtin context", () => {
   const a = fixture(),
@@ -600,7 +604,10 @@ test("dynamic body service uses a supplied creation identity and returns its che
     f.host,
   );
   assert.equal(compile(dynamicSyntax(), identity), carrier);
-  assert.ok(f.frames[0]?.$argument1.hostDefined === identity);
+  assert.ok(
+    (f.frames[0]?.$argument1 as { hostDefined: unknown } | undefined)
+      ?.hostDefined === identity,
+  );
   assert.ok(f.frames[0]?.$argument0 === f.global);
   assert.deepEqual(f.faults, []);
 });
@@ -727,7 +734,11 @@ test("direct eval carries the site rather than inheriting the active identity", 
   f.realm.agent.activeContext = outer;
   assert.equal(f.direct("1", 2, site), 42);
   assert.equal(f.modules.length, 1);
-  assert.equal(f.frames[0]?.$argument1.hostDefined, site);
+  assert.equal(
+    (f.frames[0]?.$argument1 as { hostDefined: unknown } | undefined)
+      ?.hostDefined,
+    site,
+  );
   assert.equal(f.frames[0]?.$argument1.realm, f.realm);
   assert.equal(f.realm.agent.activeContext, outer);
 });
@@ -975,4 +986,38 @@ test("direct eval compiles a private environment while retaining unresolved-name
     assert.equal(f.modules.length, 1);
     assert.equal(f.realm.unsupported, false);
   }
+});
+
+test("ShadowRealm evaluation separates syntax failures from executed throws and clears the referrer", () => {
+  assert.equal(typeof evaluation.createShadowRealmEvaluator, "function");
+  const f = fixture();
+  const evaluate = evaluation.createShadowRealmEvaluator(
+    { realm: f.realm, global: f.global },
+    f.host,
+  );
+  assert.deepEqual(evaluate("return 1"), { error: "syntax", value: undefined });
+  assert.deepEqual(evaluate("let x;let x;"), {
+    error: "syntax",
+    value: undefined,
+  });
+  assert.equal(f.modules.length, 0);
+  const failure = runtime.createRuntimeError(f.realm, "syntax");
+  f.state.result = { error: "throw", value: failure };
+  assert.deepEqual(
+    runtime.runScriptContext(
+      f.realm.agent,
+      { realm: f.realm, scriptOrModule: "outer" },
+      () => evaluate("throw new SyntaxError()"),
+    ),
+    { error: "throw", value: failure },
+  );
+  assert.equal(
+    (f.frames[0]?.$argument1 as { hostDefined: unknown } | undefined)
+      ?.hostDefined,
+    undefined,
+  );
+  f.state.result = { error: "none", value: 42 };
+  assert.deepEqual(evaluate("42"), { error: "none", value: 42 });
+  assert.deepEqual(evaluate(""), { error: "none", value: undefined });
+  assert.equal(f.frames.length, 2);
 });

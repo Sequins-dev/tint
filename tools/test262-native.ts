@@ -500,6 +500,7 @@ export function prepareNativeScriptProgram(
   jsonModules: boolean = false,
   runtimeImportCalls: boolean = false,
   assetModules: boolean = false,
+  shadowRealm: boolean = false,
 ):
   | { ok: true; scripts: readonly SourceModule[]; root?: NativeScriptRoot }
   | {
@@ -524,6 +525,7 @@ export function prepareNativeScriptProgram(
   const test = prepared.modules[prepared.modules.length - 1];
   if (test === undefined) throw "NATIVE_TEST_ENTRY_INVARIANT";
   if (
+    !(shadowRealm && /\bShadowRealm\b/.test(plan.source)) &&
     !(
       runtimeImportCalls &&
       /\bimport\s*(?:\.\s*(?:source|defer)\s*)?\(/.test(plan.source)
@@ -695,6 +697,7 @@ export function nativeTestRuntimeSource(
   sourcePhases: boolean = false,
   assetModules: boolean = false,
 ): string {
+  const shadowRealm = scriptEvaluation?.shadowRealm === true;
   if (
     scriptEvaluation?.directEval === true &&
     scriptEvaluation.indirectEval !== true
@@ -842,6 +845,23 @@ ${assetModules ? '  const declaredType=name.startsWith("\\0text\\0")?"text":name
   const resourceName = assetModules
     ? 'let resourceName=request.specifier.slice(2);for(const attribute of request.attributes){if(attribute===undefined)throw "MODULE_REQUEST_INVARIANT";if(attribute.key==="type"&&(attribute.value==="text"||attribute.value==="bytes"))resourceName="\\0"+attribute.value+"\\0"+resourceName;}'
     : "";
+  const shadowModuleInitializer =
+    shadowRealm && dynamicImport
+      ? `
+ function initializeModuleHost(target:RealmHost):void {
+  const global=target.global,realm=target.realm,hooks=target.hooks;
+${tableLoading}  realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
+   ${sourcePhases ? 'if(request.specifier==="<module source>"){finishLoadingImportedModule(referrer,request,payload,{ok:true,module:hostModuleSource()});return;}\n   ' : ""}if(referrer.realm!==realm)rejectUnsupportedExecution(realm);
+   const specifier=request.specifier,name=specifier.startsWith("./")?specifier.slice(2):undefined;
+   ${resourceName}const index=name===undefined?-1:names.indexOf(${assetModules ? "resourceName" : "name"});
+   if(index>=0){finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));return;}
+   finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});
+  };
+  target.moduleHost=initializeModuleHost;
+ }
+ host.moduleHost=initializeModuleHost;
+`
+      : "";
   const moduleRunner = moduleExecution
     ? `
 type NativeModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleRecord;${jsonModules ? "\ntype NativeJSONModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleCompletion;" : ""}
@@ -855,7 +875,7 @@ ${
  for(let i=0;i<names.length;i++){const count=(creates[i]===undefined?0:1)+(verdicts[i]===undefined?0:1)+(jsonCreates[i]===undefined?0:1);if(count!==1)return 69;}`
     : " for(let i=0;i<names.length;i++){if((creates[i]===undefined)===(verdicts[i]===undefined))return 69;}"
 }
-${tableLoading} try {
+${tableLoading}${shadowModuleInitializer} try {
   const root=record(0);
   realm.moduleLoader=(referrer:${dynamicImport ? "ModuleReferrer" : "ModuleRecord"},request:ModuleRequest,hostDefined:unknown,payload:${dynamicImport ? "ModuleLoadPayload" : "GraphLoadingState"}):void=>{
    ${sourcePhases ? 'if(request.specifier==="<module source>"){finishLoadingImportedModule(referrer,request,payload,{ok:true,module:hostModuleSource()});return;}\n   ' : ""}${
@@ -917,7 +937,7 @@ ${tableLoading} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleReques
   }
   finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});
  };
-${runnerHarness("index+1<scripts.length")} const script=scripts[scripts.length-1];if(script===undefined)throw "NATIVE_TEST_ENTRY_INVARIANT";
+${shadowModuleInitializer}${runnerHarness("index+1<scripts.length")} const script=scripts[scripts.length-1];if(script===undefined)throw "NATIVE_TEST_ENTRY_INVARIANT";
  const result=script(global,createScriptRecord(realm,undefined));
  ${scriptEvaluation === undefined ? "" : "{const fe=scriptFaultExit();if(fe!==0)return fe;}"}
  for(const active of realms){if(active!==undefined&&active.unsupported)return 10;}
@@ -930,7 +950,7 @@ ${topLevelAwait ? moduleJobCheckpoint + runnerCompletion : runnerJobs}}
 ${
   scriptEvaluation === undefined
     ? ""
-    : `import {${scriptEvaluation.functionFallback ? "createDynamicFunctionBodyCompiler," : ""}${scriptEvaluation.directEval ? "createDirectEvaluator," : ""}${scriptEvaluation.indirectEval ? "createIndirectEvaluator,type ScriptEvaluationHost," : ""}createScriptEvaluator,type ScriptEvaluator,type ScriptEvaluationFault,type ScriptEntryCompilation} from "@tint/js-engine/script-evaluation";
+    : `import {${shadowRealm ? "createShadowRealmEvaluator," : ""}${scriptEvaluation.functionFallback ? "createDynamicFunctionBodyCompiler," : ""}${scriptEvaluation.directEval ? "createDirectEvaluator," : ""}${scriptEvaluation.indirectEval ? "createIndirectEvaluator,type ScriptEvaluationHost," : ""}createScriptEvaluator,type ScriptEvaluator,type ScriptEvaluationFault,type ScriptEntryCompilation} from "@tint/js-engine/script-evaluation";
 import {createScriptEntryCompiler} from "@tint/js-engine/native/script-compile";
 import {bindScript,invoke as invokeScript,completion as viewScriptCompletion} from "script-host";
 import {scriptRuntimeTexts,scriptRuntimeSources,scriptRuntimeGlobalNames} from "script-sources";
@@ -952,7 +972,7 @@ import {createNativeFileHost,readlinkSync} from "native-fs";
 import {readFile} from "files";
 import {createTzifZone,type TzifZone} from "tzif";
 import {readTimeZoneIdentifiers} from "zone-identifiers";
-import {${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
+import {${shadowRealm ? "installShadowRealmIntrinsics," : ""}${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
 ${
   sharedBuffers
     ? `let sharedBlocks:NativeSharedBlockService|undefined=undefined;
@@ -1047,7 +1067,7 @@ function availableTimeZoneIdentifiers(realm:ErrorRealm):readonly string[] {
  return names===undefined?rejectUnsupportedExecution(realm):names;
 }
 interface RealmHost {
- ${scriptEvaluation === undefined ? "" : "readonly evaluate:ScriptEvaluator;"}
+ ${shadowRealm ? "moduleHost:((host:RealmHost)=>void)|undefined;\n " : ""}${scriptEvaluation === undefined ? "" : "readonly evaluate:ScriptEvaluator;"}
  readonly object:OrdinaryObject<ScriptPropertyKey,unknown>;
  readonly global:GlobalEnvironment<ScriptPropertyKey,unknown>;
  readonly realm:ErrorRealm;
@@ -1122,7 +1142,18 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
  installReflectIntrinsics(object,realm,hooks);
  installPromiseIntrinsics(object,realm,hooks,(promise,operation):void=>{${agentProvider === undefined ? "" : "trackNativeAgentRejection(operation);"}});
  ${scriptEvaluation === undefined ? "" : scriptEvaluation.indirectEval ? `${scriptEvaluation.functionFallback ? "" : `const service:ScriptEvaluationHost=${evaluationHost};`}const evaluate=createScriptEvaluator({realm,global},service);installEvalCompiler(realm,createIndirectEvaluator({realm,global},service));${scriptEvaluation.directEval ? "installDirectEvalCompiler(realm,createDirectEvaluator({realm,global},service));" : ""}` : `const evaluate=createScriptEvaluator({realm,global},${evaluationHost});`}
- return {object,global,realm,hooks${scriptEvaluation === undefined ? "" : ",evaluate"}};
+ ${
+   shadowRealm
+     ? `const host:RealmHost={object,global,realm,hooks,evaluate,moduleHost:undefined};
+ installShadowRealmIntrinsics(object,realm,hooks,()=>{
+  const child=createRealmHost(realm,realms);
+  const initializeModuleHost=host.moduleHost;
+  if(initializeModuleHost!==undefined)initializeModuleHost(child);
+  return {realm:child.realm,evaluate:createShadowRealmEvaluator({realm:child.realm,global:child.global},service)};
+ });
+ return host;`
+     : `return {object,global,realm,hooks${scriptEvaluation === undefined ? "" : ",evaluate"}};`
+ }
 }
 function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<ScriptPropertyKey,unknown> {
  const realm=host.realm,hooks=host.hooks;
@@ -1132,7 +1163,7 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);
  const create=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    const child=createRealmHost(realm,realms);
-   return installRealmHost(child,realms);
+   ${shadowRealm ? "const initializeModuleHost=host.moduleHost;if(initializeModuleHost!==undefined)initializeModuleHost(child);\n   " : ""}return installRealmHost(child,realms);
  });
  const detach=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    detachArrayBuffer(args[0],realm);
@@ -1670,6 +1701,7 @@ export interface NativeScriptEvaluation {
   readonly directEval?: true;
   readonly dynamicImport?: true;
   readonly templateSites?: true;
+  readonly shadowRealm?: true;
 }
 export function nativeScriptAdapter(
   evaluation?: NativeScriptEvaluation,
@@ -1695,6 +1727,7 @@ export function nativeScriptAdapter(
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  if (evaluation?.shadowRealm === true) return "native-script-v23-shadow-realm";
   if (assetModules) return "native-script-v22-resource-modules";
   if (deferredModules) return "native-script-v21-module-phases";
   if (sourcePhases) return "native-script-v20-source-phase";
@@ -1930,6 +1963,10 @@ export function capturedScriptEvaluation(
   ).get(captured.evaluation);
   const functionFallback =
     exports?.has("createDynamicFunctionBodyCompiler") === true;
+  const shadowFactory = exports?.has("createShadowRealmEvaluator") === true;
+  const shadowInstaller = objects?.has("installShadowRealmIntrinsics") === true;
+  if (shadowFactory !== shadowInstaller)
+    throw Error("incomplete captured ShadowRealm contract");
   const directFactory = exports?.has("createDirectEvaluator") === true,
     directInstaller = objects?.has("installDirectEvalCompiler") === true;
   if (directFactory || directInstaller) {
@@ -1957,6 +1994,7 @@ export function capturedScriptEvaluation(
     indirectEval: true,
     ...(functionFallback ? { functionFallback: true as const } : {}),
     ...(directFactory ? { directEval: true as const } : {}),
+    ...(shadowFactory ? { shadowRealm: true as const } : {}),
   };
 }
 export function nativeScriptServiceModules(

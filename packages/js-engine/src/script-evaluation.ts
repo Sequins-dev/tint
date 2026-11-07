@@ -16,6 +16,7 @@ import {
   type ScriptPropertyKey,
   type ScriptCompletionRecord,
   type DirectEvalCompiler,
+  type ShadowRealmEvaluation,
 } from "@tint/js-runtime/objects";
 import {
   lowerScript,
@@ -76,6 +77,42 @@ export function createScriptEvaluator(
   return createEntryEvaluator(context, host, "script");
 }
 export type IndirectEvaluator = (source: string) => unknown;
+/** ShadowRealm uses the existing eval lexical/variable environments, with a
+ * fresh lexical environment and no inherited Script/module referrer. Parsing
+ * and early errors remain distinct from exceptions produced by execution. */
+export function createShadowRealmEvaluator(
+  context: ScriptEvaluationContext,
+  host: ScriptEvaluationHost,
+): (source: string) => ShadowRealmEvaluation {
+  const realm = context.realm,
+    runner = createEntryRunner(context, host);
+  return (source: string): ShadowRealmEvaluation => {
+    if (realm.unsupported) return rejectUnsupportedExecution(realm);
+    runner.ensureDomain();
+    const parsed = parseScript(createSourceTextView(source));
+    if (!parsed.ok) {
+      if (
+        parsed.error.code === "SYNTAX_ERROR" ||
+        parsed.error.code === "LEXICAL_ERROR"
+      )
+        return { error: "syntax", value: undefined };
+      return rejectUnsupportedExecution(realm);
+    }
+    if (parsed.value.statements.length === 0)
+      return { error: "none", value: undefined };
+    const lowered = lowerEvalScript(parsed.value, source);
+    if (!lowered.ok) {
+      if (lowered.error.code === "EARLY_ERROR")
+        return { error: "syntax", value: undefined };
+      return rejectUnsupportedExecution(realm);
+    }
+    const done = runner.run(lowered.value, undefined, false);
+    if (done.error === "none" || done.error === "throw")
+      return { error: done.error, value: done.value };
+    if (done.error === "unsupported") return rejectUnsupportedExecution(realm);
+    return runner.fault("completion-kind");
+  };
+}
 /** Indirect eval owns its realm/global, but retains the effective active Script
  * identity. The ScriptRecord passed through the frame is a private carrier, not
  * a new parse identity; lowering reads only its realm and hostDefined fields. */

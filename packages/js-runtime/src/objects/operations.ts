@@ -1,4 +1,5 @@
 import type { WeakData } from "./weak-storage.ts";
+import type { ShadowRealmHost } from "./shadow-realm.ts";
 import type { RelativeTimeFormatter } from "./relative-time.ts";
 import type { DecimalNumberFormatter } from "./decimal-number-format.ts";
 import type { PluralFormatter } from "./plural-format.ts";
@@ -70,6 +71,7 @@ export interface OrdinaryObject<Key, Value> {
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
   internalModuleSourceClassName: string | undefined;
+  internalShadowRealm: ShadowRealmHost | undefined;
   readonly internalConstruct: ObjectConstruct<Value> | undefined;
   readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
   /** Presence of [[ErrorData]], independent of the object's prototype chain. */
@@ -367,6 +369,7 @@ function allocateObject<Key, Value>(
     internalSourceText: undefined,
     internalRawJSON: undefined,
     internalModuleSourceClassName: undefined,
+    internalShadowRealm: undefined,
     internalConstruct,
     internalExecutionContext,
     internalErrorData: false,

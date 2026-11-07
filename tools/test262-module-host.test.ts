@@ -481,7 +481,7 @@ test("JSON host validates the request type before cache lookup and invokes facto
       true,
       true,
     ),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
 });
 
@@ -523,7 +523,7 @@ test("source-phase runtime advertises its captured intrinsic and module-source c
       true,
       true,
     ),
-    "native-script-v20-source-phase",
+    "native-script-v23-shadow-realm",
   );
 });
 
@@ -540,6 +540,55 @@ test("deferred modules require captured synchronous evaluation and async-depende
       true,
       true,
     ),
-    "native-script-v21-module-phases",
+    "native-script-v23-shadow-realm",
   );
+});
+
+test("ShadowRealm hosts initialize fresh realm-local module graphs", () => {
+  const evaluation = {
+    evaluation: "eval",
+    compile: "compile",
+    indirectEval: true as const,
+    directEval: true as const,
+    functionFallback: true as const,
+    shadowRealm: true as const,
+  };
+  const source = native.nativeTestRuntimeSource(
+    evaluation,
+    true,
+    true,
+    false,
+    false,
+    undefined,
+    false,
+    undefined,
+    undefined,
+    undefined,
+    false,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    undefined,
+    true,
+    true,
+  );
+  assert.ok(source.includes("installShadowRealmIntrinsics(object,realm,hooks"));
+  assert.ok(
+    source.includes(
+      "createShadowRealmEvaluator({realm:child.realm,global:child.global},service)",
+    ),
+  );
+  assert.ok(
+    source.includes("function initializeModuleHost(target:RealmHost):void"),
+  );
+  assert.ok(
+    source.includes(
+      "const global=target.global,realm=target.realm,hooks=target.hooks;",
+    ),
+  );
+  assert.ok(source.includes("initializeModuleHost(child)"));
+  assert.ok(parseModule(createSourceTextView(source)).ok);
 });

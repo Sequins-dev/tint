@@ -6,13 +6,14 @@ import * as native from "./test262-native.ts";
 import { workspaceSources } from "./workspace-sources.ts";
 const snapshot = workspaceSources(),
   evaluation = native.capturedScriptEvaluation(snapshot);
+const { shadowRealm: _shadowRealm, ...legacyEvaluation } = evaluation!;
 function runtime(
   moduleExecution: boolean,
   scriptRoots: boolean,
   topLevelAwait: boolean,
 ) {
   return native.nativeTestRuntimeSource(
-    evaluation,
+    legacyEvaluation,
     true,
     true,
     false,
@@ -99,12 +100,13 @@ test("async module hosts drain jobs before reading evaluation and preserve fault
 test("the adapter changes only for a module host with top-level-await capability", () => {
   const {
     dynamicImport: _managedImport,
+    shadowRealm: _shadowRealm,
     templateSites: _templateSites,
     ...legacy
   } = evaluation!;
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true),
-    "native-script-v19-managed-templates",
+    "native-script-v23-shadow-realm",
   );
   assert.equal(
     native.nativeScriptAdapter(legacy, true, true, true),

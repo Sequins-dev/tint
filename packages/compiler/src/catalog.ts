@@ -1667,6 +1667,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/shadow-realm.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/shared-array-buffer.ts",
       packageId: "js-runtime",
     },
