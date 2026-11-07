@@ -40,8 +40,12 @@ retains its pre-fix budget failure and verifies whole-corpus forward/reverse mat
 and case folding after indexing. The [native red/green fixture](results/regexp-string-properties-native-red-green-v1.json)
 checks the matching path; the [host corpus](results/regexp-string-properties-host-corpus-v1.json)
 checks 15,812 property/union relations against the official input files. These
-fixtures are separate from unchanged Test262 selection results; complete reruns
-and frozen self-build acceptance remain pending.
+fixtures are separate from unchanged Test262 selection results. The [six current
+native regression groups](results/cluster-j-current-native-acceptance-v15.json)
+pass, and the [frozen self-build](results/cluster-j-frozen-selfbuild-acceptance-v11.json)
+produced identical stage images on its recorded source graph. Complete RegExp
+selection measurement continues on a newer frozen graph; neither fixture nor
+self-build totals establish Test262 conformance.
 Valid patterns outside the matching subset can still be constructed and inspected;
 attempting unsupported matching reports unsupported execution. The default matching work allowance grows linearly with UTF-16 input length,
 with a one-million-step floor; explicit embedding budgets remain absolute limits.
@@ -91,8 +95,10 @@ and the existing specialization budget. Indexed maps now use the shared key inde
 and pass native collision, identity, cursor and 10,000-key growth/deletion checks.
 The complete generated ASCII selection still times out after this change (v5);
 its remaining execution cost needs fresh diagnosis. These results do not establish
-property matching failure or success. The smaller unchanged character-class
-selection passes 2/2 natively.
+property matching failure or success. The current complete [character-class selection](results/test262-cluster-j-current-built-ins-RegExp-CharacterClassEscapes-v17.json)
+passes 24/24 natively. The [six retained generated-test timeouts](results/cluster-j-generated-timeouts-rechecked-v1.json)
+also pass in separate focused rechecks; those results do not replace the historical
+ASCII-property observations or the full property-escape denominator.
 
 ## Initialization and native bindings
 
