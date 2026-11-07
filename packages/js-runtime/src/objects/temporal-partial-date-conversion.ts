@@ -124,7 +124,14 @@ export function partialDateFrom(
   if (fields === undefined) throw createRuntimeError(realm, "range");
   const converted = calendarDateFromFields(
     calendar,
-    fields,
+    {
+      year: fields.year,
+      month: fields.month,
+      monthCode: undefined,
+      day: fields.day,
+      era: fields.era,
+      eraYear: fields.eraYear,
+    },
     yearMonth ? "year-month" : "month-day",
     "constrain",
   );

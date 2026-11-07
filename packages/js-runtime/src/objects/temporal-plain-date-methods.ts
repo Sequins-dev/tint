@@ -155,7 +155,14 @@ export function installPlainDateCopyMethods(
             throw "PLAIN_DATE_CALENDAR_FIELDS_INVARIANT";
           const converted = calendarDateFromFields(
             calendar,
-            fields,
+            {
+              year: fields.year,
+              month: fields.month,
+              monthCode: undefined,
+              day: fields.day,
+              era: fields.era,
+              eraYear: fields.eraYear,
+            },
             yearMonth ? "year-month" : "month-day",
             "constrain",
           );

@@ -1,0 +1,46 @@
+{
+  "kind": "compile-only-observations",
+  "nativeConformance": false,
+  "frozen": {
+    "kind": "frozen-node-toolchain",
+    "conformance": false,
+    "time": "2026-11-07T01:36:51.811Z",
+    "baseMain": "3906651470b982655337ada5dbb0337b6ae06847",
+    "branchHead": "ee9641fc4eead1818f4f3cac8e2099b36783749c",
+    "debuggerLaunch": "debugserver-direct",
+    "includes": "Gregorian-derived and Coptic/Ethiopic/ethioaa calendars, shared calendar date arithmetic and Duration context. Execution held for host authorization.",
+    "sourceSnapshot": {
+      "sha256": "8ffdd918eb0637169da37d2c1f3d54fe102b360eccb469148facb622121c6d5e",
+      "files": 578
+    },
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v15",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v15/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v15/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v15/source-snapshot.json",
+    "sha256": "342231b8d7d9bc5b95bd5d2a8f3e0157ece9b7766c89f10817408e5dc59d0981"
+  },
+  "fixtureBuild": {
+    "exit": 1,
+    "reason": "native surface rejects passing CalendarDateFields with absent optional monthCode to CalendarInputFields; adapter now creates explicit field record",
+    "log": "temporal-coptic-native-build-h-v15.log.gz"
+  },
+  "bootstrap": {
+    "exit": 0,
+    "path": ".tint-bootstrap/stage1-temporal-coptic-h-v15",
+    "bytes": 60095586,
+    "sha256": "8ed6dae734a0a555b9689784e7f91d06fd1a518e8d05511153b0d81d705c5c7c",
+    "execution": "none; superseded by adapter correction"
+  },
+  "gate": {
+    "state": "stopped while queued, before any workspace gates ran",
+    "reason": "native compilation exposed a necessary correction",
+    "log": "temporal-coptic-check-h-v1.log.gz"
+  },
+  "correctedValidation": {
+    "focusedTests": 132,
+    "passed": 132,
+    "buildExit": 0,
+    "testTypesExit": 0,
+    "hostTypesExit": 0
+  }
+}
