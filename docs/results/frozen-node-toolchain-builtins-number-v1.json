@@ -1,0 +1,47 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T21:27:30.843Z",
+  "head": "ea49b90682298ab59b4b217c98fd2638e2b4bd6c",
+  "mainAtFreeze": "22c02463495661a92e5ec345007ab43de4be7eba",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-number-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-number-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-number-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-number-v1/source-snapshot.json",
+    "sha256": "3aad4823abbc319c820f79fd7ff7579a4d41bb34a0fee43e5a9164689aeec202"
+  },
+  "runIdentity": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e",
+  "selection": "built-ins/Number",
+  "expectedVariants": 576,
+  "variantSubset": {
+    "rootSelection": "built-ins/Number",
+    "requestedVariants": 576,
+    "variantSubsetSha256": "a9904fc59a5080a4fd2ec2e30d8a9eeaba57cdb79871cce9a4cb2cad76455551"
+  },
+  "variantManifest": "docs/results/g-number-ledger18-unmeasured-variants-v1.json",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/number-breadth-build-v1.log",
+    "inputFile": ".tint-bootstrap/number-breadth-build-v1.input.json",
+    "head": "adfddc65be176b2aed2a3fff313018a74ea96fd7",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Measure all 576 Number variants unmeasured in ledger v18 on fresh main. The 104 previously passing variants remain in their original reports; no native full-family result is synthesized."
+}

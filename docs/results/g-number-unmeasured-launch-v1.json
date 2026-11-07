@@ -1,0 +1,37 @@
+{
+  "kind": "native-explicit-gap-subset-launch",
+  "conformance": false,
+  "at": "2026-11-07T21:27:58.711070+00:00",
+  "selection": "built-ins/Number",
+  "expectedVariants": 576,
+  "fullFamilyVariants": 680,
+  "previouslyPassingVariantsNotRemeasured": 104,
+  "batchSize": 64,
+  "ownerPid": 21929,
+  "observerPid": 21931,
+  "command": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "8",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-number-v1/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins/Number",
+    "64"
+  ],
+  "subset": {
+    "rootSelection": "built-ins/Number",
+    "requestedVariants": 576,
+    "variantSubsetSha256": "a9904fc59a5080a4fd2ec2e30d8a9eeaba57cdb79871cce9a4cb2cad76455551"
+  },
+  "variantManifest": "docs/results/g-number-ledger18-unmeasured-variants-v1.json",
+  "journal": "docs/results/test262-number-unmeasured-native-v1.jsonl",
+  "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/number-unmeasured-native-v1.stdout.json",
+  "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/number-unmeasured-native-v1.stderr.log",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "debuggerLaunch": "debugserver-direct",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-builtins-number-v1.json",
+  "scopeDirective": "Measure unmeasured and nonpass language/builtins variants; preserve prior passing reports without redundant reruns."
+}
