@@ -1,0 +1,4 @@
+import{startNativeHeartbeat}from "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v14/tools/test262-native-heartbeat.ts";
+import{writeFileSync}from'node:fs';
+process.on('exit',code=>writeFileSync("/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/temporal-gregorian-native-build-h-v14.exit",String(code)+'\n',{flag:'wx'}));
+const heartbeat=startNativeHeartbeat('Gregorian Temporal native fixtures, build only');process.chdir("/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v14");try{heartbeat.phase('compiling nine native cases; execution held for host authorization');await import("/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v14/tools/verify-test262-native-temporal-gregorian-calendars.ts");}finally{await heartbeat.close();}

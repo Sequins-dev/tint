@@ -1,0 +1,41 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v14.json",
+  "sourceSnapshot": {
+    "sha256": "e856717e338d3335144e93a59e7dacc53c9c30d0996bc82ec767a7b98eb07df8",
+    "files": 572
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "Every pinned variant for files explicitly named for each Gregorian-family calendar. These complete explicit subsets are not full-calendar-family or whole-Temporal reports. No results are claimed before execution.",
+  "selections": [
+    {
+      "calendar": "gregory",
+      "path": "docs/results/temporal-gregory-variant-input-h-v1.json",
+      "files": 122,
+      "variants": 244
+    },
+    {
+      "calendar": "japanese",
+      "path": "docs/results/temporal-japanese-variant-input-h-v1.json",
+      "files": 127,
+      "variants": 254
+    },
+    {
+      "calendar": "buddhist",
+      "path": "docs/results/temporal-buddhist-variant-input-h-v1.json",
+      "files": 95,
+      "variants": 190
+    },
+    {
+      "calendar": "roc",
+      "path": "docs/results/temporal-roc-variant-input-h-v1.json",
+      "files": 113,
+      "variants": 226
+    }
+  ],
+  "afterRestore": "Use standard test262-native-run.ts with TINT_TEST262_VARIANTS set to each manifest; retain one H runner at a time and prioritize resuming the held ISO PlainYearMonth journal."
+}
