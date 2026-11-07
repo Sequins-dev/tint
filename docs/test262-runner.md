@@ -557,3 +557,8 @@ The [immutable word-capture measurement](results/native-word-captures-throughput
 records direct traced closure payloads, moving-GC checks, identical native compiler
 stage images and nine unchanged Test262 outcomes. Its repeated allocation-workload
 CPU gain is separate from mixed compiler CPU and Node-hosted batch compilation.
+
+The [deferred temporary-root measurement](results/native-deferred-roots-throughput-v1.md)
+records bounded cleanup at potential collection blocks, four identical native
+compiler images and nine unchanged Test262 outcomes. Instruction reductions are
+reported separately from mixed CPU timings; failed prototypes remain preserved.

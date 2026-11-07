@@ -1,0 +1,2979 @@
+{
+  "kind": "native-deferred-temporary-root-throughput",
+  "utc": "2026-11-07T18:15:14.655822+00:00",
+  "branch": "perf/test262-deferred-temporary-roots",
+  "head": "6c0b58b0030485458e668bbb9ee7d2df3b4ca95a",
+  "inputs": {
+    "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+      "sha256": "dde0a4270f7cb1bffca98c3630fa3153c738a93211c20824226889c9912dff48"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+      "sha256": "6c679d85a6acaefd9b7221ca7dc688807976bc612cc15af137003c82228b3859"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+      "files": 595
+    },
+    "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+  },
+  "currentImplementationMatchesFrozen": [
+    {
+      "file": "packages/codegen/src/aarch64/scalar/index.ts",
+      "sha256": "1f166968fbee3f73715dc2713a886cc3a9f2174da639702a8eb924ece1e148e4"
+    },
+    {
+      "file": "packages/codegen/src/aarch64/scalar/temporary-registers.ts",
+      "sha256": "934398704e076c44fcd4650bd4a65072813ec14cb33ce6c438688b554841cd52"
+    }
+  ],
+  "operationSummary": [
+    {
+      "cpuLowerBoundMs": {
+        "median": 166.8112291666667,
+        "min": 161.53008333333335,
+        "max": 169.140625
+      },
+      "inferiorWallMs": {
+        "median": 228.604083,
+        "min": 225.45125,
+        "max": 234.518584
+      },
+      "instructions": {
+        "median": 3118253513.5,
+        "min": 3116359967,
+        "max": 3119591876
+      },
+      "cycles": {
+        "median": 467787570.0,
+        "min": 464185663,
+        "max": 468471256
+      }
+    },
+    {
+      "cpuLowerBoundMs": {
+        "median": 161.11808333333335,
+        "min": 155.96745833333335,
+        "max": 165.58491666666666
+      },
+      "inferiorWallMs": {
+        "median": 219.7882705,
+        "min": 217.654375,
+        "max": 234.37475
+      },
+      "instructions": {
+        "median": 2917313300.5,
+        "min": 2916561940,
+        "max": 2918118899
+      },
+      "cycles": {
+        "median": 465438482.0,
+        "min": 463032884,
+        "max": 466400688
+      }
+    }
+  ],
+  "operation": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-allocation-qKtJ3x/deferred-roots-allocation",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+            "files": 595
+          },
+          "imageSha256": "4ee5ca6a9f3d904bcb81243aec77bfc698cf220d99e1184b9389c5a2fa55ebc4",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-allocation-qKtJ3x/deferred-roots-allocation.source.ts",
+          "fixtureSha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/deferred-roots-benchmark-before-v6.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-allocation-W5pXbF/deferred-roots-allocation",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+            "files": 595
+          },
+          "imageSha256": "e12c53752ceb06fe1b2dd11177481e5a04da8e838ba5aeac83b9aed1a2862271",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-allocation-W5pXbF/deferred-roots-allocation.source.ts",
+          "fixtureSha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/deferred-roots-benchmark-after-v6.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12461
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 229.551458,
+        "cpuLowerBoundMs": 167.421875,
+        "unobservedCPUWallBoundMs": 0.017208,
+        "instructions": 3118390166,
+        "cycles": 467492325,
+        "probes": 150,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4501,
+          "instructions": 250007,
+          "cycles": 581269
+        },
+        "lastCPU": {
+          "userTicks": 3924293,
+          "systemTicks": 98333,
+          "instructions": 3118640173,
+          "cycles": 468073594
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12506
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 219.518291,
+        "cpuLowerBoundMs": 155.96745833333335,
+        "unobservedCPUWallBoundMs": 1.633333,
+        "instructions": 2917290956,
+        "cycles": 465301081,
+        "probes": 140,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3895,
+          "instructions": 246662,
+          "cycles": 473158
+        },
+        "lastCPU": {
+          "userTicks": 3651737,
+          "systemTicks": 95377,
+          "instructions": 2917537618,
+          "cycles": 465774239
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12581
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 234.37475,
+        "cpuLowerBoundMs": 165.58491666666666,
+        "unobservedCPUWallBoundMs": 2.627,
+        "instructions": 2916561940,
+        "cycles": 463032884,
+        "probes": 137,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2790,
+          "instructions": 117493,
+          "cycles": 328676
+        },
+        "lastCPU": {
+          "userTicks": 3892375,
+          "systemTicks": 84453,
+          "instructions": 2916679433,
+          "cycles": 463361560
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12706
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 227.656708,
+        "cpuLowerBoundMs": 166.20058333333336,
+        "unobservedCPUWallBoundMs": 1.545625,
+        "instructions": 3116359967,
+        "cycles": 464185663,
+        "probes": 146,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2415,
+          "instructions": 115975,
+          "cycles": 288522
+        },
+        "lastCPU": {
+          "userTicks": 3907789,
+          "systemTicks": 83440,
+          "instructions": 3116475942,
+          "cycles": 464474185
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12783
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 234.518584,
+        "cpuLowerBoundMs": 169.140625,
+        "unobservedCPUWallBoundMs": 0.013459,
+        "instructions": 3118116861,
+        "cycles": 468082815,
+        "probes": 154,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2659,
+          "instructions": 124877,
+          "cycles": 336178
+        },
+        "lastCPU": {
+          "userTicks": 3960739,
+          "systemTicks": 101295,
+          "instructions": 3118241738,
+          "cycles": 468418993
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12816
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 217.654375,
+        "cpuLowerBoundMs": 159.13141666666667,
+        "unobservedCPUWallBoundMs": 1.579541,
+        "instructions": 2918118899,
+        "cycles": 466400688,
+        "probes": 143,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2538,
+          "instructions": 122447,
+          "cycles": 317983
+        },
+        "lastCPU": {
+          "userTicks": 3726181,
+          "systemTicks": 95511,
+          "instructions": 2918241346,
+          "cycles": 466718671
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12821
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 220.05825,
+        "cpuLowerBoundMs": 163.10475,
+        "unobservedCPUWallBoundMs": 0.023292,
+        "instructions": 2917335645,
+        "cycles": 465575883,
+        "probes": 147,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2256,
+          "instructions": 134781,
+          "cycles": 285254
+        },
+        "lastCPU": {
+          "userTicks": 3824973,
+          "systemTicks": 91797,
+          "instructions": 2917470426,
+          "cycles": 465861137
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "loadAverageAfter": [
+          18.1357421875,
+          14.236328125,
+          12.5
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12847
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 225.45125,
+        "cpuLowerBoundMs": 161.53008333333335,
+        "unobservedCPUWallBoundMs": 0.023667,
+        "instructions": 3119591876,
+        "cycles": 468471256,
+        "probes": 145,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2218,
+          "instructions": 117278,
+          "cycles": 318206
+        },
+        "lastCPU": {
+          "userTicks": 3776962,
+          "systemTicks": 101978,
+          "instructions": 3119709154,
+          "cycles": 468789462
+        }
+      }
+    ]
+  },
+  "earlierOperationControl": [
+    {
+      "cpuLowerBoundMs": {
+        "median": 171.0378125,
+        "min": 161.48133333333334,
+        "max": 176.5955
+      },
+      "inferiorWallMs": {
+        "median": 233.346396,
+        "min": 223.69625,
+        "max": 239.155125
+      },
+      "instructions": {
+        "median": 3116246849.5,
+        "min": 3114755780,
+        "max": 3117974162
+      },
+      "cycles": {
+        "median": 463192315.5,
+        "min": 461902665,
+        "max": 467717998
+      }
+    },
+    {
+      "cpuLowerBoundMs": {
+        "median": 172.58127083333332,
+        "min": 168.37479166666665,
+        "max": 178.64395833333333
+      },
+      "inferiorWallMs": {
+        "median": 241.34702099999998,
+        "min": 236.215167,
+        "max": 258.445792
+      },
+      "instructions": {
+        "median": 2916727507.0,
+        "min": 2915324297,
+        "max": 2917676935
+      },
+      "cycles": {
+        "median": 462979680.0,
+        "min": 462653881,
+        "max": 465217803
+      }
+    }
+  ],
+  "semantics": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-2c2iSs/deferred-roots",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+            "files": 595
+          },
+          "imageSha256": "395d5dedd1a6880fc57ee5ce9a2f0fd33c1f63274963f5ad122d7268624b1572",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-2c2iSs/deferred-roots.source.ts",
+          "fixtureSha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/deferred-roots-fixture-before-v6.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-jiY2rv/deferred-roots",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+            "files": 595
+          },
+          "imageSha256": "7ba8491f129540f2e38a9f6aa9b9c12b775516527a4394235808a6822acf3002",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-deferred-roots-jiY2rv/deferred-roots.source.ts",
+          "fixtureSha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/deferred-roots-fixture-after-v6.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          18.89404296875,
+          14.16552734375,
+          12.44482421875
+        ],
+        "loadAverageAfter": [
+          18.90234375,
+          14.24560546875,
+          12.48291015625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 11878
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 128.517416,
+        "cpuLowerBoundMs": 5.623,
+        "unobservedCPUWallBoundMs": 1.551083,
+        "instructions": 33624963,
+        "cycles": 15563658,
+        "probes": 53,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3735,
+          "instructions": 381365,
+          "cycles": 381541
+        },
+        "lastCPU": {
+          "userTicks": 69660,
+          "systemTicks": 69027,
+          "instructions": 34006328,
+          "cycles": 15945199
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          18.90234375,
+          14.24560546875,
+          12.48291015625
+        ],
+        "loadAverageAfter": [
+          18.90234375,
+          14.24560546875,
+          12.48291015625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12337
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 66.31475,
+        "cpuLowerBoundMs": 5.748458333333333,
+        "unobservedCPUWallBoundMs": 1.568167,
+        "instructions": 33401756,
+        "cycles": 13351170,
+        "probes": 45,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4727,
+          "instructions": 383291,
+          "cycles": 483340
+        },
+        "lastCPU": {
+          "userTicks": 76424,
+          "systemTicks": 66266,
+          "instructions": 33785047,
+          "cycles": 13834510
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          18.90234375,
+          14.24560546875,
+          12.48291015625
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12362
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 75.415333,
+        "cpuLowerBoundMs": 4.280583333333333,
+        "unobservedCPUWallBoundMs": 1.578541,
+        "instructions": 18831808,
+        "cycles": 10575845,
+        "probes": 45,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2296,
+          "instructions": 229402,
+          "cycles": 239749
+        },
+        "lastCPU": {
+          "userTicks": 45243,
+          "systemTicks": 59787,
+          "instructions": 19061210,
+          "cycles": 10815594
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12366
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 65.156584,
+        "cpuLowerBoundMs": 5.347416666666667,
+        "unobservedCPUWallBoundMs": 1.586375,
+        "instructions": 32270754,
+        "cycles": 13780204,
+        "probes": 43,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2674,
+          "instructions": 255544,
+          "cycles": 306717
+        },
+        "lastCPU": {
+          "userTicks": 70712,
+          "systemTicks": 60300,
+          "instructions": 32526298,
+          "cycles": 14086921
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12394
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 68.544292,
+        "cpuLowerBoundMs": 4.917125,
+        "unobservedCPUWallBoundMs": 1.56225,
+        "instructions": 31298587,
+        "cycles": 12782999,
+        "probes": 45,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3021,
+          "instructions": 121867,
+          "cycles": 326955
+        },
+        "lastCPU": {
+          "userTicks": 67960,
+          "systemTicks": 53072,
+          "instructions": 31420454,
+          "cycles": 13109954
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12422
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 63.105583,
+        "cpuLowerBoundMs": 5.155708333333333,
+        "unobservedCPUWallBoundMs": 1.54525,
+        "instructions": 31126910,
+        "cycles": 11828659,
+        "probes": 43,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2087,
+          "instructions": 123762,
+          "cycles": 199069
+        },
+        "lastCPU": {
+          "userTicks": 77085,
+          "systemTicks": 48739,
+          "instructions": 31250672,
+          "cycles": 12027728
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12428
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 93.22075,
+        "cpuLowerBoundMs": 5.233416666666667,
+        "unobservedCPUWallBoundMs": 0.023125,
+        "instructions": 31213972,
+        "cycles": 12038737,
+        "probes": 44,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2311,
+          "instructions": 108501,
+          "cycles": 220648
+        },
+        "lastCPU": {
+          "userTicks": 76413,
+          "systemTicks": 51500,
+          "instructions": 31322473,
+          "cycles": 12259385
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "loadAverageAfter": [
+          18.669921875,
+          14.2744140625,
+          12.50341796875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12455
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 65.744542,
+        "cpuLowerBoundMs": 5.065583333333333,
+        "unobservedCPUWallBoundMs": 1.552292,
+        "instructions": 31977647,
+        "cycles": 13491051,
+        "probes": 43,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2495,
+          "instructions": 103953,
+          "cycles": 275870
+        },
+        "lastCPU": {
+          "userTicks": 69063,
+          "systemTicks": 55006,
+          "instructions": 32081600,
+          "cycles": 13766921
+        }
+      }
+    ]
+  },
+  "selfbuilds": [
+    {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+          "sha256": "dde0a4270f7cb1bffca98c3630fa3153c738a93211c20824226889c9912dff48"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+          "sha256": "6c679d85a6acaefd9b7221ca7dc688807976bc612cc15af137003c82228b3859"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+          "files": 595
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 13294,
+            "monotonicNs": 1339651625
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 340378207375
+          },
+          "loadBefore": [
+            16.7080078125,
+            14.10986328125,
+            12.4853515625
+          ],
+          "loadAfter": [
+            18.5478515625,
+            16.83447265625,
+            14.20849609375
+          ],
+          "cpu": {
+            "pid": 13294,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 7428811461,
+              "systemTicks": 97044523,
+              "instructions": 3241744077754,
+              "cycles": 937676262977
+            },
+            "cpuMsLowerBound": 313577.3326666667,
+            "finalUnobservedWallBoundMs": 110.063541,
+            "probes": 3146,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 339038.55575,
+          "outputSha256": "c6031c3a87ee71a8dcf5ebc55e64cfed04568f5caff865377ed4849cd73353f0",
+          "outputBytes": 53679234,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 33460,
+            "monotonicNs": 1809179041
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 300150547166
+          },
+          "loadBefore": [
+            18.5478515625,
+            16.83447265625,
+            14.20849609375
+          ],
+          "loadAfter": [
+            12.54248046875,
+            14.44677734375,
+            13.9130859375
+          ],
+          "cpu": {
+            "pid": 33460,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6878588295,
+              "systemTicks": 108754202,
+              "instructions": 3229696067113,
+              "cycles": 911248345529
+            },
+            "cpuMsLowerBound": 291139.2707083333,
+            "finalUnobservedWallBoundMs": 101.893791,
+            "probes": 2787,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 298341.368125,
+          "outputSha256": "c6031c3a87ee71a8dcf5ebc55e64cfed04568f5caff865377ed4849cd73353f0",
+          "outputBytes": 53679234,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.0770698569922987,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+          "sha256": "dde0a4270f7cb1bffca98c3630fa3153c738a93211c20824226889c9912dff48"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+          "sha256": "6c679d85a6acaefd9b7221ca7dc688807976bc612cc15af137003c82228b3859"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "530ed16933f73de5b0ce7cd7b3ee7be6869aecd4efb8e1e890c30be8a7b223b5",
+          "files": 595
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 60109,
+            "monotonicNs": 1353807625
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 289939440916
+          },
+          "loadBefore": [
+            16.009765625,
+            14.2978515625,
+            13.87548828125
+          ],
+          "loadAfter": [
+            11.306640625,
+            13.693359375,
+            13.88916015625
+          ],
+          "cpu": {
+            "pid": 60109,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6605821349,
+              "systemTicks": 100883927,
+              "instructions": 3229211193556,
+              "cycles": 907950093853
+            },
+            "cpuMsLowerBound": 279446.0531666667,
+            "finalUnobservedWallBoundMs": 105.531209,
+            "probes": 2700,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 288585.633291,
+          "outputSha256": "c6031c3a87ee71a8dcf5ebc55e64cfed04568f5caff865377ed4849cd73353f0",
+          "outputBytes": 53679234,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 70985,
+            "monotonicNs": 3351744125
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 277589289166
+          },
+          "loadBefore": [
+            11.306640625,
+            13.693359375,
+            13.88916015625
+          ],
+          "loadAfter": [
+            11.884765625,
+            12.58837890625,
+            13.28662109375
+          ],
+          "cpu": {
+            "pid": 70985,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6304035242,
+              "systemTicks": 113952024,
+              "instructions": 3244981513280,
+              "cycles": 899435296798
+            },
+            "cpuMsLowerBound": 267416.13608333335,
+            "finalUnobservedWallBoundMs": 101.119292,
+            "probes": 2580,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 274237.545041,
+          "outputSha256": "c6031c3a87ee71a8dcf5ebc55e64cfed04568f5caff865377ed4849cd73353f0",
+          "outputBytes": 53679234,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 0.9569508427583391,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    }
+  ],
+  "selfbuildSummary": {
+    "before": {
+      "cpuMs": {
+        "median": 290496.734375,
+        "min": 267416.13608333335,
+        "max": 313577.3326666667
+      },
+      "wallMs": {
+        "median": 306638.05039550003,
+        "min": 274237.545041,
+        "max": 339038.55575
+      },
+      "instructions": {
+        "median": 3243362795517.0,
+        "min": 3241744077754,
+        "max": 3244981513280
+      },
+      "cycles": {
+        "median": 918555779887.5,
+        "min": 899435296798,
+        "max": 937676262977
+      }
+    },
+    "after": {
+      "cpuMs": {
+        "median": 285292.6619375,
+        "min": 279446.0531666667,
+        "max": 291139.2707083333
+      },
+      "wallMs": {
+        "median": 293463.500708,
+        "min": 288585.633291,
+        "max": 298341.368125
+      },
+      "instructions": {
+        "median": 3229453630334.5,
+        "min": 3229211193556,
+        "max": 3229696067113
+      },
+      "cycles": {
+        "median": 909599219691.0,
+        "min": 907950093853,
+        "max": 911248345529
+      }
+    }
+  },
+  "canonical": {
+    "totals": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "baselineReport": "test262-perf-word-captures-v1.json",
+    "equivalence": "All nine paths, variants, source hashes, harness hashes and pass classifications match. Fresh process per variant; resource settings, strictness and limits unchanged."
+  },
+  "nativeVariantCPU": [
+    {
+      "record": {
+        "index": 0,
+        "label": "after",
+        "pid": 25445,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MV8kIP/test 0",
+        "observedUTC": "2026-11-07T17:45:58.107Z",
+        "load": [
+          20.3212890625,
+          16.19873046875,
+          13.6533203125
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 0,
+      "observation": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 438036.210167,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 25445,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 5403990240,
+          "systemTicks": 62930196,
+          "instructions": 2127383480930,
+          "cycles": 683783531216
+        },
+        "cpuMsLowerBound": 227788.3515,
+        "finalUnobservedWallBoundMs": 103.625291,
+        "probes": 2196,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    },
+    {
+      "record": {
+        "index": 1,
+        "label": "after",
+        "pid": 40952,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MV8kIP/test 1",
+        "observedUTC": "2026-11-07T17:49:59.565Z",
+        "load": [
+          14.44189453125,
+          15.986328125,
+          14.24755859375
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 1,
+      "observation": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 658358.929667,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 40952,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 5014868073,
+          "systemTicks": 75521753,
+          "instructions": 2129747931973,
+          "cycles": 672574562679
+        },
+        "cpuMsLowerBound": 212099.57608333335,
+        "finalUnobservedWallBoundMs": 105.88925,
+        "probes": 2033,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    },
+    {
+      "record": {
+        "index": 2,
+        "label": "after",
+        "pid": 52193,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MV8kIP/test 4",
+        "observedUTC": "2026-11-07T17:53:37.337Z",
+        "load": [
+          11.1845703125,
+          13.8466796875,
+          13.72021484375
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 4,
+      "observation": {
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "sha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 887426.198166,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 52193,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 5191393927,
+          "systemTicks": 64620795,
+          "instructions": 2150983260770,
+          "cycles": 684250809222
+        },
+        "cpuMsLowerBound": 219000.61341666666,
+        "finalUnobservedWallBoundMs": 110.071791,
+        "probes": 2120,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    }
+  ],
+  "retainedFailures": [
+    {
+      "file": "deferred-roots-equivalence-v1.json",
+      "totals": {
+        "total": 9,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 9,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "reason": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"emit\",\"message\":\"__tint_initialize$17758: OUT_OF_RANGE\"}"
+      }
+    },
+    {
+      "file": "deferred-roots-equivalence-v2.json",
+      "totals": {
+        "total": 9,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 9,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "reason": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/codegen/src/aarch64/scalar/index.ts:60460:60466: value does not match its declared type\"}"
+      }
+    },
+    {
+      "file": "deferred-roots-equivalence-v3.json",
+      "totals": {
+        "total": 9,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 9,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "reason": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/codegen/src/aarch64/scalar/index.ts:60469:60475: value does not match its declared type\"}"
+      }
+    }
+  ],
+  "gateInputs": {
+    "head": "6c0b58b0030485458e668bbb9ee7d2df3b4ca95a",
+    "base": "5f0f48e8c4048486f3b0ef14f39dedf4d656669a",
+    "scope": "All portable implementation complete, frozen self-builds and nine canonical outcomes pass; reports may be added while this code gate runs."
+  },
+  "validation": {
+    "workspaceTests": 4809,
+    "typecheckExit": 0,
+    "boundariesExit": 0,
+    "formatExit": 0,
+    "gateExit": {
+      "startedUTC": "2026-11-07T18:11:18.903Z",
+      "endedUTC": "2026-11-07T18:14:47.592Z",
+      "command": "node",
+      "args": [
+        ".tint-bootstrap/perf/deferred-roots-final-gate-v2.mjs"
+      ],
+      "status": 0,
+      "signal": null
+    }
+  },
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v37/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v37--source-snapshot.json.gz",
+      "bytes": 9833013,
+      "sha256": "a09fa48ab736175345f3cbd0b73abf9c1e8ca2b449e4fb784795dd91f4891ba8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v37/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v37--toolchain.json.gz",
+      "bytes": 467117,
+      "sha256": "5078bec634ceea78f393cf61e21fe1a10567cc1810ae39f28249770085ff302a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v38/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v38--source-snapshot.json.gz",
+      "bytes": 9834477,
+      "sha256": "ab43b8b84e4f7dd58ff0009f385ba32a9fadc248f020674d7c10ae1a85d4ae73"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v38/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v38--toolchain.json.gz",
+      "bytes": 467117,
+      "sha256": "3a01c9cf4dcb4da56af8c6f1ffe18dbe7204d240a81d1efe66bacc8522d2bf24"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v39/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v39--source-snapshot.json.gz",
+      "bytes": 9834501,
+      "sha256": "557d024b9a51fa4718844db26a0482003581820e5a5550280e13dadc17a793ab"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v39/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v39--toolchain.json.gz",
+      "bytes": 467117,
+      "sha256": "916d75457a1f72bb7ed02a4e88f24ce92b9af0929b3e04fde9abf3ee0e627afc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v40/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v40--source-snapshot.json.gz",
+      "bytes": 9834737,
+      "sha256": "df91c09325a9f83bbed0049b1e854521eb70dd048ad8a168c75e0269c94ac6d0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v40/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v40--toolchain.json.gz",
+      "bytes": 467117,
+      "sha256": "33575d683e13dacef483440585814b7c9672041d78097cefbd59a16fc4306350"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v41--source-snapshot.json.gz",
+      "bytes": 9834861,
+      "sha256": "1ba73008444a4492f2cc5f807b94097fbd5dec43306df94198b91da1a2337334"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-deferred-roots-toolchain-v41/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-deferred-roots-toolchain-v41--toolchain.json.gz",
+      "bytes": 467117,
+      "sha256": "6d7533f82b13e10aa37a04e47890b2e27f88499f6d014a494ae91f395087c71b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-word-captures-toolchain-v36--source-snapshot.json.gz",
+      "bytes": 9829469,
+      "sha256": "29e6a3fdcd0da3a62893a648e2da6f9236d76501668dd033dfd40d5cce44f6f4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/codegen-word-captures-toolchain-v36--toolchain.json.gz",
+      "bytes": 466944,
+      "sha256": "ebbd602ea8fa7a80b2b3297dd58efd10570a9385be983558a7b84b2182727cfa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-all-codegen-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-all-codegen-v1.log.gz",
+      "bytes": 24515,
+      "sha256": "12750e4a0448bef6241a2b46e0ec4dec691720a85cb240519f82e5d5f83ee09c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-after-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-after-v3.ts.gz",
+      "bytes": 803,
+      "sha256": "2da2941d3aef28256ff305c580140ffb3e17424d76257ff6e002527f79ce598e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-after-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-after-v4.ts.gz",
+      "bytes": 803,
+      "sha256": "249f1e86e7dca680f33f662243438738f42a97385d0c43afeecc9acc05f4c0a4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-after-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-after-v5.ts.gz",
+      "bytes": 803,
+      "sha256": "c1fb1943e5c87d7faf07f9cf06097f813bc2d4ae47f0159af3e1c9aed276fe0e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-after-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-after-v6.ts.gz",
+      "bytes": 803,
+      "sha256": "ba786f35fab90bdae4764cb51431e7e54c03d487be7b306cb4ba872c002f3763"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-before-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-before-v3.ts.gz",
+      "bytes": 802,
+      "sha256": "237fc9f137b3fa322ad2f94f99b81f9dc3f5b6947179ba323ec0d39ff92a555a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-before-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-before-v4.ts.gz",
+      "bytes": 802,
+      "sha256": "237fc9f137b3fa322ad2f94f99b81f9dc3f5b6947179ba323ec0d39ff92a555a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-before-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-before-v5.ts.gz",
+      "bytes": 802,
+      "sha256": "237fc9f137b3fa322ad2f94f99b81f9dc3f5b6947179ba323ec0d39ff92a555a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-before-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-before-v6.ts.gz",
+      "bytes": 802,
+      "sha256": "237fc9f137b3fa322ad2f94f99b81f9dc3f5b6947179ba323ec0d39ff92a555a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-builds-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-builds-v3.json.gz",
+      "bytes": 5657,
+      "sha256": "1c99d3f7dba0b8b9e8ac58626200bab161b8c073122c0a2879cb09c97c5c8405"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-builds-v4.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-builds-v4.json.gz",
+      "bytes": 5650,
+      "sha256": "17a2bdf43a8dbf49633ed01ec62e677c7a641c1442fdf3b879c7527d641a3fdf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-builds-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-builds-v5.json.gz",
+      "bytes": 5651,
+      "sha256": "d7e392c028bb212e0bbd834cb80f1f4164dc1bf7adcac9457dc30954f2874d0d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-builds-v6.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-builds-v6.json.gz",
+      "bytes": 5659,
+      "sha256": "9b049425c4720cadffbcf6b1b53cc767bf9f7c9ec34d8322342e168c23f49abc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-cpu-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-cpu-v3.json.gz",
+      "bytes": 10832,
+      "sha256": "d19c2528ee71741101346fec46bd70f6f16287acd6c0ca996aeaf5a83c9e6b6b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-cpu-v4.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-cpu-v4.json.gz",
+      "bytes": 10847,
+      "sha256": "fbd27dc2b03932acc3f396926383bc82c3c36891f80b806f95b7324fce4bb575"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-cpu-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-cpu-v5.json.gz",
+      "bytes": 10779,
+      "sha256": "fa5abdc895616468ef906e9fb75d79b4904b7b635e67eb70a51563a89efa2915"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-cpu-v6.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-cpu-v6.json.gz",
+      "bytes": 10689,
+      "sha256": "3ca1b238f50fa14cadf0d8681df6d0df0de5cab05e73bb9ba8906953c2d44e56"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-source-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-source-v3.ts.gz",
+      "bytes": 375,
+      "sha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-source-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-source-v4.ts.gz",
+      "bytes": 375,
+      "sha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-source-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-source-v5.ts.gz",
+      "bytes": 375,
+      "sha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-benchmark-source-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-benchmark-source-v6.ts.gz",
+      "bytes": 375,
+      "sha256": "58b6afe528cc88e7ccef4b638cef9ced0e9659deecee4d0a892e02e4c1d877c6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v1-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v1-exit.json.gz",
+      "bytes": 324,
+      "sha256": "0e3d2b01f7aa39ef48455aa784fc6d2408a75d6ecc24991b18563e481a2e2e03"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v1.log.gz",
+      "bytes": 1768,
+      "sha256": "dbe7b31bf739756c9b42f3b21b07c8aa8c39725fc7fd7c9da11f9663b4d50cb2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v1.mjs.gz",
+      "bytes": 621,
+      "sha256": "fe324d1277d70970807dda2938c6f6a2ef4a73402ab2ade9c4dd93407eddb7d6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v2.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v3.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v4.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v4.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v5.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v5.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-build-v6.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-build-v6.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-candidate-v37-manifest.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-candidate-v37-manifest.json.gz",
+      "bytes": 2151,
+      "sha256": "3b45639c314eee2e02a81eda5dc5ed2f6b4e1e4f71e42a29a07240aa790a6095"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-candidate-v38-manifest.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-candidate-v38-manifest.json.gz",
+      "bytes": 2151,
+      "sha256": "649f6eddb4f8014240962d37bb7199c3836e76e8badbce9a0e38d3bce623593e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-candidate-v39-manifest.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-candidate-v39-manifest.json.gz",
+      "bytes": 2151,
+      "sha256": "5c4674f6d35a4114cea8e1039225c97c653c7c1981b83e08ae6f62aad62e5e76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-candidate-v40-manifest.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-candidate-v40-manifest.json.gz",
+      "bytes": 2151,
+      "sha256": "bbfc21a085980c7b622dc1456f27360b59e9c83453db274fab61395455a1bb84"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-candidate-v41-manifest.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-candidate-v41-manifest.json.gz",
+      "bytes": 2151,
+      "sha256": "ff95236dc0c35a493753880544fd7fb1eb8511d67ad8983dede50db8c2ef4587"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-cost-green-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-cost-green-v1.log.gz",
+      "bytes": 882,
+      "sha256": "b7509c55e13bd614f497e0944b8e408b213151986ecee693075f085249a0558b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-cost-red-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-cost-red-v1.log.gz",
+      "bytes": 1439,
+      "sha256": "d6db86e01bd850f8ef97e3aec95286c2404c39bfce7ae5717f46fdfa3d55f248"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1-driver-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1-driver-exit.json.gz",
+      "bytes": 330,
+      "sha256": "3545562474d4bcbbc5080dd2804d69748e6101a8c66e95249fa24cb01998bb56"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1-driver-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "ba079b3cc572c0210fc3a969f1bcbffcad414cc9cdedf3786c3df667ba4bdb5f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1-driver.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1-driver.log.gz",
+      "bytes": 174,
+      "sha256": "0275d93e43065ce6e061b62fa0a9a8a15e02ed347fb71281d27fc2ee42e928b2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1-inputs.json.gz",
+      "bytes": 2167,
+      "sha256": "2e3de8969d305f47f8cd6c38cbe135745bc3abb3a807dd1ddbc6a24b5348b9ef"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1.json.gz",
+      "bytes": 11775,
+      "sha256": "1815c7ed3839545d212b5ce50eaaa724e55617656a0a2a86328abf3a9a922f65"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1.jsonl.gz",
+      "bytes": 7858,
+      "sha256": "453aaa9e6138830b96550b05a5c1fb2c0c4d7f03e98e9c9b75b3de7dcfd5c62c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1.log.gz",
+      "bytes": 5046,
+      "sha256": "146925f8ab6c616695f4e70453799edec8347db67425a8ccc64623b7b7b40696"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v1.mjs.gz",
+      "bytes": 2311,
+      "sha256": "efe1b1d0576e83d85ff2ad7002a47f8b41dd10daf095aede47bb8814ec26926d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2-driver-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2-driver-exit.json.gz",
+      "bytes": 330,
+      "sha256": "b67bcf39aa5e1ee19c5e1fb0315d5fd191b648a82b5ab0356635d7f946db430b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2-driver-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "0c43ec7df55829a453e941ca3a15afdbe88339373fe949f9cf125a48ae68dba1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2-driver.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2-driver.log.gz",
+      "bytes": 174,
+      "sha256": "6a8a5e416f3348bf792c3ab36f480f70b45923e5127473bf57e21e30d8da56a6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2-inputs.json.gz",
+      "bytes": 2167,
+      "sha256": "ed4630604ac5f607d3e78e41fe03e534775256ad2eb8942f80a16e6a7a308fc5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2.json.gz",
+      "bytes": 12349,
+      "sha256": "acac5bbec312ecb239fe80d7fa6c7bbee50ac95ee681b93c831648e8479c4a3a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2.jsonl.gz",
+      "bytes": 8432,
+      "sha256": "3164b94379a2a85b038f3a41409cc29aaa07ceb71e1a1e68b89dcf16fec32ee2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2.log.gz",
+      "bytes": 3988,
+      "sha256": "35f300e20b8e403f46956d21a23ece78cfc0e927c77c5f8e23e37ce19759db3d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v2.mjs.gz",
+      "bytes": 2307,
+      "sha256": "0303fb91f157c4a82a837d5bb7bfece646c758a584940b0849a26aeec3091ac5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3-driver-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3-driver-exit.json.gz",
+      "bytes": 330,
+      "sha256": "ba47e242a42c2fbbdf4e8787a939988e6ab917e5332bf69729ee0319444acc76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3-driver-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "04ee124108eaec7a7b23e297a7936088baebe61156bf95dc9ae130cc75fda502"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3-driver.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3-driver.log.gz",
+      "bytes": 174,
+      "sha256": "e21e1dcfe4fca129a4bf4afadd3bc7dd628e003224b3e30d86a1eaa41b0d0fe2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3-inputs.json.gz",
+      "bytes": 2167,
+      "sha256": "32fd5f8488c0737da6d073577a7a3ea0092e505b0524079bd3d1fe8d6391eb96"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3.json.gz",
+      "bytes": 12336,
+      "sha256": "947011d65a683b57d99026a055c67de37e10853dec1ef6e15a29c19c7ce7209f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3.jsonl.gz",
+      "bytes": 8419,
+      "sha256": "e1d1ba7f76100bd02fce050f4d78304a9f434d09f29a39264aeae236a6d4f242"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3.log.gz",
+      "bytes": 3988,
+      "sha256": "ae64487bf5ec5b08d7f83f0942ae825014a1dd386e06ccee4b06ae74c6f99e02"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v3.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v3.mjs.gz",
+      "bytes": 2480,
+      "sha256": "8e5d8030dfa0e084822c5498d11bb58c9c6402fd4863e267e95f6c62b296931c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v4-driver-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v4-driver-exit.json.gz",
+      "bytes": 330,
+      "sha256": "ba1e0fa89852627bc91b8e8531c10e6c85bd477ca097f9d7c311b87baaa2482e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v4-driver-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v4-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "ee9a52657d3f193e81ad4f83b9ceba3b775c1adff93b09657d627585238c376a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v4-driver.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v4-driver.log.gz",
+      "bytes": 1664,
+      "sha256": "0d65e16ff676b05cf27b77a3135b68e40309fc108d7da7c05a901da41f6eeb4d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v4.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v4.mjs.gz",
+      "bytes": 2604,
+      "sha256": "0424edb55e8ea13babaaf471a2f064ab4a9736fc5fa286947bca800e356ae04b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5-driver-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5-driver-exit.json.gz",
+      "bytes": 330,
+      "sha256": "92a80fc1e7ce5bb38bee66f68e39cef9476e451fe863a0b30ebdebc359a45f6f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5-driver-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5-driver-launcher.json.gz",
+      "bytes": 13,
+      "sha256": "9f691f4270e47633bc5d746279aaf95700ea7a10d0a84c34d386929f970a7aa5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5-driver.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5-driver.log.gz",
+      "bytes": 1112,
+      "sha256": "2ec59a90e2e363415512d05be3ddc3ba731157f168b6b055ecac056b8aa45989"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5-inputs.json.gz",
+      "bytes": 2167,
+      "sha256": "faf9f4590badd965f86a5a3a7e2d4961ed1ce9975743b9e05d8019f37e989d30"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5.json.gz",
+      "bytes": 10646,
+      "sha256": "7095f2768b096853dcb75c502773beb89b647e1bdca1fdd50e7009f61d8b5753"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5.jsonl.gz",
+      "bytes": 6819,
+      "sha256": "bbc5433dc1cf78a4caca663ecac917be630b64e002feadbc5e151b2697c278f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5.log.gz",
+      "bytes": 13346,
+      "sha256": "7ee1cf804de533653595c17acb389158ba59366243cc6352bd5b11551db769f2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-equivalence-v5.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-equivalence-v5.mjs.gz",
+      "bytes": 2869,
+      "sha256": "503c42a65170931a64bcaf4cfd75c23c2e38bf2095dcac52d620599b937db355"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v1-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v1-exit.json.gz",
+      "bytes": 329,
+      "sha256": "d9409b8e6ac0ca474535057f23dc652807a1ecb330208e8e3b3968fff29a167d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v1-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v1-inputs.json.gz",
+      "bytes": 264,
+      "sha256": "9271570ff86a7a7d2abc5a55dd9d625014b9fc41b42d9538496def70390b5aea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v1.log.gz",
+      "bytes": 9907,
+      "sha256": "f1d86d183cc282040a02cfaf38684666b4952a99a2ca77f82bd4d4dc2d134e69"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v1.mjs.gz",
+      "bytes": 849,
+      "sha256": "e6767e72932eadce15c1e81354cc06f27b698253e9d593922b6d107dd72d12aa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v2-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v2-exit.json.gz",
+      "bytes": 220,
+      "sha256": "2e9e33f6cba15174f9986049c7597a23a2e5f8a2699fe7feccc2385f67f51d90"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v2-inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v2-inputs.json.gz",
+      "bytes": 264,
+      "sha256": "c61a23d86755825160c382809faec0a4a74106fd4da7c317fecd6ddc153e5c31"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v2-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v2-launcher.json.gz",
+      "bytes": 58,
+      "sha256": "9ef3e88258ad490eca9499e35b00101e5ebf9d529c92e1692b4afad081809eea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v2.log.gz",
+      "bytes": 404311,
+      "sha256": "51a8bb0366f19137810a502aca99c6b050c5ee42cc6f3e1cdbd3b1406140d135"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-final-gate-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-final-gate-v2.mjs.gz",
+      "bytes": 849,
+      "sha256": "75f8728f17dd9c15263830e6cb8c86b60abadd8cdd616e81391dca5edb626e63"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-after-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-after-v3.ts.gz",
+      "bytes": 1523,
+      "sha256": "5d61138c95637e7d63913374715a2447434916e743b71f9ac2473fd201885407"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-after-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-after-v4.ts.gz",
+      "bytes": 1523,
+      "sha256": "0ac3ddc2df6ba9ebdd85f61e0051159b7499955f177cd1e5634dc3075b934d27"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-after-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-after-v5.ts.gz",
+      "bytes": 1523,
+      "sha256": "4ccbe2b2fcb75c2eed39d266e6cad5ee05d72d5a46a86f3bab9ff07539b24570"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-after-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-after-v6.ts.gz",
+      "bytes": 1523,
+      "sha256": "626869657cb4f57833b07db53121293499d6a8ba2c42a29311ba4a9a5ca98097"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-before-v2.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-before-v2.ts.gz",
+      "bytes": 1510,
+      "sha256": "83eefff829be24fdb404f07f361d67d4bc125c5fb59af22aa8a244c6aa6890cf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-before-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-before-v3.ts.gz",
+      "bytes": 1522,
+      "sha256": "59befc4c77110d6bf82e5ca7a0d3bd32241597f8ead04aa1af74f00a285a98e1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-before-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-before-v4.ts.gz",
+      "bytes": 1522,
+      "sha256": "59befc4c77110d6bf82e5ca7a0d3bd32241597f8ead04aa1af74f00a285a98e1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-before-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-before-v5.ts.gz",
+      "bytes": 1522,
+      "sha256": "59befc4c77110d6bf82e5ca7a0d3bd32241597f8ead04aa1af74f00a285a98e1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-before-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-before-v6.ts.gz",
+      "bytes": 1522,
+      "sha256": "59befc4c77110d6bf82e5ca7a0d3bd32241597f8ead04aa1af74f00a285a98e1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-cpu-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-cpu-v3.json.gz",
+      "bytes": 10661,
+      "sha256": "7a2022dbd98b3fa17ba51a9cb4ac23a75dc5e5d9ef43a4978aebbf74fcf12595"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-cpu-v4.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-cpu-v4.json.gz",
+      "bytes": 10682,
+      "sha256": "0e465489ae51dcaa9b0be4085885bc07a11b823c2ed51028259d1b5f614bfeaa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-cpu-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-cpu-v5.json.gz",
+      "bytes": 10597,
+      "sha256": "704f01090ed1892e003d4cde4ec033077a63e0dfc26b69112af92612cc1e7ad7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixture-cpu-v6.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixture-cpu-v6.json.gz",
+      "bytes": 10647,
+      "sha256": "8bea9d096c126a6e0c1921ac21dc9d0420eae697d7574d4f8ad1164475bb97c9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixtures-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixtures-v3.json.gz",
+      "bytes": 4857,
+      "sha256": "2d907dbd238ac299c02a9727904387470198b27791b749111bdae13419433beb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixtures-v4.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixtures-v4.json.gz",
+      "bytes": 4857,
+      "sha256": "8d287ba1ab9019958d439120303f8cc2eadde811b57bc62d7e376b6f6055e1e3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixtures-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixtures-v5.json.gz",
+      "bytes": 4857,
+      "sha256": "c2fd6f61be08219b4ed265da53e461f49c0768cb9ea47c290c090dc511d970ed"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-fixtures-v6.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-fixtures-v6.json.gz",
+      "bytes": 4857,
+      "sha256": "3f53f11bcf370fa6bd83107c98f6f85c0c612fdc60c31aa2c008e48ae0da0de5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-goldens-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-goldens-v1.log.gz",
+      "bytes": 617,
+      "sha256": "c414af65ba4fe6cc518b81a4d2ce3d8d2fbbdd5b7a868cca295a48fb0805efa3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-green-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-green-v1.log.gz",
+      "bytes": 705,
+      "sha256": "4a1331816e3c071832549d883e250c270dd0b9931aed2595f8c9dffbbb4088c3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-green-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-green-v2.log.gz",
+      "bytes": 780,
+      "sha256": "e8bac5c27980011a2371825b7ae566552ff16d07d1a936a7a8434c0c8cfb5584"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-green-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-green-v3.log.gz",
+      "bytes": 883,
+      "sha256": "b7601dac98d3b61e6e5561d30c4110e96570c268f48f7cecc0fbc5b22780b7e6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-green-v4.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-green-v4.log.gz",
+      "bytes": 878,
+      "sha256": "71a28d321132905d6f419a72552f2fe30c0ed508f50ab0d43bd142b197815911"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-green-v5.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-green-v5.log.gz",
+      "bytes": 874,
+      "sha256": "e27036f9582919c8a06448170a2ef7affaa503419e485b23200e173a4d19c4cf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-checks-v3-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-checks-v3-exit.json.gz",
+      "bytes": 693,
+      "sha256": "13321052ee8e9cbfbcceb422ed21d006f5074830aefcc347a002ce7032efeccb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-checks-v4-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-checks-v4-exit.json.gz",
+      "bytes": 693,
+      "sha256": "862614cf379cc42151ab6e5ec92ff928e1c45bfb7fb456385ddd38444a725ef9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-checks-v5-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-checks-v5-exit.json.gz",
+      "bytes": 693,
+      "sha256": "a75878eaed57e7cdfbadadec78b4ad3f3909f6fbeff0489c114f5cd4ba2e2418"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-checks-v6-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-checks-v6-exit.json.gz",
+      "bytes": 693,
+      "sha256": "7d134909ad022fed8d078536ec7bf5f1d4df71c3cd50709be3a6c84d8208805b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v1-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v1-exit.json.gz",
+      "bytes": 332,
+      "sha256": "6293065177605e6772a31e77c802f26315f76a25daa5bac925b6b952ba21fc27"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v1-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v1-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "4c6f9be638e680ab0f686bb3b74e32dff3b25dbeeec5825c42952b7476a4f967"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v1.log.gz",
+      "bytes": 3752,
+      "sha256": "0fc4379ebb632e5d8b463e8ba116f7004454699320cbef0bd787737169402e10"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v1.mjs.gz",
+      "bytes": 1481,
+      "sha256": "fb1623efaafbcab24029237982ee9bc8f134c414df1c4cf04a7a530a24337bb2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v2-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v2-exit.json.gz",
+      "bytes": 332,
+      "sha256": "0a8a0fc2d30adc40a1606d70200f35d525d795cd1723e1b4be7ec289159fb61e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v2.log.gz",
+      "bytes": 7628,
+      "sha256": "77c434211b410ae74c911132f68b856b80c080b2b5cf75c24267239460ca86e5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v2.mjs.gz",
+      "bytes": 1481,
+      "sha256": "db0c759bf9d04c2e0198de2093c1af9a2c103151abc4592afd421b7b48698579"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v3-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v3-exit.json.gz",
+      "bytes": 332,
+      "sha256": "e3492cf1860f3cff998c447acb8be1d3432ad3d9f4d92d11e0e892af8c532e54"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v3-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v3-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "84d4dae7475d94306064f9667f476663752b8b6083f61d84483da6790df959f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v3.log.gz",
+      "bytes": 21581,
+      "sha256": "6a997047f85ce56e8c40b8d43033d18f6526e2fb25d5877e2b37c0bdca67bf50"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v3.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v3.mjs.gz",
+      "bytes": 1481,
+      "sha256": "d0239387f462dd00de30889b86447339bef7c634ca6bfdd9c65bd57cc7d28bd1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v4-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v4-exit.json.gz",
+      "bytes": 332,
+      "sha256": "7535d03491294e799cdd0fa4eab2cc15cd4b855d57e596ad172a1788492bbc4e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v4-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v4-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "97ab4190f9878498ed688ba038fb83cb24923cb31c006d6e4f94608475d25e33"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v4.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v4.log.gz",
+      "bytes": 21617,
+      "sha256": "f4ca1c6773ae2f7e4983dfe8d99e0de816a93922b19f32c4afd51538221839d0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v4.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v4.mjs.gz",
+      "bytes": 1481,
+      "sha256": "7bcdf1f088dc6c815467d9b15c1e5b7aaca397940bf20f35bee6148e0d2d22a5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v5-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v5-exit.json.gz",
+      "bytes": 332,
+      "sha256": "ac4fab319687fc02a6c032aafe9440e88677e685fbc97078d3a5c98720f902f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v5-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v5-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "1e8603e2f231d0dae21d244956cae5230fa5d749ff690ab41dcb77a8e24a8c6c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v5.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v5.log.gz",
+      "bytes": 21467,
+      "sha256": "7dfb8373f0dd41bc092924be564a08a88a889bfd15275ed68d9d871d5a8bb95f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v5.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v5.mjs.gz",
+      "bytes": 1481,
+      "sha256": "0ede60382ebb2ed5d8257fb63c7bca28d174cdeb73108519dd93e3646fedcbb4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v6-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v6-exit.json.gz",
+      "bytes": 332,
+      "sha256": "43fddad82d16394266cfd313325b5a3deca04d22dcad00b04c53b0aa2572f4ff"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v6-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v6-launcher.json.gz",
+      "bytes": 13,
+      "sha256": "60e38c0a217653c024496f4243e2bccc3bfdb43b2c3b00d29f851d5d3978dc36"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v6.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v6.log.gz",
+      "bytes": 45701,
+      "sha256": "361247fa59e5d2b15664950e165be50d91ead3ce7d408355d17aa5df56ce32ce"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-native-driver-v6.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-native-driver-v6.mjs.gz",
+      "bytes": 2035,
+      "sha256": "d19827ea3aa39cf4219f95db84ecea3e9585a8b294c1c9ed02ad4381d4b0dc13"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-operation-variants-v1.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-operation-variants-v1.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-operation-variants-v2.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-operation-variants-v2.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-operation-variants-v3.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-operation-variants-v3.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-operation-variants-v5.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-operation-variants-v5.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-rebased-build-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-rebased-build-v1.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-red-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-red-v1.log.gz",
+      "bytes": 1274,
+      "sha256": "f67b2497b97be1419ce35408b56b8a892dd6a2ccc6299f9720294d9da122b492"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-red-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-red-v2.log.gz",
+      "bytes": 2507,
+      "sha256": "9a0c24ec33422a2a66f7c15c621c850a3f7b397906f744f61cdc8b2c7a4d619e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-red-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-red-v3.log.gz",
+      "bytes": 1165,
+      "sha256": "14a85da0012642fb755484c6cf036256c93f066cd45eb9c762888340e07937b0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-source-v2.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-source-v2.ts.gz",
+      "bytes": 1094,
+      "sha256": "f96a4b7838cbe8c26f55f4b82429ad2ee144295629bdeacd8dfe509f75fbcda3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-source-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-source-v3.ts.gz",
+      "bytes": 1106,
+      "sha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-source-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-source-v4.ts.gz",
+      "bytes": 1106,
+      "sha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-source-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-source-v5.ts.gz",
+      "bytes": 1106,
+      "sha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87"
+    },
+    {
+      "source": ".tint-bootstrap/perf/deferred-roots-source-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/deferred-roots-source-v6.ts.gz",
+      "bytes": 1106,
+      "sha256": "5c3f93ecde039eb158c2339326282ae585903f600ccc0070576f4f637fb22f87"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v37.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v37.log.gz",
+      "bytes": 2474,
+      "sha256": "644ce7e21b72ac8b227ff9098997687332da505d41105703533012625ccdb2ca"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v37.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v37.ts.gz",
+      "bytes": 1329,
+      "sha256": "9cc3b69516ef9844030cf40ecd99a326f4da8fc8b5c57c8de0875bc65749433f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v38.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v38.log.gz",
+      "bytes": 2474,
+      "sha256": "5305ec2fa16e32a96ba02ee063159d9f1531ff37a05d38d2fcf0569327c6c47f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v38.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v38.ts.gz",
+      "bytes": 1329,
+      "sha256": "bf5373222063d1dc2a246d3e8dc1c9b88c7e015e9cde66b2091525694b67ecc1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v39.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v39.log.gz",
+      "bytes": 2474,
+      "sha256": "795af5b19a49d373b5988433e567c9f35a6c889751c0a54a3475df2c0b775d7a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v39.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v39.ts.gz",
+      "bytes": 1329,
+      "sha256": "aa1a319f0b46c59170856e77b9a743486e3a25faffe0aa8ef9587ac9ad9bb6b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v40.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v40.log.gz",
+      "bytes": 2474,
+      "sha256": "799d35265e697e9e3ada96386895f3fd5b45d479176d4eb22b94fc2f450fe0e3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v40.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v40.ts.gz",
+      "bytes": 1329,
+      "sha256": "8966438a20e1b638933c2c8d571ca5124ef67767a3fa8dd86547ade7b3f79e40"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v41.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v41.log.gz",
+      "bytes": 2474,
+      "sha256": "50b9e97ea063d5e7f94286e923f491edde0053ef706909b7f5df8ec36ed5f73a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-deferred-roots-v41.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/freeze-deferred-roots-v41.ts.gz",
+      "bytes": 1329,
+      "sha256": "6897cecf45933cf2804b04a18aac7aae24095e9448dba5bb091b7cfc672d04e2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v1-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v1-exit.json.gz",
+      "bytes": 330,
+      "sha256": "23c3c6def7c8d7ffd0b40caa52e18310e197c5886f5486a22f23eeaef1bef2e7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v1-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v1-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "ec5faeef85a6d2b339d87a8776ca7c81a930087296b2d7faeb2c976af66985d5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v1.log.gz",
+      "bytes": 1994,
+      "sha256": "04419d08c9155c94010d007a71df973bf44a3d7a2f503b452557990890d8e7b1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v1.mjs.gz",
+      "bytes": 2163,
+      "sha256": "b119f8e11ec327ea22f6d0ef877beadd868efb6221842d780365750ebcc8509c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v2-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v2-exit.json.gz",
+      "bytes": 330,
+      "sha256": "f07b41cd9d7b4dde15b463676aac675c549c95d1766dd3207491f30dc4f65586"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v2-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v2-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "9e4262be5783159a249ade36eb5025afd305a5c2225bed86c4b2b7ac561d72a4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v2.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v2.log.gz",
+      "bytes": 543,
+      "sha256": "e523a4bbc2ae607c632b1777bcc47444370977fa2b9c8adba998c70ebe4af737"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v2.mjs.gz",
+      "bytes": 2163,
+      "sha256": "9ad5949b9d29765740d94a465c42548bc44483f296f282d9d930d63e1da0e062"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v3-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v3-exit.json.gz",
+      "bytes": 330,
+      "sha256": "1d46905239f01b0ac37126471857e0686b6e890e81e5fd22e73a6f401f94ef34"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v3-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v3-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "cc5635ec44c021603c1fa30b9a85f4936d17da333587445bd1455084defdeb89"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v3.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v3.log.gz",
+      "bytes": 543,
+      "sha256": "ab1686a89d27fdb735f8f6e6b53fe28bc5b1a06bb0f7f4753a4aae76a056ae38"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v3.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v3.mjs.gz",
+      "bytes": 2163,
+      "sha256": "4234be7cdf16b237d74b106365d78d8d379b1092e03763b10310806f2122c95e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v4-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v4-exit.json.gz",
+      "bytes": 330,
+      "sha256": "157e3b5593b26a50b1eb94eedc56f61e7b71bd473ee4eac7d0d5afc79913a5d4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v4-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v4-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "db6c85c3ae5ac3a3f3aa23d0f33ba8331545771fe75f28fee88875d263cc18ee"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v4.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v4.log.gz",
+      "bytes": 435,
+      "sha256": "a349e480298e7d9e1864c166509a09d1322dee6d8e2f75416e445e3ca3195b9e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v4.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v4.mjs.gz",
+      "bytes": 2163,
+      "sha256": "49bedb21269f3a800e5802b21793c8dbf683a0dbe5bb15a5828efd77bfe413c5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-0/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-0--cpu.json.gz",
+      "bytes": 494,
+      "sha256": "68b68fea482a3f17005c680fcdca93d22f49c7ff81dd88733b9399bd3ca1a8d6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-0/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-0--initial.json.gz",
+      "bytes": 474,
+      "sha256": "a8031ea0ef074a06478e577d793d74476dd6fd334c03b30ab030d8df2a2f1e12"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-1/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-1--cpu.json.gz",
+      "bytes": 500,
+      "sha256": "676e62fdb5248ac2933bfbf6000bb95c273483b549e30371f886e50eafa341e4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-1/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-1--initial.json.gz",
+      "bytes": 474,
+      "sha256": "e8aa66ebaf1e2ee76a8ab67f8f47c3687c06014fb19c956a87d8ea38ba474d76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-2/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-2--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "d2b8dc353b5b73aa59c2df83c0f6e290fdc00294d4b8be03de9e2a3af319d3d7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/after-2/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--after-2--initial.json.gz",
+      "bytes": 474,
+      "sha256": "9b64da4c309f037363aa65ec8d386b03383db734bcb796dbe2e370ad19af8cc8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5/observations.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5--observations.json.gz",
+      "bytes": 1506,
+      "sha256": "6bf25dcc9fb9a1ab4b2806f739f92fcf81390159c10431f4b45bcf14525731bf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5-exit.json.gz",
+      "bytes": 330,
+      "sha256": "32ad6f4b1326199b06ee48f680f0602c325b9068821acdf1cc21aa3bb6057dc0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5-launcher.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5-launcher.json.gz",
+      "bytes": 13,
+      "sha256": "2383846b3a6892e42949d55cc95c68874a891387f04fd97845fca22061bc903c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5.log.gz",
+      "bytes": 14787,
+      "sha256": "123aa2c9c637c37bcafe0ae71c15cceab460bab547db34e982ffdd85af2a85d4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-deferred-roots-cpu-v5.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/observe-deferred-roots-cpu-v5.mjs.gz",
+      "bytes": 2163,
+      "sha256": "f5ad4c5717da9ec6632b44986f961abb05b92bb7de6a4b16eac861117267653a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v1.mjs.gz",
+      "bytes": 2443,
+      "sha256": "0b16dd5af97674d2a8ec33b893a1907282f84f16b406a8dc400739a9a97bf510"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v2.mjs.gz",
+      "bytes": 2457,
+      "sha256": "006da1bfdcda3d72b4e6281f9b2a156ec9f6b7903ecda9326a44c6f3a350054b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v3.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v3.mjs.gz",
+      "bytes": 2457,
+      "sha256": "26db0eb1148047e15fc13ba1787db6ffcc5fc90317c2a5f6f9e3725e08f021b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v4.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v4.mjs.gz",
+      "bytes": 2457,
+      "sha256": "49eef81e03bad35c36570b6eb89a82b7c3596039ff9d68f9680c5275e7d1ab47"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v5.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v5.mjs.gz",
+      "bytes": 2457,
+      "sha256": "467a80bbe9a92e27831dddf1b724e8d2ef12c720ba2810dfb694508ad42fb42d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-benchmark-v6.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-benchmark-v6.mjs.gz",
+      "bytes": 2457,
+      "sha256": "214e0711ed1bcd597f19083d6ed4855ecccf32347442e2c487e43f71ac9ad269"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v1.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v1.mjs.gz",
+      "bytes": 2105,
+      "sha256": "d0490da63d54ad805c9aa7f8dd2d03cbae6123e8ff61d3631793f33daedd1a3b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v2.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v2.mjs.gz",
+      "bytes": 2119,
+      "sha256": "18da7a50bd0d79bba7762dc45d3184273a8f1feec6026fae6e6f16100efc2b44"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v3.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v3.mjs.gz",
+      "bytes": 2119,
+      "sha256": "9b966ece50d14bebce0133d1270ba5efb67c6b213582e71efae9a97817f98077"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v4.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v4.mjs.gz",
+      "bytes": 2119,
+      "sha256": "f1573c7233c563abe07a1551f700571aae8e658f9bba30d7ba704535b8567986"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v5.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v5.mjs.gz",
+      "bytes": 2119,
+      "sha256": "eb175f19c5d37654ded26a99947831c78ee262380ffa8105de1c9397fd82a652"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-deferred-roots-fixtures-v6.mjs",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/prepare-deferred-roots-fixtures-v6.mjs.gz",
+      "bytes": 2119,
+      "sha256": "7bab647a4ab24ffe0154652f89d3eecbe1ebdcb4e4f45c8c7f5d3cf5f51200e3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/after/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "15bf71f8a9aa89ca9efb91db467c687b28906b4713a7c3afd0518bfb58f07b26"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/after/final.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "2d108378c3d8b73822527a1ed8edf62898585159448c9d85c7c17a087fca64dd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/after/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "ed0fb74969fa04df049ca54f17266d670b3d872ce35248e2873f36b189df3a32"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/after/reports.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--after--reports.jsonl.gz",
+      "bytes": 754,
+      "sha256": "1078bc79c489c836349ff4515f25807b59b79c5681d5ba4177abba662149f6e3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/after/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--after--result.json.gz",
+      "bytes": 1090,
+      "sha256": "254c6ce8c4eb2d41c655119c64e25e781e3d94926a7828cd46c0e3b8d2e28857"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/before/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--before--cpu.json.gz",
+      "bytes": 502,
+      "sha256": "1f42eb44b6c2d136fc1657272f3d741697d3418d09d0f93029bb713a6d8bf8f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/before/final.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "90d814597fd996afe98b66586e0bcfc9cc51738b5179f58a05a65db1d6db4f0f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/before/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "49be3909cc75cf4864c1b00577bfdd2406f358087060b371b352e54180ad6a90"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/before/reports.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--before--reports.jsonl.gz",
+      "bytes": 755,
+      "sha256": "9fccf2ab1966dcd06bf124b52980adf4ea1ac17261c93a6f6a59d383b066e553"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/before/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--before--result.json.gz",
+      "bytes": 1093,
+      "sha256": "42e4046e0171aadb4aebb5a6b42d027b92653c6d8a1a7aa71680c5425fd45a7d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--inputs.json.gz",
+      "bytes": 3988,
+      "sha256": "329719fcaaa82fcbf5181383a0906c0e5682b3ecf8810227d9973cc1465511d1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1--result.json.gz",
+      "bytes": 5231,
+      "sha256": "baeb24c3b4b8af98a652a51dd78dcf8d5256aae7809eee1aea32ca1186123255"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1-exit.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1-exit.json.gz",
+      "bytes": 426,
+      "sha256": "770a4c2ae842939bd1eae01ebca0b8d4801b238ff537698830923f67444ca08d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1.log",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1.log.gz",
+      "bytes": 17435,
+      "sha256": "20c08288befe6a99e8009fe85bbf072019d0457e683584b49c29be136d21ef32"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-reverse-v1.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-reverse-v1.ts.gz",
+      "bytes": 6632,
+      "sha256": "bb4512204d411bdaad83887b0aa9f790bd0cf0ac8bb040e5f26908ee4e37786b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v1.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v1.ts.gz",
+      "bytes": 6890,
+      "sha256": "ce36877cc4378145b962619da2829b555343932bfa5691a8603f5fbd652f5f69"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v2.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v2.ts.gz",
+      "bytes": 6890,
+      "sha256": "454dd7f6655d023b607f6d2d426bc91871e1bb68648dfc561c9ee2b80a4d8f02"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v3/inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v3--inputs.json.gz",
+      "bytes": 3989,
+      "sha256": "93974a19a7fe418b37a6f40305e5c3e8e4b99c89b2961a06b329145d2917353d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v3.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v3.ts.gz",
+      "bytes": 6890,
+      "sha256": "5d03d621f23640de6313ebb3523454a517d85b818eab53752f281885d53962c4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v4/inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v4--inputs.json.gz",
+      "bytes": 3989,
+      "sha256": "e1cc7599e4625c6fb9bfe5f97ae60056ea496be75c77e6bd8fcc42fec5fd6c70"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v4.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v4.ts.gz",
+      "bytes": 6890,
+      "sha256": "5131e196886dbcf9930367c8d6786594d983d0a5fadffaf34c43ebde341c3736"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v5/inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v5--inputs.json.gz",
+      "bytes": 3988,
+      "sha256": "5ca2ec80ba9cd273757cb65098e2d0b6388e08e9511089dfe05b34457ed6f6ab"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v5.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v5.ts.gz",
+      "bytes": 7052,
+      "sha256": "53a0f76823790a7cae8c855cec7fabb7b15f792f43d6ca838c867c740a902404"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "7178df4c787f2e541023bd23334ff356cb98016b6af1b0ab34a3cd8b7802d2cd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after/final.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "cf86210f97fdf7b71399b9d44eb628650b327829bb085a2c03fcd2239505c0db"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "2608b9c43fb30c2884d74bd76cc76be019af80aeab8bb95727a8fc28177da9df"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after/reports.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after--reports.jsonl.gz",
+      "bytes": 746,
+      "sha256": "94142d84fdeeaffdc79481309a3b1c3f2981d46d11cfdde121381985521ec838"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after--result.json.gz",
+      "bytes": 1095,
+      "sha256": "903406f1a649c85b8256b59a8e0bc1d288ee32cc0345a9fd10540b301f7be6ae"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/after-node-stage1-ready.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--after-node-stage1-ready.json.gz",
+      "bytes": 354,
+      "sha256": "f0f9a5da9576a02644b60dd3882e6b16c7d539876cb41f97e75ad4a4d9cdbf29"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before/cpu.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before--cpu.json.gz",
+      "bytes": 500,
+      "sha256": "ea55a0af68bb9ec89d9030d1924d7e117b760c196df8e45790823ab572a4af2e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before/final.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "b38996cb06272f89c86e7c87a9a02ee8de3ed931ca86a063c82ce016cc4e87cc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before/initial.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "f2c16e2718eb565887778e8199bed0a17ecf24d67f25da139b5e9b3854dd6263"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before/reports.jsonl",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before--reports.jsonl.gz",
+      "bytes": 747,
+      "sha256": "dae437ccd98df02717cc9e3c703bb78b2d06617338c7fc7e0699a27402f29eca"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before--result.json.gz",
+      "bytes": 1093,
+      "sha256": "d4a96f73021a7ef66b92b7ec4409084cc6611280dc8f7967d4859a1a890035a4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/before-node-stage1-ready.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--before-node-stage1-ready.json.gz",
+      "bytes": 349,
+      "sha256": "644585fc89654662ebc644c2cf7856b492bc59d592bb527103c157c2884f38cd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/inputs.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--inputs.json.gz",
+      "bytes": 3988,
+      "sha256": "c551737b7256fc141a42678eb97bc35d81df06200178a19f84ec561d707bd77d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6/result.json",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6--result.json.gz",
+      "bytes": 5236,
+      "sha256": "3b8b95f412c88cf2d33518e6fd08b63a0a026d9dc942fcf571174f9776f618a1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-deferred-roots-v6.ts",
+      "asset": "docs/results/native-deferred-roots-throughput-v1-assets/selfbuild-deferred-roots-v6.ts.gz",
+      "bytes": 7052,
+      "sha256": "05facd087b9b47c7e4eb41e42c7d20f38dfbab3b9820759c459ea21edc47a6a5"
+    }
+  ],
+  "projection": "No whole-suite hours projection: 6.4% fewer instructions in a boxed-equality loop does not predict suite wall time. Native compiler CPU is mixed; Node-hosted batch compile is separate."
+}
