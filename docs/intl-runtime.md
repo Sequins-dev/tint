@@ -406,3 +406,10 @@ native conformance passes.
 Other formatting engines and their service-specific locale registries remain
 to implement. Existing `supportedValuesOf("timeZone")` consumes the
 agent's stable primary-zone inventory.
+
+The shared duration-unit profiles now cover all 860 CLDR49 locales with plural
+patterns, inherited lists and digital time separators. NumberFormat consumes
+these profiles for the ten time units, including microseconds and nanoseconds;
+other measurement-unit support remains separate. This prerequisite has
+[compile-only evidence](results/unit-format-native-resume-h-v55.md); native
+execution remains held pending host authorization.
