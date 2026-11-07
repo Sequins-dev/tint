@@ -1,0 +1,74 @@
+{
+  "kind": "complete-native-selection-acceptance",
+  "conformance": false,
+  "report": "test262-temporal-plain-year-month-family-h-v2.json",
+  "reportSha256": "ae0f8e076c820c782d81c0e42c1244093af7dd390b3f489f2bd066a40257650e",
+  "journal": "test262-temporal-plain-year-month-family-h-v2.jsonl",
+  "journalSha256": "22359f62a00b8176b540aca7b5e23db74b3ced2f30bd12d69a15607911b122f4",
+  "completeRecord": true,
+  "totals": {
+    "total": 1018,
+    "passed": 1014,
+    "failed": 4,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9960707269155207
+  },
+  "sourceSnapshot": {
+    "sha256": "67e0567194afbf7645db4a69ffec194eb434b62ee0af90553656a9cc5ce7114c",
+    "files": 568
+  },
+  "frozenToolchainSha256": "25b7900402b7da0d693e3ac89a5a17c226def5d99c9d65a60645ce303e70f4dc",
+  "frozenDescriptor": "frozen-node-toolchain-temporal-h-v12.json",
+  "debuggerLaunch": "debugserver-direct",
+  "exit": 0,
+  "retainedFailures": [
+    {
+      "path": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/branding.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/branding.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/prop-desc.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/prop-desc.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "triage": "All four failures are toLocaleString branding/property descriptor cases on frozen12, which predates H formatting. Preserve originals and recheck on linked formatting toolchain."
+}
