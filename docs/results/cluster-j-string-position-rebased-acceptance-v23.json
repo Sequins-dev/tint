@@ -1,0 +1,22 @@
+{
+  "kind": "cluster-j-signed-zero-rebased-acceptance",
+  "at": "2026-11-07T15:55:48.212677+00:00",
+  "implementationCommit": "4e4a710163b803edc8232eef36256112cdb36e51",
+  "gateBase": "26f0cf05eb32655fb66846153249a252997255eb",
+  "sourceSnapshot": {
+    "sha256": "aa2de8621f09623c06a2d6b4f32b75d0e5dcce98d0865bc130c80b5bb0758e19",
+    "files": 595
+  },
+  "portableSnapshotVerifiedAfterRebase": true,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4779,
+    "passed": 4779,
+    "failed": 0,
+    "log": "docs/results/cluster-j-string-position-check-v23b.log",
+    "sha256": "c4974bef105d8ff319cc6f95ce776d3bfd2adee5a9ae092128ec4488d782a25d"
+  },
+  "nativeAndSelfbuild": "docs/results/cluster-j-string-position-acceptance-v23.json",
+  "basis": "Main added only a standalone native-agent fixture since the integrated native/selfbuild snapshot. Rebased and reran full gate; portable source identity remains exactlyaa2de862. Both94/94 fullmethod and current integrated2/2rechecks pass; newmain nativefixture included in gate. Original failures unchanged."
+}
