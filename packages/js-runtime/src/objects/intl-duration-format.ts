@@ -133,7 +133,11 @@ export function durationPartsText(
   parts: readonly DurationFormatPart[],
 ): string {
   let result = "";
-  for (const part of parts) result += part.value;
+  for (let index = 0; index < parts.length; index++) {
+    const part: DurationFormatPart | undefined = parts[index];
+    if (part === undefined) throw "DURATION_FORMAT_TEXT_PART_INVARIANT";
+    result += part.value;
+  }
   return result;
 }
 function requireFormatter(
@@ -218,7 +222,10 @@ export function installDurationFormatIntrinsic(
             parts = durationFormatParts(formatter, duration);
           if (name === "format") return durationPartsText(parts);
           const result: unknown[] = [];
-          for (const part of parts) {
+          for (let index = 0; index < parts.length; index++) {
+            const part: DurationFormatPart | undefined = parts[index];
+            if (part === undefined)
+              throw "DURATION_FORMAT_PUBLIC_PART_INVARIANT";
             const object = createObject<ScriptPropertyKey, unknown>(
               realm.objectPrototype,
             );
