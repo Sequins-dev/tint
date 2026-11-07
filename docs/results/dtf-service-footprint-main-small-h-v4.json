@@ -1,0 +1,91 @@
+{
+  "wholeProcessCpuMs": 206467.434,
+  "kind": "native-batch-compilation-benchmark",
+  "conformance": false,
+  "label": "main-small",
+  "time": "2026-11-07T18:17:32.582Z",
+  "node": "v24.12.0",
+  "frozen": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/node-toolchain-dtf-main-control-h-v116",
+  "frozenToolchainSha256": "1137b489cb3d6b62d9ab123ee74ed6a07794570d53477bf63ff7db97f51dbe42",
+  "sourceSnapshot": {
+    "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+    "files": 595
+  },
+  "servicePreparationAndCompileCpuMs": 201833.5,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "variants": 2,
+  "inputs": [
+    {
+      "path": "language/expressions/addition/S11.6.1_A1.js",
+      "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+      "variant": "sloppy",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "language/expressions/addition/S11.6.1_A1.js",
+      "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+      "variant": "strict",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    }
+  ],
+  "compileWallMs": 156677.379916,
+  "compileCpuUserMs": 192214.832,
+  "compileCpuSystemMs": 3991.714,
+  "compileCpuMs": 196206.546,
+  "imageBytes": 141591631,
+  "imageSha256": "24737e65e1693a0c0fd4b63b4a262426429121d780dd885a0e8f438d150a9935",
+  "peakRssBytes": 3628253184,
+  "resources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/dtf-service-footprint-main-small-h-v4.json.image"
+}
