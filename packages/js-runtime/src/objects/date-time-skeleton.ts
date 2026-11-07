@@ -14,6 +14,10 @@ export interface ResolvedDateTimePattern {
   readonly tokens: readonly DateTimePatternToken[];
   readonly fields: DateTimeFormatFields;
   readonly skeleton: string;
+  readonly dateTokens: readonly DateTimePatternToken[] | undefined;
+  readonly timeTokens: readonly DateTimePatternToken[] | undefined;
+  readonly connector: string | undefined;
+  readonly timeSlot: number;
 }
 function component(symbol: string): number {
   if (symbol === "y" || symbol === "u" || symbol === "r" || symbol === "U")
@@ -81,6 +85,10 @@ function calendarYearPattern(
 }
 function descriptor(
   tokens: readonly DateTimePatternToken[],
+  dateTokens: readonly DateTimePatternToken[] | undefined,
+  timeTokens: readonly DateTimePatternToken[] | undefined,
+  connector: string | undefined,
+  timeSlot: number,
 ): ResolvedDateTimePattern | undefined {
   const fields = dateTimePatternFields(tokens);
   if (fields === undefined) return undefined;
@@ -92,7 +100,15 @@ function descriptor(
     if (value.symbol === "a" || value.symbol === "b") continue;
     skeleton += value.symbol.repeat(value.width);
   }
-  return { tokens, fields, skeleton };
+  return {
+    tokens,
+    fields,
+    skeleton,
+    dateTokens,
+    timeTokens,
+    connector,
+    timeSlot,
+  };
 }
 /** Glue patterns are LDML patterns, so quoted words and doubled apostrophes are
  * interpreted before inserting component patterns. Label text remains literal. */
@@ -215,6 +231,21 @@ function adjustPattern(
     }
   }
   return result;
+}
+/** Interval records share the same LDML width and clock-cycle adaptation as
+ * single-date skeleton records. Keep all quoting/literal tokens intact. */
+export function adaptDateTimePatternTokens(
+  source: readonly DateTimePatternToken[],
+  offered: readonly DateTimePatternToken[],
+  wanted: readonly DateTimePatternToken[],
+  decimal: string,
+): DateTimePatternToken[] {
+  return adjustPattern(
+    calendarYearPattern(source),
+    fieldTokens(offered),
+    fieldTokens(wanted),
+    decimal,
+  );
 }
 function appendRequest(field: number): string {
   if (field === 0) return "Year";
@@ -367,8 +398,11 @@ export function resolveDateTimeSkeleton(
   )
     return undefined;
   if (datePattern === undefined)
-    return timePattern === undefined ? undefined : descriptor(timePattern);
-  if (timePattern === undefined) return descriptor(datePattern);
+    return timePattern === undefined
+      ? undefined
+      : descriptor(timePattern, undefined, timePattern, undefined, 0);
+  if (timePattern === undefined)
+    return descriptor(datePattern, datePattern, undefined, undefined, 0);
   let glue: string | undefined;
   if (
     requested[9] !== undefined &&
@@ -382,7 +416,9 @@ export function resolveDateTimeSkeleton(
       [datePattern, timePattern],
       undefined,
     );
-    return joined === undefined ? undefined : descriptor(joined);
+    return joined === undefined
+      ? undefined
+      : descriptor(joined, datePattern, timePattern, glue, 1);
   } else if (requested[4] !== undefined && !hasFields(requested, 0, 4)) {
     glue = dateTimeCalendarValue(profile, "appendItems", "Time-Day-Of-Week");
     if (glue === undefined) return undefined;
@@ -391,7 +427,9 @@ export function resolveDateTimeSkeleton(
       [timePattern, datePattern],
       undefined,
     );
-    return joined === undefined ? undefined : descriptor(joined);
+    return joined === undefined
+      ? undefined
+      : descriptor(joined, datePattern, timePattern, glue, 0);
   } else {
     const month: DateTimePatternToken | undefined = requested[1];
     const style =
@@ -410,7 +448,9 @@ export function resolveDateTimeSkeleton(
     [timePattern, datePattern],
     undefined,
   );
-  return joined === undefined ? undefined : descriptor(joined);
+  return joined === undefined
+    ? undefined
+    : descriptor(joined, datePattern, timePattern, glue, 0);
 }
 function hasFields(
   fields: readonly (DateTimePatternToken | undefined)[],
@@ -495,13 +535,18 @@ export function resolveDateTimeStylePattern(
     }
   }
   if (date === undefined)
-    return time === undefined ? undefined : descriptor(time);
-  if (time === undefined) return descriptor(date);
+    return time === undefined
+      ? undefined
+      : descriptor(time, undefined, time, undefined, 0);
+  if (time === undefined)
+    return descriptor(date, date, undefined, undefined, 0);
   if (dateStyle === undefined) throw "DATE_TIME_STYLE_DATE_INVARIANT";
   const glue =
     dateTimeCalendarValue(profile, "styles", "A." + dateStyle) ??
     dateTimeCalendarValue(profile, "styles", "C." + dateStyle);
   if (glue === undefined) return undefined;
   const joined = combineDateTimePatterns(glue, [time, date], undefined);
-  return joined === undefined ? undefined : descriptor(joined);
+  return joined === undefined
+    ? undefined
+    : descriptor(joined, date, time, glue, 0);
 }

@@ -240,7 +240,7 @@ export function selectBasicDateTimeFormat(
   }
   return best;
 }
-function intervalField(symbol: string): string {
+export function dateTimePatternField(symbol: string): string {
   if (symbol === "M" || symbol === "L") return "month";
   if (symbol === "G") return "era";
   if (symbol === "y" || symbol === "u") return "year";
@@ -280,7 +280,7 @@ export function splitDateTimeIntervalPattern(
     const token: DateTimePatternToken | undefined = tokens[index];
     if (token === undefined) throw "DATE_TIME_PATTERN_TOKEN_INVARIANT";
     if (token.symbol === "") continue;
-    const field = intervalField(token.symbol);
+    const field = dateTimePatternField(token.symbol);
     if (seen.includes(field))
       return {
         first: tokens.slice(0, index),

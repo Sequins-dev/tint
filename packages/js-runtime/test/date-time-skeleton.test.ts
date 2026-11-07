@@ -44,6 +44,10 @@ test("date and time skeletons combine without adding unrequested fields", () => 
   assert.equal(result.fields.hour, "2-digit");
   assert.equal(result.fields.second, undefined);
   assert.equal(result.fields.era, undefined);
+  assert.equal(text(result.dateTokens!), "M/d/y");
+  assert.equal(text(result.timeTokens!), "HH:mm");
+  assert.equal(result.connector, "{1}, {0}");
+  assert.equal(result.timeSlot, 0);
   assert.equal(text(resolve("en", "yMdzzzz").tokens), "M/d/y zzzz");
   const period = resolve("en", "BBBB");
   assert.equal(text(period.tokens), "BBBB");
