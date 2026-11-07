@@ -1,0 +1,46 @@
+{
+  "kind": "docs-only-merge-gate",
+  "generatedAt": "2026-11-07T01:22:13.883694+00:00",
+  "branch": "feat/language-expressions-native",
+  "base": "6faf88fc25aa47aa6c2bdef225bb02c84db6343e",
+  "evidenceCommit": "f81b9c79822fc68452d530d90860ae1aad6932be",
+  "coordinatorGate": {
+    "registry": "/Users/stephenbelanger/.t3/tint-briefs/main-gates.txt",
+    "record": "2026-11-07T01:19Z c7951e3 tint-check 4621/4621 PASS (integrated main incl. J RegExp/String c7951e3)",
+    "commit": "c7951e35a78af38db27abf78da031271fd00e3b8",
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "passedTests": 4621
+  },
+  "changesBetweenGateAndBase": [
+    "docs/results/cluster-j-prepared-native-fixtures-v14.json",
+    "docs/results/cluster-j-prepared-regexp-long-repetition-v14.build.log",
+    "docs/results/cluster-j-prepared-regexp-string-properties-v14.build.log",
+    "docs/results/cluster-j-prepared-regexp-string-property-corpus-v14.build.log",
+    "docs/results/cluster-j-prepared-regexp-work-budget-v14.build.log",
+    "docs/results/cluster-j-prepared-string-charcodes-v14.build.log",
+    "docs/results/cluster-j-prepared-string-codepoints-v14.build.log"
+  ],
+  "codeChangesBetweenGateAndBase": [],
+  "slicePathsAreDocsOnly": true,
+  "heldJournalStaticValidation": {
+    "report": "docs/results/cluster-a2-object-held-journal-validation-v1.json",
+    "exitStatus": 0,
+    "observationsValidated": 815,
+    "frozenFilesVerified": 2433,
+    "frozenSymlinksVerified": 14
+  },
+  "heldJournalUnchanged": true,
+  "completeDestructuringReportUnchanged": true,
+  "nativeState": {
+    "observed": 815,
+    "passed": 812,
+    "preEntryTimeouts": 3,
+    "planned": 2252,
+    "complete": false,
+    "allOwnedNativeProcessesExited": true,
+    "hold": "Await HOST AUTHORIZATION RESTORED before resuming original frozen v4; preserve original outcomes and recheck three variants separately on current main."
+  },
+  "portableCodeChanged": false,
+  "selfBuildRequired": false
+}
