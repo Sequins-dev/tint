@@ -2,6 +2,8 @@ import {
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
+  instructionEffects,
+  effectAllocate,
   type ModuleIR,
   type FunctionIR,
   type Instruction,
@@ -13,6 +15,7 @@ export interface Inlining {
   readonly module: ModuleIR;
   readonly visited: number;
   readonly inlined: number;
+  readonly budgetExhausted?: true;
 }
 function scalar(type: ScalarType): boolean {
   return (
@@ -58,18 +61,36 @@ function supported(op: Instruction, references: boolean = true): boolean {
  * hold typed-array aliases; scalar and traced reference results use private slots.
  * Environments, calls, allocation, stores to heap, and callee
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
- * IR and never mutated. Budget exhaustion discards all partial transformations. */
+ * IR and never mutated. Incremental mode keeps only completed nonallocating
+ * callers, caps each expansion and retains original callees after exhaustion. */
 export function inlineSmallFunctions(
   module: ModuleIR,
   budget: number,
   guarded: boolean = false,
+  incremental: boolean = false,
 ): Inlining | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
   const eligible = new Uint8Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
-    inlined = 0;
+    inlined = 0,
+    committed = 0;
+  if (incremental && module.functions.length > budget)
+    return { module, visited: budget, inlined: 0, budgetExhausted: true };
+  const checkpoints = incremental ? module.functions.slice() : undefined;
+  if (incremental) visited += module.functions.length;
+  function exhausted(): Inlining | undefined {
+    if (!incremental) return undefined;
+    const completed = checkpoints;
+    if (completed === undefined) throw "inline checkpoint invariant";
+    return {
+      module: committed === 0 ? module : { ...module, functions: completed },
+      visited,
+      inlined: committed,
+      budgetExhausted: true,
+    };
+  }
   for (const fn of module.functions) {
     if (fn === undefined) throw "inline function invariant";
     let good =
@@ -90,7 +111,13 @@ export function inlineSmallFunctions(
       cost = 0,
       overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
+    if (incremental && !good) continue;
     for (let slot = 0; slot < fn.slots.length; slot++) {
+      if (incremental) {
+        if (visited >= budget) return exhausted();
+        visited++;
+        if (!good) break;
+      }
       const type = fn.slots[slot];
       if (type === undefined) throw "inline slot invariant";
       if (
@@ -107,7 +134,8 @@ export function inlineSmallFunctions(
     }
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
-      if (visited >= budget) return undefined;
+      if (incremental && !good) break;
+      if (visited >= budget) return exhausted();
       visited++;
       overhead++;
       if (block.exception !== undefined) good = false;
@@ -121,7 +149,7 @@ export function inlineSmallFunctions(
         good = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
-        if (visited >= budget) return undefined;
+        if (visited >= budget) return exhausted();
         visited++;
         cost++;
         if (
@@ -136,6 +164,15 @@ export function inlineSmallFunctions(
             fn.parameters.includes(op.slot))
         )
           good = false;
+        if (
+          incremental &&
+          (!good ||
+            cost > (guarded ? 128 : 64) ||
+            (!original && cost + overhead > (guarded ? 128 : 64)))
+        ) {
+          good = false;
+          break;
+        }
       }
     }
     const expansion = original ? cost : cost + overhead;
@@ -157,6 +194,11 @@ export function inlineSmallFunctions(
       hasCandidate = false;
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
+      if (incremental && !nonallocatingCaller) break;
+      if (incremental) {
+        if (visited >= budget) return exhausted();
+        visited++;
+      }
       nextBlock = Math.max(nextBlock, block.id + 1);
       const term = block.terminator;
       if (
@@ -167,15 +209,25 @@ export function inlineSmallFunctions(
         nonallocatingCaller = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
+        if (incremental) {
+          if (visited >= budget) return exhausted();
+          visited++;
+        }
         const id = instructionResult(op);
         if (id !== undefined) nextValue = Math.max(nextValue, id + 1);
         originalCount++;
         if (
           op.kind === "call"
             ? !eligible[op.target] || op.environment !== undefined
-            : !supported(op)
+            : incremental
+              ? (instructionEffects(op) & effectAllocate) !== 0
+              : !supported(op)
         )
           nonallocatingCaller = false;
+        if (incremental && (!nonallocatingCaller || originalCount > 50000)) {
+          nonallocatingCaller = false;
+          break;
+        }
         if (
           op.kind === "call" &&
           eligible[op.target] &&
@@ -185,11 +237,11 @@ export function inlineSmallFunctions(
           hasCandidate = true;
       }
     }
-    if (!hasCandidate) {
+    if (!hasCandidate || (incremental && !nonallocatingCaller)) {
       functions.push(fn);
       continue;
     }
-    let allowance = originalCount + 128,
+    let allowance = incremental ? 128 : originalCount + 128,
       referenceAllowance = 128,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
@@ -203,7 +255,7 @@ export function inlineSmallFunctions(
       for (let position = 0; position < block.instructions.length; position++) {
         const op = block.instructions[position];
         if (op === undefined) throw "inline instruction invariant";
-        if (visited >= budget) return undefined;
+        if (visited >= budget) return exhausted();
         visited++;
         const callee =
             op.kind === "call" ? module.functions[op.target] : undefined,
@@ -226,7 +278,7 @@ export function inlineSmallFunctions(
           if (!mappedPositions) {
             mappedPositions = true;
             for (let i = 0; i < block.instructions.length; i++) {
-              if (visited >= budget) return undefined;
+              if (visited >= budget) return exhausted();
               visited++;
               const instruction = block.instructions[i];
               if (instruction === undefined)
@@ -241,7 +293,7 @@ export function inlineSmallFunctions(
             if ((definitions.get(id) ?? position) < position) crosses = true;
           };
           for (let i = position + 1; i < block.instructions.length; i++) {
-            if (visited >= budget) return undefined;
+            if (visited >= budget) return exhausted();
             visited++;
             const later = block.instructions[i];
             if (later === undefined) throw "inline instruction invariant";
@@ -288,7 +340,8 @@ export function inlineSmallFunctions(
             } else valueMap[id] = nextValue++;
           }
         }
-        if (nextValue > 0xffffffff || nextBlock > 0xffffffff) return undefined;
+        if (nextValue > 0xffffffff || nextBlock > 0xffffffff)
+          return exhausted();
         function value(id: number): number {
           const mapped = valueMap[id];
           if (mapped === undefined) throw "inline value invariant";
@@ -335,7 +388,7 @@ export function inlineSmallFunctions(
           const cloned: Instruction[] = [];
           for (const instruction of source.instructions) {
             if (instruction === undefined) throw "inline instruction invariant";
-            if (visited >= budget) return undefined;
+            if (visited >= budget) return exhausted();
             visited++;
             if (
               straight &&
@@ -538,7 +591,10 @@ export function inlineSmallFunctions(
       }
       blocks[current] = { ...block, id: current, instructions };
     }
-    functions.push(changed ? { ...fn, slots, blocks } : fn);
+    const completed: FunctionIR = changed ? { ...fn, slots, blocks } : fn;
+    functions.push(completed);
+    if (checkpoints !== undefined) checkpoints[fn.id] = completed;
+    committed = inlined;
   }
   return {
     module: inlined === 0 ? module : { ...module, functions },

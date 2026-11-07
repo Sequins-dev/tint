@@ -844,3 +844,52 @@ test("new reference expansion has a fixed per-caller budget", () => {
     8,
   );
 });
+
+test("incremental inlining retains complete callers when a later function exhausts work", () => {
+  const input = fixture();
+  const large: FunctionIR = {
+    id: 2,
+    name: "large",
+    exported: true,
+    parameters: [],
+    slots: [],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: Array.from({ length: 500 }, (_, id) => ({
+          kind: "constant" as const,
+          id,
+          value: id,
+          ...span,
+        })),
+        terminator: { kind: "return", value: 499, ...span },
+      },
+    ],
+  };
+  const module = { functions: [...input.functions, large] },
+    snapshot = structuredClone(module);
+  const result = inlineSmallFunctions(module, 180, false, true);
+  assert.ok(result);
+  assert.equal(result.budgetExhausted, true);
+  assert.equal(result.inlined, 2);
+  assert.ok(result.visited <= 180);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.equal(result.module.functions[2], large);
+  assert.deepEqual(module, snapshot);
+  for (const n of [-3, 0, 7])
+    assert.equal(evaluate(result.module, 0, [n]), evaluate(module, 0, [n]));
+});
+
+test("incremental exhaustion rolls back an unfinished caller as a whole", () => {
+  const module = fixture();
+  for (let budget = 0; budget < 100; budget++) {
+    const result = inlineSmallFunctions(module, budget, false, true);
+    assert.ok(result);
+    assert.ok(result.visited <= budget);
+    assert.ok(result.inlined === 0 || result.inlined === 2);
+    assert.deepEqual(verify(result.module), { ok: true });
+    if (result.inlined === 0) assert.equal(result.module, module);
+  }
+});
