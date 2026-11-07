@@ -614,3 +614,93 @@ test("empty CFG blocks consume expansion cost and the analysis budget", () => {
   assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 0);
   assert.equal(inlineSmallFunctions(module, 20), undefined);
 });
+
+test("direct immutable record reads retain their object and layout after cloning", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "optional-reference", mutable: false }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "reader",
+        exported: false,
+        parameters: [0],
+        slots: ["reference", "optional-reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 1, slot: 0, ...span },
+              {
+                kind: "record-read",
+                id: 2,
+                object: 1,
+                record: 0,
+                field: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const read = result.module.functions[0]!.blocks.flatMap(
+    (b) => b.instructions,
+  ).find((op) => op.kind === "record-read");
+  assert.ok(read?.kind === "record-read");
+  assert.deepEqual([read.record, read.field], [0, 0]);
+  assert.ok(
+    result.module.functions[0]!.blocks.some((b) =>
+      b.instructions.some(
+        (op) => op.kind === "load" && op.id === read.object && op.slot !== 0,
+      ),
+    ),
+  );
+});
