@@ -1,0 +1,126 @@
+{
+  "kind": "native-frozen-self-build",
+  "conformance": false,
+  "startedAt": "2026-11-07T22:45:51.609Z",
+  "node": "v24.12.0",
+  "nodeStages": [
+    {
+      "name": "joined",
+      "toolchain": "docs/results/c2-frozen-toolchain-v24-auto-accessors-v1.json",
+      "sourceSnapshot": {
+        "sha256": "5d7b78bb8ddcc8865c5422cf7ce36941f48ef93f2552f62a6a6f3fee0589c1c2",
+        "files": 601
+      },
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2",
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-auto-accessor-joined-v2",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/bootstrap-auto-accessor-joined-v2.log",
+      "arguments": [
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v23/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v23",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-auto-accessor-joined-v2",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0,
+      "signal": null,
+      "error": null,
+      "wallMs": 44293.037416,
+      "processTimesSeconds": {
+        "real": 44.28,
+        "user": 67.71,
+        "system": 1.71
+      },
+      "imageBytes": 53580274,
+      "imageSha256": "9ca4a478fc7a902fff1962ce77c7381019db9553f5b9279dcc0a85a81cea6b51"
+    }
+  ],
+  "native": {
+    "toolchain": "docs/results/c2-frozen-toolchain-v24-auto-accessors-v1.json",
+    "sourceSnapshot": {
+      "sha256": "5d7b78bb8ddcc8865c5422cf7ce36941f48ef93f2552f62a6a6f3fee0589c1c2",
+      "files": 601
+    },
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2",
+    "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-auto-accessor-joined-v2",
+    "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2",
+    "directory": "/tmp/tc2-auto-accessor-self-cmcsN5",
+    "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/auto-accessor-selfbuild-lldb-v2.log",
+    "debuggerLaunch": "debugserver-direct",
+    "wallMs": 304438.450542,
+    "debuggerExitStatus": 0,
+    "error": null,
+    "initial": {
+      "state": "stopped",
+      "pid": 68580
+    },
+    "result": {
+      "state": "exited",
+      "exitStatus": 0,
+      "stop": null
+    },
+    "byteIdentical": true,
+    "stage1Sha256": "9ca4a478fc7a902fff1962ce77c7381019db9553f5b9279dcc0a85a81cea6b51",
+    "stage2Sha256": "9ca4a478fc7a902fff1962ce77c7381019db9553f5b9279dcc0a85a81cea6b51",
+    "stage2Bytes": 53580274
+  },
+  "checks": [
+    {
+      "name": "signature",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2"
+      ],
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2-signature-v2.log",
+      "exitStatus": 0,
+      "error": null
+    },
+    {
+      "name": "dwarf",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2",
+      "command": [
+        "/usr/bin/xcrun",
+        "dwarfdump",
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2"
+      ],
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-auto-accessor-joined-v2-dwarf-v2.log",
+      "exitStatus": 0,
+      "error": null
+    },
+    {
+      "name": "signature",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2"
+      ],
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2-signature-v2.log",
+      "exitStatus": 0,
+      "error": null
+    },
+    {
+      "name": "dwarf",
+      "target": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2",
+      "command": [
+        "/usr/bin/xcrun",
+        "dwarfdump",
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2"
+      ],
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-auto-accessor-joined-v2-dwarf-v2.log",
+      "exitStatus": 0,
+      "error": null
+    }
+  ],
+  "complete": true,
+  "stagedImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-oM4RQR/test",
+  "generatedAt": "2026-11-07T22:51:40.953Z"
+}

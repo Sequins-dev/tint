@@ -1,0 +1,111 @@
+{
+  "kind": "c2-class-auto-accessor-acceptance",
+  "conformance": false,
+  "generatedAt": "2026-11-07T22:52:19.853Z",
+  "implementationHead": "4f3c30ed9cd3681e2608c123dc7f37f58914b9ac",
+  "implementationFiles": [
+    {
+      "path": "packages/typescript/src/binding/index.ts",
+      "sha256": "68821ea57a4cbfb7eaf0ebed7e1fda757448390220bc3e990d562b7df51c5052"
+    },
+    {
+      "path": "packages/typescript/src/checker/interfaces.ts",
+      "sha256": "6104130f65f3171951780c89843a0d8ba0e92cfd1bfb0531e1ed4b179ba37530"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/index.ts",
+      "sha256": "72d7469cf2faddad43122e920c48527f67cb6b1bb65f9c58b7751eaec5abe888"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/runtime-imports.ts",
+      "sha256": "509b629166c68a4ae2fbea386724dba3db7e65b70f23403d39febc9f04a3d679"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/classes.ts",
+      "sha256": "bd3695143937c6db2d53d1ddb77feced2367938a6f80f22861df821b83d6a22d"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/index.ts",
+      "sha256": "95bf0fe8a59856d779a4c24da5c5234a8b8ca47adfc01b3020f415ada99eadc8"
+    }
+  ],
+  "toolchain": "docs/results/c2-frozen-toolchain-v24-auto-accessors-v1.json",
+  "sourceSnapshot": {
+    "sha256": "5d7b78bb8ddcc8865c5422cf7ce36941f48ef93f2552f62a6a6f3fee0589c1c2",
+    "files": 601
+  },
+  "nativeRuntime": {
+    "report": "docs/results/c2-class-auto-accessor-native-v2.json",
+    "cases": 5,
+    "passed": 5
+  },
+  "nativeCompiler": {
+    "report": "docs/results/c2-class-auto-accessor-compiler-native-v2.json",
+    "outcome": {
+      "kind": "completed"
+    },
+    "coverage": "parseScript, binding, auto-accessor lowering, typed AOT guard"
+  },
+  "selfbuild": {
+    "report": "docs/results/c2-class-auto-accessor-selfbuild-v2.json",
+    "byteIdentical": true,
+    "stageBytes": 53580274,
+    "sha256": "9ca4a478fc7a902fff1962ce77c7381019db9553f5b9279dcc0a85a81cea6b51",
+    "signatureAndDwarfExitStatuses": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "gate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "log": ".tint-bootstrap/c2/auto-accessor-gate-v4.log",
+    "logSha256": "04cc09dd5654f66d8871d4f5b366807d0a36176b27d8e2149ff425848b009fe6",
+    "head": "4f3c30ed9cd3681e2608c123dc7f37f58914b9ac",
+    "mainBase": "29f28570ad7f484c172c80426f4ec539e78aad8d",
+    "mainAtAcceptance": "098c5c6016162160fe883423e716f02ee987443f",
+    "mainAdvancedDocsOnlySince": true,
+    "tests": 4875,
+    "passed": 4875,
+    "exitStatus": 0
+  },
+  "earlierGateAttempts": [
+    {
+      "attempt": 1,
+      "exitStatus": 143,
+      "reason": "Main gained RegExp code; two import-golden mismatches were already visible."
+    },
+    {
+      "attempt": 2,
+      "exitStatus": 1,
+      "tests": 4873,
+      "passed": 4864,
+      "failed": 9,
+      "reason": "Expected unsupported-auto-accessor cases and unconditional runtime-import vocabulary; fixed by conditional imports and updated contracts."
+    },
+    {
+      "attempt": 3,
+      "exitStatus": 143,
+      "reason": "Main gained Temporal code; superseded-main cancellation."
+    }
+  ],
+  "test262RecheckManifest": "docs/results/c2-class-auto-accessor-recheck-variants-v1.json",
+  "test262Status": "Prepared four unchanged variants; progressing frozen-v22 parent survey remains the single runner. No Test262 passes are inferred from bespoke fixtures.",
+  "semantics": "Anonymous private backing fields, public prototype/static getter-setter descriptors, private auto-accessor brands, computed keys and initializer ordering, abrupt completions and realm-local brand errors; typed AOT classes continue to reject auto-accessors explicitly until that path supports their layouts.",
+  "nativeProgress": {
+    "samples": [
+      {
+        "time": "2026-11-07T22:49:39.129481+00:00",
+        "pid": 68580,
+        "cpuWall": "68580 03:00   2:49.98  97.9 RX   /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-oM4RQR/test",
+        "purpose": "Final auto-accessor frozen native self-build; sample after heartbeat stall threshold"
+      }
+    ],
+    "sample": ".tint-bootstrap/c2/auto-accessor-selfbuild-native-sample-v2.txt",
+    "sampleSha256": "667570278ca72333ad54829d28b90dd6fd9ed567009b02801c1f377c509d49f3",
+    "classification": "Active native compiler lowering and garbage collection, not a task_for_pid authorization wait. No comparative performance claim."
+  },
+  "specification": "https://github.com/tc39/proposal-decorators#class-auto-accessors",
+  "scope": "Undecorated auto-accessors only. Decorated classes/elements remain explicitly unsupported."
+}
