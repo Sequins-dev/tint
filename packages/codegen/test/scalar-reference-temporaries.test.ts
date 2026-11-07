@@ -2,7 +2,29 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { FunctionIR, Instruction } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
+import { numericHelper } from "../src/aarch64/scalar/numeric.ts";
 const s = { start: 0, end: 0 };
+test("transparent numeric kernels preserve volatile pointer homes", () => {
+  for (const kind of ["to-uint32", "remainder"] as const) {
+    for (const op of numericHelper(kind)) {
+      const integerKeys =
+        "width" in op
+          ? ["rd", "rn", "rm", "rt", "rt2"]
+          : op.op === "fmov-d-x"
+            ? ["rn"]
+            : op.op === "fmov-x-d" || op.op === "fcvtzs-x-d"
+              ? ["rd"]
+              : [];
+      for (const key of integerKeys) {
+        const register = (op as unknown as Record<string, unknown>)[key];
+        assert.ok(
+          typeof register !== "number" || register < 4 || register > 8,
+          kind + " clobbers a pointer home: " + JSON.stringify(op),
+        );
+      }
+    }
+  }
+});
 function fn(
   instructions: readonly Instruction[],
   returned: number,
@@ -38,6 +60,8 @@ test("short-lived reference payloads stay in registers until their final checked
   assert.notEqual(plan[0], 0);
   assert.notEqual(plan[1], 0);
   assert.notEqual(plan[0], plan[1]);
+  assert.ok(plan[0]! >= 36 && plan[0]! <= 40);
+  assert.ok(plan[1]! >= 36 && plan[1]! <= 40);
 });
 test("references crossing allocations or consumed by calls retain root storage", () => {
   for (const op of [
@@ -73,7 +97,20 @@ test("reference temporaries never displace the numeric register allocation", () 
   const after = temporaryRegisters(f, numeric)!;
   for (let id = 0; id < 41; id++)
     if (id !== 20) assert.equal(after[id], before[id]);
-  assert.equal(after[20], 0);
+  assert.ok(after[20]! >= 36 && after[20]! <= 40);
+});
+test("reference pressure uses only the five volatile integer homes", () => {
+  const instructions: Instruction[] = [];
+  for (let id = 0; id < 6; id++)
+    instructions.push({ kind: "load", id, slot: 0, ...s });
+  for (let id = 0; id < 6; id++)
+    instructions.push({ kind: "store", slot: 0, value: id, ...s });
+  instructions.push({ kind: "constant", id: 6, value: 42, ...s });
+  const plan = temporaryRegisters(
+    fn(instructions, 6),
+    new Uint8Array([2, 2, 2, 2, 2, 2, 1]),
+  )!;
+  assert.deepEqual([...plan.slice(0, 6)], [36, 37, 38, 39, 40, 0]);
 });
 test("reference analysis budget fallback retains the original numeric plan", () => {
   const f = fn(

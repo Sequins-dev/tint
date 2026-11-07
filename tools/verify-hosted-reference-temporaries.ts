@@ -15,7 +15,13 @@ export function run():number {
   if(churn(42)!==42||held.value!==11||head.value!==31)return 4;
  }
  const bytes=new Uint32Array(64);bytes[0]=42;
- for(let i=0;i<20;i++)if(churn(42)!==42||bytes[0]!==42)return 5;
+ for(let i=0;i<20;i++){
+  if(churn(42)!==42||bytes[0]!==42)return 5;
+  if(i%4===0){bytes[(i*3.25)%8]=i;if(bytes[(i*3.25)%8]!==i)return 7;}
+  bytes[((i*4294967297)>>>0)%8]=i;
+  if(bytes[((i*4294967297)>>>0)%8]!==i)return 8;
+  bytes[0]=42;
+ }
  if(read(head)!==11||head.next!==leaf)return 6;
  return 42;
 }`,

@@ -587,13 +587,19 @@ export function emitModule(
   function rawLoad(rt: number, offset: number): void {
     const registers = scalarRegisters,
       register = registers === undefined ? 0 : (registers[offset / 8] ?? 0);
-    if (register !== 0) emit({ op: "fmov-x-d", rd: rt, rn: register });
+    if (register >= 32) {
+      if (rt !== register - 32)
+        emit({ op: "orr-reg", width: 64, rd: rt, rn: "zr", rm: register - 32 });
+    } else if (register !== 0) emit({ op: "fmov-x-d", rd: rt, rn: register });
     else emit({ op: "ldr", width: 64, rt, rn: "sp", offset });
   }
   function rawStore(rt: number | "zr", offset: number): void {
     const registers = scalarRegisters,
       register = registers === undefined ? 0 : (registers[offset / 8] ?? 0);
-    if (register !== 0) emit({ op: "fmov-d-x", rd: register, rn: rt });
+    if (register >= 32) {
+      if (rt !== register - 32)
+        emit({ op: "orr-reg", width: 64, rd: register - 32, rn: "zr", rm: rt });
+    } else if (register !== 0) emit({ op: "fmov-d-x", rd: register, rn: rt });
     else emit({ op: "str", width: 64, rt, rn: "sp", offset });
   }
   /** Copy storage bits without crossing register banks. This is a bitwise move,
@@ -604,7 +610,24 @@ export function emitModule(
     const registers = scalarRegisters,
       from = registers === undefined ? 0 : (registers[source / 8] ?? 0),
       to = registers === undefined ? 0 : (registers[target / 8] ?? 0);
-    if (from !== 0 && to !== 0) {
+    if (from >= 32) {
+      if (to >= 32) {
+        if (from !== to)
+          emit({
+            op: "orr-reg",
+            width: 64,
+            rd: to - 32,
+            rn: "zr",
+            rm: from - 32,
+          });
+      } else if (to !== 0) emit({ op: "fmov-d-x", rd: to, rn: from - 32 });
+      else
+        emit({ op: "str", width: 64, rt: from - 32, rn: "sp", offset: target });
+    } else if (to >= 32) {
+      if (from !== 0) emit({ op: "fmov-x-d", rd: to - 32, rn: from });
+      else
+        emit({ op: "ldr", width: 64, rt: to - 32, rn: "sp", offset: source });
+    } else if (from !== 0 && to !== 0) {
       if (from !== to) emit({ op: "fmov-d-d", rd: to, rn: from });
     } else if (from !== 0)
       emit({ op: "str-d", rt: from, rn: "sp", offset: target });
@@ -1489,7 +1512,7 @@ export function emitModule(
         let referenceCount = 0,
           generalCount = 0,
           registerReferenceCount = 0;
-        const referenceHomes = new Uint8Array(16);
+        const referenceHomes = new Uint8Array(5);
         const referenceCounts: number[] = [],
           generalCounts: number[] = [];
         for (const block of fn.blocks) {
@@ -1503,8 +1526,8 @@ export function emitModule(
             const type = value(id).type;
             const register = referenceTemporary(id);
             if (register !== 0) {
-              if (referenceHomes[register - 16] === 0)
-                referenceHomes[register - 16] = ++registerReferenceCount;
+              if (referenceHomes[register - 36] === 0)
+                referenceHomes[register - 36] = ++registerReferenceCount;
             } else if (managed(type)) references++;
             else if (type === "general") generals++;
           }
@@ -1576,7 +1599,7 @@ export function emitModule(
                 type,
                 offset:
                   registerReferenceOffset +
-                  ((referenceHomes[register - 16] ?? 0) - 1) * 8,
+                  ((referenceHomes[register - 36] ?? 0) - 1) * 8,
               };
             } else if (managed(type)) {
               values[valueIds.intern(id)] = {
@@ -1876,14 +1899,16 @@ export function emitModule(
         const storage = scalarRegisters,
           offset = value(id).offset + byteOffset,
           register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-        if (register !== 0) emit({ op: "fmov-d-d", rd: rt, rn: register });
+        if (register >= 32) emit({ op: "fmov-d-x", rd: rt, rn: register - 32 });
+        else if (register !== 0) emit({ op: "fmov-d-d", rd: rt, rn: register });
         else emit({ op: "ldr-d", rt, rn: "sp", offset });
       }
       function floatStore(rt: number, id: number): void {
         const storage = scalarRegisters,
           offset = value(id).offset,
           register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-        if (register !== 0) emit({ op: "fmov-d-d", rd: register, rn: rt });
+        if (register >= 32) emit({ op: "fmov-x-d", rd: register - 32, rn: rt });
+        else if (register !== 0) emit({ op: "fmov-d-d", rd: register, rn: rt });
         else emit({ op: "str-d", rt, rn: "sp", offset });
       }
       /** Ordinary numeric ALU operands may name their existing FP homes. Only
@@ -1892,7 +1917,7 @@ export function emitModule(
         const storage = scalarRegisters,
           offset = value(id).offset,
           register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-        if (register !== 0) return register;
+        if (register !== 0 && register < 32) return register;
         floatLoad(scratch, id);
         return scratch;
       }

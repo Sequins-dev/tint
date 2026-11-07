@@ -36,7 +36,7 @@ function referenceTransparent(op: Instruction): boolean {
  * single-word reference. References must die before every safepoint and opaque
  * use, including call arguments. Numeric allocation is unchanged and takes
  * priority. Additional reference analysis falls back to that complete plan on
- * exhaustion. Private numeric/array helpers preserve the volatile d16..d31 bank. */
+ * exhaustion. Private numeric/array helpers preserve d16..d31 and x4..x8. */
 export function temporaryRegisters(
   fn: FunctionIR,
   candidates: Uint8Array,
@@ -139,33 +139,15 @@ export function temporaryRegisters(
     }
   }
   if (!hasReference) return registers;
-  // Preserve the original numeric plan on every additional-analysis fallback.
-  work += candidates.length * 2 + 32;
+  // x4..x8 hold incoming arguments only until the prologue stores them. Calls
+  // and opaque operations end reference lifetimes; transparent scalar kernels
+  // preserve these five registers. Encode integer homes as 32 + register.
+  work += candidates.length;
   if (work > maxWork) return registers;
-  const result = new Uint8Array(registers),
-    next = new Uint32Array(candidates.length),
-    heads = new Uint32Array(16),
-    tails = new Uint32Array(16);
+  const result = new Uint8Array(registers);
   for (const block of fn.blocks) {
     if (block === undefined) throw "reference temporary block invariant";
-    for (let r = 0; r < 16; r++) {
-      heads[r] = 0;
-      tails[r] = 0;
-      occupied[r] = 0;
-    }
-    for (const op of block.instructions) {
-      if (op === undefined) throw "reference temporary instruction invariant";
-      if (++work > maxWork) return registers;
-      const id = instructionResult(op);
-      if (id === undefined) continue;
-      const register = registers[id] ?? 0;
-      if (register === 0) continue;
-      const r = register - 16,
-        previous = tails[r] ?? 0;
-      if (previous === 0) heads[r] = id + 1;
-      else next[previous - 1] = id + 1;
-      tails[r] = id + 1;
-    }
+    for (let r = 0; r < 5; r++) occupied[r] = 0;
     for (const op of block.instructions) {
       if (op === undefined) throw "reference temporary instruction invariant";
       if (++work > maxWork) return registers;
@@ -174,20 +156,11 @@ export function temporaryRegisters(
       const start = starts[id] ?? 0,
         end = ends[id] ?? 0;
       if (end <= start) continue;
-      for (let r = 0; r < 16; r++) {
+      for (let r = 0; r < 5; r++) {
         if (++work > maxWork) return registers;
-        let head = heads[r] ?? 0;
-        while (head !== 0 && (ends[head - 1] ?? 0) < start) {
-          if (++work > maxWork) return registers;
-          head = next[head - 1] ?? 0;
-        }
-        heads[r] = head;
-        if (
-          (occupied[r] ?? 0) < start &&
-          (head === 0 || (starts[head - 1] ?? 0) > end)
-        ) {
+        if ((occupied[r] ?? 0) < start) {
           occupied[r] = end;
-          result[id] = r + 16;
+          result[id] = r + 36;
           break;
         }
       }
