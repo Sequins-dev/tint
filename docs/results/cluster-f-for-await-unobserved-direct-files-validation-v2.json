@@ -1,0 +1,40 @@
+{
+  "kind": "cluster-f-docs-only-direct-file-slice-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T01:29:25.075317+00:00",
+  "base": "45439a8b47d5981892d2aff78fe9f088fd1d59b4",
+  "gatePolicy": "Coordinator owns integrated main gates; user-authorized exact or explicitly approved composite reuse for docs-only slice.",
+  "gateSource": "/Users/stephenbelanger/.t3/tint-briefs/main-gates.txt",
+  "gate": {
+    "kind": "coordinator-main",
+    "codeTreeAnchor": "c7951e35a78af38db27abf78da031271fd00e3b8",
+    "tests": 4621,
+    "record": "2026-11-07T01:19Z c7951e3 tint-check 4621/4621 PASS (integrated main incl. J RegExp/String c7951e3)",
+    "exitStatus": 0
+  },
+  "codeDiffExitStatus": 0,
+  "checkpoint": "docs/results/cluster-f-for-await-unobserved-direct-completed-files-v2.json",
+  "completeFiles": 64,
+  "fileTotals": {
+    "total": 128,
+    "passed": 128,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "rootSelection": "language/statements/for-await-of",
+  "wholeRootComplete": false,
+  "parentSubsetComplete": false,
+  "requestedParentVariants": 1805,
+  "debuggerLaunch": "debugserver-direct",
+  "sourceSnapshot": {
+    "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+    "files": 568
+  },
+  "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c",
+  "nonpasses": [],
+  "newFiles": 32,
+  "originalConnectedPrefix": "docs/results/cluster-f-for-await-connected-interruption-v1.json"
+}
