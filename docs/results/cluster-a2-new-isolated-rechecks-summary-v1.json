@@ -1,0 +1,81 @@
+{
+  "kind": "native-family-isolated-recheck-summary",
+  "generatedAt": "2026-11-07T16:52:41.880958+00:00",
+  "nativeExecutionsAdded": 0,
+  "originalReport": "docs/results/test262-expressions-new-a2-native-v1.json",
+  "originalTotalsUnchanged": {
+    "total": 118,
+    "passed": 114,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 4,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9661016949152542
+  },
+  "recheckedVariants": 4,
+  "passed": 4,
+  "remainingOriginalNonpasses": [],
+  "exactOriginalNonpassSetVerified": true,
+  "reports": [
+    {
+      "report": "docs/results/test262-new-a1-1-sloppy-isolated-recheck-a2-native-v1.json",
+      "sha256": "00da0577f2e05feca267719bea5ead4068a35762e2b11f79ba82ca8609f44aff",
+      "variantSubsetSha256": "cdf70e11299cb5222264c0e80277bb6669738ce7b6212eb7ebc6e99fa235fcd7",
+      "identity": {
+        "path": "language/expressions/new/S11.2.2_A1.1.js",
+        "variant": "sloppy",
+        "sha256": "76ffc2fbfd30d7b6ff1d2b01d9194e9e0b90f5d145dcc10e81f0abeee66ff1aa"
+      },
+      "status": "pass"
+    },
+    {
+      "report": "docs/results/test262-new-a1-1-strict-isolated-recheck-a2-native-v1.json",
+      "sha256": "2efc178fc31b94f48aa40faa77f97eb6ef91a608db34fbbbd28bfbe89e1ab1ec",
+      "variantSubsetSha256": "3974ead892baea2ffc8c76d4bd8b80619cb7553c746cab0b6717121cc8b243ad",
+      "identity": {
+        "path": "language/expressions/new/S11.2.2_A1.1.js",
+        "variant": "strict",
+        "sha256": "76ffc2fbfd30d7b6ff1d2b01d9194e9e0b90f5d145dcc10e81f0abeee66ff1aa"
+      },
+      "status": "pass"
+    },
+    {
+      "report": "docs/results/test262-new-a1-2-sloppy-isolated-recheck-a2-native-v1.json",
+      "sha256": "1367fb289d94daeab4bfc68b0b26e670d5d2abf0c34f601cb5ea1c8591944d4a",
+      "variantSubsetSha256": "6e2829824c69a1b357155d73746f16a4c8d0fbf99e8cd8161f2d4d8766084f06",
+      "identity": {
+        "path": "language/expressions/new/S11.2.2_A1.2.js",
+        "variant": "sloppy",
+        "sha256": "015fc451b71d014c1e4ac3121afed58cf4c9f167347ea83dccadb9c85bd59537"
+      },
+      "status": "pass"
+    },
+    {
+      "report": "docs/results/test262-new-a1-2-strict-isolated-recheck-a2-native-v1.json",
+      "sha256": "3e0e99efce28745afd06d5cbd254c2557d0be1dc560e201ec577ec23dffba501",
+      "variantSubsetSha256": "aaf0480b83e4a41ebae101b41af4947c8427373c38f59aa8e4de16335315b688",
+      "identity": {
+        "path": "language/expressions/new/S11.2.2_A1.2.js",
+        "variant": "strict",
+        "sha256": "015fc451b71d014c1e4ac3121afed58cf4c9f167347ea83dccadb9c85bd59537"
+      },
+      "status": "pass"
+    }
+  ],
+  "policy": "Four separate official single-variant runs on fresh current-main frozen toolchains, same300s budget and direct launch. This is not a complete selection rerun; original114/118 report and its four timeouts remain unchanged.",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "631d2c01fd3ef2081ac500cd6a712d81e29b966b",
+    "passedTests": 4780,
+    "exitStatus": 0,
+    "proof": "docs/results/native-service-mechanism-validation-h-v104.json",
+    "log": "docs/results/native-service-mechanism-check-h-v5.log.gz",
+    "compressedLogSha256": "322a74a197fe416f529b1736fea9620760d81027752d90a9192f366602fda961",
+    "registryRecord": "631d2c01: 4780/4780 (H witness correction, code base f640efc5)",
+    "base": "ad06463b90495129e2b9a57010b6c7b288accd6c",
+    "codeChangesBetweenCheckedCommitAndBase": []
+  }
+}
