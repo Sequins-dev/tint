@@ -1,4 +1,22 @@
 export { managedDirectCallDeclarations } from "./managed-closure-uses.ts";
+import type { NativeServiceBinding } from "./service-unit-link.ts";
+import type { ManagedIdentityShape } from "./managed-imports.ts";
+import { managedSurfaceContract } from "./managed-directory-reader.ts";
+import {
+  createManagedTypeContractIndex,
+  managedFunctionType,
+} from "./managed-contracts.ts";
+export {
+  linkNativeServiceModules,
+  type NativeServiceBinding,
+  type NativeServiceLink,
+  type NativeServiceLinking,
+} from "./service-unit-link.ts";
+export {
+  compileNativeServiceUnit,
+  type NativeServiceUnit,
+  type NativeServiceCompilation,
+} from "./service-unit.ts";
 import {
   resolveRuntimeEntryBindings,
   rejectHostRuntimeEntries,
@@ -62,7 +80,11 @@ import {
   type RecordOperation,
   type FunctionAddressBinding,
 } from "@tint/ts-native/closure/lowering";
-import { emitModule, type NativeModule } from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule,
+  type NativeModule,
+  type ManagedFunctionEntryBinding,
+} from "@tint/codegen/aarch64/scalar";
 import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
 
 export interface NativeHostBinding {
@@ -82,7 +104,16 @@ export interface NativeWeakBinding {
   readonly name: string;
   readonly operation: WeakOperation;
 }
+/** Bodyless calls authorized by the compiler's native service composition. */
+export interface NativeServiceImport {
+  readonly module: string;
+  readonly name: string;
+  readonly contract: string;
+  /** A managed factory must exactly match this host-owned surface frame. */
+  readonly surface?: string;
+}
 export interface CompileRequest {
+  readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   /** Explicit target policy; this orchestration entry retains the initial Darwin default. */
   readonly hostABI?: PosixHostABI;
@@ -119,6 +150,8 @@ export interface SourceLineRange {
   readonly column: number;
 }
 export interface CompiledProgram {
+  /** Compiler-issued semantic identities in this program's permanent metadata. */
+  readonly serviceIdentities?: readonly NativeServiceBinding[];
   readonly managedSurfaces?: readonly {
     readonly name: string;
     readonly digest: string;
@@ -571,6 +604,97 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       );
     recordBindings.push({ function: fn.id, operation: binding.operation });
   }
+  const serviceSources: {
+    readonly function: number;
+    readonly name: string;
+    readonly contract: string;
+  }[] = [];
+  const serviceNames = new Set<number>();
+  for (const binding of request.serviceImports ?? []) {
+    if (
+      binding === undefined ||
+      !runtimeNamespacesByModule.has(binding.module) ||
+      binding.contract.length === 0 ||
+      binding.contract.includes("\0")
+    )
+      return failure(
+        "service-import",
+        "service imports require an authorized runtime export and contract",
+      );
+    const exported = linked.value.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === binding.module &&
+        item.name === binding.name &&
+        item.namespace === "value",
+    );
+    const declaration =
+      exported === undefined
+        ? undefined
+        : nativeChecked.module.statements.find(
+            (item) =>
+              item !== undefined &&
+              item.kind === "function" &&
+              item.name === exported.linkedName,
+          );
+    const fn =
+      declaration === undefined
+        ? undefined
+        : nativeChecked.bindings.functions.find(
+            (item) =>
+              item !== undefined &&
+              item.node === declaration &&
+              item.parent === undefined,
+          );
+    if (fn === undefined || serviceNames.has(fn.id))
+      return failure("service-import", "missing or duplicate service entry");
+    if (binding.surface !== undefined) {
+      const plan = surfacePlans.find(
+          (plan) => plan.directory.name === binding.surface,
+        ),
+        frameName = plan?.directory.frame,
+        frame =
+          frameName === undefined
+            ? undefined
+            : plan?.surface.types.find((type) => type.name === frameName)?.type;
+      const frameType =
+        frame?.kind === "named"
+          ? nativeChecked.typeNames.get(frame.name)
+          : undefined;
+      const id = managedFunctionType(nativeChecked, fn.id),
+        type = id === undefined ? undefined : nativeChecked.types[id];
+      if (
+        plan === undefined ||
+        binding.contract !==
+          "tint.service.factory.v1/" +
+            plan.directory.name +
+            "/" +
+            plan.directory.digest ||
+        frameType === undefined ||
+        type?.kind !== "function" ||
+        type.parameters.length !== 1 ||
+        type.receiver !== undefined ||
+        nativeChecked.types[type.result]?.kind !== "unknown"
+      )
+        return failure(
+          "service-import",
+          "factory differs from its host surface",
+        );
+      const parameter = type.parameters[0],
+        compare = createManagedTypeContractIndex(nativeChecked.types);
+      if (parameter === undefined || !compare.ok)
+        return failure("service-import", "factory frame is unavailable");
+      const match = compare.value.matches(parameter, frameType);
+      if (!match.ok || !match.value)
+        return failure("service-import", "factory frame contract differs");
+    }
+    serviceNames.add(fn.id);
+    serviceSources.push({
+      function: fn.id,
+      name: binding.module + ":" + binding.name,
+      contract: binding.contract,
+    });
+  }
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
@@ -582,7 +706,12 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       maxAlignment: 16,
     },
     4096,
-    { ...prepared.value.options, recordBindings, functionAddressBindings },
+    {
+      ...prepared.value.options,
+      recordBindings,
+      functionAddressBindings,
+      importedFunctions: serviceSources.map((source) => source.function),
+    },
   );
   if (!lowered.ok) {
     let message = lowered.error;
@@ -612,6 +741,33 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     }
     return failure("lower", message);
   }
+  let serviceImports: ManagedFunctionEntryBinding[] = [];
+  for (const source of serviceSources) {
+    const id = lowered.value.entries.indexOf(source.function),
+      fn = lowered.value.module.functions[id];
+    if (fn === undefined || fn.import !== true)
+      return failure("service-import", "service entry is absent from lowering");
+    const parameters: ScalarType[] = [];
+    for (const slot of fn.parameters) {
+      const type = fn.slots[slot ?? -1];
+      if (type === undefined)
+        return failure("service-import", "missing entry parameter");
+      parameters.push(type);
+    }
+    serviceImports.push({
+      function: id,
+      name: source.name,
+      contract: source.contract,
+      parameters,
+      returnType: fn.returnType,
+    });
+  }
+  const identityPlans: {
+    readonly shape: ManagedIdentityShape;
+    readonly contract: string;
+    record: number | undefined;
+    function: number | undefined;
+  }[] = [];
   if (surfacePlans.length !== 0) {
     const loweredModule = lowered.value;
     function surfaceFunction(name: string): FunctionIR | undefined {
@@ -652,6 +808,22 @@ export function compileArm64Program(request: CompileRequest): Compilation {
             : loweredModule.module.records?.[record];
         if (layout === undefined)
           return failure("surface", "missing AOT layout: " + expected.alias);
+        identityPlans.push({
+          contract: managedSurfaceContract(
+            plan.directory.name,
+            plan.directory.digest,
+            "record",
+            recordIndex,
+          ),
+          shape: {
+            role: "record",
+            parameters: [],
+            returnType: undefined,
+            recordLayout: expected.layout,
+          },
+          record,
+          function: undefined,
+        });
         for (const alias of [expected.alias, ...expected.aliases]) {
           if (alias === undefined) throw "surface record alias invariant";
           records.push({ alias, layout });
@@ -663,6 +835,21 @@ export function compileArm64Program(request: CompileRequest): Compilation {
           fn = name === undefined ? undefined : surfaceFunction(name);
         if (fn === undefined)
           return failure("surface", "missing AOT ABI: " + expected.alias);
+        identityPlans.push({
+          contract: managedSurfaceContract(
+            plan.directory.name,
+            plan.directory.digest,
+            "fn",
+            plan.directory.signatures.indexOf(expected),
+          ),
+          shape: {
+            role: "signature",
+            parameters: expected.parameters,
+            returnType: expected.returnType,
+          },
+          record: undefined,
+          function: fn.id,
+        });
         const parameters: ScalarType[] = [];
         for (const slot of fn.parameters) {
           if (slot === undefined) throw "surface parameter invariant";
@@ -697,6 +884,38 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         },
       );
       if (!runtimes.ok) return failure("surface", runtimes.error);
+      const runtimeTargets: string[] = [];
+      for (const provider of state.names.providers)
+        for (const name of provider.targets) runtimeTargets.push(name);
+      let runtimeSlot = 0;
+      for (const provider of plan.directory.runtimes) {
+        if (provider === undefined) throw "service provider invariant";
+        for (const operation of provider.operations) {
+          if (operation === undefined) throw "service operation invariant";
+          const name = runtimeTargets[runtimeSlot],
+            source = name === undefined ? undefined : runtimeSources.get(name),
+            id =
+              source === undefined ? -1 : loweredModule.entries.indexOf(source);
+          if (id < 0)
+            return failure("surface", "missing native service runtime entry");
+          identityPlans.push({
+            contract: managedSurfaceContract(
+              plan.directory.name,
+              plan.directory.digest,
+              "runtime",
+              runtimeSlot,
+            ),
+            shape: {
+              role: "function-entry",
+              parameters: operation.parameters,
+              returnType: operation.returnType,
+            },
+            record: undefined,
+            function: id,
+          });
+          runtimeSlot++;
+        }
+      }
       const agreement = verifyManagedSurfacePhysicalAgreement(plan.directory, {
         records,
         signatures,
@@ -941,6 +1160,22 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       throw "closed root mapping invariant";
     initializer = init - 1;
     invocation = entry - 1;
+    const mapped: ManagedFunctionEntryBinding[] = [];
+    for (const binding of serviceImports) {
+      const id = result.functionIds[binding.function] ?? 0;
+      if (id !== 0) mapped.push({ ...binding, function: id - 1 });
+    }
+    serviceImports = mapped;
+    for (const plan of identityPlans) {
+      if (plan.record !== undefined) {
+        const id = result.recordIds[plan.record] ?? 0;
+        plan.record = id === 0 ? undefined : id - 1;
+      }
+      if (plan.function !== undefined) {
+        const id = result.functionIds[plan.function] ?? 0;
+        plan.function = id === 0 ? undefined : id - 1;
+      }
+    }
     passes.push({
       phase: "scalar",
       pass: "remove-unreachable",
@@ -967,6 +1202,10 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     debugSpans: request.debugSymbols ?? false,
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
+    managedABI:
+      serviceImports.length === 0
+        ? undefined
+        : { version: 1, signatures: [], functions: serviceImports },
     closedRoots:
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
   });
@@ -992,6 +1231,49 @@ export function compileArm64Program(request: CompileRequest): Compilation {
             : String(location.start) + ":" + String(location.end) + ": ") +
         error.message,
     );
+  }
+  const serviceIdentities: NativeServiceBinding[] = [];
+  if (
+    surfacePlans.length !== 0 &&
+    native.value.functionDescriptor !== undefined
+  )
+    serviceIdentities.push({
+      name: "tint.function.v1",
+      contract: "tint.function.v1",
+      role: "function-brand",
+      parameters: [],
+      returnType: undefined,
+      metadataOffset: native.value.functionDescriptor.offset,
+    });
+  for (const plan of identityPlans) {
+    const metadata =
+      plan.shape.role === "record"
+        ? plan.record === undefined
+          ? undefined
+          : native.value.records.find(
+              (record) => record !== undefined && record.record === plan.record,
+            )
+        : plan.function === undefined
+          ? undefined
+          : native.value.signatures.find(
+              (signature) =>
+                signature !== undefined &&
+                signature.functions.includes(plan.function ?? -1),
+            );
+    if (metadata === undefined) continue;
+    const fn =
+      plan.function === undefined
+        ? undefined
+        : native.value.functions[plan.function];
+    serviceIdentities.push({
+      ...plan.shape,
+      name: plan.contract,
+      contract: plan.contract,
+      metadataOffset: metadata.offset,
+      ...(plan.shape.role !== "function-entry" || fn === undefined
+        ? {}
+        : { entryOffset: fn.offset }),
+    });
   }
   const symbols: { name: string; offset: number; byteLength: number }[] = [];
   const lines: SourceLineRange[] = [];
@@ -1069,6 +1351,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       initializer,
       entry: invocation < 0 ? undefined : invocation,
       exports: request.exports.slice(),
+      ...(serviceIdentities.length === 0 ? {} : { serviceIdentities }),
       ...(surfacePlans.length === 0
         ? {}
         : {

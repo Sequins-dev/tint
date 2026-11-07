@@ -108,7 +108,7 @@ function validRecordLayout(layout: RecordLayout | undefined): boolean {
   }
   return verify({ records: [concrete], functions: [] }).ok;
 }
-function descriptorWords(
+export function managedIdentityDescriptorWords(
   binding: ManagedIdentityShape,
 ): readonly number[] | undefined {
   if (binding.role === "record") {
@@ -192,7 +192,7 @@ function descriptorWords(
 export function managedIdentityByteLength(
   shape: ManagedIdentityShape,
 ): number | undefined {
-  const words = descriptorWords(shape);
+  const words = managedIdentityDescriptorWords(shape);
   return words === undefined ? undefined : words.length * 8;
 }
 
@@ -405,7 +405,7 @@ export function resolveManagedPointers(
         !sameManagedRecordLayout(request.recordLayout, binding.recordLayout)
       )
         return reject("Managed identity contract differs");
-      const words = descriptorWords(binding);
+      const words = managedIdentityDescriptorWords(binding);
       if (words === undefined || binding.byteLength !== words.length * 8)
         return reject("Invalid managed identity descriptor size");
       plans.push({ binding, words });

@@ -28,6 +28,49 @@ function source(
     },
   };
 }
+test("native service imports omit facade bodies and retain checked calls through pruning", () => {
+  const request = {
+    modules: [
+      source(
+        "service",
+        'export function read(value:number):number{throw "UNBOUND_NATIVE_SERVICE";}',
+      ),
+      source(
+        "main",
+        'import {read} from "service";export function run():number{return read(41);}',
+        new Map([["service", "service"]]),
+      ),
+    ],
+    entry: "main",
+    exports: ["run"],
+    start: "run",
+    runtimes: [{ module: "service", namespace: "native-service" }],
+    closedProgram: true,
+    serviceImports: [
+      { module: "service", name: "read", contract: "service.read.v1" },
+    ],
+  };
+  const compiled = compileArm64Program(request);
+  assert.ok(compiled.ok, JSON.stringify(compiled));
+  assert.equal(compiled.value.native.linkage, "unresolved-managed");
+  assert.equal(compiled.value.native.managedImports.length, 1);
+  assert.deepEqual(compiled.value.native.managedImports[0]?.parameters, [
+    "number",
+  ]);
+  assert.ok(
+    !compiled.value.native.strings.some(
+      (s) => s.value === "UNBOUND_NATIVE_SERVICE",
+    ),
+  );
+  assert.equal(compileArm64Program({ ...request, runtimes: [] }).ok, false);
+  assert.equal(
+    compileArm64Program({
+      ...request,
+      serviceImports: [...request.serviceImports, ...request.serviceImports],
+    }).ok,
+    false,
+  );
+});
 test("record-test capabilities require explicit runtime exports and reject duplicate registration", () => {
   const request = {
     modules: [

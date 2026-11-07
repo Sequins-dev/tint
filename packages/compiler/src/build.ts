@@ -3,6 +3,9 @@ import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { optimizeModule } from "@tint/ir/optimization";
 import {
   compileArm64Program,
+  linkNativeServiceModules,
+  type NativeServiceUnit,
+  type NativeServiceBinding,
   type NativeHostBinding,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -43,6 +46,11 @@ function debugFrame(
 }
 export interface BuildRequest {
   readonly threaded?: boolean;
+  /** Immutable native units prepared for the same frozen source/toolchain. */
+  readonly nativeServices?: readonly {
+    readonly unit: NativeServiceUnit;
+    readonly bind: { readonly module: string; readonly name: string };
+  }[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
   readonly allowJit?: boolean;
@@ -246,6 +254,11 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     return failure("runtime", "runtime entry is missing");
   request.report("program");
   const program = compileArm64Program({
+    serviceImports: (request.nativeServices ?? []).map((service) => ({
+      ...service.bind,
+      contract: service.unit.factoryContract,
+      surface: service.unit.surface.name,
+    })),
     managedSurfaces: request.managedSurfaces ?? [],
     closedProgram: true,
     denseReferenceLists: request.denseReferenceLists ?? false,
@@ -271,6 +284,67 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   const programEntry = program.value.entry;
   if (programEntry === undefined)
     return failure("program", "program entry is missing");
+  let programNative = program.value.native;
+  if ((request.nativeServices?.length ?? 0) !== 0) {
+    const services = request.nativeServices ?? [],
+      hostBindings: NativeServiceBinding[] = [];
+    const links = [];
+    for (let index = 0; index < services.length; index++) {
+      const service = services[index];
+      if (service === undefined) throw "native service invariant";
+      const unit = service.unit,
+        entry = unit.native.functions.find(
+          (fn) =>
+            fn !== undefined &&
+            fn.import !== true &&
+            fn.offset === unit.entryOffset,
+        ),
+        signature =
+          entry === undefined
+            ? undefined
+            : unit.native.signatures.find(
+                (signature) =>
+                  signature !== undefined &&
+                  signature.functions.includes(entry.id),
+              );
+      if (
+        unit.version !== 1 ||
+        unit.profile !== "managed-factory-v1" ||
+        signature === undefined ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "reference" ||
+        signature.returnType !== "general"
+      )
+        return failure("service-link", "invalid managed factory entry");
+      hostBindings.push({
+        unit: index,
+        name: service.bind.module + ":" + service.bind.name,
+        contract: unit.factoryContract,
+        role: "function-entry",
+        parameters: signature.parameters,
+        returnType: signature.returnType,
+        metadataOffset: signature.offset,
+        entryOffset: unit.entryOffset,
+      });
+      const bindings: NativeServiceBinding[] = [];
+      for (const imported of unit.native.managedImports) {
+        if (imported === undefined) throw "native service import invariant";
+        const binding = program.value.serviceIdentities?.find(
+          (binding) => binding.contract === imported.contract,
+        );
+        if (binding === undefined)
+          return failure(
+            "service-link",
+            "host is missing unit contract: " + imported.contract,
+          );
+        bindings.push({ ...binding, name: imported.name });
+      }
+      links.push({ native: unit.native, bindings });
+    }
+    const linked = linkNativeServiceModules(programNative, links, hostBindings);
+    if (!linked.ok) return failure("service-link", linked.error);
+    programNative = linked.value.native;
+  }
   request.report("startup");
   const hosted = emitHostedEntry({
     threaded: request.threaded ?? false,
@@ -282,7 +356,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       environmentBytes: environment.layout.size,
     },
     runtime: { native: runtime.value.native, entry: runtimeEntry },
-    program: { native: program.value.native, entry: programEntry },
+    program: { native: programNative, entry: programEntry },
     managedBytes: request.managedBytes,
     controlBytes: request.controlBytes,
     allocationCapacity: request.allocationCapacity,
@@ -308,11 +382,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         (hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset) -
         hosted.value.entryOffset,
     });
-    const natives = [
-      allocator.value,
-      runtime.value.native,
-      program.value.native,
-    ];
+    const natives = [allocator.value, runtime.value.native, programNative];
     const labels = ["allocator", "runtime", "program"];
     for (let index = 0; index < natives.length; index++) {
       const native = natives[index],

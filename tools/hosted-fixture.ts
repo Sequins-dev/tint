@@ -36,6 +36,11 @@ export function verifyHostedFixture(
     readonly hostBindings?: readonly NativeHostBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
+    readonly nativeServices?: BuildRequest["nativeServices"];
+    readonly nativeServiceIdentity?: {
+      readonly nativeLinkingMode: "aot-native-services-v1";
+      readonly nativeServiceUnitIndexSha256: string;
+    };
     readonly runtimeModule?: string;
     readonly runtimeEntry?: Exclude<BuildRequest["runtimeEntry"], undefined>;
     readonly managedBytes: number;
@@ -85,6 +90,7 @@ export function verifyHostedFixture(
     recordBindings,
     weakBindings: options.weakBindings ?? [],
     managedSurfaces: options.managedSurfaces ?? [],
+    nativeServices: options.nativeServices ?? [],
     hostBindings: [...request.hostBindings, ...(options.hostBindings ?? [])],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     runtimeEntry:

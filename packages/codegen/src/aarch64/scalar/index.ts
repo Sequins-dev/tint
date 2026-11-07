@@ -210,6 +210,9 @@ export interface NativeModule {
   readonly imports: readonly NativeImportReference[];
   readonly linkage: "local" | "unresolved-managed";
   readonly managedImports: readonly NativeManagedPointerImport[];
+  /** Five-instruction managed pointer loads. AOT composition can replace the
+   * slot address/load with a direct relative address after contract preflight. */
+  readonly managedReferences?: readonly NativeManagedAddressReference[];
   readonly functionDescriptorImport: NativeManagedPointerImport | undefined;
   readonly signatures: readonly NativeSignatureDescriptor[];
   /** Explicit synthetic function brand; ordinary matching layouts have no role. */
@@ -221,6 +224,11 @@ export interface NativeModule {
   readonly helpers: readonly NativeHelper[];
   readonly code: Uint8Array;
   readonly functions: readonly NativeFunction[];
+}
+export interface NativeManagedAddressReference {
+  readonly offset: number;
+  readonly rd: number;
+  readonly import: number;
 }
 export interface Diagnostic {
   readonly code:
@@ -339,6 +347,8 @@ export interface EmissionOptions {
   readonly closedRoots?: readonly number[] | undefined;
   readonly managedABI?: ManagedABIRequest | undefined;
   readonly localSignatures?: readonly LocalSignatureBinding[] | undefined;
+  /** Retain physical entry descriptors for separately composed native calls. */
+  readonly signatureRoots?: readonly number[] | undefined;
 }
 export function emitModule(
   module: ModuleIR,
@@ -6119,6 +6129,17 @@ export function emitModule(
     // another image deliberately remain a different identity.
     const signatureOffsets = new Map<number, number>();
     const signatureTargets = signatureFixups.map((fixup) => fixup.target);
+    for (const id of options.signatureRoots ?? []) {
+      if (
+        id === undefined ||
+        !Number.isInteger(id) ||
+        id < 0 ||
+        module.functions[id] === undefined ||
+        module.functions[id]?.import === true
+      )
+        fail("INVALID_IR", "invalid retained signature root");
+      signatureTargets.push(id);
+    }
     for (const group of localGroups) {
       if (group === undefined) throw "local signature group invariant";
       const first = group.functions[0];
@@ -6454,6 +6475,11 @@ export function emitModule(
           brandImport === undefined ? undefined : managedImports[brandImport],
         linkage: managedImports.length === 0 ? "local" : "unresolved-managed",
         managedImports,
+        managedReferences: managedPointerFixups.map((fixup) => ({
+          offset: fixup.offset,
+          rd: fixup.rd,
+          import: fixup.request,
+        })),
       },
     };
   } catch (error) {

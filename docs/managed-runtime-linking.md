@@ -150,3 +150,24 @@ extent supported by the current allocator. Node bootstrap and native CLI share
 this setting. The [matched-budget checkpoint](results/runtime-link-budget-selfhost-checkpoint-v1.json)
 passes its fixed point and smoke execution. Increasing only an output default cannot enlarge an
 already running bootstrap image.
+
+## Cached AOT service units
+
+[Native service units](native-service-units.md) define separately compiled managed
+factory units, complete cache identity and stale-entry rejection, and composition
+with Tint's own image builder. The initial `managed-factory-v1` profile supports
+concrete synchronous factory entries, named imports from an explicit managed
+surface, type declarations, functions, initialized named module bindings and
+expression statements. Each factory invocation creates independent traced module
+state; movable imports arrive through the host-owned frame. Unit permanent data
+is part of the final executable's existing permanent extent.
+
+Classes, unspecialized generic factories, async/generator factory entries, binding
+patterns, uninitialized module bindings, namespace/side-effect imports and new
+platform imports are explicit unsupported cases in this profile. Unit and host
+generational-barrier policy must agree; inline-allocation units require the host
+context extension. A factory facade must match its exact checked surface frame.
+Composition preflights all contracts, ownership, metadata windows and instruction
+sites before creating output bytes. It rewrites managed loads to relative image
+addresses and preserves default AOT physical signature interning. It does not
+create a runtime loader or relax the managed context domain checks.

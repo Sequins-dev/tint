@@ -85,6 +85,31 @@ test("managed entry refuses unapproved imports and module initialization", () =>
     );
 });
 
+test("service factory scopes module initialization inside each managed entry invocation", () => {
+  const module = parse(
+    'import {add} from "runtime";let state:number=add(1,2);function increment():number{return ++state;}export function factory():{readonly next:()=>number}{return {next:increment};}',
+  );
+  const adapted = compiler.adaptManagedSurfaceEntry(
+    module,
+    "factory",
+    "runtime",
+    surface(),
+    undefined,
+    "factory",
+  );
+  assert.ok(adapted.ok, JSON.stringify(adapted));
+  assert.ok(
+    adapted.value.module.statements.every((s) => s.kind !== "variable"),
+  );
+  const checked = checkClosureModule(adapted.value.module);
+  assert.ok(checked.ok, JSON.stringify(checked));
+  const prepared = compiler.prepareNativeFunctionEntry(
+    adapted.value.module,
+    adapted.value.entry,
+  );
+  assert.ok(prepared.ok, JSON.stringify(prepared));
+});
+
 test("managed entry resolves ordinary type imports across approved surface specifiers", () => {
   const module = parse(
     'import {add as sum} from "values";import {read} from "objects";import {Box} from "types";export function execute(box:Box):number{return sum(read(box),23);}',

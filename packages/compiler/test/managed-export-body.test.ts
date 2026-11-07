@@ -185,6 +185,21 @@ test("compile requests publish selected application surfaces and skip empty requ
   assert.ok(compiled.ok, JSON.stringify(compiled));
   assert.equal(compiled.value.managedSurfaces?.length, 1);
   assert.equal(compiled.value.managedSurfaces?.[0]?.name, "application");
+  assert.ok(
+    compiled.value.serviceIdentities?.some(
+      (binding) => binding.role === "function-brand",
+    ),
+  );
+  assert.ok(
+    compiled.value.serviceIdentities?.some(
+      (binding) => binding.role === "record",
+    ),
+  );
+  assert.ok(
+    compiled.value.serviceIdentities?.some(
+      (binding) => binding.role === "signature",
+    ),
+  );
   assert.match(
     compiled.value.managedSurfaces?.[0]?.digest ?? "",
     /^[a-f0-9]{64}$/,

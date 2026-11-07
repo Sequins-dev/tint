@@ -22,6 +22,10 @@ import {
   bindManagedRuntimeImports,
 } from "./managed-runtime-selection.ts";
 export interface ManagedSurfaceEntryRequest {
+  readonly linearAllocation?: boolean;
+  readonly generationalBarriers?: boolean;
+  /** Service-unit factories initialize private module state on invocation. */
+  readonly initialization?: "factory";
   readonly module: Module;
   readonly entry: string;
   readonly specifiers: ReadonlySet<string>;
@@ -40,15 +44,16 @@ export interface PreparedManagedSurfaceEntry {
     readonly functions: number;
   };
 }
+export type ManagedSurfaceEntryFailure = {
+  readonly ok: false;
+  readonly error: {
+    readonly stage: "profile" | "prepare" | "lower" | "emit" | "select";
+    readonly message: string;
+  };
+};
 export type ManagedSurfaceEntryPreparation =
   | { readonly ok: true; readonly value: PreparedManagedSurfaceEntry }
-  | {
-      readonly ok: false;
-      readonly error: {
-        readonly stage: "profile" | "prepare" | "lower" | "emit" | "select";
-        readonly message: string;
-      };
-    };
+  | ManagedSurfaceEntryFailure;
 /** Compile against an image-issued surface. Resolve every semantic contract
  * before returning unresolved code; mapping, pointer reads and publication are
  * exclusively the owning engine's responsibility. */
@@ -81,6 +86,7 @@ export function prepareManagedSurfaceEntry(
     specifiers,
     surface,
     { frame },
+    request.initialization ?? "none",
   );
   if (!adapted.ok) return fail("profile", adapted.error);
   const view = adapted.value.view;
@@ -159,7 +165,11 @@ export function prepareManagedSurfaceEntry(
   if (!signatures.ok) return fail("profile", signatures.error);
   const brand = signatures.value.brand;
   const emitted = emitModule(lowered.value.module, {
+    linearAllocation: request.linearAllocation ?? false,
+    generationalBarriers: request.generationalBarriers ?? false,
     closedRoots: [lowered.value.entry],
+    signatureRoots:
+      request.initialization === "factory" ? [lowered.value.entry] : [],
     managedABI: {
       version: 1,
       ...(brand === undefined ? {} : { functionBrand: brand }),

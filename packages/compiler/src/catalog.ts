@@ -223,6 +223,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/service-unit-link.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/service-unit.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/project.ts",
       packageId: "compiler",
     },

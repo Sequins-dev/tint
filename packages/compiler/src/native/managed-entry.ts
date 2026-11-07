@@ -21,13 +21,15 @@ export type ManagedSurfaceEntryAdaptation =
  * unknown table, checked by a compiler-bound record view before helper access.
  * The caller must bind and retain the returned view as an additional root, and
  * verify argument types against the checked host frame before native emission.
- * Module initialization remains unsupported. */
+ * Factory entries scope supported module initialization inside each invocation;
+ * ordinary runtime-compiled entries continue to reject it. */
 export function adaptManagedSurfaceEntry(
   module: Module,
   entry: string,
   specifier: string | readonly string[],
   surface: ManagedSurfaceTypeDescription,
   options?: { readonly frame: string },
+  initialization: "none" | "factory" = "none",
 ): ManagedSurfaceEntryAdaptation {
   const reject = (error: string): ManagedSurfaceEntryAdaptation => ({
     ok: false,
@@ -130,7 +132,31 @@ export function adaptManagedSurfaceEntry(
       declarations.push(statement);
     else if (statement.kind === "function")
       body.push({ ...statement, exported: false });
-    else return reject("managed entry does not support module initialization");
+    else if (initialization === "factory" && statement.kind === "variable") {
+      for (const binding of statement.declarations) {
+        if (
+          binding === undefined ||
+          binding.kind === "object-binding" ||
+          binding.kind === "array-binding" ||
+          binding.initializer === undefined
+        )
+          return reject(
+            "service initialization requires initialized named bindings",
+          );
+        names.add(binding.name);
+      }
+      body.push({ ...statement, exported: false });
+      continue;
+    } else if (
+      initialization === "factory" &&
+      (statement.kind === "expression" ||
+        statement.kind === "empty" ||
+        statement.kind === "debugger")
+    ) {
+      body.push(statement);
+      continue;
+    } else
+      return reject("managed entry does not support module initialization");
     names.add(statement.name);
   }
   for (const declaration of module.imports) {

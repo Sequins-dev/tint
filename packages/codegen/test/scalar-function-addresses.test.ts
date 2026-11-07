@@ -196,3 +196,51 @@ test("physical ABI equality does not grant imported signature membership", () =>
     3,
   );
 });
+
+test("managed pointer sites retain exact instruction windows for AOT prelinking", () => {
+  const result = emitManaged([0, 1]);
+  assert.ok(result.ok, JSON.stringify(result));
+  const native = result.value;
+  assert.ok(native.managedReferences?.length);
+  const view = new DataView(native.code.buffer);
+  for (const reference of native.managedReferences) {
+    const imported = native.managedImports[reference.import];
+    assert.ok(imported);
+    const sequence = relativeAddress(
+      reference.rd,
+      17,
+      imported.offset - reference.offset,
+    );
+    assert.ok(sequence.ok);
+    assert.equal(sequence.value.length, 4);
+    for (let i = 0; i < 4; i++) {
+      const encoded = encode(sequence.value[i]!);
+      assert.ok(encoded.ok);
+      assert.equal(
+        view.getUint32(reference.offset + i * 4, true),
+        encoded.value,
+      );
+    }
+    const load = encode({
+      op: "ldr",
+      width: 64,
+      rt: reference.rd,
+      rn: reference.rd,
+      offset: 0,
+    });
+    assert.ok(load.ok);
+    assert.equal(view.getUint32(reference.offset + 16, true), load.value);
+  }
+});
+
+test("retained entry signatures keep physical interning without an address-taking instruction", () => {
+  const original = fixture(),
+    first = original.functions[0]!;
+  const emitted = emitModule(
+    { functions: [first, { ...first, id: 1, name: "other" }] },
+    { signatureRoots: [0, 1] },
+  );
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  assert.equal(emitted.value.signatures.length, 1);
+  assert.deepEqual(emitted.value.signatures[0]?.functions, [0, 1]);
+});
