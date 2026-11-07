@@ -288,7 +288,7 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`built-ins/Array/prototype/toLocaleString`](results/test262-array-tolocalestring-native-v1.json)                   |       16 / 22 (72.73%) | 6 unsupported variants use dynamically compiled subclasses in the resizable-buffer harness                |
 | [`built-ins/TypedArray/from`](results/test262-typedarray-from-cluster-k-v1.json) | 42 / 42 (100%) | Complete verified extraction; overlaps the held TypedArray survey |
 | [`built-ins/TypedArray/Symbol.species`](results/test262-typedarray-species-cluster-k-v1.json) | 8 / 8 (100%) | Complete verified extraction; overlaps the held TypedArray survey |
-| [`built-ins/TypedArray/of`](results/test262-typedarray-of-cluster-k-v1.json) | 15 / 16 (93.75%) | 1 pre-entry LLDB launch error; overlaps the held TypedArray survey |
+| [`built-ins/TypedArray/of`](results/test262-typedarray-of-cluster-k-v2.json) | 16 / 16 (100%) | Direct-mode complete extraction; overlaps the running TypedArray survey; earlier launch failure retained |
 | [`built-ins/TypedArray/prototype/Symbol.iterator`](results/test262-typedarray-iterator-cluster-k-v1.json) | 2 / 2 (100%) | Complete verified extraction; overlaps the held TypedArray survey |
 | [`built-ins/TypedArray/prototype/Symbol.toStringTag`](results/test262-typedarray-tostringtag-cluster-k-v1.json) | 35 / 36 (97.22%) | 1 pre-entry LLDB launch error; overlaps the held TypedArray survey |
 | [`built-ins/TypedArray/prototype/at`](results/test262-typedarray-at-cluster-k-v1.json) | 30 / 30 (100%) | Complete verified extraction; overlaps the held TypedArray survey |
