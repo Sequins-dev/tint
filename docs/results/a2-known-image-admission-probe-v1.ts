@@ -1,0 +1,12 @@
+import {mkdtempSync,writeFileSync,readFileSync,existsSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {debugserverLaunchCommand,cleanupDebuggerSession} from '../../tools/native-debugger-session.ts';
+const binary=resolve('.tint-bootstrap/a2/object-syntax-batch0-diagnostic-image'),dir=mkdtempSync('/tmp/a2-admit-');
+console.log(new Date().toISOString(),'launching known previously working parser image',dir);
+const saveInitial=`script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(${JSON.stringify(join(dir,'initial.json'))},'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped`;
+const saveFinal=`script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(${JSON.stringify(join(dir,'final.json'))},'w').write(json.dumps({'state':s,'exit':p.GetExitStatus()})); p.Kill() if s!=lldb.eStateExited else None`;
+const result=spawnSync('/usr/bin/lldb',['--no-lldbinit','--batch','-o','settings set target.disable-aslr false','-o',debugserverLaunchCommand(binary,dir,['0'],10000,'direct'),'-o',saveInitial,'-o','continue','-o',saveFinal,binary],{encoding:'utf8',timeout:12000,killSignal:'SIGKILL',maxBuffer:2**22});
+writeFileSync(join(dir,'stdout.txt'),result.stdout??'');writeFileSync(join(dir,'stderr.txt'),result.stderr??'');
+const record={kind:'native-debugger-admission-diagnostic',time:new Date().toISOString(),binary,dir,status:result.status,error:result.error?.message,initial:existsSync(join(dir,'initial.json'))?JSON.parse(readFileSync(join(dir,'initial.json'),'utf8')):null,final:existsSync(join(dir,'final.json'))?JSON.parse(readFileSync(join(dir,'final.json'),'utf8')):null};
+cleanupDebuggerSession(dir);writeFileSync('.tint-bootstrap/a2/direct-admission-diagnostic-v1.json',JSON.stringify(record,null,2)+'\n');console.log(JSON.stringify(record));

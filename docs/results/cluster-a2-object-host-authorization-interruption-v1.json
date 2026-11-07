@@ -1,0 +1,440 @@
+{
+  "kind": "native-run-interruption",
+  "generatedAt": "2026-11-07T01:12:51.032013+00:00",
+  "complete": false,
+  "ledgerCountable": false,
+  "reason": "Mandatory host authorization hold: macOS Developer Tools authorization prompt is active; direct debugservers block before initial stop with zero inferior CPU. No new native run until HOST AUTHORIZATION RESTORED after the latest stall entry.",
+  "selection": "language/expressions/object",
+  "expectedVariants": 2252,
+  "observedVariants": 815,
+  "unobservedVariants": 1437,
+  "totals": {
+    "passed": 812,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 3,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "scope": "Observed interrupted prefix only, not a complete selection or whole-suite percentage. All native observations and non-passes retained unchanged.",
+  "journal": ".tint-bootstrap/a2/object-direct-v1.jsonl",
+  "immutablePrefix": "docs/results/cluster-a2-object-host-authorization-prefix-v1.jsonl",
+  "prefixSha256": "ac5fcb0d11afde879cffceac8ca9207f862c19e9cbc4a40da9ad812585cdf949",
+  "start": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": true,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "language/expressions/object",
+    "batchSize": 64,
+    "sourceSnapshot": {
+      "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+      "files": 568
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95/.tint-bootstrap/a2/toolchain-v4/source-snapshot.json",
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  },
+  "nonpasses": [
+    {
+      "kind": "observation",
+      "path": "language/expressions/object/dstr/async-gen-meth-dflt-obj-ptrn-prop-ary-value-null.js",
+      "sha256": "725f8ebbed87a6aeba2304686af86afb3d92c4e4dd2c061adc2a5520f3d3f143",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-iteration"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-iviDCy/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 648331.4575419994,
+      "batch": 13
+    },
+    {
+      "kind": "observation",
+      "path": "language/expressions/object/dstr/async-gen-meth-dflt-obj-ptrn-prop-ary-value-null.js",
+      "sha256": "725f8ebbed87a6aeba2304686af86afb3d92c4e4dd2c061adc2a5520f3d3f143",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["async-iteration"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ytkeqE/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 948349.5536670005,
+      "batch": 13
+    },
+    {
+      "kind": "observation",
+      "path": "language/expressions/object/dstr/async-gen-meth-dflt-obj-ptrn-prop-ary.js",
+      "sha256": "93177a70b074ac6daaf6762f4a5e73050257c4e36ffdf6e7aaa5db40e659a18b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "async"],
+        "features": ["async-iteration"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-rNx3hf/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1248369.177375,
+      "batch": 13
+    }
+  ],
+  "boundaryEvidence": {
+    "time": "2026-11-07T01:00:09.949615+00:00",
+    "acknowledgement": {
+      "pid": 67657,
+      "state": "between-variants"
+    },
+    "state": "67657 62504 SN    50:01.06",
+    "children": [],
+    "reason": "Repeated host debugger admission hangs before native entry; preserve resumable journal and release slot",
+    "manualNativeInferiorKilled": false
+  },
+  "driverExitStatus": 143,
+  "allOwnedNativeProcessesExited": true,
+  "runnerSlotReleased": true,
+  "pauseMarkersRemovedAfterOwnerExit": true,
+  "cpuEvidence": {
+    "file": "docs/results/cluster-a2-object-host-authorization-cpu-v1.jsonl.gz",
+    "uncompressedSha256": "a7b9935b25a13db7f63337c7abe7e26b591733e620f40969a2515671da198ecc",
+    "sampledStoppedInferiors": {
+      "33516": [
+        {
+          "time": "2026-11-07T00:44:52.981309+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:45:23.020778+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:45:53.060704+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:46:23.097726+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:46:53.141388+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:47:23.185301+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:47:53.231523+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:48:23.272637+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:48:53.332928+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:49:23.416137+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        }
+      ],
+      "59351": [
+        {
+          "time": "2026-11-07T00:49:53.480171+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:50:23.526712+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:50:53.586422+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:51:23.646963+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:51:53.731804+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:52:23.775607+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:52:53.815312+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:06",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:53:23.885408+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:36",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:53:53.947644+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:07",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:54:24.055558+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:37",
+          "state": "TN",
+          "cpuPercent": 0.0
+        }
+      ],
+      "75539": [
+        {
+          "time": "2026-11-07T00:54:54.118642+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:08",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:55:24.155068+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "00:38",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:55:54.196843+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:08",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:56:24.286824+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "01:38",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:56:54.323268+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:08",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:57:24.356879+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "02:38",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:57:54.407388+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:08",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:58:24.433592+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "03:38",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:58:54.466051+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:08",
+          "state": "TN",
+          "cpuPercent": 0.0
+        },
+        {
+          "time": "2026-11-07T00:59:24.517689+00:00",
+          "cpuTime": "0:00.00",
+          "elapsed": "04:38",
+          "state": "TN",
+          "cpuPercent": 0.0
+        }
+      ]
+    },
+    "finding": "All sampled inferiors during the host admission stall remained stopped with 0.00 CPU seconds; no native body execution established."
+  },
+  "knownPreviouslyWorkingImageProbe": "docs/results/cluster-a2-known-image-admission-probe-v1.json",
+  "probeFinding": "The previously passing parser image also failed to reach an initial stop within its 12-second diagnostic budget; this diagnostic adds no conformance observations. It was launched before A2 read the newly posted authorization hold.",
+  "hostChecks": "docs/results/cluster-a2-host-startup-diagnostic-v1.json",
+  "hostCheckFinding": "Developer mode disabled; the stalled runtime image has a valid signature and get-task-allow entitlement. Memory query reported 84% free, swap about 594 MiB. Disabled developer mode alone was not treated as proof of causality; the coordinator independently confirmed a pending SecurityAgent prompt.",
+  "samplerInterruption": "docs/results/cluster-a2-host-sampler-interruption-v1.json",
+  "preservedImage": "docs/results/cluster-a2-preserved-runtime-image-v1.json",
+  "staticValidation": "docs/results/cluster-a2-object-held-journal-validation-v1.json",
+  "portableSourceChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "policy": "Docs-only; readiness awaits the coordinator integrated-main gate covering the current code base. Final gate evidence is recorded separately.",
+    "registry": "/Users/stephenbelanger/.t3/tint-briefs/main-gates.txt"
+  },
+  "resume": {
+    "precondition": "HOST AUTHORIZATION RESTORED must appear after the latest HOST AUTHORIZATION STALL in /Users/stephenbelanger/.t3/tint-briefs/load-events.md",
+    "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v4.json",
+    "originalFrozenRunIdentity": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852",
+    "command": "cd /Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95\nunset TINT_TEST262_CAPTURE_SOURCES TINT_TEST262_VARIANTS\nTINT_TEST262_RESUME=1 TINT_TEST262_HEARTBEAT_MS=30000 TINT_TEST262_STALL_MS=150000 TINT_TEST262_PAUSE=\"$PWD/.tint-bootstrap/a2/object-direct-v1.pause\" TINT_TEST262_JOURNAL=\"$PWD/.tint-bootstrap/a2/object-direct-v1.jsonl\" TINT_TEST262_SOURCES=\"$PWD/.tint-bootstrap/a2/toolchain-v4/source-snapshot.json\" TINT_TEST262_MODULES=1 TINT_TEST262_CONTAINMENT_MS=300000 TINT_TEST262_DEBUGGER_LAUNCH=debugserver-direct TINT_TEST262_DEBUGGER_TRACE=1 /Users/stephenbelanger/.t3/tint-slots/slot runner 6 -- /Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node .tint-bootstrap/a2/toolchain-v4/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/expressions/object 64 > .tint-bootstrap/a2/object-direct-resumed-v1.json 2> .tint-bootstrap/a2/object-direct-resumed-v1.log",
+    "progress": "Run in the background and poll the new stderr log; keep one A2 runner and investigate STALL immediately."
+  },
+  "focusedRecheck": {
+    "manifest": "docs/results/cluster-a2-object-host-authorization-recheck-variants-v1.json",
+    "requestedVariants": 3,
+    "policy": "After restoration, use TINT_TEST262_VARIANTS on a freshly frozen current-main direct toolchain and a new report/journal. Do not apply this manifest to the original held directory journal. Original timeout outcomes remain intact."
+  },
+  "nextPriorities": [
+    "Resume and finish full object on original frozen v4",
+    "Recheck these three pre-entry timeouts in a separate focused report",
+    "assignmenttargettype: 627 variants",
+    "arrow-function: 643 variants",
+    "function: 484 variants",
+    "Remaining A2 expression selections, largest unmeasured first; dynamic-import and import.meta remain A3-owned"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "diagnostic-sampler-interruption",
+  "time": "2026-11-07T00:45:07.198047+00:00",
+  "pid": 22582,
+  "state": "22582 22569 S    -      02:56   0:00.01 sample 67657 1 -file .tint-bootstrap/a2/object-direct-batch13-stall-sample-v1.txt",
+  "openFiles": {
+    "exitStatus": 0,
+    "stdout": "COMMAND   PID            USER   FD   TYPE DEVICE SIZE/OFF                NODE NAME\nsample  22582 stephenbelanger  cwd    DIR   1,15      736           166414646 /Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95\nsample  22582 stephenbelanger  txt    REG   1,15   174688 1152921500312572696 /usr/bin/sample\nsample  22582 stephenbelanger  txt    REG   1,15  2562000 1152921500312573255 /usr/lib/dyld\nsample  22582 stephenbelanger    0r   CHR    3,2      0t0                 336 /dev/null\nsample  22582 stephenbelanger    1w   REG   1,15        0           168469524 /Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95/.tint-bootstrap/a2/object-direct-batch13-stall-sample-v1.log\nsample  22582 stephenbelanger    2w   REG   1,15        0           168469524 /Users/stephenbelanger/.t3/worktrees/tint/t3-38429a95/.tint-bootstrap/a2/object-direct-batch13-stall-sample-v1.log\n",
+    "stderr": ""
+  },
+  "reason": "Sampler produced no output for over two minutes and accumulated 0.01 CPU seconds. Native runner continues computing; stop this blocked diagnostic only.",
+  "nativeRunner": 67657,
+  "nativeRunnerKilled": false
+}

@@ -1,0 +1,35 @@
+{
+  "time": "2026-11-07T00:50:41.194585+00:00",
+  "serviceStates": [
+    "  389     1 Ss   03-11:41:27   1:44.52 /usr/sbin/securityd",
+    "  446     1 Us   03-11:41:27 1502:43.35 /usr/libexec/syspolicyd",
+    "  455     1 Ss   03-11:41:27   0:03.12 /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/authd.xpc/Contents/MacOS/authd",
+    "  615     1 Ss   03-11:41:25   0:01.04 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd",
+    "17952     1 Ss   03-11:36:18   0:43.07 /usr/libexec/taskgated",
+    "18471     1 Ss      04:35:26   0:00.01 endpointsecurityd",
+    "53556     1 Ss      05:12:26   0:10.93 /usr/sbin/spindump",
+    "79464     1 S       05:09:42   0:00.19 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd",
+    "81597     1 Ss      05:09:30   0:00.29 /usr/libexec/securityd_system",
+    "83361     1 S       04:52:09   0:00.02 /usr/libexec/spindump_agent",
+    "92130     1 Ss      05:08:13   0:02.10 /usr/libexec/amfid"
+  ],
+  "checks": [
+    {
+      "command": ["/usr/sbin/DevToolsSecurity", "-status"],
+      "status": 0,
+      "stdout": "Developer mode is currently disabled.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--verbose=2",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test"
+      ],
+      "status": 0,
+      "stdout": "",
+      "stderr": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test: valid on disk\n/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-24M2Lj/test: satisfies its Designated Requirement\n"
+    }
+  ]
+}
