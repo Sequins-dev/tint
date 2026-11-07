@@ -1,0 +1,20 @@
+{
+  "kind": "host-saturation-closeout",
+  "conformance": false,
+  "at": "2026-11-07T09:57:49.032189+00:00",
+  "priorObservation": "docs/results/g-object-resume-external-saturation-v1.json",
+  "externalSaturationWindowUtc": ["2026-11-07T09:42Z", "2026-11-07T09:57Z"],
+  "externalMetalPids": [67696, 67697],
+  "metalPercentCpu": [0, 0],
+  "runnerPid": 66567,
+  "runnerPercentCpu": 67.5,
+  "runnerCpuTime": "28:41.99",
+  "laggingLoadAverage": [54.93, 62.06, 46.05],
+  "journalObservedVariants": 1218,
+  "outcomes": {
+    "pass": 1216,
+    "timeout": 2
+  },
+  "newNonpassesDuringWindow": 0,
+  "note": "Active batch20 compilation continued throughout. Repeated samples showed runnable compiler CPU work with low CPU share under external starvation. No in-flight inferior was killed or retried."
+}
