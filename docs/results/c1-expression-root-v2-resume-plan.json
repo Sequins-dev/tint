@@ -1,0 +1,26 @@
+{
+  "kind": "c1-held-native-run-resume-plan",
+  "conformance": false,
+  "precondition": "HOST AUTHORIZATION RESTORED appears after HOST AUTHORIZATION STALL in ~/.t3/tint-briefs/load-events.md. No native launch before that marker.",
+  "launcher": ".tint-bootstrap/c1-resume-expression-root-v2.mjs",
+  "launcherArchive": "docs/results/c1-expression-root-v2-resume-launcher.mjs.gz",
+  "launcherSha256": "8b4d9316a1a72b0859ad0201507e6699c254644126707a651cb8434f12d43866",
+  "command": [
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    ".tint-bootstrap/c1-resume-expression-root-v2.mjs",
+    "30",
+    "31",
+    ".tint-bootstrap/c1-phase2-toolchain-v11.json",
+    "2"
+  ],
+  "launchMode": "detached background, stdout/stderr to .tint-bootstrap/c1-expression-root-resume-v2-controller.txt; poll every minute",
+  "originalJournal": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v1.jsonl",
+  "originalJournalSha256": "5a7f1aa0b15276858c2a10eb28a08d1c45f6a03e09267dbe54f8e28364e532c3",
+  "resumeJournal": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v11.json",
+  "restoredVariants": 413,
+  "retainedTimeouts": 2,
+  "unobservedVariants": 82,
+  "pauseFile": ".tint-bootstrap/c1-expression-root-v2.pause",
+  "scope": "Clone immutable original journal to a new path and resume on its original frozen toolchain/resources. No observed outcome is retried or overwritten. Fresh selections and explicit-variant rechecks use a new current-main freeze."
+}

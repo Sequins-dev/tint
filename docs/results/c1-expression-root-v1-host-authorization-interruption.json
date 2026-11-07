@@ -1,0 +1,62 @@
+{
+  "kind": "c1-native-host-authorization-interruption",
+  "conformance": false,
+  "selection": "language/expressions/class/*.js",
+  "expectedVariants": 495,
+  "observedVariants": 413,
+  "unobservedVariants": 82,
+  "outcomes": {
+    "pass": 411,
+    "timeout": 2,
+    "failure": 0,
+    "unsupported": 0,
+    "harnessError": 0,
+    "crash": 0
+  },
+  "journal": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v1.jsonl",
+  "journalSha256": "5a7f1aa0b15276858c2a10eb28a08d1c45f6a03e09267dbe54f8e28364e532c3",
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v11.json",
+  "frozenRunIdentity": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76",
+  "sourceSnapshot": {
+    "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+    "files": 568
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "runnerExitStatus": 137,
+  "controllerExitStatus": 1,
+  "nativeExecutionActiveAtStop": false,
+  "stopProof": {
+    "observedVariants": 413,
+    "passed": 411,
+    "timeouts": 2,
+    "journalSha256": "5a7f1aa0b15276858c2a10eb28a08d1c45f6a03e09267dbe54f8e28364e532c3",
+    "journal": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v1.jsonl",
+    "pendingPath": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-factory.js",
+    "pendingVariant": "sloppy",
+    "pendingNativeCpu": "0:00.00",
+    "pendingAgeSeconds": 250,
+    "initialFileAbsent": true,
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test",
+    "imageBytes": 192316415,
+    "imageSha256": "3e2643d09033c4734130cb6ce2a309344715a6d45a4bf313cff726ecf0fc8623",
+    "stoppedPids": [
+      18546,
+      68823,
+      68820,
+      68771
+    ],
+    "reason": "Three consecutive direct launches stalled before entry; two original timeouts recorded. Pending third variant never executed. Native run interrupted with resumable journal; no progressing inferior was killed."
+  },
+  "stdout": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v1.json.interrupted-stdout.txt",
+  "stderr": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v1.json.stderr.txt",
+  "diagnostics": "docs/results/c1-expression-preentry-diagnostics-v1.json.gz",
+  "hostStatus": "DevToolsSecurity: developer mode disabled; SecurityAgent prompt active; corroborated by the 2026-11-07T00:45Z HOST AUTHORIZATION STALL entry and cluster G evidence.",
+  "controls": [
+    "docs/results/c1-direct-launch-image-probe-v1.json",
+    "docs/results/c1-known-fixture-launch-probe-v1.json",
+    "docs/results/c1-tiny-launch-probe-v1.json"
+  ],
+  "resumePlan": "docs/results/c1-expression-root-v2-resume-plan.json",
+  "recheckManifest": "docs/results/c1-expression-host-authorization-recheck-variants-v1.json",
+  "scope": "Incomplete parent selection. Two original pre-entry timeouts remain in denominator. A third pending variant was stopped with zero native CPU after 250 seconds before initial entry. Resume only after host authorization is restored; no progressing inferior was killed."
+}

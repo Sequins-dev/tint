@@ -1,0 +1,31 @@
+{
+  "kind": "c1-docs-only-held-slice-validation",
+  "conformance": false,
+  "base": "37c81bbab89dc3b35222ab01579a899d82b78100",
+  "gateReusedFromMain": "3f53c0991acc3533cd7d298e73c8dfadd539d09d",
+  "gateRecord": "2026-11-07T00:49Z 3f53c09 tint-check 4610/4610 PASS (integrated main incl. H calendar identifiers 02acb41)",
+  "gateLedger": "/Users/stephenbelanger/.t3/tint-briefs/main-gates.txt",
+  "workspaceGateExitStatus": 0,
+  "workspaceTests": 4610,
+  "workspaceTestsPassed": 4610,
+  "executableChangesSinceGate": [],
+  "checkpoint": "docs/results/c1-direct-expressions-completed-files-v10.json",
+  "completeExpressionFiles": 212,
+  "totals": {
+    "total": 413,
+    "passed": 411,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "parentComplete": false,
+  "parentExpectedVariants": 495,
+  "parentObservedVariants": 413,
+  "unobservedVariants": 82,
+  "blocker": "Host developer-tools authorization disabled with active SecurityAgent prompt; direct launch stalls before entry. No native class semantic failure observed.",
+  "diagnosticControls": "Original image, byte-identical fresh copy, earlier-passing fixture and minimal return-42 image all timed out before initial entry. Controls add no conformance outcomes.",
+  "launcherSyntaxCheckExitStatus": 0,
+  "scope": "Docs-only evidence and dashboard. Current code matches the newest recorded integrated-main gate. Every original timeout remains counted. No new compiler/runtime implementation change."
+}
