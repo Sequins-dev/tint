@@ -1,0 +1,3929 @@
+{
+  "kind": "native-capture-throughput-v1",
+  "schemaVersion": 1,
+  "createdUTC": "2026-11-07T11:07:22.931204+00:00",
+  "implementation": "Strict simple captured numeric parameters with no reassignment, alias, eval, arguments or TDZ/default hazard are stored by value. Other captures retain cells. No guard is inferred solely from a TypeScript assertion.",
+  "sourceSnapshot": {
+    "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+    "files": 570
+  },
+  "operationBenchmark": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-I71cg8/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "6fec133a21fcd4346ea2ec05632ea7a01a472b6dcde3e16d23e05e049e04137f",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-I71cg8/value-capture-region.source.ts",
+          "fixtureSha256": "6e38a95e49ebde57bc4268338e9c317c919032ee99929b95f0c1a37ad1175ceb",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-CTKVZR/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "8406a6f9f512ae979840173e4c87692ca314f4d67c32bbd2c7686ade32631dbe",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-CTKVZR/value-capture-region.source.ts",
+          "fixtureSha256": "6e38a95e49ebde57bc4268338e9c317c919032ee99929b95f0c1a37ad1175ceb",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          8.69287109375,
+          4.62109375,
+          2.56298828125
+        ],
+        "loadAverageAfter": [
+          8.95751953125,
+          4.7431640625,
+          2.6181640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67254
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2245.326542,
+        "cpuLowerBoundMs": 2197.7145833333334,
+        "unobservedCPUWallBoundMs": 0.018417,
+        "probes": 1755,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3094
+        },
+        "lastCPU": {
+          "userTicks": 52619355,
+          "systemTicks": 128889
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          8.95751953125,
+          4.7431640625,
+          2.6181640625
+        ],
+        "loadAverageAfter": [
+          8.95751953125,
+          4.7431640625,
+          2.6181640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67376
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1993.542708,
+        "cpuLowerBoundMs": 1938.1026666666667,
+        "unobservedCPUWallBoundMs": 0.011625,
+        "probes": 1560,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3072
+        },
+        "lastCPU": {
+          "userTicks": 46348257,
+          "systemTicks": 169279
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          8.95751953125,
+          4.7431640625,
+          2.6181640625
+        ],
+        "loadAverageAfter": [
+          9.44091796875,
+          4.9130859375,
+          2.6904296875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67415
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1863.500791,
+        "cpuLowerBoundMs": 1813.9972083333332,
+        "unobservedCPUWallBoundMs": 1.303666,
+        "probes": 1464,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2048
+        },
+        "lastCPU": {
+          "userTicks": 43439265,
+          "systemTicks": 98716
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          9.44091796875,
+          4.9130859375,
+          2.6904296875
+        ],
+        "loadAverageAfter": [
+          9.44091796875,
+          4.9130859375,
+          2.6904296875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67431
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2177.83425,
+        "cpuLowerBoundMs": 2129.0848333333333,
+        "unobservedCPUWallBoundMs": 0.026208,
+        "probes": 1709,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2866
+        },
+        "lastCPU": {
+          "userTicks": 50993006,
+          "systemTicks": 107896
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          9.44091796875,
+          4.9130859375,
+          2.6904296875
+        ],
+        "loadAverageAfter": [
+          9.6455078125,
+          5.0302734375,
+          2.74462890625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67441
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2302.32625,
+        "cpuLowerBoundMs": 2252.475875,
+        "unobservedCPUWallBoundMs": 1.320542,
+        "probes": 1799,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1629
+        },
+        "lastCPU": {
+          "userTicks": 53947041,
+          "systemTicks": 114009
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          9.6455078125,
+          5.0302734375,
+          2.74462890625
+        ],
+        "loadAverageAfter": [
+          9.6455078125,
+          5.0302734375,
+          2.74462890625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67697
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1833.286292,
+        "cpuLowerBoundMs": 1781.9299166666667,
+        "unobservedCPUWallBoundMs": 1.304917,
+        "probes": 1422,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1801
+        },
+        "lastCPU": {
+          "userTicks": 42662130,
+          "systemTicks": 105989
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          9.6455078125,
+          5.0302734375,
+          2.74462890625
+        ],
+        "loadAverageAfter": [
+          9.9140625,
+          5.162109375,
+          2.8046875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67739
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1772.307917,
+        "cpuLowerBoundMs": 1726.6304166666666,
+        "unobservedCPUWallBoundMs": 1.293834,
+        "probes": 1396,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2690
+        },
+        "lastCPU": {
+          "userTicks": 41352040,
+          "systemTicks": 89780
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          9.9140625,
+          5.162109375,
+          2.8046875
+        ],
+        "loadAverageAfter": [
+          9.9140625,
+          5.162109375,
+          2.8046875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 67771
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2104.529291,
+        "cpuLowerBoundMs": 2058.0506666666665,
+        "unobservedCPUWallBoundMs": 0.019541,
+        "probes": 1658,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1727
+        },
+        "lastCPU": {
+          "userTicks": 49285734,
+          "systemTicks": 109209
+        }
+      }
+    ]
+  },
+  "operationSummary": [
+    {
+      "index": 0,
+      "runs": 4,
+      "cpuLowerBoundMs": {
+        "median": 2163.3997083333334,
+        "min": 2058.0506666666665,
+        "max": 2252.475875
+      },
+      "inferiorWallMs": {
+        "median": 2211.580396,
+        "min": 2104.529291,
+        "max": 2302.32625
+      }
+    },
+    {
+      "index": 1,
+      "runs": 4,
+      "cpuLowerBoundMs": {
+        "median": 1797.9635625,
+        "min": 1726.6304166666666,
+        "max": 1938.1026666666667
+      },
+      "inferiorWallMs": {
+        "median": 1848.3935415,
+        "min": 1772.307917,
+        "max": 1993.542708
+      }
+    }
+  ],
+  "counterBenchmark": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-I71cg8/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "6fec133a21fcd4346ea2ec05632ea7a01a472b6dcde3e16d23e05e049e04137f",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-I71cg8/value-capture-region.source.ts",
+          "fixtureSha256": "6e38a95e49ebde57bc4268338e9c317c919032ee99929b95f0c1a37ad1175ceb",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-CTKVZR/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "8406a6f9f512ae979840173e4c87692ca314f4d67c32bbd2c7686ade32631dbe",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-CTKVZR/value-capture-region.source.ts",
+          "fixtureSha256": "6e38a95e49ebde57bc4268338e9c317c919032ee99929b95f0c1a37ad1175ceb",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          11.52587890625,
+          11.892578125,
+          8.0556640625
+        ],
+        "loadAverageAfter": [
+          11.52587890625,
+          11.892578125,
+          8.0556640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 98935
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2543.26075,
+        "cpuLowerBoundMs": 2489.316125,
+        "unobservedCPUWallBoundMs": 0.012208,
+        "instructions": 61220490952,
+        "cycles": 8046360357,
+        "probes": 1673,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1954,
+          "instructions": 110135,
+          "cycles": 289845
+        },
+        "lastCPU": {
+          "userTicks": 59615223,
+          "systemTicks": 130318,
+          "instructions": 61220601087,
+          "cycles": 8046650202
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          11.52587890625,
+          11.892578125,
+          8.0556640625
+        ],
+        "loadAverageAfter": [
+          11.4033203125,
+          11.86083984375,
+          8.06689453125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99188
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2008.4,
+        "cpuLowerBoundMs": 1954.3848333333333,
+        "unobservedCPUWallBoundMs": 1.532792,
+        "instructions": 51019235768,
+        "cycles": 6467860031,
+        "probes": 1322,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3210,
+          "instructions": 240634,
+          "cycles": 509278
+        },
+        "lastCPU": {
+          "userTicks": 46800179,
+          "systemTicks": 108267,
+          "instructions": 51019476402,
+          "cycles": 6468369309
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          11.4033203125,
+          11.86083984375,
+          8.06689453125
+        ],
+        "loadAverageAfter": [
+          11.4033203125,
+          11.86083984375,
+          8.06689453125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99227
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2004.219458,
+        "cpuLowerBoundMs": 1950.3296666666668,
+        "unobservedCPUWallBoundMs": 0.015042,
+        "instructions": 51026954597,
+        "cycles": 6467697256,
+        "probes": 1322,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2461,
+          "instructions": 115826,
+          "cycles": 306555
+        },
+        "lastCPU": {
+          "userTicks": 46638118,
+          "systemTicks": 172255,
+          "instructions": 51027070423,
+          "cycles": 6468003811
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          11.4033203125,
+          11.86083984375,
+          8.06689453125
+        ],
+        "loadAverageAfter": [
+          11.29052734375,
+          11.82958984375,
+          8.078125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99326
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2394.028958,
+        "cpuLowerBoundMs": 2334.7262916666664,
+        "unobservedCPUWallBoundMs": 1.526125,
+        "instructions": 61124254210,
+        "cycles": 7675678563,
+        "probes": 1576,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1407,
+          "instructions": 107826,
+          "cycles": 189181
+        },
+        "lastCPU": {
+          "userTicks": 55898585,
+          "systemTicks": 136253,
+          "instructions": 61124362036,
+          "cycles": 7675867744
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          11.29052734375,
+          11.82958984375,
+          8.078125
+        ],
+        "loadAverageAfter": [
+          11.29052734375,
+          11.82958984375,
+          8.078125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99393
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2435.38625,
+        "cpuLowerBoundMs": 2380.3203333333336,
+        "unobservedCPUWallBoundMs": 1.540166,
+        "instructions": 61220298105,
+        "cycles": 7617877323,
+        "probes": 1603,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2321,
+          "instructions": 106459,
+          "cycles": 254752
+        },
+        "lastCPU": {
+          "userTicks": 57004543,
+          "systemTicks": 125466,
+          "instructions": 61220404564,
+          "cycles": 7618132075
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          11.29052734375,
+          11.82958984375,
+          8.078125
+        ],
+        "loadAverageAfter": [
+          11.10693359375,
+          11.7822265625,
+          8.08349609375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99480
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2098.664917,
+        "cpuLowerBoundMs": 2042.7874166666668,
+        "unobservedCPUWallBoundMs": 1.52775,
+        "instructions": 50993114619,
+        "cycles": 6448197638,
+        "probes": 1379,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1920,
+          "instructions": 114744,
+          "cycles": 309797
+        },
+        "lastCPU": {
+          "userTicks": 48905437,
+          "systemTicks": 123381,
+          "instructions": 50993229363,
+          "cycles": 6448507435
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          11.10693359375,
+          11.7822265625,
+          8.08349609375
+        ],
+        "loadAverageAfter": [
+          11.10693359375,
+          11.7822265625,
+          8.08349609375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99514
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2118.626584,
+        "cpuLowerBoundMs": 2053.406375,
+        "unobservedCPUWallBoundMs": 0.020167,
+        "instructions": 51040961593,
+        "cycles": 6695861305,
+        "probes": 1385,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1917,
+          "instructions": 110426,
+          "cycles": 286645
+        },
+        "lastCPU": {
+          "userTicks": 48955098,
+          "systemTicks": 328572,
+          "instructions": 51041072019,
+          "cycles": 6696147950
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          11.10693359375,
+          11.7822265625,
+          8.08349609375
+        ],
+        "loadAverageAfter": [
+          11.01806640625,
+          11.75244140625,
+          8.09423828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 99568
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2612.704875,
+        "cpuLowerBoundMs": 2518.65825,
+        "unobservedCPUWallBoundMs": 1.577417,
+        "instructions": 61290199544,
+        "cycles": 8177106273,
+        "probes": 1716,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2074,
+          "instructions": 117029,
+          "cycles": 304306
+        },
+        "lastCPU": {
+          "userTicks": 59617269,
+          "systemTicks": 832603,
+          "instructions": 61290316573,
+          "cycles": 8177410579
+        }
+      }
+    ]
+  },
+  "counterSummary": [
+    {
+      "index": 0,
+      "runs": 4,
+      "cpuLowerBoundMs": {
+        "median": 2434.8182291666667,
+        "min": 2334.7262916666664,
+        "max": 2518.65825
+      },
+      "inferiorWallMs": {
+        "median": 2489.3235,
+        "min": 2394.028958,
+        "max": 2612.704875
+      },
+      "instructions": {
+        "median": 61220394528.5,
+        "min": 61124254210,
+        "max": 61290199544
+      },
+      "cycles": {
+        "median": 7861019460.0,
+        "min": 7617877323,
+        "max": 8177106273
+      }
+    },
+    {
+      "index": 1,
+      "runs": 4,
+      "cpuLowerBoundMs": {
+        "median": 1998.586125,
+        "min": 1950.3296666666668,
+        "max": 2053.406375
+      },
+      "inferiorWallMs": {
+        "median": 2053.5324585,
+        "min": 2004.219458,
+        "max": 2118.626584
+      },
+      "instructions": {
+        "median": 51023095182.5,
+        "min": 50993114619,
+        "max": 51040961593
+      },
+      "cycles": {
+        "median": 6467778643.5,
+        "min": 6448197638,
+        "max": 6695861305
+      }
+    }
+  ],
+  "nativeSemanticFixture": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-4ncFEP/value-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "eff206c4b31427eeb61f3053d3aac0cc8580dc981f5bbd844d396b339118b649",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-4ncFEP/value-captures.source.ts",
+          "fixtureSha256": "37914d34e17b093f4af680aee0ba0747f173291e1057d520bb8c2572aad59061",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-fixture-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-5KcpVJ/value-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "a26972af23b37b15d5ffbf225d33dae76bb81f7d3a8e57445b02b9da6120a1f5",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-5KcpVJ/value-captures.source.ts",
+          "fixtureSha256": "37914d34e17b093f4af680aee0ba0747f173291e1057d520bb8c2572aad59061",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-fixture-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          4.7177734375,
+          2.0390625,
+          1.42822265625
+        ],
+        "loadAverageAfter": [
+          4.7177734375,
+          2.0390625,
+          1.42822265625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61765
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 47.472041,
+        "cpuLowerBoundMs": 4.357291666666667,
+        "unobservedCPUWallBoundMs": 1.284666,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2801
+        },
+        "lastCPU": {
+          "userTicks": 59337,
+          "systemTicks": 48039
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          4.7177734375,
+          2.0390625,
+          1.42822265625
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61768
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 47.271458,
+        "cpuLowerBoundMs": 4.150458333333334,
+        "unobservedCPUWallBoundMs": 0.004125,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3674
+        },
+        "lastCPU": {
+          "userTicks": 53823,
+          "systemTicks": 49462
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61828
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 46.020625,
+        "cpuLowerBoundMs": 3.2135833333333337,
+        "unobservedCPUWallBoundMs": 1.302875,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2447
+        },
+        "lastCPU": {
+          "userTicks": 43445,
+          "systemTicks": 36128
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61831
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 44.825208,
+        "cpuLowerBoundMs": 3.7245,
+        "unobservedCPUWallBoundMs": 0.005458,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1653
+        },
+        "lastCPU": {
+          "userTicks": 56435,
+          "systemTicks": 34606
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61835
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 46.351125,
+        "cpuLowerBoundMs": 3.8074583333333334,
+        "unobservedCPUWallBoundMs": 1.314667,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2172
+        },
+        "lastCPU": {
+          "userTicks": 54983,
+          "systemTicks": 38568
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61838
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 45.275167,
+        "cpuLowerBoundMs": 3.6307083333333336,
+        "unobservedCPUWallBoundMs": 0.014292,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1710
+        },
+        "lastCPU": {
+          "userTicks": 52801,
+          "systemTicks": 36046
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61841
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 46.30825,
+        "cpuLowerBoundMs": 3.5967083333333334,
+        "unobservedCPUWallBoundMs": 1.278125,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1871
+        },
+        "lastCPU": {
+          "userTicks": 52504,
+          "systemTicks": 35688
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "loadAverageAfter": [
+          4.98046875,
+          2.1376953125,
+          1.46630859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 61915
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 47.736875,
+        "cpuLowerBoundMs": 3.9495416666666667,
+        "unobservedCPUWallBoundMs": 1.281834,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2831
+        },
+        "lastCPU": {
+          "userTicks": 58443,
+          "systemTicks": 39177
+        }
+      }
+    ]
+  },
+  "selfbuilds": [
+    {
+      "manifest": {
+        "kind": "frozen-matched-numeric-value-capture-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+          "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+          "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+          "files": 570
+        },
+        "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 62936,
+            "monotonicNs": 1085107916
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 228464648208
+          },
+          "loadBefore": [
+            5.81298828125,
+            2.515625,
+            1.61669921875
+          ],
+          "loadAfter": [
+            9.94287109375,
+            6.4140625,
+            3.5224609375
+          ],
+          "cpu": {
+            "pid": 62936,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 5376390340,
+              "systemTicks": 21952903
+            },
+            "cpuMsLowerBound": 224930.96845833334,
+            "finalUnobservedWallBoundMs": 105.058209,
+            "probes": 2181,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 227379.540292,
+          "outputSha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+          "outputBytes": 59815314,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 71642,
+            "monotonicNs": 1706332791
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 276216874750
+          },
+          "loadBefore": [
+            9.94287109375,
+            6.4140625,
+            3.5224609375
+          ],
+          "loadAfter": [
+            12.26708984375,
+            11.0419921875,
+            6.521484375
+          ],
+          "cpu": {
+            "pid": 71642,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6332170554,
+              "systemTicks": 67678579
+            },
+            "cpuMsLowerBound": 266660.38054166664,
+            "finalUnobservedWallBoundMs": 110.063584,
+            "probes": 2567,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 274510.541959,
+          "outputSha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+          "outputBytes": 59815314,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 0.8435110157775653,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    {
+      "manifest": {
+        "kind": "frozen-matched-numeric-value-capture-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+          "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+          "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+          "files": 570
+        },
+        "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+      },
+      "observations": [
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 48290,
+            "monotonicNs": 328205083
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 262070000083
+          },
+          "loadBefore": [
+            12.8701171875,
+            15.43505859375,
+            12.486328125
+          ],
+          "loadAfter": [
+            12.8681640625,
+            14.3505859375,
+            12.76220703125
+          ],
+          "cpu": {
+            "pid": 48290,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6144513025,
+              "systemTicks": 36981930,
+              "instructions": 2821379814449,
+              "cycles": 847261858500
+            },
+            "cpuMsLowerBound": 257562.28979166667,
+            "finalUnobservedWallBoundMs": 100.966125,
+            "probes": 2470,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 261741.795,
+          "outputSha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+          "outputBytes": 59815314,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 61712,
+            "monotonicNs": 474675833
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 1245735788916
+          },
+          "loadBefore": [
+            12.8681640625,
+            14.3505859375,
+            12.76220703125
+          ],
+          "loadAfter": [
+            25.72509765625,
+            40.94677734375,
+            40.4345703125
+          ],
+          "cpu": {
+            "pid": 61712,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 8541563402,
+              "systemTicks": 205400424,
+              "instructions": 2874612305059,
+              "cycles": 1004607553814
+            },
+            "cpuMsLowerBound": 364456.8260833333,
+            "finalUnobservedWallBoundMs": 105.340292,
+            "probes": 10176,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 1245261.113083,
+          "outputSha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+          "outputBytes": 59815314,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.415024017600286,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    }
+  ],
+  "selfbuildInterpretation": "All four native compiler executions reproduce the same 59,815,314-byte candidate image. CPU changes direction between the two orders (first after slower, reverse after faster); reverse baseline overlaps external saturation. Retired instructions are 1.85% lower after in the counter pair. No stable whole-compiler CPU speedup follows.",
+  "nativeSelection": {
+    "before": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+        "files": 569
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+      "frozenToolchainSha256": "abed8b3169d41c4e2027a4bde1cfd2c9dba621f7ea584e2cbb9783d702705dec",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 6,
+            "kind": "execution",
+            "compileMs": 229021.81062499998,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 6,
+      "variantSubsetSha256": "5389f7b9bfbc8caece1a4b69a70910617cadd59f0f9398c29cd316a4ee19cff8",
+      "complete": true,
+      "totals": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 231344.677708,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 231906.964166,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 232469.627125,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 232985.011,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 233480.195709,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 234011.23525,
+          "batch": 0
+        }
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+        "files": 570
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "frozenToolchainSha256": "5511573315f4d719f5415df1303f7411364852f789ef52218486b3a3d0330152",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 6,
+            "kind": "execution",
+            "compileMs": 195083.399542,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 6,
+      "variantSubsetSha256": "5389f7b9bfbc8caece1a4b69a70910617cadd59f0f9398c29cd316a4ee19cff8",
+      "complete": true,
+      "totals": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 196772.413625,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 197108.831917,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 197457.117708,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 197797.587959,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 198119.682125,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 198447.229125,
+          "batch": 0
+        }
+      ]
+    },
+    "observationsEqual": true,
+    "observations": [
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      }
+    ]
+  },
+  "canonicalA1": {
+    "before": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "dc400843a4546c5ba12f4fa9aaa73ca6123fc004f1dde4e250029829e3cc14ea",
+        "files": 568
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-frame-production-toolchain-v10/source-snapshot.json",
+      "frozenToolchainSha256": "a75b8bc8990582f25e8e3288bf124b9e749c16581f1dfbfd130ff42813c5b4b4",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 2,
+            "kind": "execution",
+            "compileMs": 176328.910542,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions/addition/S11.6.1_A1.js",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 466517.774542,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 744469.578333,
+          "batch": 0
+        }
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+        "files": 570
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "frozenToolchainSha256": "5511573315f4d719f5415df1303f7411364852f789ef52218486b3a3d0330152",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 2,
+            "kind": "execution",
+            "compileMs": 1133594.09375,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions/addition/S11.6.1_A1.js",
+      "totals": {
+        "total": 2,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TG7di4/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 27756 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001091e09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1091e09c0 <+0>:  mov    x0, sp\n    0x1091e09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1091e09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1091e09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+          },
+          "status": "timeout",
+          "elapsedMs": 1433706.5540830002,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A1.js",
+          "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "timeout",
+            "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aJzKSe/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4W2Oiu/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 49633 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d3c09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d3c09c0 <+0>:  mov    x0, sp\n    0x10d3c09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d3c09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d3c09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+          },
+          "status": "timeout",
+          "elapsedMs": 1733753.950292,
+          "batch": 0
+        }
+      ]
+    },
+    "cpuAfter": [
+      {
+        "pid": 27756,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 4965509414,
+          "systemTicks": 162411515,
+          "instructions": 1382864227467,
+          "cycles": 569554573384
+        },
+        "cpuMsLowerBound": 213663.37204166665,
+        "finalUnobservedWallBoundMs": 102.221584,
+        "probes": 2831,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      {
+        "pid": 49633,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 3398583992,
+          "systemTicks": 143437699,
+          "instructions": 915007234081,
+          "cycles": 385996987460
+        },
+        "cpuMsLowerBound": 147584.237125,
+        "finalUnobservedWallBoundMs": 101.8485,
+        "probes": 2801,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    ],
+    "interpretation": "Original complete outcomes are retained: baseline 2/2 pass, candidate 0/2 with two after-entry timeouts. Candidate received only 213.7 and 147.6 CPU seconds in 300 seconds wall. This is not an A1 equivalence or A1 performance claim; separately recheck under normal load. Failed first CPU observer matched debugserver and is invalid, explicitly retained."
+  },
+  "a1Diagnostic": {
+    "kind": "native-workload-profile",
+    "conformance": false,
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-addition-v2/map-after/image",
+    "imageSha256": "242be5ad018bc756457d6e4b77f9fbc0912391892b02ab481d31688e39419f0c",
+    "selectedCase": "0",
+    "containmentMs": 300000,
+    "containmentScope": "300 seconds after observed initial stopped state; independent 300-second startup watchdog",
+    "startedUTC": "2026-11-07T09:18:56.390Z",
+    "wallMs": 248411,
+    "startLoad": [
+      13.67041015625,
+      10.9814453125,
+      6.201171875
+    ],
+    "endLoad": [
+      12.93798828125,
+      12.13623046875,
+      7.9287109375
+    ],
+    "initial": {
+      "state": "stopped",
+      "pid": 85269
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42
+    },
+    "timedOut": false,
+    "debugger": {
+      "code": 0,
+      "signal": null
+    },
+    "cpu": {
+      "pid": 85269,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "lastCPU": {
+        "userTicks": 5569907915,
+        "systemTicks": 63016016
+      },
+      "cpuMsLowerBound": 234705.16379166665,
+      "finalUnobservedWallBoundMs": 110.053625,
+      "probes": 2251,
+      "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+    },
+    "samples": [
+      {
+        "index": 0,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-0.txt",
+        "startUTC": "2026-11-07T09:19:00.427Z",
+        "loadBefore": [
+          13.53662109375,
+          10.998046875,
+          6.23486328125
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:19:05.612Z",
+        "loadAfter": [
+          13.2529296875,
+          10.9814453125,
+          6.2568359375
+        ]
+      },
+      {
+        "index": 1,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-1.txt",
+        "startUTC": "2026-11-07T09:19:30.662Z",
+        "loadBefore": [
+          12.73583984375,
+          11.044921875,
+          6.41552734375
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:19:35.837Z",
+        "loadAfter": [
+          12.5966796875,
+          11.0439453125,
+          6.4423828125
+        ]
+      },
+      {
+        "index": 2,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-2.txt",
+        "startUTC": "2026-11-07T09:20:00.896Z",
+        "loadBefore": [
+          11.7646484375,
+          10.97412109375,
+          6.5498046875
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:20:06.053Z",
+        "loadAfter": [
+          11.703125,
+          10.97412109375,
+          6.57568359375
+        ]
+      },
+      {
+        "index": 3,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-3.txt",
+        "startUTC": "2026-11-07T09:20:30.929Z",
+        "loadBefore": [
+          15.01220703125,
+          11.74560546875,
+          6.97705078125
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:20:36.271Z",
+        "loadAfter": [
+          15.5712890625,
+          11.91552734375,
+          7.06494140625
+        ]
+      },
+      {
+        "index": 4,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-4.txt",
+        "startUTC": "2026-11-07T09:21:01.164Z",
+        "loadBefore": [
+          14.25390625,
+          11.9033203125,
+          7.20068359375
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:21:08.272Z",
+        "loadAfter": [
+          13.99365234375,
+          11.9228515625,
+          7.26220703125
+        ]
+      },
+      {
+        "index": 5,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-5.txt",
+        "startUTC": "2026-11-07T09:21:31.390Z",
+        "loadBefore": [
+          13.36376953125,
+          11.9111328125,
+          7.365234375
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:21:36.560Z",
+        "loadAfter": [
+          13.41455078125,
+          11.94580078125,
+          7.40380859375
+        ]
+      },
+      {
+        "index": 6,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-6.txt",
+        "startUTC": "2026-11-07T09:22:01.617Z",
+        "loadBefore": [
+          13.56982421875,
+          12.08154296875,
+          7.58251953125
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:22:06.786Z",
+        "loadAfter": [
+          13.28369140625,
+          12.046875,
+          7.5966796875
+        ]
+      },
+      {
+        "index": 7,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-7.txt",
+        "startUTC": "2026-11-07T09:22:31.858Z",
+        "loadBefore": [
+          12.759765625,
+          12.01220703125,
+          7.71142578125
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:22:37.019Z",
+        "loadAfter": [
+          12.85888671875,
+          12.044921875,
+          7.748046875
+        ]
+      },
+      {
+        "index": 8,
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-8.txt",
+        "startUTC": "2026-11-07T09:23:02.076Z",
+        "loadBefore": [
+          12.93310546875,
+          12.1220703125,
+          7.89892578125
+        ],
+        "status": 0,
+        "endUTC": "2026-11-07T09:23:04.683Z",
+        "loadAfter": [
+          12.93798828125,
+          12.13623046875,
+          7.9287109375
+        ]
+      }
+    ]
+  },
+  "a1Attribution": {
+    "samples": 6277,
+    "windows": 8,
+    "paths": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-0.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-1.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-2.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-3.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-4.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-5.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-6.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-7.txt"
+    ],
+    "emptyWindows": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-8.txt"
+    ],
+    "groups": [
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+        "samples": 960,
+        "percent": 15.293930221443365
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+        "samples": 910,
+        "percent": 14.497371355743189
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+        "samples": 761,
+        "percent": 12.123625935956667
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+        "samples": 357,
+        "percent": 5.687430301099251
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+        "samples": 232,
+        "percent": 3.696033136848813
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+        "samples": 222,
+        "percent": 3.536721363708778
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+        "samples": 174,
+        "percent": 2.77202485263661
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+        "samples": 173,
+        "percent": 2.756093675322606
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+        "samples": 169,
+        "percent": 2.692368966066592
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+        "samples": 166,
+        "percent": 2.6445754341245817
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+        "samples": 157,
+        "percent": 2.50119483829855
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+        "samples": 145,
+        "percent": 2.3100207105305084
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+        "samples": 143,
+        "percent": 2.278158355902501
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:position",
+        "samples": 117,
+        "percent": 1.8639477457384102
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+        "samples": 97,
+        "percent": 1.54532419945834
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+        "samples": 96,
+        "percent": 1.5293930221443364
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+        "samples": 96,
+        "percent": 1.5293930221443364
+      },
+      {
+        "function": "program:helper:string-equal",
+        "samples": 76,
+        "percent": 1.2107694758642664
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:expression",
+        "samples": 69,
+        "percent": 1.0992512346662417
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+        "samples": 67,
+        "percent": 1.0673888800382347
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+        "samples": 58,
+        "percent": 0.9240082842122033
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+        "samples": 49,
+        "percent": 0.7806276883861717
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+        "samples": 43,
+        "percent": 0.6850406245021508
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+        "samples": 40,
+        "percent": 0.6372470925601402
+      },
+      {
+        "function": "runtime:helper:remainder",
+        "samples": 37,
+        "percent": 0.5894535606181297
+      },
+      {
+        "function": "runtime:helper:to-uint32",
+        "samples": 36,
+        "percent": 0.5735223833041262
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+        "samples": 34,
+        "percent": 0.5416600286761192
+      },
+      {
+        "function": "program:helper:string-concat-copy",
+        "samples": 30,
+        "percent": 0.47793531942010514
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+        "samples": 30,
+        "percent": 0.47793531942010514
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:next",
+        "samples": 29,
+        "percent": 0.46200414210610163
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+        "samples": 28,
+        "percent": 0.4460729647920981
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:statement",
+        "samples": 27,
+        "percent": 0.4301417874780946
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:declarations",
+        "samples": 26,
+        "percent": 0.4142106101640911
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:validIndex",
+        "samples": 26,
+        "percent": 0.4142106101640911
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+        "samples": 25,
+        "percent": 0.3982794328500876
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:expression",
+        "samples": 25,
+        "percent": 0.3982794328500876
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:collect",
+        "samples": 24,
+        "percent": 0.3823482555360841
+      },
+      {
+        "function": "program:helper:to-uint32",
+        "samples": 20,
+        "percent": 0.3186235462800701
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+        "samples": 20,
+        "percent": 0.3186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@8120",
+        "samples": 18,
+        "percent": 0.2867611916520631
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:index",
+        "samples": 15,
+        "percent": 0.23896765971005257
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2559",
+        "samples": 14,
+        "percent": 0.22303648239604906
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+        "samples": 13,
+        "percent": 0.20710530508204555
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+        "samples": 13,
+        "percent": 0.20710530508204555
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+        "samples": 12,
+        "percent": 0.19117412776804205
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+        "samples": 11,
+        "percent": 0.17524295045403857
+      },
+      {
+        "function": "runtime:helper:memory-move",
+        "samples": 11,
+        "percent": 0.17524295045403857
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:writeList",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:statement",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:tokenAt",
+        "samples": 8,
+        "percent": 0.12744941851202804
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:copyType",
+        "samples": 8,
+        "percent": 0.12744941851202804
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:current",
+        "samples": 7,
+        "percent": 0.11151824119802453
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+        "samples": 7,
+        "percent": 0.11151824119802453
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:at",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@7370",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:mark",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:compare",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1039",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:createList",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:resolve",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:graphDepth",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:closure@8727",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:narrowedType",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refine",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:cell",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineLiteralBinding",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@4441",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:unionCycle",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:same",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:expression",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:fingerprint",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:relates",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:createNumberList",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:pure",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:advanceSetCursor",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:parameters",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:canonical",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:expr",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:predeclare",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:reference",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:cell:write:2",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:rotateLeft",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:closure@1586",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:capture",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:presentType",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineNullBinding",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/union-index.ts:closure@762",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:helper:string-code-unit",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:writeNumberList",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:ungroup",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:helper:string-starts-with",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@899",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:valid",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:start",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:end",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:edge",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "runtime:helper:string-equal",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3419",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2639",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:requireType",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:createTypeSystem",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@7323",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:setMap",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:hasList",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:statement",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:createKeyIndex",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:recordTypeFlow",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:named",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:assignable",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:resizeNumberList",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:valid",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:exportedName",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:helper:string-slice-copy",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:planManagedSurfaceContracts",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-directory-data.ts:text",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-entry.ts:closure@1242",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/sha256-compression.ts:compressWords",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/sha256-compression.ts:readSha256Word",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/numeric/number-text/index.ts:natural",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1348",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:fn",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolveInterfaceTypes",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:identifier",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:printReifiedTypes",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:quote",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:render",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:part",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:quotedText",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:space",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:afterParameters",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:reserved",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:reservedName",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:take",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:typeArgumentCall",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:cell:initialize:0",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5226",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5931",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:deleteSet",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:resizeList",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@15292",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6456",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@26658",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:closure@4601",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:cell:initialize:3",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:cloneSet",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:chainReceiver",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:discriminants",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:call",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:valid",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:cell",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:constPrimitiveType",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:isList",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineDiscriminant",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:matches",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/bytes.ts:store",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:grow",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:expression",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/list-sort/sparse.ts:closure@369",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:add",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:collectRuntimeRequirements",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6820",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:unionSubset",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:canonicalMembers",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:binding",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:parameter",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:variableBinding",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@86556",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:invalidateCalls",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolve",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-closure-uses.ts:closure@1162",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:closure@6792",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-records.ts:bindManagedJitRecords",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:validIndex",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:expr",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:closure@3315",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:scalarType",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/records.ts:indexObjects",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/runtime/elements.ts:presentAssignable",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/scalar.ts:store",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:computeScalarRelation",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:dependency",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:lookup",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      }
+    ]
+  },
+  "wholeSuiteProjectionHours": null,
+  "projectionLimit": "The fixed-work closure benchmark is not the suite execution mix. Node-hosted compilation is a separate fixed cost. The canonical A1 timings under load do not justify extrapolation.",
+  "gatePending": "A fresh rebased workspace gate is recorded separately before READY. Earlier 4634-test gate and pre-entry authorization failures remain in native-hot-functions-v8.",
+  "assets": [
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-numeric-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.json",
+      "uncompressedSha256": "0c185f88e16baaf4da9f75dba53ff34769ba2291c70df68601e46ae2cf57ea54"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-numeric-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.jsonl",
+      "uncompressedSha256": "cb5c830d4144924711e2503fd6ad07bd668375c6a479bbd9054714655fc58a55"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-numeric-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.log",
+      "uncompressedSha256": "ad50043d72cfa849b6980c9e18fb40064ea7ebd4d661e2ebf26bfcb3b1f50ce3"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-numeric-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1-inputs.json",
+      "uncompressedSha256": "38751a13106a67c75ab722d22e2f985f8ffe5cd4b411ed7def417e2e4e19da71"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-capture-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-capture-v1.json",
+      "uncompressedSha256": "48e8592fb8ceeaf26b108729e31496f8fccc45369005dc799dad91442b043182"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-capture-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-capture-v1.jsonl",
+      "uncompressedSha256": "abcb29562e0f963e5ce49d30f231d6de9199b7038d190b3293d6b097775ffecb"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-capture-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-capture-v1.log",
+      "uncompressedSha256": "729b1fb0da501c59b5d7ace2df028a97ec3112f0c529c0e5752a89ef53888abe"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-operation-equivalence-capture-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-capture-v1-inputs.json",
+      "uncompressedSha256": "17a6ed80d6e726106c59334ab949b8e5af0b1e884161dd4d6dbd9c22695c1e5f"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-selfbuild-value-capture-matched-pair-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-value-capture-matched-pair-v1.ts",
+      "uncompressedSha256": "9f80042fb7e023dca836d40f9ee4856dbab9f587701155656a41a0dc74a1b6d4"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-selfbuild-value-capture-matched-pair-v1.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-value-capture-matched-pair-v1.log",
+      "uncompressedSha256": "a0c842e541f4cf6e3db485e1ceccd7a84b08c9ba171619e5f4978eea82029365"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-selfbuild-capture-counters-reverse-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-capture-counters-reverse-v1.ts",
+      "uncompressedSha256": "70206ca09b09b51f36fb635e3005dc5fcb22a03b7bba7285e7fadfd3dbdb8a1f"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-selfbuild-capture-counters-reverse-v1.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-capture-counters-reverse-v1.log",
+      "uncompressedSha256": "5e2ad5fd213863b945f62a5e8af40c90a6e1c940abc97c437cc3bbb696a12779"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-native-checks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-native-checks-v1.log",
+      "uncompressedSha256": "5a45ba53cfc6803255cb930b9456aa40e9c7c8981c93890ab37159a51eb10b86"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-long-benchmarks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-long-benchmarks-v1.log",
+      "uncompressedSha256": "65f77e8ebc20079526150b3169a662e324978b9623c39d395816e4a8bd797c8e"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-counter-benchmarks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-counter-benchmarks-v1.log",
+      "uncompressedSha256": "3801405e6e964d5b398ddeb3fcde9209c1f940c6f91ac4b25d422dcf7abc75e1"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-time-cpu-micro.ts.gz",
+      "source": ".tint-bootstrap/perf/time-cpu-micro.ts",
+      "uncompressedSha256": "affa6a7e0fdbbc658220c2412695c01a4bf73c1bc6bf3c8895056738ff5b9018"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-time-cpu-counters-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "uncompressedSha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-observe-selfbuild-cpu-v2.py.gz",
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "uncompressedSha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-value-capture-region-builds-v3.json.gz",
+      "source": ".tint-bootstrap/perf/value-capture-region-builds-v3.json",
+      "uncompressedSha256": "3bf53b6baaa1605e5fdfe07f1fab79a378a4d8bf06fc1dd54239cf6cde143fe0"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-observe-canonical-a1-cpu-v1-invalid.json.gz",
+      "source": ".tint-bootstrap/perf/observe-canonical-a1-cpu-v1-invalid.json",
+      "uncompressedSha256": "44d45d6941c97659cb8ad6c93b646f4a5e9f82483cfe682abe66d6dcb387d8d9"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-observe-canonical-a1-cpu-v2.mjs.gz",
+      "source": ".tint-bootstrap/perf/observe-canonical-a1-cpu-v2.mjs",
+      "uncompressedSha256": "d35213758d41cc162e7942c358ca650ea5e98d2b8f37a052324fd17c185cb06a"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence-v2.mjs.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence-v2.mjs",
+      "uncompressedSha256": "7c9e278af1f7dba85736133808859b895e140af5c88a4d037eaee6f3edca4b35"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--report.json.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/report.json",
+      "uncompressedSha256": "e7fca4876660dcabc5522c8ee961f18415b147d1ddfcf07396dc88ef0ffb6c4d"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--attribution.json.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/attribution.json",
+      "uncompressedSha256": "23391ecf33d4f47a5ef967815f3bba440f6fd34e1da060cfa6727abefcde1788"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--lldb.log.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/lldb.log",
+      "uncompressedSha256": "487410fc090260f10fc0035297e4f1058d95a80071a98751c4704fc083943319"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-profile-capture-selfbuild-v2--observations.json.gz",
+      "source": ".tint-bootstrap/perf/profile-capture-selfbuild-v2/observations.json",
+      "uncompressedSha256": "be981d5c1f5758975d237b910c53729c9da32203aab432f27f566190f07956c6"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-profile-capture-selfbuild-v2--before-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-capture-selfbuild-v2/before-210000.txt",
+      "uncompressedSha256": "c4957da82770050b338726737ea37f06bd6a718a83dd29195f0a25a042fdd333"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-profile-capture-selfbuild-v2--after-210000.txt.gz",
+      "source": ".tint-bootstrap/perf/profile-capture-selfbuild-v2/after-210000.txt",
+      "uncompressedSha256": "5abf92d50444267e70d626e44358a33843c3a0e8a6a62388f8698138c5fd8d3f"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-0.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-0.txt",
+      "uncompressedSha256": "0de8c3045a2a6de41fac14641f8f48998b965160e2b81836687191793307c57c"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-1.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-1.txt",
+      "uncompressedSha256": "1955c73d1b4e8393617a3318b9d0beb720e10d36ec784059cc66a6d5391733db"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-2.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-2.txt",
+      "uncompressedSha256": "bd0038c0bece4271eaeebe64c42edb3367a8dd51663fa1f4f4bcf29787d56ea1"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-3.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-3.txt",
+      "uncompressedSha256": "44732cd2c749d1df57de8845587694838ea71a3d69c2de9e0817256b3b072604"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-4.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-4.txt",
+      "uncompressedSha256": "14ab10fb30a4d15e31b5c2c2dba107c88ac492a20335e21313e1872ad357e5b0"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-5.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-5.txt",
+      "uncompressedSha256": "25ddf47cc462c5f567f1789eae8c86a11d79b1d8c3c2b9ece9ec7725b59d3562"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-6.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-6.txt",
+      "uncompressedSha256": "081daa70a5638dde5efd1b737fbc006e7147053646f2e475ade276826f2f4b49"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-7.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-7.txt",
+      "uncompressedSha256": "b777b082f74eb299ce919b9fcd2aabaa4f0345dd3c08f8a3940972382f9525e2"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-a1-capture-profile-v1--sample-8.txt.gz",
+      "source": ".tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-8.txt",
+      "uncompressedSha256": "18402d0e5ca4a976f2ffb71a55e3c391c3524a644de5ccc0e039b0ce97e998bf"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-before-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-before-v1.json",
+      "uncompressedSha256": "bd9738f29433fd8310f24dd32b85a9c7d97ec89e1640a35f69f50e936a4f802e"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-before-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-before-v1.jsonl",
+      "uncompressedSha256": "3f49315c69f7ea1dbd4c38b3153a2140094042dfd7fe986c5b38a73e27d37d0b"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-before-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-before-v1.log",
+      "uncompressedSha256": "5dbadad28e6e03bde8bce61e872567d4af1076735aee79f07f48a54a3c87d41d"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-after-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-after-v1.json",
+      "uncompressedSha256": "0405e5442b44bf5cefd4fc3d6a35d2a2089e52c376f3819ae46822f89ac3e638"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-after-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-after-v1.jsonl",
+      "uncompressedSha256": "ed5f4d2651450f12c7f3bee251da94600b0104847fb546e13edfdea6f2769c46"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-restored-addition-equivalence2-after-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-addition-equivalence2-after-v1.log",
+      "uncompressedSha256": "5cca0c627bfffc020e029e071aec3e9b1ddef54463caf2f4f1129faecd9a8056"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-observe-canonical-a1-cpu-v2--after-0--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-canonical-a1-cpu-v2/after-0/cpu.json",
+      "uncompressedSha256": "8d93e64f0abd7182ca2bd1db6a0c412dc32059a62da31782baa1683df11dd37d"
+    },
+    {
+      "path": "docs/results/native-capture-throughput-v1-observe-canonical-a1-cpu-v2--after-1--cpu.json.gz",
+      "source": ".tint-bootstrap/perf/observe-canonical-a1-cpu-v2/after-1/cpu.json",
+      "uncompressedSha256": "2f26399759d87424ab82e4de5cfa801b59ccff5df60dd60d11e3561de1d4c50f"
+    }
+  ]
+}

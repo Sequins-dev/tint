@@ -1,0 +1,1561 @@
+{
+  "kind": "native-hot-function-attribution",
+  "version": 9,
+  "utc": "2026-11-07T11:12:16.382405+00:00",
+  "scope": "Selected exclusive main-thread sample windows. Different phases and workloads are not added or treated as a matched share comparison.",
+  "captureEvidence": "native-capture-throughput-v1.json",
+  "a1": {
+    "samples": 6277,
+    "windows": 8,
+    "paths": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-0.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-1.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-2.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-3.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-4.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-5.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-6.txt",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-7.txt"
+    ],
+    "emptyWindows": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/restored-a1-capture-profile-v1/sample-8.txt"
+    ],
+    "groups": [
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+        "samples": 960,
+        "percent": 15.293930221443365
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+        "samples": 910,
+        "percent": 14.497371355743189
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+        "samples": 761,
+        "percent": 12.123625935956667
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+        "samples": 357,
+        "percent": 5.687430301099251
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+        "samples": 232,
+        "percent": 3.696033136848813
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+        "samples": 222,
+        "percent": 3.536721363708778
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+        "samples": 174,
+        "percent": 2.77202485263661
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+        "samples": 173,
+        "percent": 2.756093675322606
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+        "samples": 169,
+        "percent": 2.692368966066592
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+        "samples": 166,
+        "percent": 2.6445754341245817
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+        "samples": 157,
+        "percent": 2.50119483829855
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+        "samples": 145,
+        "percent": 2.3100207105305084
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+        "samples": 143,
+        "percent": 2.278158355902501
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:position",
+        "samples": 117,
+        "percent": 1.8639477457384102
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+        "samples": 97,
+        "percent": 1.54532419945834
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+        "samples": 96,
+        "percent": 1.5293930221443364
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+        "samples": 96,
+        "percent": 1.5293930221443364
+      },
+      {
+        "function": "program:helper:string-equal",
+        "samples": 76,
+        "percent": 1.2107694758642664
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:expression",
+        "samples": 69,
+        "percent": 1.0992512346662417
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+        "samples": 67,
+        "percent": 1.0673888800382347
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+        "samples": 58,
+        "percent": 0.9240082842122033
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+        "samples": 49,
+        "percent": 0.7806276883861717
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+        "samples": 43,
+        "percent": 0.6850406245021508
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+        "samples": 40,
+        "percent": 0.6372470925601402
+      },
+      {
+        "function": "runtime:helper:remainder",
+        "samples": 37,
+        "percent": 0.5894535606181297
+      },
+      {
+        "function": "runtime:helper:to-uint32",
+        "samples": 36,
+        "percent": 0.5735223833041262
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+        "samples": 34,
+        "percent": 0.5416600286761192
+      },
+      {
+        "function": "program:helper:string-concat-copy",
+        "samples": 30,
+        "percent": 0.47793531942010514
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+        "samples": 30,
+        "percent": 0.47793531942010514
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:next",
+        "samples": 29,
+        "percent": 0.46200414210610163
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+        "samples": 28,
+        "percent": 0.4460729647920981
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:statement",
+        "samples": 27,
+        "percent": 0.4301417874780946
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:declarations",
+        "samples": 26,
+        "percent": 0.4142106101640911
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:validIndex",
+        "samples": 26,
+        "percent": 0.4142106101640911
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+        "samples": 25,
+        "percent": 0.3982794328500876
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:expression",
+        "samples": 25,
+        "percent": 0.3982794328500876
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:collect",
+        "samples": 24,
+        "percent": 0.3823482555360841
+      },
+      {
+        "function": "program:helper:to-uint32",
+        "samples": 20,
+        "percent": 0.3186235462800701
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+        "samples": 20,
+        "percent": 0.3186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@8120",
+        "samples": 18,
+        "percent": 0.2867611916520631
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:index",
+        "samples": 15,
+        "percent": 0.23896765971005257
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/copying.ts:closure@2559",
+        "samples": 14,
+        "percent": 0.22303648239604906
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+        "samples": 13,
+        "percent": 0.20710530508204555
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+        "samples": 13,
+        "percent": 0.20710530508204555
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+        "samples": 12,
+        "percent": 0.19117412776804205
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+        "samples": 11,
+        "percent": 0.17524295045403857
+      },
+      {
+        "function": "runtime:helper:memory-move",
+        "samples": 11,
+        "percent": 0.17524295045403857
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:writeList",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:statement",
+        "samples": 10,
+        "percent": 0.15931177314003506
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:tokenAt",
+        "samples": 8,
+        "percent": 0.12744941851202804
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:copyType",
+        "samples": 8,
+        "percent": 0.12744941851202804
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:current",
+        "samples": 7,
+        "percent": 0.11151824119802453
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+        "samples": 7,
+        "percent": 0.11151824119802453
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:at",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@7370",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:mark",
+        "samples": 6,
+        "percent": 0.09558706388402102
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:compare",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1039",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:createList",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:resolve",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:graphDepth",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/modules/exports.ts:closure@8727",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:narrowedType",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refine",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:cell",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineLiteralBinding",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@4441",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:unionCycle",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:same",
+        "samples": 5,
+        "percent": 0.07965588657001753
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:expression",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:fingerprint",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:relates",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:createNumberList",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:pure",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:advanceSetCursor",
+        "samples": 4,
+        "percent": 0.06372470925601402
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:parameters",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:canonical",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:expr",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:predeclare",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:reference",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:cell:write:2",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:rotateLeft",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:closure@1586",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:capture",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:presentType",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineNullBinding",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/union-index.ts:closure@762",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:helper:string-code-unit",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:writeNumberList",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:ungroup",
+        "samples": 3,
+        "percent": 0.04779353194201051
+      },
+      {
+        "function": "program:helper:string-starts-with",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@899",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:valid",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:start",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:end",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:edge",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "runtime:helper:string-equal",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@3419",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2639",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:requireType",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:createTypeSystem",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@7323",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:setMap",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:hasList",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:statement",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:createKeyIndex",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:recordTypeFlow",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:named",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:assignable",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:resizeNumberList",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:valid",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:exportedName",
+        "samples": 2,
+        "percent": 0.03186235462800701
+      },
+      {
+        "function": "program:helper:string-slice-copy",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:planManagedSurfaceContracts",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-directory-data.ts:text",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-entry.ts:closure@1242",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/sha256-compression.ts:compressWords",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/sha256-compression.ts:readSha256Word",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/numeric/number-text/index.ts:natural",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1348",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/binding/index.ts:fn",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolveInterfaceTypes",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:identifier",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:printReifiedTypes",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:quote",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/reify/print.ts:render",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:part",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:quotedText",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/lexer.ts:space",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:afterParameters",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:reserved",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:reservedName",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:take",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/parser.ts:typeArgumentCall",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:cell:initialize:0",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5226",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:closure@5931",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:deleteSet",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/sparse-list.ts:resizeList",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@15292",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6456",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@26658",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/identities.ts:closure@4601",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:cell:initialize:3",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-set.ts:cloneSet",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:chainReceiver",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:discriminants",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:call",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:valid",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:cell",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:constPrimitiveType",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:isList",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:refineDiscriminant",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-contracts.ts:matches",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/binary/bytes.ts:store",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:grow",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:expression",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/index.ts:type",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/list-sort/sparse.ts:closure@369",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:add",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:collectRuntimeRequirements",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6820",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:unionSubset",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:canonicalMembers",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:binding",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:parameter",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/syntax/rewrite.ts:variableBinding",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:closure@86556",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/closures.ts:invalidateCalls",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/checker/interfaces.ts:resolve",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-closure-uses.ts:closure@1162",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:closure@6792",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-program.ts:lowerManagedJitProgram",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/compiler/src/native/managed-jit-records.ts:bindManagedJitRecords",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/foundation/src/collections/number-list.ts:validIndex",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:expr",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:closure@3315",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/planning.ts:scalarType",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/closure/lowering/records.ts:indexObjects",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/runtime/elements.ts:presentAssignable",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/ts-native/src/scalar.ts:store",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:computeScalarRelation",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:dependency",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      },
+      {
+        "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:lookup",
+        "samples": 1,
+        "percent": 0.015931177314003505
+      }
+    ]
+  },
+  "compilerWindows": [
+    {
+      "actualElapsedMs": 215581.53588867188,
+      "label": "before",
+      "pid": 62936,
+      "offsetMs": 210000,
+      "startedUTC": "2026-11-07T09:14:55.235Z",
+      "endedUTC": "2026-11-07T09:15:00.351Z",
+      "loadBefore": [
+        9.5986328125,
+        6.10009765625,
+        3.345703125
+      ],
+      "loadAfter": [
+        9.95068359375,
+        6.23095703125,
+        3.40771484375
+      ],
+      "status": 0,
+      "signal": null,
+      "path": ".tint-bootstrap/perf/profile-capture-selfbuild-v2/before-210000.txt"
+    },
+    {
+      "actualElapsedMs": 215309.20141601562,
+      "label": "after",
+      "pid": 71642,
+      "offsetMs": 210000,
+      "startedUTC": "2026-11-07T09:18:44.150Z",
+      "endedUTC": "2026-11-07T09:18:49.321Z",
+      "loadBefore": [
+        13.6416015625,
+        10.8798828125,
+        6.10986328125
+      ],
+      "loadAfter": [
+        13.990234375,
+        10.998046875,
+        6.17919921875
+      ],
+      "status": 0,
+      "signal": null,
+      "path": ".tint-bootstrap/perf/profile-capture-selfbuild-v2/after-210000.txt"
+    }
+  ],
+  "referenceRegisterCandidate": {
+    "productionImageEquivalence": {
+      "observations": [
+        {
+          "label": "before",
+          "identical": true,
+          "sha256": "816fad67b0ed8156fa2378e41a050e1d21f1ebcc74731035ff43e5ce41628ebf"
+        },
+        {
+          "label": "after",
+          "identical": true,
+          "sha256": "d24e3a21106c9b4cb8fd488a59fb266b6d46960d4c12192fe98edcf27bb20b4b"
+        }
+      ],
+      "scope": "Frozen production implementation reproduces the exact previously measured prototype images. The eight LLDB outcomes and hardware-counter observations therefore apply to these same bytes; this does not replace compiler stage-image validation."
+    },
+    "nativePrototypeCounters": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": ".tint-bootstrap/perf/reference-callee-closed-v1/before",
+          "manifest": {
+            "kind": "closed-reference-callee-prototype",
+            "prototype": true,
+            "fixtureSha256": "eb2b2da5125af424eb80b1fd9243626ca8c61c31080e504fb72cc5d1456fe12a",
+            "imageSha256": "816fad67b0ed8156fa2378e41a050e1d21f1ebcc74731035ff43e5ce41628ebf",
+            "iterations": 50000000,
+            "functions": [
+              {
+                "id": 0,
+                "name": "reference-loop",
+                "exported": true,
+                "offset": 0,
+                "byteLength": 588,
+                "frameBytes": 160,
+                "signature": {
+                  "parameters": [
+                    {
+                      "kind": "integer",
+                      "index": 4
+                    }
+                  ],
+                  "stackBytes": 0
+                }
+              },
+              {
+                "id": 1,
+                "name": "identity",
+                "exported": false,
+                "offset": 588,
+                "byteLength": 48,
+                "frameBytes": 64,
+                "signature": {
+                  "parameters": [
+                    {
+                      "kind": "integer",
+                      "index": 4
+                    }
+                  ],
+                  "stackBytes": 0
+                }
+              }
+            ],
+            "roots": [],
+            "scope": "Same verified closed IR; no allocations or safepoints. Foreign wrapper creates a descriptor-tagged immutable stack record. Both images retain checked property reads and one direct call per iteration."
+          }
+        },
+        {
+          "binary": ".tint-bootstrap/perf/reference-callee-closed-v1/after",
+          "manifest": {
+            "kind": "closed-reference-callee-prototype",
+            "prototype": true,
+            "fixtureSha256": "eb2b2da5125af424eb80b1fd9243626ca8c61c31080e504fb72cc5d1456fe12a",
+            "imageSha256": "d24e3a21106c9b4cb8fd488a59fb266b6d46960d4c12192fe98edcf27bb20b4b",
+            "iterations": 50000000,
+            "functions": [
+              {
+                "id": 0,
+                "name": "reference-loop",
+                "exported": true,
+                "offset": 0,
+                "byteLength": 604,
+                "frameBytes": 176,
+                "signature": {
+                  "parameters": [
+                    {
+                      "kind": "integer",
+                      "index": 4
+                    }
+                  ],
+                  "stackBytes": 0
+                }
+              },
+              {
+                "id": 1,
+                "name": "identity",
+                "exported": false,
+                "offset": 604,
+                "byteLength": 48,
+                "frameBytes": 64,
+                "signature": {
+                  "parameters": [
+                    {
+                      "kind": "integer",
+                      "index": 4
+                    }
+                  ],
+                  "stackBytes": 0
+                }
+              }
+            ],
+            "roots": [],
+            "scope": "Same verified closed IR; no allocations or safepoints. Foreign wrapper creates a descriptor-tagged immutable stack record. Both images retain checked property reads and one direct call per iteration."
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            25.81005859375,
+            39.22705078125,
+            39.82373046875
+          ],
+          "loadAverageAfter": [
+            25.81005859375,
+            39.22705078125,
+            39.82373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 33673
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 466.516125,
+          "cpuLowerBoundMs": 232.76579166666664,
+          "unobservedCPUWallBoundMs": 0.03575,
+          "instructions": 4075851330,
+          "cycles": 609843086,
+          "probes": 239,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 6452,
+            "instructions": 422771,
+            "cycles": 693773
+          },
+          "lastCPU": {
+            "userTicks": 5350036,
+            "systemTicks": 242795,
+            "instructions": 4076274101,
+            "cycles": 610536859
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            25.81005859375,
+            39.22705078125,
+            39.82373046875
+          ],
+          "loadAverageAfter": [
+            25.8583984375,
+            38.7919921875,
+            39.662109375
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 34526
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 613.839584,
+          "cpuLowerBoundMs": 221.147,
+          "unobservedCPUWallBoundMs": 6.32125,
+          "instructions": 3873114925,
+          "cycles": 582686226,
+          "probes": 307,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 4650,
+            "instructions": 273945,
+            "cycles": 479950
+          },
+          "lastCPU": {
+            "userTicks": 5113934,
+            "systemTicks": 198244,
+            "instructions": 3873388870,
+            "cycles": 583166176
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            25.8583984375,
+            38.7919921875,
+            39.662109375
+          ],
+          "loadAverageAfter": [
+            25.8583984375,
+            38.7919921875,
+            39.662109375
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 34647
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 533.774459,
+          "cpuLowerBoundMs": 221.56029166666664,
+          "unobservedCPUWallBoundMs": 0.035042,
+          "instructions": 3875329071,
+          "cycles": 586508973,
+          "probes": 264,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2555,
+            "instructions": 124033,
+            "cycles": 282195
+          },
+          "lastCPU": {
+            "userTicks": 5105377,
+            "systemTicks": 214625,
+            "instructions": 3875453104,
+            "cycles": 586791168
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            25.8583984375,
+            38.7919921875,
+            39.662109375
+          ],
+          "loadAverageAfter": [
+            26.18994140625,
+            38.64599609375,
+            39.60546875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 34830
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 350.228167,
+          "cpuLowerBoundMs": 231.06758333333335,
+          "unobservedCPUWallBoundMs": 0.063875,
+          "instructions": 4072354010,
+          "cycles": 604838954,
+          "probes": 193,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3061,
+            "instructions": 151193,
+            "cycles": 284870
+          },
+          "lastCPU": {
+            "userTicks": 5350910,
+            "systemTicks": 197773,
+            "instructions": 4072505203,
+            "cycles": 605123824
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            26.18994140625,
+            38.64599609375,
+            39.60546875
+          ],
+          "loadAverageAfter": [
+            26.18994140625,
+            38.64599609375,
+            39.60546875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 34992
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 484.158417,
+          "cpuLowerBoundMs": 233.28629166666667,
+          "unobservedCPUWallBoundMs": 0.034292,
+          "instructions": 4074954927,
+          "cycles": 611709871,
+          "probes": 283,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3344,
+            "instructions": 260136,
+            "cycles": 354571
+          },
+          "lastCPU": {
+            "userTicks": 5372934,
+            "systemTicks": 229281,
+            "instructions": 4075215063,
+            "cycles": 612064442
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            26.18994140625,
+            38.64599609375,
+            39.60546875
+          ],
+          "loadAverageAfter": [
+            26.09423828125,
+            38.41943359375,
+            39.51953125
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 35106
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 451.216792,
+          "cpuLowerBoundMs": 221.21725,
+          "unobservedCPUWallBoundMs": 3.53425,
+          "instructions": 3871809231,
+          "cycles": 577463312,
+          "probes": 251,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2601,
+            "instructions": 126048,
+            "cycles": 287167
+          },
+          "lastCPU": {
+            "userTicks": 5122417,
+            "systemTicks": 189398,
+            "instructions": 3871935279,
+            "cycles": 577750479
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            26.09423828125,
+            38.41943359375,
+            39.51953125
+          ],
+          "loadAverageAfter": [
+            26.56689453125,
+            38.3125,
+            39.47509765625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 35210
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 394.253042,
+          "cpuLowerBoundMs": 220.73433333333335,
+          "unobservedCPUWallBoundMs": 0.01875,
+          "instructions": 3873766565,
+          "cycles": 578579162,
+          "probes": 163,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3528,
+            "instructions": 137536,
+            "cycles": 370185
+          },
+          "lastCPU": {
+            "userTicks": 5092970,
+            "systemTicks": 208182,
+            "instructions": 3873904101,
+            "cycles": 578949347
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            26.56689453125,
+            38.3125,
+            39.47509765625
+          ],
+          "loadAverageAfter": [
+            26.56689453125,
+            38.3125,
+            39.47509765625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 35328
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 355.33175,
+          "cpuLowerBoundMs": 234.157875,
+          "unobservedCPUWallBoundMs": 0.071209,
+          "instructions": 4075907237,
+          "cycles": 612120939,
+          "probes": 166,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2603,
+            "instructions": 127663,
+            "cycles": 287743
+          },
+          "lastCPU": {
+            "userTicks": 5380993,
+            "systemTicks": 241399,
+            "instructions": 4076034900,
+            "cycles": 612408682
+          }
+        }
+      ]
+    },
+    "fullNativeCompilerValidation": "pending; no READY claim"
+  },
+  "historicalAttribution": "native-hot-functions-v8.md",
+  "wholeSuiteProjectionHours": null
+}
