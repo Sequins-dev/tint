@@ -378,31 +378,34 @@ const outputPath = "packages/js-runtime/src/objects/date-time-format-data.ts";
 writeFileSync(outputPath, output);
 writeFileSync(
   "packages/js-runtime/date-time-format-data-manifest.json",
-  JSON.stringify(
-    {
-      kind: "cldr-date-time-calendar-data",
-      archiveSha256,
-      cldrVersion: "49",
-      inputs,
-      locales: localeKeys.length,
-      calendars: calendars.map(([name]) => name),
-      bindings: bindings.length,
-      profiles: pools.profiles.length,
-      fields: pools.fields.length,
-      strings: pools.strings.length,
-      skeletons: skeletonList,
-      intervalSkeletons: intervalList,
-      greatestDifferences: differenceList,
-      output: {
-        path: outputPath,
-        sha256: hash(new TextEncoder().encode(output)),
+  await format(
+    JSON.stringify(
+      {
+        kind: "cldr-date-time-calendar-data",
+        archiveSha256,
+        cldrVersion: "49",
+        inputs,
+        locales: localeKeys.length,
+        calendars: calendars.map(([name]) => name),
+        bindings: bindings.length,
+        profiles: pools.profiles.length,
+        fields: pools.fields.length,
+        strings: pools.strings.length,
+        skeletons: skeletonList,
+        intervalSkeletons: intervalList,
+        greatestDifferences: differenceList,
+        output: {
+          path: outputPath,
+          sha256: hash(new TextEncoder().encode(output)),
+        },
+        policy:
+          "General parent inheritance and source-locale aliases including LDML default format types; complete numeric locale registry; all pinned draft grades; Gregorian data shared by ISO; modern Japanese eras; no host Intl.",
       },
-      policy:
-        "General parent inheritance and source-locale aliases including LDML default format types; complete numeric locale registry; all pinned draft grades; Gregorian data shared by ISO; modern Japanese eras; no host Intl.",
-    },
-    null,
-    2,
-  ) + "\n",
+      null,
+      2,
+    ),
+    { parser: "json" },
+  ),
 );
 console.log(
   JSON.stringify({
