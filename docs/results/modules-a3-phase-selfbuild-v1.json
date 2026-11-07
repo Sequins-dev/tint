@@ -1,0 +1,305 @@
+{
+  "kind": "native-module-phase-self-build-acceptance",
+  "complete": true,
+  "records": [
+    {
+      "label": "bootstrap",
+      "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/sources",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "selfbuild",
+      "command": "/usr/bin/lldb",
+      "args": [
+        "--batch",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1",
+        "-o",
+        "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/sources\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+        "-o",
+        "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/selfbuild-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/selfbuild-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==0\")"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "selfbuild",
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-46y3gH",
+      "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/selfbuild-initial.json",
+      "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/selfbuild-outcome.json"
+    },
+    {
+      "label": "prepare-smoke",
+      "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16/tools/prepare-compiler-smoke.ts",
+        "--debug-symbols"
+      ],
+      "cwd": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16",
+      "exitStatus": 0
+    },
+    {
+      "label": "compile-smoke",
+      "command": "/usr/bin/lldb",
+      "args": [
+        "--batch",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2",
+        "-o",
+        "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16/.tint-bootstrap/smoke-project\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+        "-o",
+        "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/compile-smoke-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/compile-smoke-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==0\")"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "compile-smoke",
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-UZ5WYr",
+      "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/compile-smoke-initial.json",
+      "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/compile-smoke-outcome.json"
+    },
+    {
+      "label": "execute-smoke",
+      "command": "/usr/bin/lldb",
+      "args": [
+        "--batch",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke",
+        "-o",
+        "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+        "-o",
+        "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/execute-smoke-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/execute-smoke-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42\")"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "execute-smoke",
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-Bmyp7F",
+      "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/execute-smoke-initial.json",
+      "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/execute-smoke-outcome.json"
+    },
+    {
+      "label": "stage1-signature",
+      "command": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage1-dwarf",
+      "command": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage2-signature",
+      "command": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "stage2-dwarf",
+      "command": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "smoke-signature",
+      "command": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "smoke-dwarf",
+      "command": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke"
+      ],
+      "exitStatus": 0
+    }
+  ],
+  "images": [
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1",
+      "bytes": 53580274,
+      "sha256": "266a7ea6e74b5114a829e7d6e7715f3855020a4c942609eaac22a1386e96558a"
+    },
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2",
+      "bytes": 53580274,
+      "sha256": "266a7ea6e74b5114a829e7d6e7715f3855020a4c942609eaac22a1386e96558a"
+    },
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16/.tint-bootstrap/smoke-node",
+      "bytes": 1555186,
+      "sha256": "54674d520cf67b8a8328180819b55886e668bd1af27d6d1f1e82193ffaf9383e"
+    },
+    {
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke",
+      "bytes": 1555186,
+      "sha256": "54674d520cf67b8a8328180819b55886e668bd1af27d6d1f1e82193ffaf9383e"
+    }
+  ],
+  "stageImagesEqual": true,
+  "smokeImagesEqual": true,
+  "smokeExit": 42,
+  "conformance": false,
+  "generatedAt": "2026-11-07T20:50:13.594Z",
+  "implementationCommit": "651255c3bc8786d4c1c349c358f916fb5de1d3b1",
+  "implementationInReadyRange": true,
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "frozenToolchainSha256": "41f533f071756e861c01c7be33422ab94144cd6a273a308f8e38fabacdb3ea7c",
+  "frozenFilesVerified": true,
+  "snapshotFilesMatchImplementation": 601,
+  "sourceRoot": ".tint-bootstrap/a3/toolchain-phases-v16",
+  "debugSymbols": true,
+  "debugDirectory": ".tint-bootstrap/a3/selfbuild-phases-v17/sources",
+  "budgets": {
+    "managedBytes": 4294966272,
+    "allocationCapacity": 100663296,
+    "roots": 1048576,
+    "stackBytes": 268435456
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "sessions": [
+    {
+      "label": "selfbuild",
+      "initial": {
+        "state": 5,
+        "pid": 84498
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 0,
+        "pid": 84498
+      }
+    },
+    {
+      "label": "compile-smoke",
+      "initial": {
+        "state": 5,
+        "pid": 5765
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 0,
+        "pid": 5765
+      }
+    },
+    {
+      "label": "execute-smoke",
+      "initial": {
+        "state": 5,
+        "pid": 6657
+      },
+      "outcome": {
+        "state": 10,
+        "exitStatus": 42,
+        "pid": 6657
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "label": "stage1",
+      "signature": {
+        "exitStatus": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1: satisfies its Designated Requirement\n"
+      },
+      "dwarf": {
+        "exitStatus": 0,
+        "log": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage1:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+        "sections": [
+          {
+            "name": "__debug_info",
+            "bytes": 1042913
+          },
+          {
+            "name": "__debug_line",
+            "bytes": 11453293
+          }
+        ]
+      }
+    },
+    {
+      "label": "stage2",
+      "signature": {
+        "exitStatus": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2: satisfies its Designated Requirement\n"
+      },
+      "dwarf": {
+        "exitStatus": 0,
+        "log": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/stage2:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+        "sections": [
+          {
+            "name": "__debug_info",
+            "bytes": 1042913
+          },
+          {
+            "name": "__debug_line",
+            "bytes": 11453293
+          }
+        ]
+      }
+    },
+    {
+      "label": "smoke",
+      "signature": {
+        "exitStatus": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke: valid on disk\n/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke: satisfies its Designated Requirement\n"
+      },
+      "dwarf": {
+        "exitStatus": 0,
+        "log": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-phases-v17/smoke:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+        "sections": [
+          {
+            "name": "__debug_info",
+            "bytes": 56982
+          },
+          {
+            "name": "__debug_line",
+            "bytes": 483444
+          }
+        ]
+      }
+    }
+  ],
+  "driver": {
+    "file": "docs/results/modules-a3-phase-selfbuild-driver-v1.ts",
+    "sha256": "93947f6a1e5c700c46bebed15a20ecac5f4dd3f9b700f0a3ac511cfc0e246ac5"
+  },
+  "originalLog": {
+    "path": ".tint-bootstrap/a3/selfbuild-phases-v17.log",
+    "sha256": "d207e7a0c2288cc01d5b0abe3a8fcf51552085c5210d3ae3c6625e9a9846108f"
+  },
+  "scope": "Compiler stage equivalence and debug-artifact acceptance. This is separate from native Test262 conformance. Both phases share existing portable compiler/runtime infrastructure."
+}

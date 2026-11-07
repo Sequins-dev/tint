@@ -1,0 +1,380 @@
+{
+  "kind": "native-module-phase-development-observations",
+  "conformance": false,
+  "nativeCoverage": false,
+  "recordedAt": "2026-11-07T20:48:59.420650+00:00",
+  "scope": "Preserved development diagnostics, not canonical coverage evidence. WIP snapshots are deliberately excluded from the coverage ledger. Native canary v15 ran unchanged Test262 sources; earlier candidates never entered native test inferiors because compilation failed.",
+  "candidates": [
+    {
+      "report": ".tint-bootstrap/a3/source-canary-v8.json",
+      "reportSha256": "4762475a4dded6b652d73667cf2f3548364e345e918e386abae2e2b068e82bfd",
+      "journal": ".tint-bootstrap/a3/source-canary-v8.jsonl",
+      "journalSha256": "00d4abb7f0f2db73c4354c1acae2431adccbc972be519278b49d6cf331b248cf",
+      "frozenToolchainSha256": "c0767103e9f78ddb038f47330df11e1c3c8aa83307abe6d8b6d50d0814ac608b",
+      "sourceSnapshot": {
+        "sha256": "88ede93c2be040dca1b36b9543b3b7b115ed421123feb4cbfdc1c2a1de8aca5b",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 27,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 27,
+            "kind": "execution",
+            "compileMs": 5446.455583999999,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/js-runtime/src/objects/module-source.ts:798:865: parameter count does not match context\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/source-canary-v9.json",
+      "reportSha256": "db4bae1083437bfea5b9ad23f4596f84910c8c9cd63df56fa57fb22ff517f691",
+      "journal": ".tint-bootstrap/a3/source-canary-v9.jsonl",
+      "journalSha256": "089d9497a7450e8b6509fca9fe806963ea88427570d1b6acac8ad91fcb2087ce",
+      "frozenToolchainSha256": "e5001702828802bc53e765c64c1acb295bf74230252414e79d8e1ffaf3d5f8ad",
+      "sourceSnapshot": {
+        "sha256": "a7347bdbf00fe3dff5fc859fd0f2a7c1aa647f3fcd99cc42a253cad62869f5b6",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 27,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 27,
+            "kind": "execution",
+            "compileMs": 7235.014708999999,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/js-engine/src/lowering/index.ts:101257:101315: value does not match its declared type\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/source-canary-v10.json",
+      "reportSha256": "db1753418fafc5417512d3d8d20c48b065a015a910553a165dd3f0366aebf09b",
+      "journal": ".tint-bootstrap/a3/source-canary-v10.jsonl",
+      "journalSha256": "0f2fcd58d590c099186ca0e8ff8612e011001cf3ba4eab1fb5272c90d7f71818",
+      "frozenToolchainSha256": "c095c321532f15fbd73204214b6bdfe10446a9af02666274b14be7e10f86d7d6",
+      "sourceSnapshot": {
+        "sha256": "63e13381f95f77c33c6a82adfc33286ae67706ef6c52fd41c6a6b6afad8b725a",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 27,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 27,
+            "kind": "execution",
+            "compileMs": 7915.49525,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/js-engine/src/lowering/index.ts:165299:165348: value does not match its declared type\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/source-canary-v11.json",
+      "reportSha256": "a5c5d1f6bfbf33c35772f893804fd29e43e2d9e6c12c9f79c973749792ab9c08",
+      "journal": ".tint-bootstrap/a3/source-canary-v11.jsonl",
+      "journalSha256": "b30bd28935026f86f4770f9c6619c9945b21049e8af9fb9cc280d16b9388b067",
+      "frozenToolchainSha256": "652c2f9c3a4058fcd5a655b3b000f5b0478f9345ff1da4a5013ea95fd30d4a80",
+      "sourceSnapshot": {
+        "sha256": "906d2907193420efbfdd8af7508c51cbc45c234ceeb5d20cd325353c91e5c800",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 27,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 27,
+            "kind": "execution",
+            "compileMs": 7370.820832999998,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/js-engine/src/lowering/index.ts:165635:165654: invalid call\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/phases-canary-v12.json",
+      "reportSha256": "8824ab75cf70958c7f53a5eefeae5009aecbea75e55cebfb2ab2f5ecbdd197f5",
+      "journal": ".tint-bootstrap/a3/phases-canary-v12.jsonl",
+      "journalSha256": "fbee3b0145a9e44358b14145a863da3da752428a1edb42b9370318e6da64b914",
+      "frozenToolchainSha256": "161122b9d2932b1f19081a24afa8697b0b94e19519e5c57cf8913469366353ca",
+      "sourceSnapshot": {
+        "sha256": "8cc6415a953bdac631ff74076a153fe3c48a11144b0ef0e8a5e21db2073f848b",
+        "files": 601
+      },
+      "totals": {
+        "total": 37,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 37,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 37,
+            "kind": "execution",
+            "compileMs": 7733.355083999999,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"surface\",\"message\":\"packages/js-runtime/src/modules/dynamic-import.ts:2176:2206: invalid property read\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/phases-canary-v13.json",
+      "reportSha256": "31706f88e4dcdf1f73817183bfcf736df974edd6dca78334942a0cadcdb72387",
+      "journal": ".tint-bootstrap/a3/phases-canary-v13.jsonl",
+      "journalSha256": "629e19a00ca9c4e00e6222be8efe1034f73d5ee783e3b0472611e4790b55ba92",
+      "frozenToolchainSha256": "0a15082fb6ff163a9b9793814312dce1c407fc9ed0ea8c63d570f0ecab791b8f",
+      "sourceSnapshot": {
+        "sha256": "9ae226c1941a2841785b2633bf6dfc8552ab3e902eba29f9a752266d07633a13",
+        "files": 601
+      },
+      "totals": {
+        "total": 37,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 37,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 37,
+            "kind": "execution",
+            "compileMs": 88614.26741700001,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"lower\",\"message\":\"type requires an unsupported native representation (type 2625)\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/phases-canary-v14.json",
+      "reportSha256": "166dde3eb0254f38661dc12d5575e239e29bff07aa51962cf2ad230a0b345b80",
+      "journal": ".tint-bootstrap/a3/phases-canary-v14.jsonl",
+      "journalSha256": "3196293e8881f23457b29bf1326c5f35521b9041d5bd7e192acb7550cab1617f",
+      "frozenToolchainSha256": "6f5696e9ef99f0bdfe5dad98eeeb3d530b23eb6356527713ab04dc23db4c7d77",
+      "sourceSnapshot": {
+        "sha256": "3ae758602710208a7e7c468804c0b9b0eae1e5e18c909d250e1ae110e89ff87b",
+        "files": 601
+      },
+      "totals": {
+        "total": 37,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 37,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 37,
+            "kind": "execution",
+            "compileMs": 87518.143625,
+            "outcome": "unsupported"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "unsupported",
+          "reason": "native compilation: {\"stage\":\"lower\",\"message\":\"type requires an unsupported native representation (type 2625, kind object, encoding none, context entry)\"}"
+        }
+      ],
+      "failedVariants": []
+    },
+    {
+      "report": ".tint-bootstrap/a3/phases-canary-v15.json",
+      "reportSha256": "a89151fd8c2a5ed8643a5eb039643db0f7631b74fc8c4946e0c92ee5d2c5e2d8",
+      "journal": ".tint-bootstrap/a3/phases-canary-v15.jsonl",
+      "journalSha256": "b60cf4cfe9dac57464b54241e8c7e591478a6f6f2e0b2349cb0c674827fd247d",
+      "frozenToolchainSha256": "3989d41259bbc80c323ee65da26756992985f60c46567de8fa39642204543934",
+      "sourceSnapshot": {
+        "sha256": "a8ab033f0ad94231888bf1e5cb4bfacb39f254c2f941bc79fda890c0a2147e14",
+        "files": 601
+      },
+      "totals": {
+        "total": 37,
+        "passed": 35,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9459459459459459
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 37,
+            "kind": "execution",
+            "compileMs": 180543.059458,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "nonPassOutcomes": [
+        {
+          "kind": "error",
+          "phase": "runtime",
+          "type": "Test262Error",
+          "message": "native $DONE reported failure"
+        }
+      ],
+      "failedVariants": [
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "sloppy",
+          "status": "fail",
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "Test262Error",
+            "message": "native $DONE reported failure"
+          }
+        },
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "strict",
+          "status": "fail",
+          "outcome": {
+            "kind": "error",
+            "phase": "runtime",
+            "type": "Test262Error",
+            "message": "native $DONE reported failure"
+          }
+        }
+      ]
+    }
+  ],
+  "resolution": {
+    "v8": "Intrinsic callbacks now have exact expected parameter arity.",
+    "v9": "Import-call argument lists use explicit typed arrays instead of conditional array spread.",
+    "v10": "Serialized ModuleRequest fields use explicit typed arrays.",
+    "v11": "Optional phase is captured in a local before narrowing for native lowering.",
+    "v12": "New native loops explicitly guard indexed entries before property reads.",
+    "v13_v14": "Native record entry encoding rejects optional unknown properties. ImportBindingPlan now always supplies a required sourceValue slot.",
+    "v15": "Valid source binding named from required looking past the first from token. Parser regression failed first, then passed after lookahead fix. The full source-phase run includes the correction."
+  },
+  "validationHarnessFailure": {
+    "log": ".tint-bootstrap/a3/selfbuild-phases-v16.log",
+    "reason": "Scratch driver import path was wrong; no build or native inferior started. Corrected driver v17 completes self-build equivalence and smoke acceptance."
+  },
+  "workspaceGateFailure": {
+    "log": ".tint-bootstrap/a3/phases-tint-check-v16.log",
+    "result": "4857/4861 pass; four host compatibility assertions failed.",
+    "resolution": "Restore disabled-phase generated host bytes and extend the explicit adapter capability assertion. Focused compatibility checks then pass 35/35; complete gate is rerun independently."
+  }
+}
