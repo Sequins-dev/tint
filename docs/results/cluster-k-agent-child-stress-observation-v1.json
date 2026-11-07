@@ -1,0 +1,20 @@
+{
+  "kind": "native-agent-large-child-compilation-observation",
+  "report": "native-script-agent-failure-containment-v3.json",
+  "driverExit": 1,
+  "outcome": "post-entry timeout",
+  "lastCapturedCpu": {
+    "seconds": 235.71,
+    "wallSeconds": 259,
+    "pid": 70066,
+    "provenance": "ps output captured during the run at about2026-11-07T15:16:48Z"
+  },
+  "earlierSamples": "cluster-k-agent-failure-recheck-cpu-v3.jsonl.gz",
+  "sample": "cluster-k-agent-failure-case2-lower-load.sample.txt.gz",
+  "interpretation": "Substantial CPU cost persists in the original300000-character child-evaluation stress input. No final CPU total was captured, so do not claim the >250CPU-second classification threshold was measured. The main thread parks while the worker remains busy; the sample is unsymbolized and does not establish a particular compiler function.",
+  "boundedFollowup": {
+    "nodeProbe": "managed Script compilation emits646728 bytes for64 simple additions, exceeding the unchanged262144-byte entry budget",
+    "nativeFixture": "tools/build-native-agent-child-failure-fixture.ts",
+    "status": "building; no native pass claim"
+  }
+}
