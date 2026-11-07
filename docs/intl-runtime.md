@@ -110,8 +110,9 @@ conjunction thresholds. A [postponement correction](results/temporal-hebrew-post
 retains the original conjunction weekday when applying special deferrals, matching
 an independent neighboring-year formula across 550,001 years. Older ICU reference
 comparisons remain retained and do not override the corrected kevi'ah rules.
-Native execution of these new calendar families remains held for host Developer
-Tools authorization.
+The [native calendar regression](results/calendar-native-restored-h-v68.md)
+completes all57 cases across the requested families. Native stage comparison and
+smoke execution pass; complete unchanged Test262 reruns remain separate.
 
 `calendar-chinese.ts` implements Chinese and Dangi month identities and arithmetic.
 Complete pinned ICU4X year tables cover 1900–2102, including published Chinese and
@@ -126,8 +127,8 @@ Month-day references use the specified rare-month table. Year differences compar
 the original month code before constraining it, as required by CompareSurpasses.
 [Semantic checks](results/temporal-chinese-semantic-validation-h-v1.json) and
 [algorithm invariants](results/calendar-east-asian-invariants-h-v1.json) remain
-separate from native evidence. Native execution and stage comparison are held
-pending host authorization.
+separate from the [completed native regression and stage comparison](results/calendar-native-restored-h-v68.md).
+Per-calendar Test262 selections remain to measure.
 
 ## List formatting
 
