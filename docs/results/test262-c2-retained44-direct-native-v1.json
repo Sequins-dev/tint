@@ -1,0 +1,1797 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+    "files": 570
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v18/source-snapshot.json",
+  "frozenToolchainSha256": "258bb24e7069e2d597c8d970e3edf5b4dc8d9a53c47044ced1c0956526bbd803",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 44,
+        "kind": "execution",
+        "compileMs": 142910.37958399998,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/statements/class/elements [explicit variant subset]",
+  "rootSelection": "language/statements/class/elements",
+  "requestedVariants": 44,
+  "variantSubsetSha256": "b22ab0af2eae5db6ba37eeacd92ad21d10557c24564b1fbe9ace7e07b1096961",
+  "complete": true,
+  "totals": {
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/elements/after-same-line-static-async-method-rs-privatename-identifier.js",
+      "sha256": "48769d161cac06d61fd7b2e19b857f4be279c83d68927cd445deee7f4b4b85d7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "class-fields-private",
+          "class",
+          "class-fields-public",
+          "async-functions"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145276.318375,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-async-method-static-private-methods.js",
+      "sha256": "2ea828507108be48fa78cb0f4c119db3686cdb03df28cbf41f93559117d4529c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "class-static-methods-private",
+          "class",
+          "class-fields-public",
+          "async-functions"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145602.437333,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-gen-grammar-privatename-identifier-semantics-stringvalue.js",
+      "sha256": "01e52c794b9044cdd77996207700cdf855129c919200a6eaf4ca14c507369845",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "generators",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145931.37449999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-gen-private-method-getter-usage.js",
+      "sha256": "439e4edcad14962fae1d478da9c0bfe6f13317fc8a81f71486939ead4f10eb16",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-methods-private",
+          "generators",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146269.21433299998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-gen-rs-static-method-privatename-identifier.js",
+      "sha256": "02cf27d3ec90f49c7bea7a794eda51d698c38d6c18afe9f350cf8f6b809b6133",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-static-methods-private",
+          "generators",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146614.50624999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-gen-rs-static-privatename-identifier.js",
+      "sha256": "58511baa4d89d0928bccc287764bc28cbd161db1a840bbdca3e25c544f6ada26",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-static-fields-private",
+          "generators",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146971.144209,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-method-rs-private-method-alt.js",
+      "sha256": "72af4efd57679a8984a072d5dd91f2b1e68f5f8091328af879646fee5a65a1f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-methods-private",
+          "class-fields-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147324.00004199997,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-method-rs-private-method.js",
+      "sha256": "01a62c0032d805c571f4490ae22cfcc33de5af2dcb8179526b267d76b9985acb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-methods-private",
+          "class-fields-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147696.37220800002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-method-rs-privatename-identifier.js",
+      "sha256": "0973d0fb0a215b906d8a66dc77d1807e8b6db0ba5c93bbbe2fc5c77eb5c8a43d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-fields-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148068.824458,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-method-rs-static-async-generator-method-privatename-identifier.js",
+      "sha256": "c941f8fd2c3976567d0a8feaf8f920bcfae8c67c7f0aaae11348b2e6895c5097",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "class-static-methods-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148431.16525,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/after-same-line-static-method-static-private-methods.js",
+      "sha256": "9a6b9ced627098552ae096eeb61ee46f8b176d6ec313c31b95748b1eac82ecc0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class-static-methods-private",
+          "class",
+          "class-fields-public"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148798.160875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/arrow-body-arguments-label.js",
+      "sha256": "653485e28d375223d109ed09b382f289d07ee4b55ae8176dcc3edaf4d0e831d4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class-fields-public",
+          "arrow-function"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149171.90333399997,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/arrow-body-derived-cls-direct-eval-err-contains-supercall-1.js",
+      "sha256": "d3293d70770e48cbb9f837f0015cf465f5b59306a2ba2dcbe8c30b97d020419a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-fields-public"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149537.980083,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/arrow-body-derived-cls-indirect-eval-contains-superproperty-1.js",
+      "sha256": "88819990f0c3dc93c348a844863d51f2897add75d9be8512a52276915e2a89a2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-fields-public"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149902.689917,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/arrow-body-derived-cls-indirect-eval-err-contains-supercall-1.js",
+      "sha256": "2a12c12e38c586fc9ace4831d32dc914e51c6ed84ed5347b766ccba76f723b36",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-fields-public"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150263.174042,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/arrow-body-private-derived-cls-direct-eval-contains-superproperty-2.js",
+      "sha256": "76b87038a46af4783fb2e7fec80f89609ac2d93abdd05e5c4c442651565de668",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "class-fields-public",
+          "class-fields-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179033.60916599998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-not-callable-undefined-throw.js",
+      "sha256": "a186840a97dd159654082ecb5b15c399a8adcf9a2b3e5a45b71737b73f883aa1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179431.834333,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-not-callable-undefined-throw.js",
+      "sha256": "a186840a97dd159654082ecb5b15c399a8adcf9a2b3e5a45b71737b73f883aa1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179814.581125,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-get-abrupt.js",
+      "sha256": "a0c8d363fd8f72f60fb72d55de167de29aaddf58e29c41edf14471d166fd2822",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180167.572833,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-get-abrupt.js",
+      "sha256": "a0c8d363fd8f72f60fb72d55de167de29aaddf58e29c41edf14471d166fd2822",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180515.48991700003,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-boolean-fulfillpromise.js",
+      "sha256": "812fa05c9c842f239d617c188c9e2955996a62a2194c1ac90f69caa17bb9d2a9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180853.801375,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-boolean-fulfillpromise.js",
+      "sha256": "812fa05c9c842f239d617c188c9e2955996a62a2194c1ac90f69caa17bb9d2a9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 181183.747875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-null-fulfillpromise.js",
+      "sha256": "acdbe5b88d72f88431b2a018e06549582c19165c14910a09ec43a304b249f44b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 181515.37645799998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-null-fulfillpromise.js",
+      "sha256": "acdbe5b88d72f88431b2a018e06549582c19165c14910a09ec43a304b249f44b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 181847.68695899998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-number-fulfillpromise.js",
+      "sha256": "68c1923da3a7660441892f30dc38d563f19234cb8c180ff09b299b35694c5926",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 182174.698333,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-number-fulfillpromise.js",
+      "sha256": "68c1923da3a7660441892f30dc38d563f19234cb8c180ff09b299b35694c5926",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 182500.639292,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-object-fulfillpromise.js",
+      "sha256": "18e9b210c2180f125b04960377c3786a9e23145ed896644bc442ffdc8e7645de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 182832.924041,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-object-fulfillpromise.js",
+      "sha256": "18e9b210c2180f125b04960377c3786a9e23145ed896644bc442ffdc8e7645de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 183153.057167,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-string-fulfillpromise.js",
+      "sha256": "4f4c3df74a4de24cd5ccdff784e53a1dc33043329b29b2d0e6088c94b103c19a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 183479.744792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-string-fulfillpromise.js",
+      "sha256": "4f4c3df74a4de24cd5ccdff784e53a1dc33043329b29b2d0e6088c94b103c19a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 183800.389875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-symbol-fulfillpromise.js",
+      "sha256": "2d9f48e1e2a5598b305e5b87d8f29ffd1e39ec8adeb4966d66d13c214ba8e9a8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 184167.553458,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-symbol-fulfillpromise.js",
+      "sha256": "2d9f48e1e2a5598b305e5b87d8f29ffd1e39ec8adeb4966d66d13c214ba8e9a8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 184513.9825,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-undefined-fulfillpromise.js",
+      "sha256": "1b24d565184ca7535ef6277b9a59b90d3ac7fda4a5c2e40c95016432c1021102",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 184852.599916,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-non-callable-undefined-fulfillpromise.js",
+      "sha256": "1b24d565184ca7535ef6277b9a59b90d3ac7fda4a5c2e40c95016432c1021102",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185177.840875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-returns-abrupt.js",
+      "sha256": "d3dbbfde86208a26217bbe421fe578b02f35d054abca46109ca60e8e43575757",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185498.658541,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-next-then-returns-abrupt.js",
+      "sha256": "d3dbbfde86208a26217bbe421fe578b02f35d054abca46109ca60e8e43575757",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "Symbol.asyncIterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185813.243875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-next.js",
+      "sha256": "e18b668ebdfd30c98d4901bcee1e4ff653b19465295f5cb2763c860764cc43ea",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "Symbol.asyncIterator",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 186141.354208,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-next.js",
+      "sha256": "e18b668ebdfd30c98d4901bcee1e4ff653b19465295f5cb2763c860764cc43ea",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "Symbol.asyncIterator",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 186488.548458,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-return.js",
+      "sha256": "78bf017a94d52c160a0a0810f6c144980c2d0ddeb6980b46ecca58280ee6d366",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "Symbol.asyncIterator",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 186822.187167,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-return.js",
+      "sha256": "78bf017a94d52c160a0a0810f6c144980c2d0ddeb6980b46ecca58280ee6d366",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "Symbol.asyncIterator",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 187170.12604200002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-throw.js",
+      "sha256": "45c2031e8c006ec234665ce8ddb1d2e37d655f92408d4f1696e0dcb5b7187359",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 187525.934917,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method/yield-star-sync-throw.js",
+      "sha256": "45c2031e8c006ec234665ce8ddb1d2e37d655f92408d4f1696e0dcb5b7187359",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "Symbol.iterator",
+          "async-iteration",
+          "class-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 187898.281292,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method-static/yield-promise-reject-next-catch.js",
+      "sha256": "1298fed6df2d5c1c71dea0fe07e1b48c7e11b82a48a03dae09369098f599d6c4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "async-iteration",
+          "class-static-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 188245.43137500001,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/elements/async-gen-private-method-static/yield-promise-reject-next-catch.js",
+      "sha256": "1298fed6df2d5c1c71dea0fe07e1b48c7e11b82a48a03dae09369098f599d6c4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated",
+          "async"
+        ],
+        "features": [
+          "async-iteration",
+          "class-static-methods-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 188601.579334,
+      "batch": 0
+    }
+  ],
+  "startedAt": "2026-11-07T09:10:52.295Z",
+  "observationTiming": {
+    "source": "first runner heartbeat",
+    "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-retained44-direct-native-v1.stderr",
+    "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-retained44-direct-native-v1.report.partial",
+    "stdoutSha256": "379a5b4ace16f4487734ae7ebf50b6634cc5dd71af6059a19f908bd635932002",
+    "policy": "Publication preserves run age; later focused rechecks remain later evidence."
+  }
+}
