@@ -43,12 +43,11 @@ export function hebrewCalendarYearStart(
   if (!Number.isSafeInteger(parts)) return undefined;
   const whole = Math.floor(parts / 25920),
     fraction = parts - whole * 25920;
-  let day = months * 29 + whole,
-    weekday = mod(day, 7);
-  if (weekday === 2 || weekday === 4 || weekday === 6) {
-    day++;
-    weekday = mod(day, 7);
-  }
+  let day = months * 29 + whole;
+  // Special molad deferrals use the conjunction weekday, before Lo ADU moves it.
+  // Recomputing it after Sunday postponement incorrectly applies Monday's rule.
+  const weekday = mod(day, 7);
+  if (weekday === 2 || weekday === 4 || weekday === 6) day++;
   // Exact conjunction thresholds postpone too; strict comparisons create 356-day years.
   if (weekday === 1 && fraction >= 16404 && !hebrewLeapYear(year)) day += 2;
   else if (weekday === 0 && fraction >= 23269 && hebrewLeapYear(year - 1))

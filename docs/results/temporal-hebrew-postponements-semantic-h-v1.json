@@ -1,0 +1,92 @@
+{
+  "kind": "semantic-calendar-fix-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T03:25:52.230224+00:00",
+  "rootCause": "Special conjunction postponements reused a weekday recomputed after Lo ADU. A Sunday conjunction postponed to Monday then incorrectly received Monday's additional postponement. Keep the original conjunction weekday.",
+  "red": {
+    "tests": 2,
+    "failed": 2
+  },
+  "green": {
+    "focusedTests": 173,
+    "passed": 173,
+    "buildExit": 0,
+    "testTypesExit": 0,
+    "hostTypesExit": 0
+  },
+  "independentCalendarComparison": {
+    "years": 550001,
+    "range": [
+      -270000,
+      280000
+    ],
+    "previousDifferences": 2961,
+    "currentDifferences": 0,
+    "before": "calendar-hebrew-postponement-reference-h-v1.json",
+    "after": "calendar-hebrew-postponement-reference-h-v2.json"
+  },
+  "diagnosticObjectAdapterProbe": {
+    "method": "Node executes date examples with Temporal calls routed to Tint object adapters; unchanged assertion/Temporal helpers in v3/v4. Host conversions are a diagnostic bridge. Not native or Test262 conformance evidence.",
+    "examples": 751,
+    "beforeErrors": 3,
+    "afterErrors": 0,
+    "before": "calendar-object-adapter-arithmetic-probe-h-v3.json.gz",
+    "after": "calendar-object-adapter-arithmetic-probe-h-v4.json.gz",
+    "earlierSubstituteHelperChecks": {
+      "examples": 644,
+      "assertions": 23491,
+      "errors": 0
+    }
+  },
+  "nativeStatus": "Three-case fixture prepared. Native execution and stage comparison remain held for HOST AUTHORIZATION RESTORED; no Test262 gains claimed.",
+  "references": [
+    "https://github.com/EdReingold/calendar-code2/blob/main/calendar.l",
+    "https://emr.reingold.co/cc-paper.pdf"
+  ],
+  "logs": {
+    "calendar-hebrew-postponements-red-h-v1": {
+      "path": "calendar-hebrew-postponements-red-h-v1.log.gz",
+      "sha256": "d51460ffb1f6f9bede2ada13967839dbeed4dae1ec4cd59dfbdc453b0c07762f"
+    },
+    "calendar-hebrew-postponements-green-h-v1": {
+      "path": "calendar-hebrew-postponements-green-h-v1.log.gz",
+      "sha256": "c8a08d30c9decb1104b9ac24acae2b7204fb32a0578f8dac901ccf73704d90ed"
+    },
+    "calendar-hebrew-postponements-build-h-v1": {
+      "path": "calendar-hebrew-postponements-build-h-v1.log.gz",
+      "sha256": "f2d0c85c73b917653a9e884ca9303accffcc5386352a839a6729e1dd0e575816"
+    },
+    "calendar-hebrew-postponements-focused-h-v1": {
+      "path": "calendar-hebrew-postponements-focused-h-v1.log.gz",
+      "sha256": "c9dbe757e979006c71cc5356ee894a0ac41a9422e9a6c5075c0088733f9869eb"
+    },
+    "calendar-hebrew-postponements-test-types-h-v1": {
+      "path": "calendar-hebrew-postponements-test-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "calendar-hebrew-postponements-host-types-h-v1": {
+      "path": "calendar-hebrew-postponements-host-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "calendar-basic-difference-vectors-h-v1": {
+      "path": "calendar-basic-difference-vectors-h-v1.log.gz",
+      "sha256": "4abb5a757b0908ca6fb9bd01bb9a64248a16cd8a4fc2723da16f2aa1e2c99b12"
+    },
+    "calendar-object-adapter-arithmetic-probe-h-v1": {
+      "path": "calendar-object-adapter-arithmetic-probe-h-v1.log.gz",
+      "sha256": "01cd25266232513ffb52ade7090e03c6c3b0fefcf36460bdb18eab42e61c36f2"
+    },
+    "calendar-object-adapter-arithmetic-probe-h-v2": {
+      "path": "calendar-object-adapter-arithmetic-probe-h-v2.log.gz",
+      "sha256": "08736b4ac25208fa02e1afa34becacaba39e968ada24b7a7d80c1f15d8e11a64"
+    },
+    "calendar-object-adapter-arithmetic-probe-h-v3": {
+      "path": "calendar-object-adapter-arithmetic-probe-h-v3.log.gz",
+      "sha256": "fe6a42fd2f40659200c19c9ce38458147f7d1f8f820ee5afe23b9b9b51a26bc2"
+    },
+    "calendar-object-adapter-arithmetic-probe-h-v4": {
+      "path": "calendar-object-adapter-arithmetic-probe-h-v4.log.gz",
+      "sha256": "951a8149854cadddc0791074abb30a56051e46d6fd84edb62a2c9aa60df8f1f0"
+    }
+  }
+}

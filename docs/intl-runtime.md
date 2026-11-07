@@ -106,8 +106,12 @@ when adding years and balances actual month serials when adding months or taking
 differences. Shared reference-date limits remain in `calendar-date-limits.ts`.
 [Semantic validation](results/temporal-hebrew-semantic-validation-h-v1.json)
 passes 164 focused tests, including full-domain reconstruction and exact
-conjunction thresholds. Native execution of these new calendar families remains
-held for host Developer Tools authorization.
+conjunction thresholds. A [postponement correction](results/temporal-hebrew-postponements-semantic-h-v1.json)
+retains the original conjunction weekday when applying special deferrals, matching
+an independent neighboring-year formula across 550,001 years. Older ICU reference
+comparisons remain retained and do not override the corrected kevi'ah rules.
+Native execution of these new calendar families remains held for host Developer
+Tools authorization.
 
 `calendar-chinese.ts` implements Chinese and Dangi month identities and arithmetic.
 Complete pinned ICU4X year tables cover 1900–2102, including published Chinese and
