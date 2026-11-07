@@ -1,0 +1,66 @@
+{
+  "kind": "intl-formatting-native-service-feature-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T21:11:46.434085+00:00",
+  "accepted": true,
+  "nativeSelections": [
+    {
+      "report": "test262-intl-date-time-format-unit-family-h-v8.json",
+      "sha256": "6e190fd0918c74eea9ab950af8be12549b562247f859a45dde05fa0255d3f38d",
+      "totals": {
+        "total": 490,
+        "passed": 490,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "test262-intl-duration-format-unit-family-h-v2.json",
+      "sha256": "2659e7bcb62ade3650bb183cf092082434db6cd83d90a65e53256fe91d195865",
+      "totals": {
+        "total": 220,
+        "passed": 220,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v131.json",
+  "frozenToolchainSha256": "f08ba4ac9f5d6c99b881baceeaa7be67310a3ca091ef8b5838bae1074ca71d2d",
+  "sourceSnapshot": {
+    "sha256": "5b6ac6623fc80ba9f0f33451b7ce8311859b56df8a96b40e8dd3f39fb9c71e7b",
+    "files": 626
+  },
+  "nativeLinkingMode": "aot-native-services-v1",
+  "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+  "migrationAcceptance": "date-time-service-migration-acceptance-h-v8.json",
+  "outcomeEquivalence": "date-time-service-outcome-equivalence-h-v8.json",
+  "outcomeEquivalenceScope": "64predeclared strict/sloppy variants across32files, all identical to matching linked observations; not a second full monolithic490 run.",
+  "compileCpuTargetPercent": 5,
+  "compileCpuDeltaVersusMainWithMergedHashFixPercent": -4.849709294829207,
+  "coldAndMemoryTradeoffs": "See migration acceptance: fresh one-batch whole-process CPU+8.37%, peakRSS+17.86%, imagebytes-0.89% versus hash-fixed main control. Setup is once per runner; batch CPU meets target.",
+  "workspaceGate": "date-time-service-check-h-v132.json",
+  "workspaceTestsPassed": 4980,
+  "selfbuild": "date-time-unit-selfbuild-h-v131.json",
+  "portableInputsStillByteIdenticalAfterRebase": 626,
+  "apiEvidence": [
+    "date-time-api-linked-native-h-v131.json",
+    "temporal-date-time-linked-native-h-v131.json",
+    "duration-format-linked-native-h-v131.json"
+  ],
+  "olderFeatureReportsRetainedWithImplementation": [
+    "test262-intl-date-time-format-family-h-v3.json",
+    "test262-intl-duration-format-family-h-v1.json"
+  ],
+  "plainYearMonthEvidence": "Already merged at83484d10; absent from this slice diff.",
+  "interruptedEntryPreserved": "date-time-service-unit-interruption-h-v8.json",
+  "remaining": "Calendar breadth and complete ISO Temporal selections, tracked separately; these formatting selections have no remaining non-passes."
+}

@@ -94,8 +94,8 @@ Constructors and resolved-options queries do not decode the large tables; the
 first comparison does. The [complete native rerun](results/test262-cluster-j-collator-localecompare-g6-localeinfo-native-v29.json)
 passes 186/188: Collator128/130, localeCompare26/26, Locale.getCollations26/26 and
 G’s String-locale descriptors6/6. Two `this-value-ignored` cases use an unchanged
-harness that also requires the missing DateTimeFormat; they remain failures with
-a handoff to H. The [acceptance record](results/cluster-j-collator-acceptance-v29.json)
+harness that also requires DateTimeFormat, which that toolchain predates.
+The Collator selection still needs a focused rerun with the formatter below. The [acceptance record](results/cluster-j-collator-acceptance-v29.json)
 links the native API fixture, byte-identical frozen self-build, semantic corpus,
 workspace gate and matched 64-variant non-Intl compile CPU measurements.
 
@@ -238,10 +238,11 @@ Temporal locale methods use this private service; ZonedDateTime supplies its own
 zone and rejects a defined timeZone option. Date's locale methods share the same
 formatter defaults and validation. [Integration validation](results/temporal-date-time-format-native-resume-h-v54.md)
 passes its original 224 focused and 4813 workspace tests. The newer
-[linked native API fixtures](results/date-time-service-linked-api-acceptance-h-v110.json)
-complete DateTimeFormat, Temporal locale forwarding and DurationFormat with entry
-stops and exit42. Full selection equivalence and compile-cost acceptance remain
-separate gates for this feature branch.
+[DateTimeFormat](results/date-time-api-linked-native-h-v131.json),
+[Temporal locale](results/temporal-date-time-linked-native-h-v131.json) and
+[DurationFormat](results/duration-format-linked-native-h-v131.json) linked native
+API fixtures complete with entry stops and exit42. Selection equivalence and
+compile-cost results are recorded at the service boundary below.
 
 ## DateTimeFormat native service boundary
 
@@ -261,9 +262,13 @@ executable, and a checked factory adapter creates state in the current context.
 No runtime sidecar or platform linker is involved. Packing generators and pinned
 CLDR manifests remain the data source of truth and retain their license notices.
 
-The migration's native API fixtures pass. Same-toolchain monolithic equivalence,
-non-Intl batch compile cost and the final workspace gate remain acceptance work;
-the earlier feature-toolchain coverage reports do not establish main coverage.
+The [migration acceptance](results/date-time-service-migration-acceptance-h-v8.json)
+records 490/490 native DateTimeFormat passes, identical outcomes for a declared
+64-variant monolithic control on the same frozen toolchain, native API fixtures,
+byte-identical compiler stages and a 4,980-test workspace gate. Non-Intl batch
+compile CPU meets the 5% target; cold setup cost and increased peak RSS remain
+explicit in the measurements. Feature-toolchain reports publish with their
+implementation code.
 
 ## Duration formatting
 
@@ -282,9 +287,12 @@ and exact range validation.
 
 The [DurationFormat checkpoint](results/duration-format-native-resume-h-v62.md)
 passes all4831 workspace tests and compiles its fixture and frozen compiler.
-The [feature-toolchain selection](results/test262-intl-duration-format-family-h-v1.json)
-completes 220/220 variants; its implementation and evidence must merge together.
-The newer linked native API fixture is included in the validation above.
+The [current linked selection](results/test262-intl-duration-format-unit-family-h-v2.json)
+passes 220/220 variants with no unsupported cases or infrastructure errors.
+The [combined formatting acceptance](results/intl-formatting-native-service-feature-acceptance-h-v9.json)
+links its frozen toolchain, native API fixture, compiler fixed point, workspace
+gate and DateTimeFormat equivalence/performance evidence. Earlier feature-toolchain
+reports remain with their implementation code.
 
 ## List formatting
 

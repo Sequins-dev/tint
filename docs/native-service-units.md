@@ -152,14 +152,22 @@ select or forge the binding.
    with two simultaneously live factory instances in one heap context. Independent heap-context state is owned by each host factory invocation; this fixture does not claim a cross-context exchange test. Run the workspace gate
    and frozen self-build/stage comparison for compiler-graph changes.
 2. **DateTimeFormat:** contract/body separation and service composition. Re-run
-   existing native formatter fixtures and current workspace gates. Compare all
-   490 unchanged DateTimeFormat variants in monolithic and cached modes on one
-   frozen source/toolchain; preserve every outcome and compare per variant.
+   existing native formatter fixtures and current workspace gates, plus the complete
+   490-variant linked selection. On the same frozen source/toolchain, compare a
+   predeclared representative monolithic subset against the matching linked rows.
+   The [64-variant manifest](results/date-time-service-monolithic-equivalence-variants-h-v1.json)
+   retains both strictness variants for 32 files covering constructors, realms,
+   calendars, time zones, parts, ranges and Temporal paths. Preserve every outcome;
+   this control does not claim a second complete monolithic family run.
 3. **Coverage and cost:** measure a small non-Intl selection and a 64-variant
    non-Intl batch on main and the linked branch. Report warm compile CPU, image
    bytes, runner peak RSS, cache hits and one-time preparation cost. Target compile
    CPU within about 5% of main. Repeat Temporal/Intl selections as required.
 
-Post each completed slice independently. Keep the existing packed-data and
-compiler-hash observations as immutable evidence; they are not a claim that the
-compile regression is already fixed.
+Post each completed slice independently. The [DateTimeFormat acceptance](results/date-time-service-migration-acceptance-h-v8.json)
+records 490/490 linked passes, 64/64 identical monolithic outcomes, the frozen
+self-build/stage comparison and the 4,980-test workspace gate. Against main with
+the merged runtime-hash fix, batch compile CPU is 4.85% lower and image size is
+0.89% lower. Peak RSS is 17.86% higher; a fresh one-batch process uses 8.37% more
+CPU, with startup and one-time service preparation reported separately. Earlier
+packed-data and compiler-hash failures remain immutable evidence.
