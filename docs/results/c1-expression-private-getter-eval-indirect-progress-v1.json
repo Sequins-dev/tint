@@ -1,0 +1,24 @@
+{
+  "kind": "c1-runtime-eval-native-progress-diagnostic",
+  "conformance": false,
+  "selection": "language/expressions/class/*.js",
+  "variantPath": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval-indirect.js",
+  "variant": "sloppy",
+  "inferiorPid": 17432,
+  "cpuObservations": [
+    "0:52.21",
+    "1:22.58"
+  ],
+  "heartbeatStalls": [
+    "2026-11-07T00:20:02.238Z [Test262 STALL] selection=\"language/expressions/class/*.js\" phase=\"executing language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval-indirect.js [sloppy; flags=noStrict] (launching debugger / awaiting LLDB)\" elapsed=155495ms done=402/495 pass=402 fail=0 unsupported=0 infra=0 waiting runner=18546 child/inferior=17429,17431,17432"
+  ],
+  "nativeResult": "pass",
+  "originalAttempt": true,
+  "nativeParentPassedAfterVariant": 403,
+  "sampleAttempt": {
+    "targetPid": 17432,
+    "exitStatus": 255,
+    "reason": "Inferior already exited; sample could not examine process. Parent journal records the original native pass."
+  },
+  "scope": "Execution progress diagnosis only. Native inferior CPU advanced despite stale awaiting-LLDB phase wording. No retry or compiler-performance investigation."
+}

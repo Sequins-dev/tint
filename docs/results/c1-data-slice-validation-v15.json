@@ -1,0 +1,22 @@
+{
+  "kind": "c1-docs-only-slice-validation",
+  "conformance": false,
+  "base": "de52b57c8d17fff8a9cd6763329439e2ce1111d2",
+  "gatePolicy": "READY FILE: docs-only slices may reuse current main gate. No exact-source claim is made for an older individual cluster gate after main integrates further source slices.",
+  "gateReusedFromMain": "de52b57c8d17fff8a9cd6763329439e2ce1111d2",
+  "executableChangesInC1Slice": [],
+  "upstreamGateReferences": [
+    "docs/results/cluster-f-variant-subset-feature-validation-v1.json",
+    "docs/results/native-codegen-frame-normalization-v1.json"
+  ],
+  "olderExactGateCheck": "Older F gate source equality check correctly failed after main integrated frame normalization and Temporal changes; that gate alone is not asserted to cover current main.",
+  "checkpoint": "docs/results/c1-direct-expressions-completed-files-v7.json",
+  "completeExpressionFiles": 205,
+  "expressionVariants": 403,
+  "nativePassed": 403,
+  "parentObservedVariants": 403,
+  "incompleteFilesRetainedInSnapshot": {},
+  "wholeExpressionParent": false,
+  "wholeClass": false,
+  "scope": "All immutable prefix observations belong to complete expression file selections. Parent remains incomplete. Historical overlaps require ledger deduplication."
+}
