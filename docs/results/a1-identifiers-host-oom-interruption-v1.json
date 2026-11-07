@@ -1,0 +1,26 @@
+{
+  "kind": "native-run-interruption",
+  "selection": "language/identifiers",
+  "requestedVariants": 535,
+  "observed": 359,
+  "passed": 359,
+  "unobserved": 176,
+  "complete": false,
+  "journal": "docs/results/test262-a1-v16-language-identifiers-v1.jsonl",
+  "stderr": "docs/results/test262-a1-v16-language-identifiers-v1.json.stderr.log",
+  "journalSha256": "7bf212b61bdedd57d4561d9f3961ebb933616db16c91e4e883104cf66507662a",
+  "runIdentity": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "exitCode": 134,
+  "phase": "compiling batch 6 (64 runtime variants)",
+  "diagnosis": "Node compiler host exhausted its 4 GiB V8 heap; no inferior active. Last GC retained 4088.4 MB. Batch source payload approx 1904954 bytes includes repeated large Unicode identifier sources. This is not a native variant failure.",
+  "lastObservation": {
+    "path": "language/identifiers/part-unicode-9.0.0-class-escaped.js",
+    "variant": "strict"
+  },
+  "recovery": "Retain original immutable prefix and fatal stderr; a fresh full-selection attempt on current main uses batch size 16 to bound compile memory. Resume with a changed batch size is prohibited by journal identity. Original 359 observations are not credited as complete family coverage.",
+  "emptyOutputRemoved": "Zero-byte canonical stdout file removed; original journal and fatal stderr retained."
+}
