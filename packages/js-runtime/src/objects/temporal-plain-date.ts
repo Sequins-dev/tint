@@ -196,7 +196,8 @@ export function installTemporalPlainDate(
     (receiver): GregorianDate => requireDate(receiver, realm),
     create,
   );
-  for (const name of ["toString", "toJSON", "valueOf"]) {
+  // Core locale serialization uses intrinsic slots and ignores locale options.
+  for (const name of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
     if (name === undefined) throw "TEMPORAL_METHOD_INVARIANT";
     builtinProperty(
       prototype,
