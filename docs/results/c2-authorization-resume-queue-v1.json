@@ -1,0 +1,66 @@
+{
+  "kind": "c2-native-authorization-held-queue",
+  "conformance": false,
+  "generatedAt": "2026-11-07T01:25:03.992Z",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "resumeGate": "No native launch until load-events.md records HOST AUTHORIZATION RESTORED.",
+  "debuggerLaunch": "debugserver-direct",
+  "configuredBatchSize": 64,
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "maxConcurrentRunners": 1,
+  "toolchainPolicy": "Rebase and re-freeze current main after authorization returns; include independently validated query fix once merge-ready. Never modify an existing frozen toolchain or journal identity.",
+  "first": "Complete held statements/class/elements journal on its original frozen-v11 connected toolchain; preserve original outcomes, then recheck pre-entry errors separately on fresh main direct.",
+  "retained44": {
+    "path": "docs/results/c2-elements-retained44-preentry-recheck-variants-v1.json",
+    "sha256": "820c533d3e10e33e6832ab5d2ad9ee99406f698a2701f7c1057460e6afb230d1",
+    "expectedVariants": 44,
+    "rootSelection": "language/statements/class/elements",
+    "source": "docs/results/c2-elements-complete-file-harvest-v5.json",
+    "includedIn": "docs/results/c2-elements-preentry-recheck-variants-v1.json"
+  },
+  "allPreentry": {
+    "path": "docs/results/c2-elements-preentry-recheck-variants-v1.json",
+    "expectedVariants": 97,
+    "rootSelection": "language/statements/class/elements"
+  },
+  "then": [
+    {
+      "selection": "language/expressions/class/elements",
+      "expectedVariants": 2943,
+      "path": "docs/results/c2-expressions-elements-complete-variants-v1.json",
+      "sha256": "9c6e1679d0901535df7ded109d58479fe7cd5ce898ae08b6d6407785bcf04287",
+      "validatedSubset": {
+        "rootSelection": "language/expressions/class/elements",
+        "requestedVariants": 2943,
+        "variantSubsetSha256": "39d8f10afeb101c8a06649bcff6958829cafbd901d34fe0a9d532966a3b5192d"
+      },
+      "basename": "test262-c2-expressions-elements-native-v1"
+    },
+    {
+      "selection": "language/statements/class/dstr",
+      "expectedVariants": 3840,
+      "path": "docs/results/c2-statements-dstr-complete-variants-v1.json",
+      "sha256": "90f25dbcad9e7b7650469cd7e756eb18bbba02e58d19c19b2dcccfdede94f253",
+      "validatedSubset": {
+        "rootSelection": "language/statements/class/dstr",
+        "requestedVariants": 3840,
+        "variantSubsetSha256": "4998c195340b27424e88a26257fdf815fdcefc1668ee6bc2bfd2b540d4e1aa37"
+      },
+      "basename": "test262-c2-statements-dstr-native-v2"
+    },
+    {
+      "selection": "language/expressions/class/dstr",
+      "expectedVariants": 3840,
+      "path": "docs/results/c2-expressions-dstr-complete-variants-v1.json",
+      "sha256": "c82e6ec14e8ea3b1708fe1935b6f4501928496ac21fc9daf8402088bb0e961ad",
+      "validatedSubset": {
+        "rootSelection": "language/expressions/class/dstr",
+        "requestedVariants": 3840,
+        "variantSubsetSha256": "bdae8959071b7ef69666882351c611cb7d4a3eb2e5aa44befd3dd2653602ff14"
+      },
+      "basename": "test262-c2-expressions-dstr-native-v1"
+    }
+  ],
+  "validation": "All manifest source hashes, metadata variants and membership accepted by the native runner selection resolver. Full manifests exactly equal their ordinary directory selections. This is compile-only preparation, not native coverage."
+}
