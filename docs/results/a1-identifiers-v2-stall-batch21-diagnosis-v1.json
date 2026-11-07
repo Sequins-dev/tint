@@ -1,0 +1,33 @@
+{
+  "kind": "native-run-stall-diagnosis",
+  "selection": "language/identifiers",
+  "attempt": "v2",
+  "batch": 21,
+  "journal": "docs/results/test262-a1-v16-language-identifiers-v2.jsonl",
+  "stderr": "docs/results/test262-a1-v16-language-identifiers-v2.json.stderr.log",
+  "stallAt": "2026-11-07T19:50:20.688Z",
+  "stallElapsedMs": 173330,
+  "observedAtStall": 327,
+  "observedAfterBatch": 343,
+  "allPass": true,
+  "sample": "docs/results/a1-identifiers-v2-stall-batch21-sample-v1.txt",
+  "cpuSamples": [
+    {
+      "at": "2026-11-07T19:49:26.234Z",
+      "nodeCpuTime": "21:32.60",
+      "cpuPercent": 110.7
+    },
+    {
+      "at": "2026-11-07T19:50:26.238Z",
+      "nodeCpuTime": "22:47.03",
+      "cpuPercent": 102.9
+    }
+  ],
+  "diagnosis": "Compiler host remained CPU-active and completed batch21; no native inferior at warning. 74.43 CPU seconds accrued in60 wallseconds. Compilation advanced to batch22 at19:50:35.075Z. Original STALL retained; no variant retried and no supervisor killed.",
+  "holds": [
+    {
+      "path": ".tint-bootstrap/v16-language-identifiers-v2.pause",
+      "exists": false
+    }
+  ]
+}
