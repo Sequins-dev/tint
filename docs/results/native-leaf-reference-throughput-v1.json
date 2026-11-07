@@ -1,0 +1,1274 @@
+{
+  "kind": "native-language-operation-throughput",
+  "version": 1,
+  "utc": "2026-11-07T13:45:52.704005+00:00",
+  "scope": "Leaf pointer storage in integer registers. Matched native benchmarks and compiler source; semantic equivalence across nine pinned Test262 variants. Historical canonical host sources differ, so variant CPU totals are context, not causal speedup ratios.",
+  "freeze": {
+    "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+      "sha256": "59a2a3856a9d0001a4e56c3b222915605e3d8542a854b9eb47f6e4f591eeb159"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+      "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "42ecbaecaef8cb1c9d0e53018ca9312db30536eee8fc146def448f6984286843",
+      "files": 591
+    },
+    "scope": "Same current candidate implementation/source snapshot compiled by frozen reference-temporary baseline and leaf reference emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+  },
+  "verifiedToolchainSeals": [
+    {
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+        "sha256": "59a2a3856a9d0001a4e56c3b222915605e3d8542a854b9eb47f6e4f591eeb159"
+      },
+      "verifiedFiles": 2518,
+      "identityVerified": true,
+      "journalIdentitySha256": "44c917d679a4e136c89d6c6cabb74607bb77d9b108481cad2a9ab001d2c468cd"
+    },
+    {
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+        "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+      },
+      "verifiedFiles": 2540,
+      "identityVerified": true,
+      "journalIdentitySha256": "98a97749d7e174733acc4424d522abac39ad1f636e60026fff900a258e8b9aab"
+    }
+  ],
+  "benchmarks": {
+    "pointer": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 427.5318541666667,
+          "min": 403.904,
+          "max": 444.8020833333333
+        },
+        "inferiorWallMs": {
+          "median": 472.860771,
+          "min": 454.406667,
+          "max": 492.085417
+        },
+        "instructions": {
+          "median": 2165593962.0,
+          "min": 2123286058,
+          "max": 2166321126
+        },
+        "cycles": {
+          "median": 1470293934.5,
+          "min": 1446907146,
+          "max": 1477761690
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 214.72952083333334,
+          "min": 198.60741666666667,
+          "max": 232.15954166666666
+        },
+        "inferiorWallMs": {
+          "median": 259.6947705,
+          "min": 243.896208,
+          "max": 279.267625
+        },
+        "instructions": {
+          "median": 2163427681.5,
+          "min": 2141809429,
+          "max": 2165304083
+        },
+        "cycles": {
+          "median": 756233759.5,
+          "min": 746998589,
+          "max": 757034818
+        }
+      },
+      "cpuSpeedup": 1.9910250463349386
+    },
+    "collections": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 1111.4066041666665,
+          "min": 1094.4550416666668,
+          "max": 1114.114125
+        },
+        "inferiorWallMs": {
+          "median": 1218.5927915,
+          "min": 1196.457292,
+          "max": 1225.989083
+        },
+        "instructions": {
+          "median": 9589052573.5,
+          "min": 9574907688,
+          "max": 9595482387
+        },
+        "cycles": {
+          "median": 3157918732.5,
+          "min": 3113430980,
+          "max": 3173617526
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 726.2728125,
+          "min": 712.20775,
+          "max": 733.1229583333334
+        },
+        "inferiorWallMs": {
+          "median": 820.2855,
+          "min": 804.022417,
+          "max": 823.358
+        },
+        "instructions": {
+          "median": 9550202800.5,
+          "min": 9546114457,
+          "max": 9554512908
+        },
+        "cycles": {
+          "median": 2045834903.5,
+          "min": 2029030163,
+          "max": 2100257379
+        }
+      },
+      "cpuSpeedup": 1.5302880474637985
+    }
+  },
+  "nodeReference": {
+    "node": "v24.12.0",
+    "scope": "Same production collection algorithms and loop body in V8. Timing includes initialization and first JIT compilation; five repetitions, no Node performance ratio substituted for native equivalence.",
+    "rows": [
+      {
+        "repetition": 0,
+        "cpuMs": 114.616,
+        "wallMs": 112.16575000000012,
+        "loadBefore": [15.1455078125, 14.36962890625, 14.0390625],
+        "loadAfter": [15.1455078125, 14.36962890625, 14.0390625],
+        "outcome": 42
+      },
+      {
+        "repetition": 1,
+        "cpuMs": 106.251,
+        "wallMs": 110.56004199999734,
+        "loadBefore": [15.1455078125, 14.36962890625, 14.0390625],
+        "loadAfter": [15.1455078125, 14.36962890625, 14.0390625],
+        "outcome": 42
+      },
+      {
+        "repetition": 2,
+        "cpuMs": 111.27,
+        "wallMs": 115.16749999999593,
+        "loadBefore": [15.1455078125, 14.36962890625, 14.0390625],
+        "loadAfter": [15.1455078125, 14.36962890625, 14.0390625],
+        "outcome": 42
+      },
+      {
+        "repetition": 3,
+        "cpuMs": 114.499,
+        "wallMs": 119.00400000000081,
+        "loadBefore": [15.1455078125, 14.36962890625, 14.0390625],
+        "loadAfter": [15.1455078125, 14.36962890625, 14.0390625],
+        "outcome": 42
+      },
+      {
+        "repetition": 4,
+        "cpuMs": 113.829,
+        "wallMs": 118.43445799999608,
+        "loadBefore": [15.1455078125, 14.36962890625, 14.0390625],
+        "loadAfter": [15.1455078125, 14.36962890625, 14.0390625],
+        "outcome": 42
+      }
+    ]
+  },
+  "nativeCompiler": {
+    "forward": {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+          "sha256": "59a2a3856a9d0001a4e56c3b222915605e3d8542a854b9eb47f6e4f591eeb159"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+          "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "42ecbaecaef8cb1c9d0e53018ca9312db30536eee8fc146def448f6984286843",
+          "files": 591
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen reference-temporary baseline and leaf reference emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 50661,
+            "monotonicNs": 1597949208
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 298994574750
+          },
+          "loadBefore": [14.0048828125, 13.03076171875, 13.1611328125],
+          "loadAfter": [14.6220703125, 14.873046875, 14.0849609375],
+          "cpu": {
+            "pid": 50661,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6566660122,
+              "systemTicks": 113416364,
+              "instructions": 2866590035951,
+              "cycles": 878801266170
+            },
+            "cpuMsLowerBound": 278336.52025,
+            "finalUnobservedWallBoundMs": 105.162417,
+            "probes": 2790,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 297396.625542,
+          "outputSha256": "2f2012477820a6113eab60acb906e269770d0a0e706db8c098a736f7b8865198",
+          "outputBytes": 54334770,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 68579,
+            "monotonicNs": 1222944416
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 301788923500
+          },
+          "loadBefore": [14.6220703125, 14.873046875, 14.0849609375],
+          "loadAfter": [15.1318359375, 14.29736328125, 14.005859375],
+          "cpu": {
+            "pid": 68579,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6682627450,
+              "systemTicks": 188726206,
+              "instructions": 2870147627269,
+              "cycles": 837274672399
+            },
+            "cpuMsLowerBound": 286306.40233333333,
+            "finalUnobservedWallBoundMs": 105.052625,
+            "probes": 2833,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 300565.979084,
+          "outputSha256": "2f2012477820a6113eab60acb906e269770d0a0e706db8c098a736f7b8865198",
+          "outputBytes": 54334770,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 0.9721631021228286,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    "reverse": {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-reference-temporary-toolchain-v23/source-snapshot.json",
+          "sha256": "59a2a3856a9d0001a4e56c3b222915605e3d8542a854b9eb47f6e4f591eeb159"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+          "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "42ecbaecaef8cb1c9d0e53018ca9312db30536eee8fc146def448f6984286843",
+          "files": 591
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen reference-temporary baseline and leaf reference emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 90046,
+            "monotonicNs": 1627954416
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 363519651250
+          },
+          "loadBefore": [18.0419921875, 15.197265625, 14.357421875],
+          "loadAfter": [17.642578125, 17.3466796875, 15.8154296875],
+          "cpu": {
+            "pid": 90046,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 7861105051,
+              "systemTicks": 161637234,
+              "instructions": 2866429238318,
+              "cycles": 852349428731
+            },
+            "cpuMsLowerBound": 334280.9285416667,
+            "finalUnobservedWallBoundMs": 108.993875,
+            "probes": 3458,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 361891.696834,
+          "outputSha256": "2f2012477820a6113eab60acb906e269770d0a0e706db8c098a736f7b8865198",
+          "outputBytes": 54334770,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 10339,
+            "monotonicNs": 1790111833
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 389027281000
+          },
+          "loadBefore": [17.642578125, 17.3466796875, 15.8154296875],
+          "loadAfter": [16.89208984375, 16.18310546875, 15.71923828125],
+          "cpu": {
+            "pid": 10339,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 8477669524,
+              "systemTicks": 217489586,
+              "instructions": 2872335999474,
+              "cycles": 921212180270
+            },
+            "cpuMsLowerBound": 362298.29625,
+            "finalUnobservedWallBoundMs": 103.571375,
+            "probes": 3644,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 387237.169167,
+          "outputSha256": "2f2012477820a6113eab60acb906e269770d0a0e706db8c098a736f7b8865198",
+          "outputBytes": 54334770,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.0838138383501619,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    "allStageImagesIdentical": true,
+    "cpuClaim": "Mixed order/host conditions; no stable whole-compiler CPU speedup established. Retired counters and repeated operation medians reported independently."
+  },
+  "canonical": {
+    "report": "test262-perf-leaf-reference-v1.json",
+    "journal": "test262-perf-leaf-reference-v1.jsonl",
+    "totals": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "identicalSemanticObservations": true,
+    "baselineReports": [
+      "test262-perf-reference-temporaries-integer-v1.json",
+      "cluster-a2-call-eval-near-budget-v1.json"
+    ],
+    "heavyInferiors": [
+      {
+        "case": "0",
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 64450,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5247025567,
+            "systemTicks": 111832857,
+            "instructions": 2190435382760,
+            "cycles": 703412323103
+          },
+          "cpuMsLowerBound": 223285.76766666665,
+          "finalUnobservedWallBoundMs": 104.344709,
+          "probes": 2170,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": "1",
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "cpu": {
+          "pid": 75083,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6000043649,
+            "systemTicks": 148421988,
+            "instructions": 2194408028725,
+            "cycles": 719851876446
+          },
+          "cpuMsLowerBound": 256186.06820833334,
+          "finalUnobservedWallBoundMs": 104.884209,
+          "probes": 2621,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": "4",
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "cpu": {
+          "pid": 93829,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6232912099,
+            "systemTicks": 123602698,
+            "instructions": 2022315089413,
+            "cycles": 675202054679
+          },
+          "cpuMsLowerBound": 264854.78320833336,
+          "finalUnobservedWallBoundMs": 106.297416,
+          "probes": 2703,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      }
+    ],
+    "compilation": {
+      "batchSize": 64,
+      "batches": [
+        {
+          "id": 0,
+          "variants": 9,
+          "kind": "execution",
+          "compileMs": 222667.691292,
+          "outcome": "compiled"
+        }
+      ],
+      "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+    }
+  },
+  "gate": {
+    "startedUTC": "2026-11-07T13:31:16.212Z",
+    "endedUTC": "2026-11-07T13:35:21.789Z",
+    "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+    "args": [],
+    "status": 0,
+    "signal": null
+  },
+  "gateInputs": {
+    "head": "80ab2605fcd1141489c3eb69307eba47b0bbb4d1",
+    "main": "fca30d8f6c51e07ff9ebe0d885eb037322c428bf",
+    "utc": "2026-11-07T13:31:16.181Z"
+  },
+  "wholeSuiteProjection": "Not identifiable from operation loops or nine variants; no projected whole-suite speedup claimed. Node compilation remains separate.",
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-candidate-v25-manifest.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-candidate-v25-manifest.json.gz",
+      "sha256": "c3da37c9dc57da76fc03dc3af9dceb150378634c9e16f69dce44005e0dcdc3dc",
+      "sourceBytes": 2173
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-candidate-v26-manifest.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-candidate-v26-manifest.json.gz",
+      "sha256": "51bb1eedebd55e57178c88d4b80d08428cf05036fc39bd861ff258d010b064bb",
+      "sourceBytes": 2173
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-candidate-v27-manifest.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-candidate-v27-manifest.json.gz",
+      "sha256": "1027d9b2529dd42093f26c3edc70782099b7a0d099964e91e22ff76ce38749a8",
+      "sourceBytes": 2173
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixtures-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixtures-v1.json.gz",
+      "sha256": "2a7073d927c00e0da9e03f39e9a7305e96468febd7eab76d6f7603a8400e577d",
+      "sourceBytes": 4883
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-pointer-builds-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-pointer-builds-v1.json.gz",
+      "sha256": "1097c12c0a40d242c9a0f9da387ed20f6cc2bdf6b4916f37c3bbeb19d597beb9",
+      "sourceBytes": 4931
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-cpu-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-cpu-v1.json.gz",
+      "sha256": "eea2896bf1f409eae4f11fda10cc97d6250ae977fb5661b388dd82373a593133",
+      "sourceBytes": 10668
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-pointer-cpu-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-pointer-cpu-v1.json.gz",
+      "sha256": "6266b39764170603776fa5955cfd4f4b6364e609924d213f1a8ad7f7bb84e913",
+      "sourceBytes": 10794
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-cpu-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-cpu-v1.json.gz",
+      "sha256": "d82cf835ec2c2f0a42ea9906d3c1091e3d171ede283bfc24f88f69e791a5ee5c",
+      "sourceBytes": 12318
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-builds-v4.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-builds-v4.json.gz",
+      "sha256": "83092f08a97aebd638eb8d61feb7ff54be8c98fa6a815367f6a8b5ed40d4b386",
+      "sourceBytes": 4995
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-cpu-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-cpu-v1.json.gz",
+      "sha256": "84fcc2af5fdc702d96396698c54d86ef8491e67bafe74109d7ad8e81b22d5598",
+      "sourceBytes": 10842
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-node-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-node-v1.json.gz",
+      "sha256": "31f0f2c955925788b178704adfc07204b3f535ee9a77797edbd954f6dd4579aa",
+      "sourceBytes": 1796
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-static-comparison-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-static-comparison-v1.json.gz",
+      "sha256": "a46f92dc86d7a4a7675c8ff945355a26e9c5eb26392a1f5bd90010592a901ca9",
+      "sourceBytes": 5750
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-static-before-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-static-before-v1.json.gz",
+      "sha256": "8ede86b9af508c2fddd9e1ef68a1f1b4fb4c497d54a06cbb86548eb140a7a1a5",
+      "sourceBytes": 828782
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-static-after-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-static-after-v1.json.gz",
+      "sha256": "8d125706a99fad8df1cbad3369db714390fb5a8ee363a6742a5988c3e7c3344f",
+      "sourceBytes": 826005
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-compiler-attribution-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-compiler-attribution-v1.json.gz",
+      "sha256": "21a54506df5773bb72c928b8961ddbee2d723c64a9c238c72ff964486e1fa1f5",
+      "sourceBytes": 101490
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-stall-investigation-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-stall-investigation-v1.json.gz",
+      "sha256": "345d237ac14e239a69b52c08ed156a6f4bddbabebe42371e866ded40161328fc",
+      "sourceBytes": 1045
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-tint-check-v1-inputs.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-tint-check-v1-inputs.json.gz",
+      "sha256": "db75b5166e15d241884fd3339e96513a716bb42e7fb9d16a2d7aedacfa6064f1",
+      "sourceBytes": 148
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-tint-check-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-tint-check-v1-exit.json.gz",
+      "sha256": "cf35c2359c85ca0001a2a63c52c152422e5ecbf6d47aebb48ab28737a48819be",
+      "sourceBytes": 201
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-tint-check-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-tint-check-v1.log.gz",
+      "sha256": "269dffcf245579f91bc8f41aa58b1ada7183d85e88197b1816298184de7c16a9",
+      "sourceBytes": 396516
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-equivalence-v1-inputs.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-equivalence-v1-inputs.json.gz",
+      "sha256": "d1a27b21bf387bfd981e78ad718a25bdddc78c36e35344544214fdc0550ad6a4",
+      "sourceBytes": 2156
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-operation-variants-v1.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-operation-variants-v1.json.gz",
+      "sha256": "560f9228f69636f22feb6f6f0dac5dce50752e41123a016a3d63ad0f559282ce",
+      "sourceBytes": 1605
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-equivalence-v1-driver-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-equivalence-v1-driver-exit.json.gz",
+      "sha256": "4caa327fa6a21f5c0c2291b7b96d410539a8e009a25b6ab1230ab67d24122025",
+      "sourceBytes": 276
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-equivalence-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-equivalence-v1.log.gz",
+      "sha256": "39c08fd3b35171276e26439ea45c67e495636fd96403fb5f634e3a0788b59bf6",
+      "sourceBytes": 14862
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-bootstrap-preflight-v1-interruption.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-bootstrap-preflight-v1-interruption.json.gz",
+      "sha256": "8a7a90fcd802ffbae9a7eb8f4126832a4b0b3fb1fec2bbee4e268d354ae1b7f7",
+      "sourceBytes": 297
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-bootstrap-preflight-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-bootstrap-preflight-v1.log.gz",
+      "sha256": "8b743664724cdc755bdcdb8d775e1ece0fcf3b11e53443096e9e44f24d7ea702",
+      "sourceBytes": 75
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-registers-focused-v3.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-registers-focused-v3.log.gz",
+      "sha256": "a393d0a65d9476ce391599eaa86a65e81bd324fdd7147f169a46a5685d03fa4c",
+      "sourceBytes": 147
+    },
+    {
+      "source": ".tint-bootstrap/perf/open-scalar-registers-red-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/open-scalar-registers-red-v1.log.gz",
+      "sha256": "899be22b2aa21124069b1c3d01b7f1272061f2a6cb590041f2c2d26b2902f948",
+      "sourceBytes": 1076
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v1.ts.gz",
+      "sha256": "5c6f27dd11d02d425b44f7120f24ca7c289de09943cb3e08262154b2c48fc3de",
+      "sourceBytes": 6878
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v2.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v2.ts.gz",
+      "sha256": "1786714f16103c569b5764e07ef79a4837f7ae610128b14094a90a05c264a984",
+      "sourceBytes": 6878
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3.ts.gz",
+      "sha256": "9d305c773fa20641744af1dba4861c54fa2574cdfde61fe191a06987136f6f0d",
+      "sourceBytes": 6878
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v1.log.gz",
+      "sha256": "fef4746fc8c1c32b1de359434fbe5295ea38e80d53dc19eac4ab7dd6355501ed",
+      "sourceBytes": 2028
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v2.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v2.log.gz",
+      "sha256": "fcd21017e127b8f2de596a81afc08b6b28dcead2a73df51e630b48f39831b3fc",
+      "sourceBytes": 2011
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3.log.gz",
+      "sha256": "11449a370f12c0c53c126a7163864d01e884c048a116fb35927788bfd907b4b8",
+      "sourceBytes": 19740
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v1-exit.json.gz",
+      "sha256": "7e6bfdc83e7911b19bbec086112398a01b4221fe72d43c126ddbd41f39c67621",
+      "sourceBytes": 365
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v2-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v2-exit.json.gz",
+      "sha256": "2865ba0e493f5e1480204042f99765e1f539f7e2e3f9e616f0af00e0c1d32ef6",
+      "sourceBytes": 365
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3-exit.json.gz",
+      "sha256": "8a88c47d45c56cbf2ab8a562c0775533e0ceeb74065e6ef9d7bb5233ca2af3a7",
+      "sourceBytes": 365
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1.ts.gz",
+      "sha256": "070333b047a3960468261e3f9e97e7eb03207bab8e4115bf146c11355960a372",
+      "sourceBytes": 6850
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1.log.gz",
+      "sha256": "5a9e970e19970b29f5da25c9441af239252829683fa09f605d0a868f696efe57",
+      "sourceBytes": 19917
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1-exit.json.gz",
+      "sha256": "e31a5183886b8461a9f26e62761cf4573a16dd744d95998a03e2f3c66a62b91d",
+      "sourceBytes": 373
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-checks-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-checks-v1.mjs.gz",
+      "sha256": "d6f907b1433e9ed8e97f30fd286314104d3de6312db465a2df70b3d2b8527166",
+      "sourceBytes": 543
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-checks-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-checks-v1.mjs.gz",
+      "sha256": "332ad2af2b0d8a10bada84c981ec9f4a7c41f0d2177bfe636ad40cc1918f2022",
+      "sourceBytes": 2008
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-equivalence-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-equivalence-v1.mjs.gz",
+      "sha256": "d3f1ae617a517b4166cd0bf9ff9043765d0117a2d7087ee2cd8e6af1cad411a1",
+      "sourceBytes": 2121
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-source-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-source-v1.ts.gz",
+      "sha256": "31aba87634a65b3cdd054b7daab2ba95d0b3caac08a3b79b973d433d4435c9e0",
+      "sourceBytes": 527
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-after-pointer-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-after-pointer-v1.ts.gz",
+      "sha256": "e2184888bd5979ab9117fc27c7d3f738e5632d754f2c3eb89ec0014c7158d389",
+      "sourceBytes": 778
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-after-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-after-v1.ts.gz",
+      "sha256": "842334f4e299c3218ba1d8c315886279dfcbb4694911dcb605b226212219f0b2",
+      "sourceBytes": 2139
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-before-collections-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-before-collections-v1.ts.gz",
+      "sha256": "551a5765cc94fb63cc2feaf840a29ec8c0aa1a074e9e77be5b45c812730acb99",
+      "sourceBytes": 960
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-before-pointer-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-before-pointer-v1.ts.gz",
+      "sha256": "ca54c7876627b0ff36491a71498ba941f3ef75e8001afce1f306a6ffd71c493d",
+      "sourceBytes": 783
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-fixture-before-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-fixture-before-v1.ts.gz",
+      "sha256": "b8ba9f81b44d4888a881d53c4c359b0d0e406c7b7bf6f615bb3b2037b733da62",
+      "sourceBytes": 2144
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-pointer-source-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-pointer-source-v1.ts.gz",
+      "sha256": "ae78e70a072c9b23c15f3cff359dbdb7ba9ecb6b434ef2c3a5dd5ded881d348b",
+      "sourceBytes": 357
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-source-v1.ts",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-source-v1.ts.gz",
+      "sha256": "ad5009535067cff434541c1f414376e3df26aea3fc9024105e3a7f5d6cc72fcf",
+      "sourceBytes": 1722
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v1.mjs.gz",
+      "sha256": "d9cc698d4cf5afce7868a2054642242fb3e2a86dfa4f016b632ad9f17f29c662",
+      "sourceBytes": 2778
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v2.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v2.mjs.gz",
+      "sha256": "b3d657f7c5d4b1f7618159adf2fde51b38efae5b6cb6baffabbce27e75f7f877",
+      "sourceBytes": 2996
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v3.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v3.mjs.gz",
+      "sha256": "87f2ef18ec51618a8411f66446e631b83df174e0db9563500b2a279a5e9d074f",
+      "sourceBytes": 2996
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v4.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v4.mjs.gz",
+      "sha256": "c471fd32d6a7c38be821d5697befe4701df053b8d3f43245f3ebf2397f5d11d1",
+      "sourceBytes": 3028
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v1.log.gz",
+      "sha256": "e926428339560464cf97fd5f0791dcd978ba9f32fb8ed190b7ee8bd7925defdb",
+      "sourceBytes": 5247
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v2.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v2.log.gz",
+      "sha256": "f67b677d35ee88599a293bd5e29835b3b8e344a3751fad382cbdf906651b1113",
+      "sourceBytes": 866
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v3.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v3.log.gz",
+      "sha256": "cebad3d75ed359a56ac44e86d9ef0b92d25307ae428a06355c2960774b36b909",
+      "sourceBytes": 5458
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v4.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v4.log.gz",
+      "sha256": "9d23890a92c2694adb0ada26cccfc0d8efddffd155d427edefd4d2e232c65937",
+      "sourceBytes": 941
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v1-exit.json.gz",
+      "sha256": "5e7a00ef04f88bb463df3dd69c1bf6c1967f42b2878f79080bbbc80dc3521357",
+      "sourceBytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v2-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v2-exit.json.gz",
+      "sha256": "cc6bf22a4e11084f725891d492368a4628a948d59ece9e8f9f1f5616d565a8ec",
+      "sourceBytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v3-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v3-exit.json.gz",
+      "sha256": "33b61b77d3e1d9a4469b871408ca66e860fdc18c0fc42e15969b28d9d4926405",
+      "sourceBytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-collections-v4-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-collections-v4-exit.json.gz",
+      "sha256": "002f13f493dbb76ea3e0bf9a3d02ca7ba27b85da1a3fbb0a5fbd0ab6869e082c",
+      "sourceBytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-fixtures-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-fixtures-v1.mjs.gz",
+      "sha256": "620db167b328433e3a38026f255b0ac3b128b03cdabc9dbf932213179e691657",
+      "sourceBytes": 2106
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-leaf-reference-pointer-builds-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/prepare-leaf-reference-pointer-builds-v1.mjs.gz",
+      "sha256": "560e2de130e79b6c46154872b22f01b54f203442e5ba0d05339e1ffef1796eff",
+      "sourceBytes": 2578
+    },
+    {
+      "source": ".tint-bootstrap/perf/build-leaf-permuted-native-v1.mjs",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/build-leaf-permuted-native-v1.mjs.gz",
+      "sha256": "cfc9fb156a114ba83b3c8c995bf2da17aa3d8142ebfbb3f94ad2d71622473210",
+      "sourceBytes": 4437
+    },
+    {
+      "source": ".tint-bootstrap/perf/disassemble_leaf_hots_v1.py",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/disassemble_leaf_hots_v1.py.gz",
+      "sha256": "89be2f48968d046cad9ecb9404716ecae21a03874dc0e5211cd39c6b0b3085eb",
+      "sourceBytes": 1579
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-checks-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-checks-v1.log.gz",
+      "sha256": "85cf868b82136a574a726766d5d60371b9c209564180e5397640475b768431cf",
+      "sourceBytes": 12836
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-checks-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-checks-v1-exit.json.gz",
+      "sha256": "bdde1d494273b1705b431702c56736b850fb0f7be8a7f442fb5c26d8eddbc679",
+      "sourceBytes": 271
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-checks-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-checks-v1.log.gz",
+      "sha256": "22cbba5da8fd0f5658f803e4d9dd1f64074801bc5f5498094cab41d2afc4ed6d",
+      "sourceBytes": 6375
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-checks-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-checks-v1-exit.json.gz",
+      "sha256": "acbc92cf9528012b9d0ba44a9334a5371f42366f5378b48ba6e86dcc783777fa",
+      "sourceBytes": 444
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-checks-v1.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-checks-v1.log.gz",
+      "sha256": "cb5a79f238651d7190003334d3c94e1e76d459f6e8e560ecf4d4fb017fa28c4b",
+      "sourceBytes": 7551
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-reference-collections-checks-v1-exit.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-reference-collections-checks-v1-exit.json.gz",
+      "sha256": "3c7aa7116c343f8434eb57e07a9ee5d7377616133f984a7137efa1289d9e4ecd",
+      "sourceBytes": 283
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/after/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/after/cpu.json.gz",
+      "sha256": "9fdeea7d823bf9119f40aea7a1a05eb4b54599fd9a984ab8745afa4906ac2d14",
+      "sourceBytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/after/final.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/after/final.json.gz",
+      "sha256": "4a9d55ee739f42ed8a7e7b9fc5f9a27ea531492bb0b16ea307d67a046d01f3ab",
+      "sourceBytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/after/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/after/initial.json.gz",
+      "sha256": "a2818b709cfe3f7be09f0d5e15b1d17f5ce2888ecea302193f4e4e709351f606",
+      "sourceBytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/after/reports.jsonl",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/after/reports.jsonl.gz",
+      "sha256": "4a3d26e968a3c0167d9b269e983b9c1c1bb9b67a3e36e3ef4e8872ccd92c9f2f",
+      "sourceBytes": 747
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/after/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/after/result.json.gz",
+      "sha256": "2d2056d11937720c035ffa7472471e3aae3b826640b79f40beed3d8422c24d06",
+      "sourceBytes": 1091
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/before/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/before/cpu.json.gz",
+      "sha256": "2b313b1042c253d3d5672fe5827aeb6cd95a25b003a3d6fca8bc0d238655ae5d",
+      "sourceBytes": 496
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/before/final.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/before/final.json.gz",
+      "sha256": "e38ad3d88184f556b1a9c84b69f7b4f935c612799b5c6dbc7c9dc358e5c78d1c",
+      "sourceBytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/before/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/before/initial.json.gz",
+      "sha256": "209d8a9db22076b5c9e6c47261ebb06844b4988d30c7d1259c5ebd6d27d3212a",
+      "sourceBytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/before/reports.jsonl",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/before/reports.jsonl.gz",
+      "sha256": "953f7a72ff0c52131a0409b0e36c62e603d2f0c376ac6718dd79502e6fdec59c",
+      "sourceBytes": 748
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/before/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/before/result.json.gz",
+      "sha256": "e44800f2ad4988fceaff95a86809123db60c27809a3313f770cfa55a56a0feab",
+      "sourceBytes": 1087
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/inputs.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/inputs.json.gz",
+      "sha256": "26434b6ae46f0cb7fbaaab20394933f022de0119bf63947a4f6055557eabf4ba",
+      "sourceBytes": 4035
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-v3/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-v3/result.json.gz",
+      "sha256": "1321c718ea9f43b64d009459fee9abd804f79b371815635fb19a9ca020a18238",
+      "sourceBytes": 5248
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/after/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/after/cpu.json.gz",
+      "sha256": "f401b4abf391954b54c4c7a01bbf7eb212ffc6910abd1adbda3bd4d1240a451c",
+      "sourceBytes": 501
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/after/final.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/after/final.json.gz",
+      "sha256": "df4d52100a9f84fa100aa161a6129366e04404d36155bca05cc41ae800ceb475",
+      "sourceBytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/after/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/after/initial.json.gz",
+      "sha256": "78094e185b73bf34a212b6a3671cf2cbc94e6f0784ce301482043cdb3f49361d",
+      "sourceBytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/after/reports.jsonl",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/after/reports.jsonl.gz",
+      "sha256": "b88d7e3ab08742f60ada736a0d5fc217d47f46e4b3ec2953a963e2befaa46aa1",
+      "sourceBytes": 755
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/after/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/after/result.json.gz",
+      "sha256": "4e02ddf82d594db52a0bb6f163fb374f5931c59849cb943be369a3c735bcef67",
+      "sourceBytes": 1088
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/before/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/before/cpu.json.gz",
+      "sha256": "6ca28afab730d303e39d171cd0cdbad674a11be0778d0afba6b00fd4e08a8b85",
+      "sourceBytes": 496
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/before/final.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/before/final.json.gz",
+      "sha256": "4c3966002b846b119a924b8148ad2e40639634f9a4c3f271137580b51743a679",
+      "sourceBytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/before/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/before/initial.json.gz",
+      "sha256": "27165d125679bf1dfff6c48469ffecbbe32326d0886e7f7257f5f54c167661ca",
+      "sourceBytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/before/reports.jsonl",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/before/reports.jsonl.gz",
+      "sha256": "614a0d0ebd0b11ed126dc5c4a718086806fb91943ab8368fab7c281a8c41fa04",
+      "sourceBytes": 756
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/before/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/before/result.json.gz",
+      "sha256": "36bd2cd8830c78e40aebcac996fbebc7e002cbbc0717af56976871ab24c20cb3",
+      "sourceBytes": 1089
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/inputs.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/inputs.json.gz",
+      "sha256": "4452eccfb8f386d76202306e8eb4d33ea91ff93ce13ee54c33b4bc085c4f0e8d",
+      "sourceBytes": 4032
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-leaf-references-reverse-v1/result.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/selfbuild-leaf-references-reverse-v1/result.json.gz",
+      "sha256": "a6f7cd9bb00bc4d0f04dd830bcb7e8f55d956ac248cc95d2b4d01130df6470c6",
+      "sourceBytes": 5247
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-0/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-0/cpu.json.gz",
+      "sha256": "4f788d5bf03eec87ca0ca222b17e00bab26acdfcbccea3d2a11919e075043999",
+      "sourceBytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-0/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-0/initial.json.gz",
+      "sha256": "a54cf48e146ca42ae2d31fe59bfa56cdd1175da14bf68d03d666893895c3bc1b",
+      "sourceBytes": 465
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-1/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-1/cpu.json.gz",
+      "sha256": "43850922ec8ab55c8f401df46300f877ba4dc8ef8491bf48425966d5aa489270",
+      "sourceBytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-1/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-1/initial.json.gz",
+      "sha256": "4622c8486c1628388576c6463a3288476a9bbd13ca22801d615723c64eef599d",
+      "sourceBytes": 471
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-2/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-2/initial.json.gz",
+      "sha256": "ae762bd1eb28d86caf63f03a9b9a619228c8ece344caf37bfcb371e33a1c6cd3",
+      "sourceBytes": 471
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-4/cpu.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-4/cpu.json.gz",
+      "sha256": "1e69c9159aeb673cf83a51d136a15fa95feba4f02daa3264f8ec1c32e510a48c",
+      "sourceBytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/after-4/initial.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/after-4/initial.json.gz",
+      "sha256": "0bd75c16834db42677ad6bf49fbff62574a6c1234d3af42f3e04aa7a084254c0",
+      "sourceBytes": 469
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-leaf-reference-cpu-v1/observations.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/observe-leaf-reference-cpu-v1/observations.json.gz",
+      "sha256": "0f0bf236aeae782de9ebe498f8b801eb465d834c758db4fb600791581e875d5b",
+      "sourceBytes": 1987
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-150000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-150000.log.gz",
+      "sha256": "cc13b1298784f11aca00cce62184177f191e3c8a320672bf3b43ef5f1181bf14",
+      "sourceBytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-150000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-150000.txt.gz",
+      "sha256": "394f26a2017e92f4beb6aebc9efd32259b47f4e400344e4def5f1e24a1249d9a",
+      "sourceBytes": 230165
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-210000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-210000.log.gz",
+      "sha256": "356e4f544d121121f565811185895919a92fd41534efa32bf02cb81b288ff2dc",
+      "sourceBytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-210000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-210000.txt.gz",
+      "sha256": "fc1b145a7d3041fc2aefcf65f7521937994514c89d19c9ffad62861b04832270",
+      "sourceBytes": 727821
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-270000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-270000.log.gz",
+      "sha256": "a6a38ba7a6c8fd1da0f0265bab5875c2399f308cb22a6eb12c3f279456d26de8",
+      "sourceBytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-270000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-270000.txt.gz",
+      "sha256": "7659aca533e1acb957b9daa134c860168b99605815a0a46939b5b00034d35b2f",
+      "sourceBytes": 196238
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-90000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-90000.log.gz",
+      "sha256": "620ecc880f9d631dafe7ebb1c0c069239e04a063056853f6c614de4f6ab57752",
+      "sourceBytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/after-90000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/after-90000.txt.gz",
+      "sha256": "d224e95dcd133f2e78cac534631a95962fb718a8bf8a7c3ee315c99dc8e440e3",
+      "sourceBytes": 280390
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-150000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-150000.log.gz",
+      "sha256": "59617351a8f62013d4fa353ca64a0d2dca8450c11ada44874ebf8bdf6603eb2a",
+      "sourceBytes": 242
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-150000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-150000.txt.gz",
+      "sha256": "68017f20e37f444c5729a719501836aa9de60b3affc46055cd5d5e5728c10cd4",
+      "sourceBytes": 1350997
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-210000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-210000.log.gz",
+      "sha256": "fa5103581c7e18bd7730afaa7494666faaa26131792daa259223a970f890eddf",
+      "sourceBytes": 242
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-210000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-210000.txt.gz",
+      "sha256": "697ee5a7a5f45010428bfd5c6641c270f22586edd24fbd45ed85b710ff3222be",
+      "sourceBytes": 732281
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-270000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-270000.log.gz",
+      "sha256": "8edfbb5045abd22c8c559c174eca792ba4308b66618f86b9e8dc6287f4a4462e",
+      "sourceBytes": 242
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-270000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-270000.txt.gz",
+      "sha256": "718e546bc7c8f8f9f134874e7eb4971d35594e9839aa679128a7c4af940f7e49",
+      "sourceBytes": 206396
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-90000.log",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-90000.log.gz",
+      "sha256": "284c11513bb5e42102447f6ceb2e1e12e12d8d8b21f374ae2b954225380f1aaf",
+      "sourceBytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/before-90000.txt",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/before-90000.txt.gz",
+      "sha256": "7bd8280f87dca5ee214cb7f0e94926d4c529dda8e6d9afe10216b4fbf299d092",
+      "sourceBytes": 1488965
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-leaf-references-v1/observations.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/profile-leaf-references-v1/observations.json.gz",
+      "sha256": "23f367016aa60a6f33085f99b02b02102194856a821f366c857ee85b52a6c65f",
+      "sourceBytes": 3974
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-v1/after.manifest.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-v1/after.manifest.json.gz",
+      "sha256": "b343a22057727ab71c2b013ab8d886e4e233094764244fb7c439bf832e5a5394",
+      "sourceBytes": 1692
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-v1/before.manifest.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-v1/before.manifest.json.gz",
+      "sha256": "5b0a14eccbb4e46da43c41a69cba7e45e88ca773a2ab5a177fe5970484f45daf",
+      "sourceBytes": 1712
+    },
+    {
+      "source": ".tint-bootstrap/perf/leaf-permuted-native-v1/build.json",
+      "path": "docs/results/native-leaf-reference-throughput-v1-assets/leaf-permuted-native-v1/build.json.gz",
+      "sha256": "16ed47c9adee94875bc4fd1677a45d047de04e8bec29431649dc41b08525a3bb",
+      "sourceBytes": 7672
+    }
+  ]
+}

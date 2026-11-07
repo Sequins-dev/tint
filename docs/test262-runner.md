@@ -540,3 +540,9 @@ The [retained A1 recheck](results/test262-addition-post-C2-correct-budget-v3-aud
 completed with two pre-entry crashes during a confirmed authorization stall.
 It provides no native execution timing. Recheck into a new report after host
 authorization is restored; preserve the original report and journal.
+
+The [leaf pointer register measurement](results/native-leaf-reference-throughput-v1.md)
+records repeated inferior CPU/cycle measurements, four identical native compiler
+stage images and nine unchanged canonical outcomes. Its operation-loop speedups
+do not imply a whole-suite speedup. The [current attribution](results/native-hot-functions-v10.md)
+keeps real native preparation separate from Node-hosted batch compilation.
