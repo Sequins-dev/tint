@@ -161,6 +161,7 @@ export function leafStorageRegisters(
     signature.parameters.length !== fn.parameters.length
   )
     return original;
+  const parameters = signature.parameters;
   // Three analysis arrays, a separate emitter working copy, and five searches.
   // Exhaustion retains the complete original FP bank, never partial new homes.
   work += words * 9;
@@ -198,7 +199,7 @@ export function leafStorageRegisters(
   for (let i = 0; i < fn.parameters.length; i++) {
     if (++work > maxWork) return original;
     const slot = fn.parameters[i],
-      location = signature.parameters[i];
+      location = parameters[i];
     if (slot === undefined || location === undefined)
       throw "leaf reference parameter invariant";
     const offset = slotOffsets[slot];
