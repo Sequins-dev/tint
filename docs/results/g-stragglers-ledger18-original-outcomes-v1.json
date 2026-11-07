@@ -1,0 +1,564 @@
+[
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/Math/trunc/Math.trunc_Zero.js",
+      "sha256": "1b726c0d7d55645b7a88e52774b35fe8562695213d02687a2e9301da12033514",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1qpDOI/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"0\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YTOPZq/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1qpDOI/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1qpDOI/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1qpDOI/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: ss.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\nlldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)\n have platform=true, platform_sp->IsHost()=true, default_to_use_pty=true\n at least one of stdin/stdout/stderr was not set, evaluating default handling\n eLaunchFlagDisableSTDIO set, adding suppression action for stdin, stdout and stderr\n Process::ControlPrivateStateThread (signal = 2)\n Sending control event of type: 2.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x78b168800, pid = 0) got a control event: 2\n (plugin = gdb-remote, state = launching, restarted = 0)\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n timeout = 10000000 us, event_sp)...\n timeout = 10000000 us, event_sp) => TIMEOUT\n (plugin = gdb-remote status = 0 (0x00000000), description=\"failed to catch stop after launch\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 1\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x78b168800, pid = 0) got a control event: 1\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x78b168800, pid = 0) thread exiting...\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Went to stop the private state thread, but it was already invalid.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: e triple: arm64-apple-macosx14.0.0\n ProcessGDBRemote::DoLaunch() entered\n ProcessGDBRemote::DoLaunch provided with STDIO paths via launch_info: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n ProcessGDBRemote::DoLaunch final STDIO paths after all adjustments: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n <  32> send packet: $QSetSTDIN:2f6465762f6e756c6c#e4\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDOUT:2f6465762f6e756c6c#45\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDERR:2f6465762f6e756c6c#36\n <   6> read packet: $OK#00\n <  21> send packet: $QSetDisableASLR:0#cd\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:0#f7\n <   6> read packet: $OK#00\n <  21> send packet: $QLaunchArch:arm64#0e\n <   6> read packet: $OK#00\n < 170> send packet: $vRun;2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d59544f505a712f74657374;30#87\n <   4> read packet: $#00\n < 176> send packet: $A158,0,2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d59544f505a712f74657374,2,1,30#b4\n <   6> read packet: $OK#00\n <  18> send packet: $qLaunchSuccess#a5\n <   6> read packet: $OK#00\n <  16> send packet: $qProcessInfo#dc\n <  11> send packet: $qEcho:1#5b\n failed to connect to debugserver: (null)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread exiting...\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 87551.56550000003,
+      "batch": 10
+    },
+    "report": "docs/results/test262-math-family-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/Math/trunc/Math.trunc_Zero.js",
+      "sha256": "1b726c0d7d55645b7a88e52774b35fe8562695213d02687a2e9301da12033514",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ipacxd/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"1\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YTOPZq/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ipacxd/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ipacxd/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-ipacxd/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: error: connect (socket, &saddr_un, saddr_un_len): Connection refused\n\nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: ss.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\nlldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)\n have platform=true, platform_sp->IsHost()=true, default_to_use_pty=true\n at least one of stdin/stdout/stderr was not set, evaluating default handling\n eLaunchFlagDisableSTDIO set, adding suppression action for stdin, stdout and stderr\n Process::ControlPrivateStateThread (signal = 2)\n Sending control event of type: 2.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x868e87000, pid = 0) got a control event: 2\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n (plugin = gdb-remote, state = launching, restarted = 0)\n timeout = 10000000 us, event_sp)...\n timeout = 10000000 us, event_sp) => TIMEOUT\n (plugin = gdb-remote status = 0 (0x00000000), description=\"failed to catch stop after launch\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 1\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x868e87000, pid = 0) got a control event: 1\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0x868e87000, pid = 0) thread exiting...\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Went to stop the private state thread, but it was already invalid.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: e triple: arm64-apple-macosx14.0.0\n ProcessGDBRemote::DoLaunch() entered\n ProcessGDBRemote::DoLaunch provided with STDIO paths via launch_info: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n ProcessGDBRemote::DoLaunch final STDIO paths after all adjustments: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n <  32> send packet: $QSetSTDIN:2f6465762f6e756c6c#e4\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDOUT:2f6465762f6e756c6c#45\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDERR:2f6465762f6e756c6c#36\n <   6> read packet: $OK#00\n <  21> send packet: $QSetDisableASLR:0#cd\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:0#f7\n <   6> read packet: $OK#00\n <  21> send packet: $QLaunchArch:arm64#0e\n <   6> read packet: $OK#00\n < 170> send packet: $vRun;2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d59544f505a712f74657374;31#88\n <   4> read packet: $#00\n < 176> send packet: $A158,0,2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d59544f505a712f74657374,2,1,31#b5\n <   6> read packet: $OK#00\n <  18> send packet: $qLaunchSuccess#a5\n <   6> read packet: $OK#00\n <  16> send packet: $qProcessInfo#dc\n <  11> send packet: $qEcho:1#5b\n failed to connect to debugserver: (null)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread exiting...\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 143073.95929200004,
+      "batch": 10
+    },
+    "report": "docs/results/test262-math-family-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/Boolean/S9.2_A1_T1.js",
+      "sha256": "bf3acb6e16632329e5f37ea8d6577a28ec8b433fe74d6b711048ba515acb40dc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 375315.765333,
+      "batch": 0
+    },
+    "report": "docs/results/test262-boolean-framework-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/Boolean/S9.2_A1_T1.js",
+      "sha256": "bf3acb6e16632329e5f37ea8d6577a28ec8b433fe74d6b711048ba515acb40dc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 377554.805208,
+      "batch": 0
+    },
+    "report": "docs/results/test262-boolean-framework-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/BigInt/prototype/toString/length.js",
+      "sha256": "468a4136acefddea7f35af2a268cdebedec7f4139fa36ba3b69a1d8fd2722800",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SKYFoZ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"0\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Hq1bDF/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SKYFoZ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SKYFoZ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-SKYFoZ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: ss.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\nlldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)\n have platform=true, platform_sp->IsHost()=true, default_to_use_pty=true\n at least one of stdin/stdout/stderr was not set, evaluating default handling\n eLaunchFlagDisableSTDIO set, adding suppression action for stdin, stdout and stderr\n Process::ControlPrivateStateThread (signal = 2)\n Sending control event of type: 2.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xc72e87000, pid = 0) got a control event: 2\n (plugin = gdb-remote, state = launching, restarted = 0)\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n timeout = 10000000 us, event_sp)...\n timeout = 10000000 us, event_sp) => TIMEOUT\n (plugin = gdb-remote status = 0 (0x00000000), description=\"failed to catch stop after launch\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 1\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xc72e87000, pid = 0) got a control event: 1\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xc72e87000, pid = 0) thread exiting...\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Went to stop the private state thread, but it was already invalid.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: e triple: arm64-apple-macosx14.0.0\n ProcessGDBRemote::DoLaunch() entered\n ProcessGDBRemote::DoLaunch provided with STDIO paths via launch_info: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n ProcessGDBRemote::DoLaunch final STDIO paths after all adjustments: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n <  32> send packet: $QSetSTDIN:2f6465762f6e756c6c#e4\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDOUT:2f6465762f6e756c6c#45\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDERR:2f6465762f6e756c6c#36\n <   6> read packet: $OK#00\n <  21> send packet: $QSetDisableASLR:0#cd\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:0#f7\n <   6> read packet: $OK#00\n <  21> send packet: $QLaunchArch:arm64#0e\n <   6> read packet: $OK#00\n < 170> send packet: $vRun;2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d4871316244462f74657374;30#25\n <   4> read packet: $#00\n < 176> send packet: $A158,0,2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d4871316244462f74657374,2,1,30#52\n <   6> read packet: $OK#00\n <  18> send packet: $qLaunchSuccess#a5\n <   6> read packet: $OK#00\n <  16> send packet: $qProcessInfo#dc\n <  11> send packet: $qEcho:1#5b\n failed to connect to debugserver: (null)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread exiting...\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 87153.327875,
+      "batch": 0
+    },
+    "report": "docs/results/test262-bigint-tostring-length-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/BigInt/prototype/toString/length.js",
+      "sha256": "468a4136acefddea7f35af2a268cdebedec7f4139fa36ba3b69a1d8fd2722800",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"10\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: -pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(60)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5TCyFJ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"1\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Hq1bDF/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5TCyFJ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5TCyFJ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-5TCyFJ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n25\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: failed to catch stop after launch\nstate=10\nProcess state: ss.internal-state(pid=0)>             Process::HandlePrivateEvent (pid = 0) broadcasting new state connected (old state connected) to public\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\nlldb.debugger.event-handler      (plugin = gdb-remote, state = connected, restarted = 0)\n have platform=true, platform_sp->IsHost()=true, default_to_use_pty=true\n at least one of stdin/stdout/stderr was not set, evaluating default handling\n eLaunchFlagDisableSTDIO set, adding suppression action for stdin, stdout and stderr\n Process::ControlPrivateStateThread (signal = 2)\n Sending control event of type: 2.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xb7a029800, pid = 0) got a control event: 2\n<lldb.process.internal-state(pid=0)>             timeout = <infinite>, event_sp)...\n (plugin = gdb-remote, state = launching, restarted = 0)\n timeout = 10000000 us, event_sp)...\n timeout = 10000000 us, event_sp) => TIMEOUT\n (plugin = gdb-remote status = 0 (0x00000000), description=\"failed to catch stop after launch\")\n (plugin = gdb-remote, state = exited)\n (plugin = gdb-remote, state = exited, stop_id = 1\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xb7a029800, pid = 0) got a control event: 1\n<lldb.process.internal-state(pid=0)>             Process::RunPrivateStateThread (arg = 0xb7a029800, pid = 0) thread exiting...\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Went to stop the private state thread, but it was already invalid.\n Went to stop the private state thread, but it was already invalid.\n\nRemote packets: e triple: arm64-apple-macosx14.0.0\n ProcessGDBRemote::DoLaunch() entered\n ProcessGDBRemote::DoLaunch provided with STDIO paths via launch_info: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n ProcessGDBRemote::DoLaunch final STDIO paths after all adjustments: stdin=/dev/null, stdout=/dev/null, stderr=/dev/null\n <  32> send packet: $QSetSTDIN:2f6465762f6e756c6c#e4\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDOUT:2f6465762f6e756c6c#45\n <   6> read packet: $OK#00\n <  33> send packet: $QSetSTDERR:2f6465762f6e756c6c#36\n <   6> read packet: $OK#00\n <  21> send packet: $QSetDisableASLR:0#cd\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:0#f7\n <   6> read packet: $OK#00\n <  21> send packet: $QLaunchArch:arm64#0e\n <   6> read packet: $OK#00\n < 170> send packet: $vRun;2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d4871316244462f74657374;31#26\n <   4> read packet: $#00\n < 176> send packet: $A158,0,2f7661722f666f6c646572732f36302f666b7734767874733470316737727670646830366b31397230303030676e2f542f74696e742d746573743236322d696d6167652d4871316244462f74657374,2,1,31#53\n <   6> read packet: $OK#00\n <  18> send packet: $qLaunchSuccess#a5\n <   6> read packet: $OK#00\n <  16> send packet: $qProcessInfo#dc\n <  11> send packet: $qEcho:1#5b\n failed to connect to debugserver: (null)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) Got an event of type: 2...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) got eBroadcastBitAsyncThreadShouldExit...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 0) thread exiting...\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n ProcessGDBRemote::StopAsyncThread ()\n ProcessGDBRemote::StopAsyncThread () - Called when Async thread was not running.\n"
+      },
+      "status": "crash",
+      "elapsedMs": 137514.850792,
+      "batch": 0
+    },
+    "report": "docs/results/test262-bigint-tostring-length-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "path": "built-ins/BigInt/prototype/valueOf/cross-realm.js",
+      "sha256": "7994ef0467a5fa7e5e72939c03177e5193f4051565bfa923552856682b933b93",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "cross-realm"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 5190.919416000001
+    },
+    "report": "docs/results/test262-bigint-valueof-native-v1.json"
+  },
+  {
+    "observation": {
+      "path": "built-ins/BigInt/prototype/valueOf/cross-realm.js",
+      "sha256": "7994ef0467a5fa7e5e72939c03177e5193f4051565bfa923552856682b933b93",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "BigInt",
+          "cross-realm"
+        ],
+        "includes": []
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "ReferenceError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 4291.874708
+    },
+    "report": "docs/results/test262-bigint-valueof-native-v1.json"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/Reflect/getOwnPropertyDescriptor/target-is-not-object-throws.js",
+      "sha256": "aa5d5121b759c5d4a74c13bbf99b8f4b20647ee58db1ea523533a8cd6fca7408",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-CFLeRU/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-CFLeRU/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry -- 0\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "crash",
+      "elapsedMs": 74449.19241700001,
+      "batch": 2
+    },
+    "report": "docs/results/test262-reflect-framework-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/WeakSet/add-not-callable-throws.js",
+      "sha256": "071440ab14dd6158d882c9bc8ee37b386771f953b67d2e6073bf7703f0a8398b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-10osrB/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-10osrB/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jgSInZ/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-jgSInZ/state.log\" lldb process state\n(lldb) process launch --stop-at-entry -- 0\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: hread (arg = 0x89ae79800, pid = 40376) got a control event: 4\n<lldb.process.internal-state(pid=40376)>         timeout = <infinite>, event_sp)...\n timeout = <infinite>\n timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote status = -1 (0xffffffffffffffff), description=\"attach failed (attached to process, but could not pause execution; attach failed)\")\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited, stop_id = 1\n<lldb.process.internal-state(pid=40376)>         Process::AttachCompletionHandler::PerformAction called with state exited (10)\n<lldb.process.internal-state(pid=40376)>         Ran next event action, result was 2.\n ::waitpid (pid = 40377, &status, 0) => pid = 40377, status = 0x00000000 (EXITED), signal = 0, exit_status = 0\n ::waitpid (pid = 40376, &status, 0) => pid = 40376, status = 0x00000001 (SIGNALED), signal = 1, exit_status = -1\n pid = 40376, signal = 1, status = -1\n<lldb.process.internal-state(pid=40376)>         Process::ShouldBroadcastEvent (0x89ac06260) => new state: exited, last broadcast state: exited - YES\n<lldb.process.internal-state(pid=40376)>         Process::HandlePrivateEvent (pid = 40376) broadcasting new state exited (old state exited) to hijacked\n<lldb.process.internal-state(pid=40376)>         Process::RunPrivateStateThread (arg = 0x89ae79800, pid = 40376) about to exit with internal state exited...\n<lldb.process.internal-state(pid=40376)>         Process::RunPrivateStateThread (arg = 0x89ae79800, pid = 40376) thread exiting...\n (plugin = gdb-remote, state = exited, restarted = 0)\n (plugin = gdb-remote, state = exited) -- unlocking run lock\n timeout = <infinite>, event_sp) => exited\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n\nRemote packets: native-signals+;SupportedWatchpointTypes=aarch64-mask,aarch64-bas;memory-tagging+;MultiMemRead+;jMultiBreakpoint+;#00\n <  26> send packet: $QThreadSuffixSupported#e4\n <   6> read packet: $OK#00\n <  27> send packet: $QListThreadsInStopReply#21\n <   6> read packet: $OK#00\n <  13> send packet: $qHostInfo#9b\n < 204> read packet: $cputype:16777228;cpusubtype:2;addressing_bits:47;ostype:macosx;watchpoint_exceptions_received:before;vendor:apple;os_version:26.6.2;maccatalyst_version:26.6;endian:little;ptrsize:8;vm-page-size:16384;#00\n <  10> send packet: $vCont?#49\n <  17> read packet: $vCont;c;C;s;S#00\n <  27> send packet: $qVAttachOrWaitSupported#38\n <   6> read packet: $OK#00\n <  23> send packet: $QEnableErrorStrings#8c\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:1#f8\n <   6> read packet: $OK#00\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 40376) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 40376) got eBroadcastBitAsyncContinue: vAttach;9db8\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with vAttach;9db8\n<lldb.process.gdb-remote.async>  <  16> send packet: $vAttach;9db8#3d\n<lldb.process.gdb-remote.async>  < 170> read packet: $E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429#00\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::SendContinuePacketAndWaitForResponse () got packet: E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 40376) thread exiting...\n ProcessGDBRemote::MonitorDebugserverProcess(process_wp, pid=40377, signo=0 (0x0), exit_status=0)\n ProcessGDBRemote::MonitorDebugserverProcess(process = 0x89ae79800)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n"
+      },
+      "status": "crash",
+      "elapsedMs": 79067.089167,
+      "batch": 0
+    },
+    "report": "docs/results/test262-weak-set-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/FinalizationRegistry/prototype/unregister/name.js",
+      "sha256": "1a716b338e4bc41925f6d8401f2f0c44716b048422c3140b85fc241d1974ec11",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "FinalizationRegistry"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-VBdRPk/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-VBdRPk/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-llP7S7/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-llP7S7/state.log\" lldb process state\n(lldb) process launch --stop-at-entry -- 0\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: hread (arg = 0xa4f411800, pid = 53852) got a control event: 4\n<lldb.process.internal-state(pid=53852)>         timeout = <infinite>, event_sp)...\n timeout = <infinite>\n timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote status = -1 (0xffffffffffffffff), description=\"attach failed (attached to process, but could not pause execution; attach failed)\")\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited, stop_id = 1\n<lldb.process.internal-state(pid=53852)>         Process::AttachCompletionHandler::PerformAction called with state exited (10)\n<lldb.process.internal-state(pid=53852)>         Ran next event action, result was 2.\n ::waitpid (pid = 53853, &status, 0) => pid = 53853, status = 0x00000000 (EXITED), signal = 0, exit_status = 0\n ::waitpid (pid = 53852, &status, 0) => pid = 53852, status = 0x00000001 (SIGNALED), signal = 1, exit_status = -1\n pid = 53852, signal = 1, status = -1\n<lldb.process.internal-state(pid=53852)>         Process::ShouldBroadcastEvent (0xa4c9612c0) => new state: exited, last broadcast state: exited - YES\n<lldb.process.internal-state(pid=53852)>         Process::HandlePrivateEvent (pid = 53852) broadcasting new state exited (old state exited) to hijacked\n<lldb.process.internal-state(pid=53852)>         Process::RunPrivateStateThread (arg = 0xa4f411800, pid = 53852) about to exit with internal state exited...\n<lldb.process.internal-state(pid=53852)>         Process::RunPrivateStateThread (arg = 0xa4f411800, pid = 53852) thread exiting...\n (plugin = gdb-remote, state = exited, restarted = 0)\n (plugin = gdb-remote, state = exited) -- unlocking run lock\n timeout = <infinite>, event_sp) => exited\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n\nRemote packets: native-signals+;SupportedWatchpointTypes=aarch64-mask,aarch64-bas;memory-tagging+;MultiMemRead+;jMultiBreakpoint+;#00\n <  26> send packet: $QThreadSuffixSupported#e4\n <   6> read packet: $OK#00\n <  27> send packet: $QListThreadsInStopReply#21\n <   6> read packet: $OK#00\n <  13> send packet: $qHostInfo#9b\n < 204> read packet: $cputype:16777228;cpusubtype:2;addressing_bits:47;ostype:macosx;watchpoint_exceptions_received:before;vendor:apple;os_version:26.6.2;maccatalyst_version:26.6;endian:little;ptrsize:8;vm-page-size:16384;#00\n <  10> send packet: $vCont?#49\n <  17> read packet: $vCont;c;C;s;S#00\n <  27> send packet: $qVAttachOrWaitSupported#38\n <   6> read packet: $OK#00\n <  23> send packet: $QEnableErrorStrings#8c\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:1#f8\n <   6> read packet: $OK#00\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53852) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53852) got eBroadcastBitAsyncContinue: vAttach;d25c\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with vAttach;d25c\n<lldb.process.gdb-remote.async>  <  16> send packet: $vAttach;d25c#34\n<lldb.process.gdb-remote.async>  < 170> read packet: $E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429#00\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::SendContinuePacketAndWaitForResponse () got packet: E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 53852) thread exiting...\n ProcessGDBRemote::MonitorDebugserverProcess(process_wp, pid=53853, signo=0 (0x0), exit_status=0)\n ProcessGDBRemote::MonitorDebugserverProcess(process = 0xa4f411800)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n"
+      },
+      "status": "crash",
+      "elapsedMs": 77117.433541,
+      "batch": 1
+    },
+    "report": "docs/results/test262-finalization-registry-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "path": "built-ins/AggregateError/cause-property.js",
+      "sha256": "105409164ee0d6a61a21bd1ff06d6a36c9823966c184844bd68a21d494b80d51",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "AggregateError",
+          "error-cause"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: error: process exited with status -1 (attach failed (attached to process, but could not pause execution; attach failed))\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-WQd1mC/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-WQd1mC/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-PXknjA/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-PXknjA/state.log\" lldb process state\n(lldb) process launch --stop-at-entry -- 0\n\nDebugserver: \nConnection: \nLaunch: \nProcess state: hread (arg = 0xb87924800, pid = 25173) got a control event: 4\n<lldb.process.internal-state(pid=25173)>         timeout = <infinite>, event_sp)...\n timeout = <infinite>\n timeout = <infinite>, event_sp)...\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote status = -1 (0xffffffffffffffff), description=\"attach failed (attached to process, but could not pause execution; attach failed)\")\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited)\n<lldb.process.gdb-remote.async>  (plugin = gdb-remote, state = exited, stop_id = 1\n<lldb.process.internal-state(pid=25173)>         Process::AttachCompletionHandler::PerformAction called with state exited (10)\n<lldb.process.internal-state(pid=25173)>         Ran next event action, result was 2.\n ::waitpid (pid = 25174, &status, 0) => pid = 25174, status = 0x00000000 (EXITED), signal = 0, exit_status = 0\n ::waitpid (pid = 25173, &status, 0) => pid = 25173, status = 0x00000001 (SIGNALED), signal = 1, exit_status = -1\n pid = 25173, signal = 1, status = -1\n<lldb.process.internal-state(pid=25173)>         Process::ShouldBroadcastEvent (0xb86fabc00) => new state: exited, last broadcast state: exited - YES\n<lldb.process.internal-state(pid=25173)>         Process::HandlePrivateEvent (pid = 25173) broadcasting new state exited (old state exited) to hijacked\n<lldb.process.internal-state(pid=25173)>         Process::RunPrivateStateThread (arg = 0xb87924800, pid = 25173) about to exit with internal state exited...\n<lldb.process.internal-state(pid=25173)>         Process::RunPrivateStateThread (arg = 0xb87924800, pid = 25173) thread exiting...\n (plugin = gdb-remote, state = exited, restarted = 0)\n (plugin = gdb-remote, state = exited) -- unlocking run lock\n timeout = <infinite>, event_sp) => exited\n (plugin = gdb-remote status = 6 (0x00000006), description=\"destroying when not connected to debugserver\")\n (plugin = gdb-remote) ignoring exit status because state was already set to eStateExited\n Process::ControlPrivateStateThread (signal = 1)\n Sending control event of type: 1.\n\nRemote packets: native-signals+;SupportedWatchpointTypes=aarch64-mask,aarch64-bas;memory-tagging+;MultiMemRead+;jMultiBreakpoint+;#00\n <  26> send packet: $QThreadSuffixSupported#e4\n <   6> read packet: $OK#00\n <  27> send packet: $QListThreadsInStopReply#21\n <   6> read packet: $OK#00\n <  13> send packet: $qHostInfo#9b\n < 204> read packet: $cputype:16777228;cpusubtype:2;addressing_bits:47;ostype:macosx;watchpoint_exceptions_received:before;vendor:apple;os_version:26.6.2;maccatalyst_version:26.6;endian:little;ptrsize:8;vm-page-size:16384;#00\n <  10> send packet: $vCont?#49\n <  17> read packet: $vCont;c;C;s;S#00\n <  27> send packet: $qVAttachOrWaitSupported#38\n <   6> read packet: $OK#00\n <  23> send packet: $QEnableErrorStrings#8c\n <   6> read packet: $OK#00\n <  23> send packet: $QSetDetachOnError:1#f8\n <   6> read packet: $OK#00\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 25173) Got an event of type: 1...\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 25173) got eBroadcastBitAsyncContinue: vAttach;6255\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::ContinueLock::lock() resuming with vAttach;6255\n<lldb.process.gdb-remote.async>  <  16> send packet: $vAttach;6255#d8\n<lldb.process.gdb-remote.async>  < 170> read packet: $E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429#00\n<lldb.process.gdb-remote.async>  GDBRemoteClientBase::SendContinuePacketAndWaitForResponse () got packet: E96;617474616368206661696c65642028617474616368656420746f2070726f636573732c2062757420636f756c64206e6f7420706175736520657865637574696f6e3b20617474616368206661696c656429\n<lldb.process.gdb-remote.async>  ProcessGDBRemote::AsyncThread(pid = 25173) thread exiting...\n ProcessGDBRemote::MonitorDebugserverProcess(process_wp, pid=25174, signo=0 (0x0), exit_status=0)\n ProcessGDBRemote::MonitorDebugserverProcess(process = 0xb87924800)\n ProcessGDBRemote::DoDestroy()\n ProcessGDBRemote::StopAsyncThread ()\n"
+      },
+      "status": "crash",
+      "elapsedMs": 80808.55958299991,
+      "batch": 27
+    },
+    "report": "docs/results/test262-aggregateerror-family-historical-extract-native-v1.json"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+      "sha256": "73144c6e18e008264415ebc7224cfe8a00ac36550efff62f1f3407a6be6f4cd7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout"
+      },
+      "status": "timeout",
+      "elapsedMs": 117498.41154200002,
+      "batch": 1
+    },
+    "report": "docs/results/test262-decode-uri-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+      "sha256": "73144c6e18e008264415ebc7224cfe8a00ac36550efff62f1f3407a6be6f4cd7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout"
+      },
+      "status": "timeout",
+      "elapsedMs": 177503.931708,
+      "batch": 1
+    },
+    "report": "docs/results/test262-decode-uri-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+      "sha256": "9f6346d52bffc388b5d8ddf5f9f6b13095e9062f5c871b38b29de9663d1b3e40",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout"
+      },
+      "status": "timeout",
+      "elapsedMs": 139522.062416,
+      "batch": 1
+    },
+    "report": "docs/results/test262-decode-uri-component-native-v1.jsonl"
+  },
+  {
+    "observation": {
+      "kind": "observation",
+      "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+      "sha256": "9f6346d52bffc388b5d8ddf5f9f6b13095e9062f5c871b38b29de9663d1b3e40",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout"
+      },
+      "status": "timeout",
+      "elapsedMs": 199531.46329200003,
+      "batch": 1
+    },
+    "report": "docs/results/test262-decode-uri-component-native-v1.jsonl"
+  }
+]
