@@ -57,12 +57,23 @@ test("top-level-await capability requires the captured async source factory", ()
   };
   assert.equal(native.nativeTopLevelAwaitCapability(older), false);
 });
-test("historical generated hosts remain byte-identical when the capability is off", () => {
+test("historical hosts retain their ABI text after quota normalization when the capability is off", () => {
   const expected = JSON.parse(readFileSync(baseline, "utf8"));
   for (const row of expected.cases)
     assert.equal(
       createHash("sha256")
-        .update(runtime(row.moduleExecution, row.scriptRoots, false))
+        .update(
+          // Restore the immutable baseline's resource profile, not its ABI.
+          runtime(row.moduleExecution, row.scriptRoots, false)
+            .replaceAll(
+              `maxScriptCodeBytes:${native.nativeTestResources.maxScriptCodeBytes}`,
+              "maxScriptCodeBytes:262144",
+            )
+            .replaceAll(
+              `},${native.nativeTestResources.executableMemoryBytes});`,
+              "},4194304);",
+            ),
+        )
         .digest("hex"),
       row.sha256,
     );

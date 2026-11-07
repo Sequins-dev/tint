@@ -8,8 +8,12 @@ unchanged conformance reruns are running. The frozen v9 survey keeps its earlier
 adapter, sources and resource policy.
 
 Development images use one uniform budget: 256 MiB managed heap, 8 Mi allocation
-metadata capacity, 16,384 roots, 16 MiB stack and a 4 MiB executable arena per agent.
-Scripts have a 256 KiB per-compilation code limit; dynamic `Function` retains 64 KiB.
+metadata capacity, 16,384 roots, 16 MiB stack and a 16 MiB executable arena per agent.
+Scripts have a 2 MiB per-compilation code limit; dynamic `Function` retains 64 KiB.
+Node-side agent coercion and clock emission diagnostics produce roughly 0.5–0.7 MiB.
+Native controls confirm a worker rejected by the old 256 KiB profile succeeds
+under the larger budget. Failed observations retain their original profile; the new
+uniform arena allows several bounded entries in each isolated agent context.
 The shared registry retains up to 2,048 blocks and 32 MiB of page-rounded payload
 reservations through engine shutdown. The unchanged shared conversion matrix
 creates 1,120 four-byte blocks, reserving 17.5 MiB with 16 KiB native pages. Its

@@ -79,15 +79,24 @@ test("absent Script capability keeps the generated host unchanged", () => {
     },
   ])[0]!;
   // Frozen pre-service host AST, excluding spans and the deliberately enlarged arena.
-  const canonical = JSON.stringify(runtime.module, (key, value) =>
-    key === "start" || key === "end" || key === "sourceStart"
-      ? undefined
-      : value === 4194304
-        ? 1048576
-        : value === "4194304"
-          ? "1048576"
-          : value,
-  );
+  const canonical = JSON.stringify(runtime.module, (key, value) => {
+    if (key === "start" || key === "end" || key === "sourceStart")
+      return undefined;
+    if (
+      value?.kind === "call" &&
+      value.callee?.kind === "identifier" &&
+      value.callee.name === "createEngineCodeStorage"
+    )
+      return {
+        ...value,
+        arguments: value.arguments.map((argument: unknown, index: number) =>
+          index === 1
+            ? { ...(argument as object), value: 1048576, raw: "1048576" }
+            : argument,
+        ),
+      };
+    return value;
+  });
   assert.equal(
     createHash("sha256").update(canonical).digest("hex"),
     "5a4f83fd3dad89301378123d05cf844e2f89acae579b53697c2e801e8983c139",
@@ -175,7 +184,7 @@ test("Script service generated modules use captured source bytes", () => {
   );
 });
 test("Script service budgets reserve space for multiple compilations", () => {
-  assert.equal(native.nativeTestResources.maxScriptCodeBytes, 262144);
+  assert.equal(native.nativeTestResources.maxScriptCodeBytes, 2097152);
   assert.equal(native.nativeTestResources.managedBytes, 268435456);
   assert.equal(native.nativeTestResources.stackBytes, 16777216);
   assert.equal(native.nativeTestResources.allocationCapacity, 8388608);
@@ -360,7 +369,7 @@ test("function fallback reuses the realm evaluation host before constructing the
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "3be2f4e6cb353fd49f4c6abefb03be7b917f16b4b3ed25ff8c377cb0f9fb2ff3",
+    "48b2054cda6f1dbb2367dd645a5c47edfebe919b19ce726409cbb6248ca877de",
   );
 });
 
@@ -446,7 +455,7 @@ test("direct eval shares the same per-realm service after indirect installation"
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "0edd2772bf3bc5cfb2e7c48435139553ea35adeb3b0f8f5add3352fcd7f2e9b4",
+    "e01c298502810953f54345755a060586b74a5e951026eb9373846f9adfdb93e0",
   );
 });
 

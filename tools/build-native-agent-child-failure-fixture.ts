@@ -3,10 +3,10 @@ import { verifyNativeScriptCases } from "./native-script-fixture.ts";
 if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("build-only failure containment fixture");
 
-// The managed Script compiler emits over 600 KiB for this small input, above
-// the unchanged 256 KiB entry budget. Catching that host failure in a child
+// The managed Script compiler emits over 2 MiB for this bounded input, above
+// the uniform 2 MiB entry budget. Catching that host failure in a child
 // realm must not let the worker report successful completion.
-const cases = ["0", "var x=0;" + "x=x+1;".repeat(64)].map((body) => {
+const cases = ["0", "var x=0;" + "x=x+1;".repeat(256)].map((body) => {
   const worker =
     "var child=$262.createRealm();try{child.evalScript(" +
     JSON.stringify(body) +

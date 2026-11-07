@@ -94,9 +94,11 @@ export function nativeContainmentTimeout(
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
 export const nativeTestResources = Object.freeze({
   collector: "copying",
-  executableMemoryBytes: 4194304,
+  executableMemoryBytes: 16777216,
   maxDynamicCodeBytes: 65536,
-  maxScriptCodeBytes: 262144,
+  // Agent coercion/clock emission diagnostics exceed 600 KiB. Keep one uniform
+  // bounded profile with room for multiple compilations in each private arena.
+  maxScriptCodeBytes: 2097152,
   managedBytes: 268435456,
   arrayBufferBytes: 16777216,
   // Shared mappings remain live through engine shutdown. The conversion matrix
