@@ -1,0 +1,38 @@
+{
+  "kind": "workspace-equivalent-gates",
+  "conformance": false,
+  "head": "9adbd541fab61e3519bd7615f411814f65610d4e",
+  "sourceSnapshot": {
+    "sha256": "e57f180c23439a6322692ce905f0086fb2a5d11eff8ce622607211da66a0bc1e",
+    "files": 607
+  },
+  "typecheck": {
+    "exit": 0,
+    "proof": "Full slotted gate proceeded to tests under set -e"
+  },
+  "fullSuite": {
+    "tests": 4835,
+    "passed": 4834,
+    "failed": 1,
+    "exit": 1,
+    "log": "intl-formatting-callback-check-h-v1.log.gz"
+  },
+  "retainedFailure": "Heartbeat worker timing assertion during observed Metal saturation (services started09:42:10; failed test09:44:13). No source changes for recheck.",
+  "focusedRecheck": {
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "exit": 0,
+    "log": "intl-formatting-heartbeat-recheck-h-v1.log.gz"
+  },
+  "boundaries": {
+    "exit": 0,
+    "log": "intl-formatting-callback-boundaries-h-v1.log.gz"
+  },
+  "format": {
+    "exit": 0,
+    "log": "intl-formatting-callback-format-h-v1.log.gz"
+  },
+  "remainingFailures": 0,
+  "nativeStageComparison": "integrated-formatting-callback-selfbuild-h-v69.json"
+}
