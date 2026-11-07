@@ -1,0 +1,49 @@
+{
+  "kind": "native-run-environment-progress",
+  "conformance": false,
+  "recordedAt": "2026-11-07T10:14:51.414482+00:00",
+  "selection": "language/statements/for-await-of [1805 explicit variants]",
+  "complete": false,
+  "sourceSnapshotSha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+  "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c",
+  "observations": 837,
+  "passed": 832,
+  "retainedTimeouts": 5,
+  "newNonpassesSinceResume": 0,
+  "unobserved": 968,
+  "resumedAt": "2026-11-07T09:10Z",
+  "authorizationRestoredAt": "2026-11-07T09:09Z",
+  "developerModeEnabledAt": "2026-11-07T09:11Z",
+  "recoveredPreentryDelay": "A delayed launch around09:39 completed natively without intervention or retry. Sampling reached an already-exited debugserver; no task_for_pid authorization block was established.",
+  "externalSaturation": "Metal compiler processes used~1570%CPU approximately09:42\u201309:57Z. F was compiling throughout and recorded no new native outcomes or timeouts in that window. Subsequent CPU samples show continued Node execution.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-f-resume-launch-investigation-v1.json",
+      "sha256": "0981fb5b777be2986221814b3722167dbc8ad5bfa3579abe5f973272d748cea2",
+      "bytes": 4415
+    },
+    {
+      "path": "docs/results/cluster-f-resume-launch-investigation-v2.json",
+      "sha256": "ab7a406c78a3043ccf164df7c6f712245d8478fa384b740f54cced26edc26004",
+      "bytes": 744
+    },
+    {
+      "path": "docs/results/cluster-f-resume-external-saturation-v1.json",
+      "sha256": "b24f4ddad63869a3f2e8b0ddaea0203a61bc9d251500a8b029f7ad2dad56f366",
+      "bytes": 1732
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-v1-stall-12-1.txt.gz",
+      "sha256": "55c3d49dd729736a8bc6a2c7f82842127e31e5df00d2e67f4bef56148915acc1",
+      "bytes": 94481,
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-v1-stall-13-0.txt.gz",
+      "sha256": "f0c012542d5c3d6649822076f2cf3eca69d5b926ad3a223c79046516fcc06ad5",
+      "bytes": 100810,
+      "compression": "gzip"
+    }
+  ],
+  "coverage": "Progress and diagnostic context only. Complete per-file native reports are indexed separately; interrupted/focused totals are not full-family conformance."
+}

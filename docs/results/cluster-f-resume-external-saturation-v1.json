@@ -1,0 +1,31 @@
+{
+  "at": "2026-11-07T09:43:20.665956+00:00",
+  "load": "17:43  up 3 days, 21:08, 1 user, load averages: 38.28 22.59 16.27",
+  "topProcesses": [
+    "  PID  %CPU      TIME COMM",
+    "67697 816.5   9:18.62 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService",
+    "67696 809.4   7:54.78 /System/Library/Frameworks/Metal.framework/Versions/A/XPCServices/MTLCompilerService.xpc/Contents/MacOS/MTLCompilerService",
+    "  416  17.7  79:26.05 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "64073  12.5   1:39.29 /Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "67640  11.5   0:07.28 /Users/stephenbelanger/Downloads/roms/switch2/Ocarina of Time - lighting fix.app/Contents/MacOS/dmhost",
+    "71173   9.0   0:00.05 /opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "60211   7.1  30:08.20 /Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "61712   6.8   1:38.91 /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1"
+  ],
+  "nativeObservations": 709,
+  "passed": 704,
+  "retainedTimeouts": 5,
+  "phase": "compilebatch12; no native inferior currently executing",
+  "interpretation": "External Metal compilation saturating most cores; current F compiler CPU share fell to5-22%. No new timeout observed.",
+  "recovery": {
+    "at": "2026-11-07T09:58:11.763782+00:00",
+    "metalCpuPercent": [
+      0,
+      0
+    ],
+    "compilerCpuPercent": 64.3,
+    "loadAverage1m": 42.28,
+    "observationsStill": 709,
+    "newNativeTimeoutsInWindow": 0
+  }
+}

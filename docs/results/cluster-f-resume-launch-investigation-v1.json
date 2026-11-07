@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-07T09:40:29.120133+00:00",
+  "processes": [
+    [
+      "58067",
+      "60129",
+      "0.0",
+      "0:00.23",
+      "00:53",
+      "S",
+      "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb --no-lldbinit --batch -o settings set target.disable-aslr false -o log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/packets.log\" gdb-remote packets process -o log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/state.log\" lldb process state -o script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-K3zRe8/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\") -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped -o continue -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/outcome.json\",'w').write(json.dumps({'state':'exited' if s==lldb.eStateExited else str(s),'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-K3zRe8/test"
+    ],
+    [
+      "58284",
+      "58067",
+      "0.0",
+      "0:00.01",
+      "00:51",
+      "S",
+      "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver --kill-on-error --no-stdio --unix-socket /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-xN5FJK/port -- 127.0.0.1:0 /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-K3zRe8/test 0"
+    ],
+    [
+      "58286",
+      "58284",
+      "0.0",
+      "0:00.00",
+      "00:51",
+      "TX",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-K3zRe8/test 0"
+    ],
+    [
+      "60129",
+      "60108",
+      "0.0",
+      "30:07.22",
+      "30:09",
+      "S",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node /Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/node-toolchain-cluster-f-for-await-unobserved-direct-v1/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/statements/for-await-of 64"
+    ]
+  ]
+}
