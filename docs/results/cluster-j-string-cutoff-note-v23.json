@@ -1,0 +1,44 @@
+{
+  "kind": "cluster-j-complete-file-index-cutoff-note",
+  "at": "2026-11-07T15:25:42.255535+00:00",
+  "index": "docs/results/cluster-j-string-completed-files-v23.json",
+  "rawPrefix": "docs/results/cluster-j-string-prefix-768-v21.jsonl",
+  "observedVariants": 768,
+  "observedPasses": 742,
+  "observedFailures": 26,
+  "completeFileCount": 384,
+  "indexedCompleteFileVariants": 767,
+  "indexedPasses": 741,
+  "indexedFailures": 26,
+  "unindexedPartialFileObservations": [
+    {
+      "kind": "observation",
+      "path": "built-ins/String/prototype/match/S15.5.4.10_A1_T10.js",
+      "sha256": "698dd30e3bff94875289dc424fb49153ebb75bfd92244fc4c16bd558d48b8132",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 224457.17899999954,
+      "batch": 11
+    }
+  ],
+  "policy": "Every original observation is retained. One passing partial neighboring file is not counted as a complete file; all26 failures remain in the767-variant complete-file denominator. Full2443-variant family continues."
+}

@@ -1,0 +1,85 @@
+{
+  "kind": "cluster-j-complete-string-methods",
+  "at": "2026-11-07T15:25:12.599877+00:00",
+  "sourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "reports": [
+    {
+      "selection": "built-ins/String/prototype/indexOf",
+      "report": "docs/results/test262-cluster-j-current-built-ins-String-prototype-indexOf-v21.json",
+      "totals": {
+        "total": 94,
+        "passed": 92,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9787234042553191
+      }
+    },
+    {
+      "selection": "built-ins/String/prototype/isWellFormed",
+      "report": "docs/results/test262-cluster-j-current-built-ins-String-prototype-isWellFormed-v21.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/String/prototype/lastIndexOf",
+      "report": "docs/results/test262-cluster-j-current-built-ins-String-prototype-lastIndexOf-v21.json",
+      "totals": {
+        "total": 50,
+        "passed": 50,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/String/prototype/localeCompare",
+      "report": "docs/results/test262-cluster-j-current-built-ins-String-prototype-localeCompare-v21.json",
+      "totals": {
+        "total": 26,
+        "passed": 2,
+        "failed": 24,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.07692307692307693
+      }
+    }
+  ],
+  "prefix": {
+    "path": "docs/results/cluster-j-string-search-and-locale-prefix-v21.jsonl",
+    "bytes": 438861,
+    "sha256": "5291b067199255e74921f44cb85b4bb0519ba1be6854d61ccadbebf6956553e9"
+  },
+  "nonpasses": [
+    {
+      "variants": 2,
+      "selection": "String/prototype/indexOf",
+      "path": "position-tointeger.js",
+      "cause": "Native absoluteIndex preserves negative-zero position; minimal native fixture controlled exit1, fix in progress. Original observations retained."
+    },
+    {
+      "variants": 24,
+      "selection": "String/prototype/localeCompare",
+      "cause": "Method absent; proper ECMA-402 behavior requires shared Intl.Collator comparison service currently unimplemented. Concrete dependency documented in docs/intl-runtime.md and handoff-J-to-I.md; no fallback substituted."
+    }
+  ],
+  "scope": "Four complete unchanged String method selections, including all26 failures. Overlaps file indices; full2443-variant family remains in progress."
+}
