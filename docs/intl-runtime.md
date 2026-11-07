@@ -158,6 +158,23 @@ the original month code before constraining it, as required by CompareSurpasses.
 separate from the [completed native regression and stage comparison](results/calendar-native-restored-h-v68.md).
 Per-calendar Test262 selections remain to measure.
 
+## Date and time presentation data
+
+`date-time-pattern.ts` parses LDML quoting and field runs, computes ECMA-402
+BasicFormatMatcher scores and splits interval patterns at repeated fields.
+`date-time-calendar.ts` provides inherited CLDR 49 calendar presentation data for
+860 locales and 16 calendars. Packed profiles retain styles, skeletons, intervals,
+calendar names, eras, cyclic years and leap-month wrappers. The generator uses
+checksum-pinned archive members and resolves parent locales and source-locale
+aliases, including implicit standard format types. Generated manifests record
+input hashes and the output hash.
+
+The [pattern core](results/intl-date-time-pattern-native-resume-h-v31.md) and
+[calendar presentation data](results/intl-date-time-calendar-native-resume-h-v32.md)
+have semantic tests and compiled native fixtures. Native execution and compiler
+stage comparison remain held for host Developer Tools authorization. These
+internal services do not yet install the public DateTimeFormat constructor.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
