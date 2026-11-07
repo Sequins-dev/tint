@@ -1,0 +1,11 @@
+{
+  "kind": "native-build-only-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v22.json",
+  "phase": "parse",
+  "exit": 1,
+  "message": "calendar-chinese.ts line78 non-null assertion rejected by portable parser",
+  "fix": "Replace all non-null assertions in the new portable calendar module with checked record lookups. All 587 portable modules subsequently parsed, and 21 Chinese/Dangi/Hebrew focused tests pass.",
+  "log": "temporal-chinese-native-build-h-v22.log.gz",
+  "nativeExecution": "not attempted; host authorization held"
+}

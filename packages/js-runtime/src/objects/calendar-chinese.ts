@@ -75,7 +75,9 @@ function publishedYear(
   );
   if (value === undefined) throw "EAST_ASIAN_PUBLISHED_YEAR_INVARIANT";
   const parts = value.split(",");
-  return { start: Number(parts[0]), leap: Number(parts[1]), bits: parts[2]! };
+  const bits = parts[2];
+  if (bits === undefined) throw "EAST_ASIAN_PUBLISHED_ROW_INVARIANT";
+  return { start: Number(parts[0]), leap: Number(parts[1]), bits };
 }
 function winterWindow(calendar: string, label: number): WinterWindow {
   for (const cached of windows)
@@ -216,6 +218,11 @@ function yearRecord(calendar: string, year: number): YearRecord | undefined {
   records.push(record);
   return record;
 }
+function monthStart(record: YearRecord, index: number): number {
+  const start = record.moons[index];
+  if (start === undefined) throw "CHINESE_MONTH_START_INVARIANT";
+  return start;
+}
 export function chineseCalendarMonthsInYear(
   calendar: string,
   year: number,
@@ -235,7 +242,7 @@ export function chineseCalendarDaysInMonth(
     month > record.moons.length
   )
     return undefined;
-  return (record.moons[month] ?? record.end) - record.moons[month - 1]!;
+  return (record.moons[month] ?? record.end) - monthStart(record, month - 1);
 }
 export function chineseCalendarEpochDay(
   calendar: string,
@@ -251,7 +258,7 @@ export function chineseCalendarEpochDay(
     day < 1 ||
     day > maximum
     ? undefined
-    : record.moons[month - 1]! + day - 1;
+    : monthStart(record, month - 1) + day - 1;
 }
 export function chineseCalendarFieldsAtEpoch(
   calendar: string,
@@ -275,11 +282,12 @@ export function chineseCalendarFieldsAtEpoch(
     if (record === undefined) return undefined;
   }
   let month = 1;
-  while (month < record.moons.length && epoch >= record.moons[month]!) month++;
+  while (month < record.moons.length && epoch >= monthStart(record, month))
+    month++;
   return {
     year,
     month,
-    day: epoch - record.moons[month - 1]! + 1,
+    day: epoch - monthStart(record, month - 1) + 1,
     era: undefined,
     eraYear: undefined,
   };
@@ -320,7 +328,8 @@ export function chineseOrdinalFromMonthCode(
   if (record === undefined) return undefined;
   let regular: number | undefined;
   for (let i = 0; i < record.codes.length; i++) {
-    const c = record.codes[i]!;
+    const c = record.codes[i];
+    if (c === undefined) throw "CHINESE_MONTH_CODE_INVARIANT";
     if (c.month === code.month) {
       if (c.leap === code.leap) return i + 1;
       if (!c.leap) regular = i + 1;
