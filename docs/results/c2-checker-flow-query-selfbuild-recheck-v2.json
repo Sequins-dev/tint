@@ -1,0 +1,36 @@
+{
+  "kind": "native-frozen-self-build-focused-recheck",
+  "conformance": false,
+  "startedAt": "2026-11-07T00:55:24.649Z",
+  "originalFailure": "docs/results/c2-checker-flow-query-selfbuild-v1.json",
+  "buildToolchain": "docs/results/c2-frozen-toolchain-v17-query-joined-v1.json",
+  "sourceSnapshot": {
+    "sha256": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+    "files": 568
+  },
+  "originalImage": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+  "imageSha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-joined-v1",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v2",
+  "directory": "/tmp/tc2-query-re-f5VvmC",
+  "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/query-selfbuild-lldb-v2.log",
+  "debuggerLaunch": "debugserver-direct",
+  "debuggerTracing": true,
+  "changedLaunchPreparation": "Exact image bytes re-staged through NativeImageRunner atomic-rename-after-fsync; tracing enabled. This is a separate diagnostic recheck, not proof of root cause or replacement of the failed observation.",
+  "complete": false,
+  "stagedImage": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-UKSgWz/test",
+  "wallMs": 301013.734208,
+  "debuggerExitStatus": 1,
+  "error": null,
+  "initial": {
+    "state": "0",
+    "pid": 0
+  },
+  "result": null,
+  "sessionLogs": "\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: ",
+  "byteIdentical": false,
+  "stage2Sha256": null,
+  "stage2Bytes": null,
+  "failure": "Error: native recheck failed entry,exit0 or stage identity",
+  "generatedAt": "2026-11-07T01:00:25.790Z"
+}

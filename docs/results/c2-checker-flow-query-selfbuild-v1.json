@@ -1,0 +1,133 @@
+{
+  "kind": "native-frozen-self-build",
+  "conformance": false,
+  "startedAt": "2026-11-07T00:38:06.054Z",
+  "node": "v24.12.0",
+  "nodeStages": [
+    {
+      "name": "baseline",
+      "toolchain": "docs/results/c2-frozen-toolchain-v15-baseline-v1.json",
+      "sourceSnapshot": {
+        "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+        "files": 568
+      },
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-baseline-v1",
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-baseline-v1",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/bootstrap-query-baseline-v1.log",
+      "arguments": [
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v15/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-baseline-v1",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v15",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-baseline-v1",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0,
+      "signal": null,
+      "error": null,
+      "wallMs": 187006.21016699998,
+      "processTimesSeconds": {
+        "real": 186.98,
+        "user": 113.77,
+        "system": 4.94
+      },
+      "imageBytes": 60838434,
+      "imageSha256": "6da7954ef05974ccac738e3869a466c28443d1246ce426d8ad461d4c200b3528"
+    },
+    {
+      "name": "fixed",
+      "toolchain": "docs/results/c2-frozen-toolchain-v16-query-fix-v1.json",
+      "sourceSnapshot": {
+        "sha256": "090f54d09a1e4b1b7d546e506dca0cb0ef4015486d0113c764300d6cdafee70b",
+        "files": 568
+      },
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-fixed-v1",
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-fixed-v1",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/bootstrap-query-fixed-v1.log",
+      "arguments": [
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v16/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-fixed-v1",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v16",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-fixed-v1",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0,
+      "signal": null,
+      "error": null,
+      "wallMs": 95858.84887499997,
+      "processTimesSeconds": {
+        "real": 95.85,
+        "user": 92.05,
+        "system": 2.54
+      },
+      "imageBytes": 60838434,
+      "imageSha256": "6fb9ca7115c09d8fe5e5ed540c9b8cdfd8ffe481cc594a9c781f5043f81023ae"
+    },
+    {
+      "name": "joined",
+      "toolchain": "docs/results/c2-frozen-toolchain-v17-query-joined-v1.json",
+      "sourceSnapshot": {
+        "sha256": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+        "files": 568
+      },
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-joined-v1",
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/bootstrap-query-joined-v1.log",
+      "arguments": [
+        "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v17/tools/bootstrap-compiler.ts",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+        "--source-root",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v17",
+        "--snapshot",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-joined-v1",
+        "--debug-symbols"
+      ],
+      "exitStatus": 0,
+      "signal": null,
+      "error": null,
+      "wallMs": 53258.35895799997,
+      "processTimesSeconds": {
+        "real": 53.25,
+        "user": 77.92,
+        "system": 1.6
+      },
+      "imageBytes": 60079074,
+      "imageSha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c"
+    }
+  ],
+  "native": {
+    "toolchain": "docs/results/c2-frozen-toolchain-v17-query-joined-v1.json",
+    "sourceSnapshot": {
+      "sha256": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+      "files": 568
+    },
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage1-query-joined-v1",
+    "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/source-query-joined-v1",
+    "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/stage2-query-joined-v1",
+    "directory": "/tmp/tc2-query-self-ty7OMl",
+    "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/query-selfbuild-lldb-v1.log",
+    "debuggerLaunch": "debugserver-direct",
+    "wallMs": 301634.61195900006,
+    "debuggerExitStatus": 1,
+    "error": null,
+    "initial": {
+      "state": "0",
+      "pid": 0
+    },
+    "result": null,
+    "byteIdentical": false,
+    "stage1Sha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c",
+    "stage2Sha256": null,
+    "stage2Bytes": null
+  },
+  "checks": [],
+  "complete": false,
+  "failure": "Error: native self-build did not satisfy initial stop, exit0 and identical stages",
+  "generatedAt": "2026-11-07T00:48:43.969Z"
+}

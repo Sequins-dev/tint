@@ -1,0 +1,41 @@
+{
+  "kind": "c2-native-host-authorization-interruption",
+  "conformance": false,
+  "generatedAt": "2026-11-07T01:07:17.426266+00:00",
+  "selection": "language/statements/class/elements",
+  "complete": false,
+  "population": 3156,
+  "observedVariants": 1391,
+  "counts": {
+    "pass": 1294,
+    "crash": 97
+  },
+  "unobservedVariants": 1765,
+  "sourceSnapshot": {
+    "sha256": "123935ef906ff413ccbc14759243a25d66e8ad9cf4a26ce1dfdea9504cc9378c",
+    "files": 568
+  },
+  "frozenToolchainSha256": "1c53b5eca597c20fc79f86f0ec9b371e00964a76e70ff324be0c72198eedc407",
+  "toolchain": "docs/results/c2-frozen-toolchain-v11.json",
+  "debuggerLaunch": "debugserver-connected",
+  "configuredBatchSize": 64,
+  "boundary": {
+    "ack": {
+      "pid": 47042,
+      "state": "between-variants"
+    },
+    "childrenBeforeSignal": [],
+    "signal": "SIGTERM",
+    "executingInferiorKilled": false
+  },
+  "prefix": {
+    "path": "docs/results/c2-elements-host-authorization-prefix-v3.jsonl",
+    "sha256": "f1c292416a6ea2267bfaa7920dad9345274050666f0124ab081cc4d37d9e9be4",
+    "bytes": 1193487
+  },
+  "originalJournal": ".tint-bootstrap/c2/test262-c2-statements-elements-native-v2.jsonl",
+  "reason": "Shared load-events.md records HOST AUTHORIZATION STALL from00:42Z, Developer Tools disabled and SecurityAgent prompt active. Direct self-builds received zero inferiorCPU and stopped before entry; connected survey launches now systematically fail state4PID0 Sending qLaunchSuccess packet failed. Do not produce further native launch outcomes until authorization restored.",
+  "resumeGate": "load-events.md must contain HOST AUTHORIZATION RESTORED; original schema2 run resumes only on frozen-v11 connected with module1,batch64,containment300000,heartbeat30000/stall150000. Recheck all stalled variants separately on fresh main direct with TINT_TEST262_VARIANTS.",
+  "heldMarker": ".tint-bootstrap/c2/elements-launch-diagnostic.pause",
+  "nativeSemanticFailuresObserved": 0
+}

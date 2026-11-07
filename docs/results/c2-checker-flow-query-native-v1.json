@@ -1,0 +1,44 @@
+{
+  "kind": "native-checker-flow-query-regression",
+  "conformance": false,
+  "generatedAt": "2026-11-07T00:18:04.106Z",
+  "cases": 13,
+  "nativeExecutions": 1,
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "090f54d09a1e4b1b7d546e506dca0cb0ef4015486d0113c764300d6cdafee70b",
+      "files": 568
+    },
+    "imageSha256": "7603bebd531db375faf34fb5830e8eabfc2b9bf4bc2f7cfda6c0f9d46493c63a",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-checker-flow-Ued9J2/checker-flow.source.ts",
+    "fixtureSha256": "28405abe36a9b03a5ba4a688087345a8f31c57cc761cc269d003aa859384b001",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v16/tools/verify-hosted-checker-flow.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "runtimeEntry": "initializeCopyingRuntime",
+      "managedBytes": 268435456,
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216
+    },
+    "debugSymbols": false
+  },
+  "runToolchain": "docs/results/c2-frozen-toolchain-v16-query-fix-v1.json",
+  "driver": ".tint-bootstrap/c2/run-query-flow-fixture-v1.mjs",
+  "driverSha256": "e8514f0fef38b1ad6c7353017668b800f56c2330ec8d0d37c18101c4d911c759",
+  "debuggerLaunch": "debugserver-direct",
+  "assertions": "executeNativeFile requires LLDB initial stopped state and final expected exit42; no retry.",
+  "checkpoint": {
+    "pid": 47042,
+    "state": "between-variants"
+  },
+  "waitingMs": 1003.706625,
+  "executionMs": 1924.9223749999999,
+  "outcome": {
+    "kind": "completed"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "c2-confirmed-host-authorization-blocker",
+  "conformance": false,
+  "generatedAt": "2026-11-07T01:11:22.028230+00:00",
+  "sharedEvent": "- 2026-11-07T00:45Z: HOST AUTHORIZATION STALL. DevToolsSecurity reports developer mode disabled and a SecurityAgent prompt is active (since ~00:42Z). debugservers are blocking in task_for_pid with zero inferior CPU. Native launches in this window are pre-entry infra stalls, not results; recheck them after the user approves the prompt or enables developer mode.",
+  "nativeCompilerReceivedCpuSeconds": 0,
+  "attempts": [
+    {
+      "report": "docs/results/c2-checker-flow-query-selfbuild-v1.json",
+      "initial": {
+        "state": "0",
+        "pid": 0
+      },
+      "wallMs": 301634.61195900006,
+      "signatureVerified": true
+    },
+    {
+      "report": "docs/results/c2-checker-flow-query-selfbuild-recheck-v2.json",
+      "initial": {
+        "state": "0",
+        "pid": 0
+      },
+      "wallMs": 301013.734208,
+      "identicalImageRestaged": true,
+      "tracing": true
+    }
+  ],
+  "interpretation": "Both failed before confirmed entry during the documented host authorization outage. They do not establish a compiler semantic failure or a successful self-build. No native stage2 image was produced.",
+  "nativeFixtureBeforeOutage": "docs/results/c2-checker-flow-query-native-v1.json (13 checks passed before00:42Z)",
+  "surveyCheckpoint": "docs/results/c2-elements-host-authorization-interruption-v3.json",
+  "gateForNewNativeWork": "HOST AUTHORIZATION RESTORED in shared load-events.md",
+  "next": "After restoration, re-run only native self-build from already-valid staged compiler/source snapshot; resume original journal and use current-main TINT_TEST262_VARIANTS for all infrastructure rechecks. No new Native launches before restoration."
+}

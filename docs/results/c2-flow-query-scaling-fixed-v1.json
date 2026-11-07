@@ -1,0 +1,72 @@
+{
+  "kind": "c2-node-checker-flow-query-operation-census",
+  "generatedAt": "2026-11-07T00:03:45.621Z",
+  "native": false,
+  "policy": "Counts all Set iterator entries inside checkClosureModule, after parsing; semantic results retained. One observation per size; CPU versus wall recorded without speed claims.",
+  "rows": [
+    {
+      "family": "chained-binding-reads",
+      "count": 64,
+      "visits": 8,
+      "wallMs": 18.692625000000007,
+      "cpuMs": 16.532,
+      "ok": true
+    },
+    {
+      "family": "chained-binding-reads",
+      "count": 128,
+      "visits": 8,
+      "wallMs": 2.7787079999999946,
+      "cpuMs": 2.989,
+      "ok": true
+    },
+    {
+      "family": "chained-binding-reads",
+      "count": 256,
+      "visits": 8,
+      "wallMs": 4.790958000000003,
+      "cpuMs": 8.508,
+      "ok": true
+    },
+    {
+      "family": "chained-binding-reads",
+      "count": 512,
+      "visits": 8,
+      "wallMs": 11.110749999999996,
+      "cpuMs": 15.634,
+      "ok": true
+    },
+    {
+      "family": "discriminant-tags-with-unrelated-bindings",
+      "count": 32,
+      "visits": 433,
+      "wallMs": 16.21366599999999,
+      "cpuMs": 9.503,
+      "ok": true
+    },
+    {
+      "family": "discriminant-tags-with-unrelated-bindings",
+      "count": 64,
+      "visits": 849,
+      "wallMs": 2.8095830000000035,
+      "cpuMs": 4.194,
+      "ok": true
+    },
+    {
+      "family": "discriminant-tags-with-unrelated-bindings",
+      "count": 128,
+      "visits": 1681,
+      "wallMs": 6.6742089999999905,
+      "cpuMs": 11.965,
+      "ok": true
+    },
+    {
+      "family": "discriminant-tags-with-unrelated-bindings",
+      "count": 256,
+      "visits": 3345,
+      "wallMs": 19.139583000000016,
+      "cpuMs": 26.315,
+      "ok": true
+    }
+  ]
+}
