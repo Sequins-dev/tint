@@ -68,7 +68,7 @@ export function installTemporalPlainDate(
   );
   function create(
     date: GregorianDate,
-    calendar: string = "iso8601",
+    calendar: string,
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
     object.internalTemporalCalendar = calendar;
