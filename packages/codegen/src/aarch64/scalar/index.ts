@@ -1669,10 +1669,14 @@ export function emitModule(
         let originalStores = poolWords,
           deferredStores = 0,
           directStores: boolean = true;
-        for (const offset of temporaryRoots)
+        for (const offset of temporaryRoots) {
+          if (offset === undefined) throw "root cleanup offset invariant";
           if (offset > 32760) directStores = false;
-        for (const offset of temporaryGenerals)
+        }
+        for (const offset of temporaryGenerals) {
+          if (offset === undefined) throw "general cleanup offset invariant";
           if (offset + 8 > 32760) directStores = false;
+        }
         for (const block of fn.blocks) {
           if (block === undefined) throw "root cleanup cost block invariant";
           originalStores +=
