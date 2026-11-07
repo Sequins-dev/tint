@@ -650,13 +650,16 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       return failure("service-import", "missing or duplicate service entry");
     if (binding.surface !== undefined) {
       const plan = surfacePlans.find(
-          (plan) => plan.directory.name === binding.surface,
+          (plan) =>
+            plan !== undefined && plan.directory.name === binding.surface,
         ),
         frameName = plan?.directory.frame,
         frame =
           frameName === undefined
             ? undefined
-            : plan?.surface.types.find((type) => type.name === frameName)?.type;
+            : plan?.surface.types.find(
+                (type) => type !== undefined && type.name === frameName,
+              )?.type;
       const frameType =
         frame?.kind === "named"
           ? nativeChecked.typeNames.get(frame.name)
@@ -743,6 +746,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
   }
   let serviceImports: ManagedFunctionEntryBinding[] = [];
   for (const source of serviceSources) {
+    if (source === undefined) throw "service source invariant";
     const id = lowered.value.entries.indexOf(source.function),
       fn = lowered.value.module.functions[id];
     if (fn === undefined || fn.import !== true)
@@ -885,8 +889,13 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       );
       if (!runtimes.ok) return failure("surface", runtimes.error);
       const runtimeTargets: string[] = [];
-      for (const provider of state.names.providers)
-        for (const name of provider.targets) runtimeTargets.push(name);
+      for (const provider of state.names.providers) {
+        if (provider === undefined) throw "service runtime provider invariant";
+        for (const name of provider.targets) {
+          if (name === undefined) throw "service runtime target invariant";
+          runtimeTargets.push(name);
+        }
+      }
       let runtimeSlot = 0;
       for (const provider of plan.directory.runtimes) {
         if (provider === undefined) throw "service provider invariant";
@@ -1162,17 +1171,21 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     invocation = entry - 1;
     const mapped: ManagedFunctionEntryBinding[] = [];
     for (const binding of serviceImports) {
+      if (binding === undefined) throw "service import invariant";
       const id = result.functionIds[binding.function] ?? 0;
       if (id !== 0) mapped.push({ ...binding, function: id - 1 });
     }
     serviceImports = mapped;
     for (const plan of identityPlans) {
-      if (plan.record !== undefined) {
-        const id = result.recordIds[plan.record] ?? 0;
+      if (plan === undefined) throw "service identity plan invariant";
+      const recordId = plan.record,
+        functionId = plan.function;
+      if (recordId !== undefined) {
+        const id = result.recordIds[recordId] ?? 0;
         plan.record = id === 0 ? undefined : id - 1;
       }
-      if (plan.function !== undefined) {
-        const id = result.functionIds[plan.function] ?? 0;
+      if (functionId !== undefined) {
+        const id = result.functionIds[functionId] ?? 0;
         plan.function = id === 0 ? undefined : id - 1;
       }
     }
@@ -1232,39 +1245,38 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         error.message,
     );
   }
-  const serviceIdentities: NativeServiceBinding[] = [];
-  if (
-    surfacePlans.length !== 0 &&
-    native.value.functionDescriptor !== undefined
-  )
+  const serviceIdentities: NativeServiceBinding[] = [],
+    brand = native.value.functionDescriptor;
+  if (surfacePlans.length !== 0 && brand !== undefined)
     serviceIdentities.push({
       name: "tint.function.v1",
       contract: "tint.function.v1",
       role: "function-brand",
       parameters: [],
       returnType: undefined,
-      metadataOffset: native.value.functionDescriptor.offset,
+      metadataOffset: brand.offset,
     });
   for (const plan of identityPlans) {
+    if (plan === undefined) throw "service identity plan invariant";
+    const recordId = plan.record,
+      functionId = plan.function;
     const metadata =
       plan.shape.role === "record"
-        ? plan.record === undefined
+        ? recordId === undefined
           ? undefined
           : native.value.records.find(
-              (record) => record !== undefined && record.record === plan.record,
+              (record) => record !== undefined && record.record === recordId,
             )
-        : plan.function === undefined
+        : functionId === undefined
           ? undefined
           : native.value.signatures.find(
               (signature) =>
                 signature !== undefined &&
-                signature.functions.includes(plan.function ?? -1),
+                signature.functions.includes(functionId ?? -1),
             );
     if (metadata === undefined) continue;
     const fn =
-      plan.function === undefined
-        ? undefined
-        : native.value.functions[plan.function];
+      functionId === undefined ? undefined : native.value.functions[functionId];
     serviceIdentities.push({
       ...plan.shape,
       name: plan.contract,

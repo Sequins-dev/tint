@@ -330,7 +330,8 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       for (const imported of unit.native.managedImports) {
         if (imported === undefined) throw "native service import invariant";
         const binding = program.value.serviceIdentities?.find(
-          (binding) => binding.contract === imported.contract,
+          (binding) =>
+            binding !== undefined && binding.contract === imported.contract,
         );
         if (binding === undefined)
           return failure(

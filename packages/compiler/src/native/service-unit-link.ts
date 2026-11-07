@@ -20,6 +20,9 @@ export interface NativeServiceBinding extends ManagedIdentityShape {
   readonly metadataOffset: number;
   readonly entryOffset?: number;
 }
+interface NativeServiceBindingIndex {
+  readonly byName: Map<string, NativeServiceBinding>;
+}
 export interface NativeServiceLink {
   readonly native: NativeModule;
   readonly bindings: readonly NativeServiceBinding[];
@@ -91,9 +94,12 @@ export function linkNativeServiceModules(
   });
   const all: NativeServiceLink[] = [];
   all.push({ native: host, bindings: hostBindings });
-  for (const unit of units) all.push(unit);
+  for (const unit of units) {
+    if (unit === undefined) return reject("missing unit");
+    all.push(unit);
+  }
   const offsets: number[] = [0],
-    targets: Map<string, NativeServiceBinding>[] = [];
+    targets: NativeServiceBindingIndex[] = [];
   let length = host.code.length;
   for (const unit of units) {
     if (unit === undefined) return reject("missing unit");
@@ -103,11 +109,13 @@ export function linkNativeServiceModules(
     if (!uint(length)) return reject("composed image exceeds address domain");
   }
   function owner(binding: NativeServiceBinding): NativeServiceLink | undefined {
-    if (binding.unit === undefined) return all[0];
-    return uint(binding.unit) ? all[binding.unit + 1] : undefined;
+    const index = binding.unit;
+    if (index === undefined) return all[0];
+    return uint(index) ? all[index + 1] : undefined;
   }
   function ownerBase(binding: NativeServiceBinding): number | undefined {
-    return offsets[binding.unit === undefined ? 0 : binding.unit + 1];
+    const index = binding.unit;
+    return offsets[index === undefined ? 0 : index + 1];
   }
   for (let index = 0; index < all.length; index++) {
     const unit = all[index];
@@ -224,11 +232,13 @@ export function linkNativeServiceModules(
       )
         return reject("managed reference is outside native code");
     }
-    targets.push(bindings);
+    targets.push({ byName: bindings });
   }
   // All authority and range checks precede the first metadata byte read.
-  for (const bindings of targets)
-    for (const binding of bindings.values()) {
+  for (const unit of all) {
+    if (unit === undefined) throw "service target unit invariant";
+    for (const binding of unit.bindings) {
+      if (binding === undefined) throw "service target binding invariant";
       const source = owner(binding);
       if (source === undefined) throw "service identity owner invariant";
       const words = managedIdentityDescriptorWords(binding);
@@ -239,6 +249,7 @@ export function linkNativeServiceModules(
         )
           return reject("host descriptor bytes differ");
     }
+  }
   const code = new Uint8Array(length);
   code.set(host.code);
   const functions = host.functions.slice(),
@@ -252,7 +263,8 @@ export function linkNativeServiceModules(
   for (let index = 0; index < all.length; index++) {
     const unit = all[index],
       base = offsets[index],
-      bindings = targets[index];
+      targetIndex = targets[index];
+    const bindings = targetIndex?.byName;
     if (unit === undefined || base === undefined || bindings === undefined)
       throw "service placement invariant";
     const native = unit.native,
