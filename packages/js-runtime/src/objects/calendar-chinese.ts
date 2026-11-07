@@ -83,8 +83,15 @@ function publishedYear(
   return { start: Number(startText), leap: Number(leapText), bits };
 }
 function winterWindow(calendar: string, label: number): WinterWindow {
-  for (const cached of windows)
-    if (cached.calendar === calendar && cached.label === label) return cached;
+  for (let i = 0; i < windows.length; i++) {
+    const cached: WinterWindow | undefined = windows[i];
+    if (
+      cached !== undefined &&
+      cached.calendar === calendar &&
+      cached.label === label
+    )
+      return cached;
+  }
   const before = calendarWinterSolstice(calendar, label),
     after = calendarWinterSolstice(calendar, label + 1),
     first = calendarNewMoon(calendar, before + 1, true),
@@ -136,8 +143,15 @@ export function chineseCalendarYearStart(
     return undefined;
   const published = publishedYear(calendar, year);
   if (published !== undefined) return published.start;
-  for (const cached of starts)
-    if (cached.calendar === calendar && cached.year === year) return cached.day;
+  for (let i = 0; i < starts.length; i++) {
+    const cached: YearStart | undefined = starts[i];
+    if (
+      cached !== undefined &&
+      cached.calendar === calendar &&
+      cached.year === year
+    )
+      return cached.day;
+  }
   const window = winterWindow(calendar, year - 1),
     second = calendarNewMoon(calendar, window.first + 25, true);
   const day =
@@ -170,8 +184,15 @@ function codeAtMoon(
 }
 
 function yearRecord(calendar: string, year: number): YearRecord | undefined {
-  for (const record of records)
-    if (record.calendar === calendar && record.year === year) return record;
+  for (let i = 0; i < records.length; i++) {
+    const record: YearRecord | undefined = records[i];
+    if (
+      record !== undefined &&
+      record.calendar === calendar &&
+      record.year === year
+    )
+      return record;
+  }
   const published = publishedYear(calendar, year);
   if (published !== undefined) {
     const moons: number[] = [],
