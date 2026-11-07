@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
-import { encode } from "../src/aarch64/isa.ts";
+import { encode, type Condition } from "../src/aarch64/isa.ts";
 const s = { start: 0, end: 0 };
-function fixture(shared: boolean): ModuleIR {
+function fixture(
+  shared: boolean,
+  operator: "<" | ">" | "<=" | ">=" | "===" | "!==" | "==" | "!=" = "<",
+): ModuleIR {
   return {
     functions: [
       {
@@ -21,7 +24,7 @@ function fixture(shared: boolean): ModuleIR {
             instructions: [
               { kind: "load", id: 0, slot: 0, ...s },
               { kind: "load", id: 1, slot: 1, ...s },
-              { kind: "binary", id: 2, operator: "<", left: 0, right: 1, ...s },
+              { kind: "binary", id: 2, operator, left: 0, right: 1, ...s },
               ...(shared
                 ? [{ kind: "store" as const, slot: 2, value: 2, ...s }]
                 : []),
@@ -49,10 +52,10 @@ function fixture(shared: boolean): ModuleIR {
     ],
   };
 }
-function conditionSets(module: ModuleIR): number {
+function conditionSets(module: ModuleIR, condition: Condition = "mi"): number {
   const r = emitModule(module);
   assert.ok(r.ok, JSON.stringify(r));
-  const word = encode({ op: "cset", rd: 9, condition: "mi" });
+  const word = encode({ op: "cset", rd: 9, condition });
   assert.ok(word.ok);
   const view = new DataView(r.value.code.buffer, r.value.code.byteOffset);
   const fn = r.value.functions[0]!;
@@ -66,4 +69,41 @@ test("a comparison used only by its branch does not materialize a boolean", () =
 });
 test("a comparison saved before its branch retains its boolean value", () => {
   assert.equal(conditionSets(fixture(true)), 1);
+});
+test("all comparison flags work with either successor in fallthrough position", () => {
+  for (const [operator, condition] of [
+    ["===", "eq"],
+    ["!==", "ne"],
+    ["==", "eq"],
+    ["!=", "ne"],
+    ["<", "mi"],
+    ["<=", "ls"],
+    [">", "gt"],
+    [">=", "ge"],
+  ] as const) {
+    const module = fixture(false, operator),
+      fn = module.functions[0]!;
+    assert.equal(conditionSets(module, condition), 0, operator);
+    const swapped: ModuleIR = {
+      ...module,
+      functions: [
+        {
+          ...fn,
+          blocks: fn.blocks.map((block) =>
+            block.id === 0 && block.terminator.kind === "branch"
+              ? {
+                  ...block,
+                  terminator: {
+                    ...block.terminator,
+                    consequent: 2,
+                    alternate: 1,
+                  },
+                }
+              : block,
+          ),
+        },
+      ],
+    };
+    assert.equal(conditionSets(swapped, condition), 0, operator + " swapped");
+  }
 });
