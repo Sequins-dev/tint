@@ -1,0 +1,83 @@
+{
+  "kind": "native-script-fixture-build-only",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v17.json",
+  "manifestPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-8RtOFi/fixture.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "94717c7438235b6e59bbfd8597a4b4475bf9eb1cebc04e752dd0f025cc59adf9",
+      "files": 580
+    },
+    "imageSha256": "9cbcef46b0cbedcdd86d497422ea964ba63f1a3a4c8d883f92a016e8e6028ce3",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const[iso,year,month,day]of[[\"2023-03-21\",1944,12,30],[\"2023-03-22\",1945,1,1],[\"2024-03-21\",1946,1,1],[\"2024-04-20\",1946,1,31],[\"2024-04-21\",1946,2,1]]){const d=Temporal.PlainDate.from(iso+\"[u-ca=indian]\");if(d.year!==year||d.month!==month||d.day!==day||d.era!==\"shaka\"||d.eraYear!==year||d.monthsInYear!==12||d.calendarId!==\"indian\")throw 1;}for(const year of[-1,0,1]){const d=Temporal.PlainDate.from({calendar:\"indian\",era:\"shaka\",eraYear:year,month:1,day:1});if(d.year!==year||d.eraYear!==year)throw 2;}",
+        "sha256": "54cbe1086dd21cdda387a5d9ad635b0fa79ab4ab2e1fb2c7893875b40a026c99"
+      },
+      {
+        "index": 1,
+        "source": "const a=Temporal.PlainDate.from({calendar:\"indian\",year:1946,month:1,day:31}),b=a.add({years:1});if(a.daysInMonth!==31||a.daysInYear!==366||!a.inLeapYear||b.day!==30||b.year!==1947||b.daysInYear!==365||b.inLeapYear)throw 1;let ok=false;try{a.add({years:1},{overflow:\"reject\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;const start=Temporal.PlainDate.from({calendar:\"indian\",year:1946,month:1,day:1}),end=start.add({years:1});if(start.until(end,{largestUnit:\"month\"}).months!==12||start.until(end).days!==366)throw 3;",
+        "sha256": "7079e5afa61ce21be10a883e30bcc604b0a7859ad282bddd1ea51997d9cd0ed7"
+      },
+      {
+        "index": 2,
+        "source": "const d=Temporal.PlainDate.from({calendar:\"indian\",year:1946,month:1,day:31}),ym=d.toPlainYearMonth(),md=d.toPlainMonthDay();if(ym.toString()!==\"2024-03-21[u-ca=indian]\"||md.toString()!==\"1972-04-20[u-ca=indian]\"||ym.toPlainDate({day:31}).day!==31||md.toPlainDate({year:1946}).day!==31||ym.add({months:1}).month!==2||!ym.equals(Temporal.PlainYearMonth.from(d.toString()))||!md.equals(Temporal.PlainMonthDay.from(d.toString())))throw 1;for(const[monthCode,day,iso]of[[\"M10\",11,\"1972-01-01\"],[\"M12\",30,\"1972-03-20\"]])if(Temporal.PlainMonthDay.from({calendar:\"indian\",monthCode,day}).toString()!==iso+\"[u-ca=indian]\")throw 2;",
+        "sha256": "5f4955c0dc03d76a5b87eac543e3ee429a737a5b7f0c28e37ddf5ad66e214016"
+      },
+      {
+        "index": 3,
+        "source": "const a=Temporal.PlainDateTime.from({calendar:\"indian\",year:1946,month:1,day:31,hour:23,minute:59}),b=a.add({minutes:2});if(b.month!==2||b.day!==1||b.minute!==1||b.calendarId!==\"indian\")throw 1;for(const timeZone of[\"UTC\",\"+00:00\"]){const x=Temporal.ZonedDateTime.from({calendar:\"indian\",year:1946,month:1,day:1,timeZone}),y=x.add({months:1});if(y.month!==2||x.until(y,{largestUnit:\"day\"}).days!==31||x.until(y,{largestUnit:\"month\"}).months!==1||y.calendarId!==\"indian\")throw 2;}",
+        "sha256": "5b06e55df4e4ea70a61d56968668f553ac1a21f5806368e0edfe68fb26bd6697"
+      },
+      {
+        "index": 4,
+        "source": "for(const timeZone of[undefined,\"UTC\",\"+00:00\"]){const relativeTo={calendar:\"indian\",year:1946,month:1,day:1,timeZone},d=new Temporal.Duration(0,1),half=new Temporal.Duration(0,0,0,15,12);if(d.total({unit:\"day\",relativeTo})!==31||d.round({smallestUnit:\"day\",largestUnit:\"day\",relativeTo}).days!==31||half.total({unit:\"month\",relativeTo})!==0.5||half.round({smallestUnit:\"month\",relativeTo}).months!==1||Temporal.Duration.compare(\"P1M\",\"P31D\",{relativeTo})!==0)throw 1;}",
+        "sha256": "330f13b86c696c90031800357ed182209b8d30d76f4de38058be32407ac31216"
+      },
+      {
+        "index": 5,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const d=Temporal.PlainDate.from({calendar,year,monthCode:\"M13\",day:6}),md=d.toPlainMonthDay();if(d.toString()!==\"2023-09-11[u-ca=\"+calendar+\"]\"||md.toString()!==\"1971-09-11[u-ca=\"+calendar+\"]\"||md.with({day:5}).toString()!==\"1972-09-10[u-ca=\"+calendar+\"]\"||d.add({months:1}).month!==1)throw 1;}for(const[year,month,day]of[[-271821,4,19],[275760,9,13]]){const a=new Temporal.PlainDate(year,month,day,\"indian\"),b=Temporal.PlainDate.from({calendar:\"indian\",year:a.year,month:a.month,day:a.day});if(!a.equals(b))throw 2;}",
+        "sha256": "a385caf03ed9f2615ed7fd1ab7c0def528a3371d7739d9d27f6b60543f2de736"
+      }
+    ]
+  },
+  "buildExit": 0,
+  "codesignExit": 0,
+  "nativeExecution": "none; host authorization hold",
+  "nativePasses": 0
+}
