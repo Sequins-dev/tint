@@ -94,6 +94,12 @@ share the regular-calendar resolver with the Coptic families. The Persian
 backend uses an exact solar cycle with the complete pinned ICU 77.1 leap-shift
 correction table and proleptic AP era years. Its [semantic and reference checks](results/temporal-persian-semantic-validation-h-v1.json)
 cover both date-domain limits and the documented corrections.
+The Islamic services implement civil and Thursday tabular epochs plus the complete
+pinned Umm al-Qura table, using its specified civil rules outside the data interval.
+They preserve AH/BH era semantics and 355-day leap metadata. Temporal rejects the
+Intl-only `islamic` and `islamic-rgsa` fallback names before testing arithmetic
+availability. [Semantic and reference evidence](results/temporal-islamic-semantic-validation-h-v1.json)
+includes every day in the complete table interval.
 PlainDate, PlainDateTime, partial dates, ZonedDateTime and Duration relative
 context use the same service, including calendar-grid rounding and canonical
 reference dates. [Semantic validation](results/temporal-coptic-semantic-validation-h-v1.json)

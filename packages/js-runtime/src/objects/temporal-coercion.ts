@@ -44,7 +44,13 @@ export function canonicalTemporalCalendar(
   if (typeof suppliedCalendar !== "string")
     throw createRuntimeError(realm, "type");
   const calendar = canonicalCalendarIdentifier(suppliedCalendar);
-  if (calendar !== undefined) return calendar;
+  // Intl-only Islamic fallback identifiers have no Temporal calendar semantics.
+  if (
+    calendar !== undefined &&
+    calendar !== "islamic" &&
+    calendar !== "islamic-rgsa"
+  )
+    return calendar;
   throw createRuntimeError(realm, "range");
 }
 /** Validate identity before checking the available portable calendar algorithms. */

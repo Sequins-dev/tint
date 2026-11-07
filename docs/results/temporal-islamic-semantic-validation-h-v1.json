@@ -1,0 +1,63 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T02:05:21.874601+00:00",
+  "families": [
+    "islamic-civil",
+    "islamic-tbla",
+    "islamic-umalqura"
+  ],
+  "initialRed": {
+    "tests": 8,
+    "failed": 8
+  },
+  "focusedGreen": {
+    "tests": 151,
+    "passed": 151
+  },
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "hostTypesExit": 0,
+  "implementation": [
+    "exact thirty-year civil and Thursday epochs, proleptic AH/BH eras",
+    "complete Umm al-Qura years 1300-1600, with every source year start verified and ICU-defined civil arithmetic outside that interval",
+    "shared calendar operations and canonical partial dates; correct 355-day leap metadata",
+    "islamicc aliases civil; Intl-only islamic/islamic-rgsa names throw Temporal RangeError while shared Intl vocabulary stays available"
+  ],
+  "references": [
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/islamcal.cpp",
+    "https://tc39.es/proposal-intl-era-monthcode/"
+  ],
+  "independentReferenceProbes": [
+    "calendar-islamic-reference-probe-h-v1.json",
+    "calendar-islamic-reference-probe-h-v2.json"
+  ],
+  "sourceDataVerification": "calendar-islamic-data-verification-h-v1.json",
+  "nativeStatus": "Six-case fixture prepared; execution and native stage comparison held for HOST AUTHORIZATION RESTORED. No Test262 passes claimed.",
+  "logs": {
+    "calendar-islamic-core-red-h-v1": {
+      "path": "docs/results/calendar-islamic-core-red-h-v1.log.gz",
+      "sha256": "3828febe6f774e00dc7c26c388f6b14a06135da1f896d3f246c9a02ded4b6b5e"
+    },
+    "calendar-islamic-core-green-h-v1": {
+      "path": "docs/results/calendar-islamic-core-green-h-v1.log.gz",
+      "sha256": "b863cd23fcde77f6ed4256216242a57e31aa6397430bf691808f0cd2f77cb507"
+    },
+    "temporal-islamic-focused-h-v1": {
+      "path": "docs/results/temporal-islamic-focused-h-v1.log.gz",
+      "sha256": "a020362889b8f70310aaa6466df876762af3382a5205a56426c1495d406836fa"
+    },
+    "temporal-islamic-focused-h-v2": {
+      "path": "docs/results/temporal-islamic-focused-h-v2.log.gz",
+      "sha256": "e88aceb79aa231f57065a07d74f0f497d53ef359a0882b0017f173bb79a4c9f6"
+    },
+    "temporal-islamic-test-types-h-v2": {
+      "path": "docs/results/temporal-islamic-test-types-h-v2.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "temporal-islamic-host-types-h-v2": {
+      "path": "docs/results/temporal-islamic-host-types-h-v2.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

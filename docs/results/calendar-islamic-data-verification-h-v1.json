@@ -1,0 +1,17 @@
+{
+  "kind": "calendar-data-source-verification",
+  "nativeConformance": false,
+  "source": "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/islamcal.cpp",
+  "sourceSha256": "a665b4eed397fc890786a27d27e80c754f71620101d79bc6a2b1bfa7d00bb6cb",
+  "completeMonthMasks": 301,
+  "firstYear": 1300,
+  "lastYear": 1600,
+  "completeYearStartsVerifiedAgainstICUFormula": true,
+  "startEpochOffset": 460322,
+  "endEpochOffset": 566987,
+  "civil1601Offset": 566987,
+  "license": "Unicode-3.0",
+  "licensePath": "packages/js-runtime/LICENSE-CLDR.txt",
+  "preparationCorrection": "First parser found 297/301 masks because a C++ line comment contains };. Completeness guard rejected it; comments now removed before extracting array boundaries.",
+  "output": "packages/js-runtime/src/objects/calendar-data.ts"
+}

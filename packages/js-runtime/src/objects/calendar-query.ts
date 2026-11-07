@@ -1,4 +1,12 @@
 import {
+  isIslamicCalendar,
+  islamicCalendarYearStart,
+  islamicCalendarDaysInMonth,
+  islamicCalendarFields,
+  islamicCalendarDateFromFields,
+  islamicCalendarEpochDay,
+} from "./calendar-islamic.ts";
+import {
   persianCalendarYearStart,
   persianCalendarDaysInMonth,
   persianCalendarFields,
@@ -43,7 +51,8 @@ export function calendarAlgorithmsAvailable(calendar: string): boolean {
     isGregorianCalendar(calendar) ||
     isCopticCalendar(calendar) ||
     calendar === "indian" ||
-    calendar === "persian"
+    calendar === "persian" ||
+    isIslamicCalendar(calendar)
   );
 }
 export function calendarFieldsFromISO(
@@ -54,8 +63,9 @@ export function calendarFieldsFromISO(
     return gregorianCalendarFields(calendar, date);
   if (isCopticCalendar(calendar)) return copticCalendarFields(calendar, date);
   if (calendar === "indian") return indianCalendarFields(calendar, date);
-  return calendar === "persian"
-    ? persianCalendarFields(calendar, date)
+  if (calendar === "persian") return persianCalendarFields(calendar, date);
+  return isIslamicCalendar(calendar)
+    ? islamicCalendarFields(calendar, date)
     : undefined;
 }
 export function calendarDateFromFields(
@@ -72,6 +82,8 @@ export function calendarDateFromFields(
     return indianCalendarDateFromFields(calendar, fields, kind, overflow);
   if (calendar === "persian")
     return persianCalendarDateFromFields(calendar, fields, kind, overflow);
+  if (isIslamicCalendar(calendar))
+    return islamicCalendarDateFromFields(calendar, fields, kind, overflow);
   return { value: undefined, error: "unsupported" };
 }
 export function calendarMonthsInYear(
@@ -79,12 +91,10 @@ export function calendarMonthsInYear(
   year: number,
 ): number | undefined {
   if (!Number.isSafeInteger(year)) return undefined;
-  return isGregorianCalendar(calendar) ||
-    calendar === "indian" ||
-    calendar === "persian"
-    ? 12
-    : isCopticCalendar(calendar)
-      ? 13
+  return isCopticCalendar(calendar)
+    ? 13
+    : calendarAlgorithmsAvailable(calendar)
+      ? 12
       : undefined;
 }
 export function calendarDaysInMonth(
@@ -102,8 +112,10 @@ export function calendarDaysInMonth(
     return copticCalendarDaysInMonth(calendar, year, month);
   if (calendar === "indian")
     return indianCalendarDaysInMonth(calendar, year, month);
-  return calendar === "persian"
-    ? persianCalendarDaysInMonth(calendar, year, month)
+  if (calendar === "persian")
+    return persianCalendarDaysInMonth(calendar, year, month);
+  return isIslamicCalendar(calendar)
+    ? islamicCalendarDaysInMonth(calendar, year, month)
     : undefined;
 }
 export function calendarYearStartEpochDay(
@@ -119,8 +131,9 @@ export function calendarYearStartEpochDay(
   if (isCopticCalendar(calendar))
     return copticCalendarYearStart(calendar, year);
   if (calendar === "indian") return indianCalendarYearStart(calendar, year);
-  return calendar === "persian"
-    ? persianCalendarYearStart(calendar, year)
+  if (calendar === "persian") return persianCalendarYearStart(calendar, year);
+  return isIslamicCalendar(calendar)
+    ? islamicCalendarYearStart(calendar, year)
     : undefined;
 }
 export function calendarDaysInYear(
@@ -157,13 +170,15 @@ export function calendarDateAt(
       return undefined;
     return { year: isoYear, month, day };
   }
-  const epoch = isCopticCalendar(calendar)
-    ? copticCalendarEpochDay(calendar, year, month, day)
-    : calendar === "indian"
-      ? indianCalendarEpochDay(calendar, year, month, day)
-      : calendar === "persian"
-        ? persianCalendarEpochDay(calendar, year, month, day)
-        : undefined;
+  let epoch: number | undefined;
+  if (isCopticCalendar(calendar))
+    epoch = copticCalendarEpochDay(calendar, year, month, day);
+  else if (calendar === "indian")
+    epoch = indianCalendarEpochDay(calendar, year, month, day);
+  else if (calendar === "persian")
+    epoch = persianCalendarEpochDay(calendar, year, month, day);
+  else if (isIslamicCalendar(calendar))
+    epoch = islamicCalendarEpochDay(calendar, year, month, day);
   return epoch === undefined
     ? undefined
     : gregorianCoordinateFromEpochDay(epoch);
@@ -174,5 +189,9 @@ export function calendarInLeapYear(
   year: number,
 ): boolean | undefined {
   const days = calendarDaysInYear(calendar, year);
-  return days === undefined ? undefined : days === 366;
+  return days === undefined
+    ? undefined
+    : isIslamicCalendar(calendar)
+      ? days === 355
+      : days === 366;
 }
