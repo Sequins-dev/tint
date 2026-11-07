@@ -69,8 +69,29 @@ names, excludes search/standard/private tailorings and returns sorted fresh list
 Explicit collation keywords are returned as stored; unmatched locales use
 `emoji,eor`, without likely-subtag expansion.
 [Five native boundary fixtures](results/native-locale-collations-validation-v1.json)
-pass. `Intl.Collator` comparison remains unimplemented; metadata support does not
-establish collation-service conformance. The unchanged [collation selection](results/test262-locale-collations-native-v1.json) passes 24/26 variants; both failures instantiate the missing Collator. The updated full Locale selection is pending.
+pass. `collator.ts` resolves the Collator service options and locale extensions;
+`intl-collator.ts` installs its constructor, branded accessors and methods, and
+`String.prototype.localeCompare`. Both interfaces share the same comparison
+engine and preserve receiver/string/locale/option coercion order.
+
+`collation-engine.ts` uses the Unicode 17 CLDR 48 fractional root table, matching
+the existing normalization and casing version. Identifier and locale metadata
+remain pinned to CLDR 49. The generator verifies the archive, each interpreted
+member and UnicodeData before producing packed lazy tables. It retains script
+boundary contractions, resolves implicit Han references and interprets the three
+reference forms separately. Comparison normalizes to NFD, handles contiguous and
+discontiguous contractions and prefix contexts, and applies sensitivity, case
+ordering, arbitrary-length decimal runs and punctuation shifting.
+
+Available service languages are `de,en,es,fr,it,sv,th`; script/region requests use
+ordinary language lookup, and unmatched locales use the shared default `en`.
+The service includes root search/EOR, German phonebook/search, Spanish
+standard/search, Swedish standard and Thai standard data. Unapproved provisional
+German EOR data is excluded; German EOR uses the approved root profile. Service
+availability is deliberately separate from the broader Locale metadata catalog.
+Constructors and resolved-options queries do not decode the large tables; the
+first comparison does. Native conformance and the matched 64-variant non-Intl
+compile-cost acceptance are being validated for this implementation. The unchanged [collation selection](results/test262-locale-collations-native-v1.json) passes 24/26 variants; both failures instantiate the missing Collator. The updated full Locale selection is pending.
 
 ## Calendar algorithms
 

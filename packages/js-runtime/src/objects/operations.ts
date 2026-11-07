@@ -4,6 +4,7 @@ import type { DecimalNumberFormatter } from "./decimal-number-format.ts";
 import type { PluralFormatter } from "./plural-format.ts";
 import type { DisposalStack } from "../disposal/index.ts";
 import type { LocaleData } from "./locale-id.ts";
+import type { CollatorData } from "./collator.ts";
 import type { ListFormatter } from "./list-format.ts";
 import type { BigIntValue } from "./bigints.ts";
 import type { TemporalZonedDateTime } from "./temporal-zoned-date-time.ts";
@@ -85,6 +86,7 @@ export interface OrdinaryObject<Key, Value> {
   internalTemporalInstant: BigIntValue | undefined;
   internalLocaleData: LocaleData | undefined;
   internalListFormatData: ListFormatter | undefined;
+  internalCollatorData: CollatorData | undefined;
   internalPluralRulesData: PluralFormatter | undefined;
   internalRelativeTimeData: RelativeTimeFormatter | undefined;
   internalNumberFormatData: DecimalNumberFormatter | undefined;
@@ -377,6 +379,7 @@ function allocateObject<Key, Value>(
     internalTemporalInstant: undefined,
     internalLocaleData: undefined,
     internalListFormatData: undefined,
+    internalCollatorData: undefined,
     internalPluralRulesData: undefined,
     internalRelativeTimeData: undefined,
     internalNumberFormatData: undefined,

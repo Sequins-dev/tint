@@ -16,6 +16,7 @@ import {
 import { canonicalLocaleList, runtimeDefaultLocale } from "./locale-objects.ts";
 import { stringValue } from "./coercion.ts";
 import { installLocaleIntrinsic } from "./intl-locale.ts";
+import { installCollatorIntrinsic } from "./intl-collator.ts";
 import { installListFormatIntrinsic } from "./intl-list-format.ts";
 import {
   createRuntimeError,
@@ -33,6 +34,7 @@ export function installIntlIntrinsics(
   const intl = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
   installLocaleIntrinsic(intl, realm, hooks);
   installListFormatIntrinsic(intl, realm, hooks);
+  installCollatorIntrinsic(intl, realm, hooks);
   installPluralRulesIntrinsic(intl, realm, hooks);
   installNumberFormatIntrinsic(intl, realm, hooks);
   installRelativeTimeFormatIntrinsic(intl, realm, hooks);

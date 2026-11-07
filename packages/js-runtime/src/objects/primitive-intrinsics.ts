@@ -1,6 +1,7 @@
 import { normalizeUnicode } from "@tint/foundation/unicode/normalization";
 import { installDateIntrinsics } from "./date-intrinsics.ts";
 import { installNumberFormattingMethods } from "./number-format.ts";
+import { installStringLocaleCompare } from "./intl-collator.ts";
 import { installStringCasingMethods } from "./string-casing.ts";
 import { installStringHTMLMethods } from "./string-html.ts";
 import { installJSONIntrinsics } from "./json-intrinsics.ts";
@@ -65,6 +66,7 @@ export function installPrimitiveIntrinsics(
   installStringRegExpMethods(realm, hooks);
   installStringHTMLMethods(realm, hooks);
   installStringCasingMethods(realm, hooks);
+  installStringLocaleCompare(realm, hooks);
   function numberConstructor(value: unknown): unknown {
     const converted = numericValue(value, hooks, realm);
     if (converted.error === "unsupported")

@@ -1,0 +1,31 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T17:39:23.435Z",
+  "sourceSnapshot": {
+    "sha256": "74686ae07c7d0e4922c013475e1f74173c4f6cbdf913d8d98b2136e9c6ef6f16",
+    "files": 599
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v27",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v27/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v27/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v27/source-snapshot.json",
+    "sha256": "85a8640c2341bcc92995ffb5dce2e545b4c8cfa31c2d4902faf03f1b8576fe0f"
+  },
+  "mainAtCapture": "9e5404ac9a73909b86ed691e8770658dda707b9e",
+  "head": "7fe6eecb963ead44f6666a8ecc80017486f74876",
+  "portableChangesFromV26": [
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/src/objects/collation-data.ts",
+    "packages/js-runtime/src/objects/collation-engine.ts",
+    "packages/js-runtime/src/objects/collator.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/functions.ts",
+    "packages/js-runtime/src/objects/intl-collator.ts",
+    "packages/js-runtime/src/objects/intl.ts",
+    "packages/js-runtime/src/objects/operations.ts",
+    "packages/js-runtime/src/objects/primitive-intrinsics.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Current main includes merged J casing/protocol fix7fe6eecb and P word-capture changes. Uncommitted Collator root UCA17/CLDR48 packed data, lazy engine, supported tailoring profiles, realm slots, constructor/options/compare and String.localeCompare adapter. Prototype and failed instrumentation outcomes remain separate. Matched nonIntl64 compile CPU and full Collator130/String.localeCompare26/G6 are required before readiness."
+}
