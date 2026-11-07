@@ -1,0 +1,32 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T01:10:59.357Z",
+  "sourceSnapshot": {
+    "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+    "files": 570
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v14",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v14/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v14/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v14/source-snapshot.json",
+    "sha256": "731eaad521cff4aaa5ff1e224f86387940aed149f918799625ed32cdd613141c"
+  },
+  "base": "37c81bbab89dc3b35222ab01579a899d82b78100",
+  "head": "53574c1c591637a507ec8fa529ec070192f7824d",
+  "debuggerLaunch": "debugserver-direct",
+  "portableChangesFromV13": [
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/src/objects/calendar.ts",
+    "packages/js-runtime/src/objects/locale-canonicalization.ts",
+    "packages/js-runtime/src/objects/temporal-coercion.ts",
+    "packages/js-runtime/src/objects/temporal-date-fields.ts",
+    "packages/js-runtime/src/objects/temporal-date-time-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date.ts",
+    "packages/js-runtime/src/objects/temporal-plain-date-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-relative-to.ts",
+    "packages/js-runtime/src/objects/temporal-zoned-conversion.ts"
+  ],
+  "basis": "Prepared during host authorization hold after build and rebase. No native execution on this graph. All J portable source bytes are unchanged from the six green v13 fixtures and byte-compared v11 selfbuild."
+}

@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-j-implementation-evidence-summary",
+  "at": "2026-11-07T01:14:48.148023+00:00",
+  "scope": "RegExp Unicode17 string properties, indexed string-property membership, proportional default work budget, compact greedy single-character repetition, balanced String.fromCodePoint/fromCharCode construction. Scope measurement continues; this is not full RegExp/String conformance.",
+  "currentSourceSnapshot": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+  "workspaceGate": "docs/results/cluster-j-workspace-acceptance-v16.json",
+  "nativeFixtures": {
+    "report": "docs/results/cluster-j-current-native-acceptance-v13.json",
+    "sourceSnapshot": "811b4051bb15a84616af3ef0fcc8d4f6513a6a93c29f3215e0854650e5df24bc",
+    "completed": 6,
+    "total": 6,
+    "debuggerLaunch": "debugserver-direct"
+  },
+  "selfbuild": {
+    "report": "docs/results/cluster-j-frozen-selfbuild-acceptance-v11.json",
+    "sourceSnapshot": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+    "byteIdentical": true,
+    "imageBytes": 60838434,
+    "sha256": "a9b130075622633c43fb76a9e89642e2e662545aa58ab160f39f7bf3d2927cf6",
+    "signaturesAndDwarfExit": 0
+  },
+  "sourceAttribution": "All J portable implementation bytes are identical across selfbuild-v11, six-fixture-v13 and current frozen-v14. Later main changes are six Temporal modules, unused-slot codegen, and calendar/locale modules; their changed graphs retain separate hashes and evidence. No claim of a native run or selfbuild on current graph7abf2a12.",
+  "completeNativeMeasurements": {
+    "files": "docs/results/cluster-j-string-completed-files-v13.json",
+    "filePasses": 639,
+    "fileVariants": 639,
+    "completeDirectories": 11,
+    "overlap": "Directory reports overlap the complete file index; never sum them. All conformance observations here are frozen-v9/source5fa3391, before the later fromCharCode performance change."
+  },
+  "retainedFailures": {
+    "hostAuthorization": "docs/results/cluster-j-host-auth-interruption-v1.json",
+    "originalPrefixPasses": 640,
+    "originalPrefixVariants": 643,
+    "originalTimeouts": 3,
+    "generatedRegExp": "docs/results/cluster-j-recheck-list-v5.json"
+  },
+  "blockedValidation": "No native rerun on current graph, full affected fromCharCode rerun, remaining String/RegExp breadth or focused timeout rechecks may start until HOST AUTHORIZATION RESTORED. Current graph has full workspace gates0, focused Node tests263/263 and reference repetition audit46080 comparisons; these are not native results.",
+  "plan": "docs/results/cluster-j-host-auth-recheck-plan-v1.json"
+}

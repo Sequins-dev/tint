@@ -1,0 +1,20 @@
+{
+  "kind": "cluster-j-host-authorization-hold-validation",
+  "at": "2026-11-07T01:12:54.033789+00:00",
+  "sourceSnapshot": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+  "head": "53574c1c591637a507ec8fa529ec070192f7824d",
+  "buildExit": 0,
+  "focusedNodeTests": {
+    "command": "node --test --test-concurrency=2 <RegExp matching/syntax/sets, normalization, String codepoints, RegExp object tests, native variant selection>",
+    "exitStatus": 0,
+    "tests": 263,
+    "passed": 263,
+    "failed": 0,
+    "log": "docs/results/cluster-j-host-auth-focused-tests-v1.log",
+    "logSha256": "33776cf9967be813ed4cee13fd013bac7ff296c0d3722b04dd9b80ecb67465ff"
+  },
+  "referenceAudit": "docs/results/cluster-j-host-reference-repetition-audit-v1.json",
+  "inventory": "docs/results/cluster-j-inventory-v2.json",
+  "nativeStarted": false,
+  "nativeBlocker": "HOST AUTHORIZATION RESTORED marker absent; native launches and retries prohibited by coordinator."
+}
