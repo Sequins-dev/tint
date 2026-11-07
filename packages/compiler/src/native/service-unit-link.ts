@@ -89,10 +89,9 @@ export function linkNativeServiceModules(
     ok: false,
     error: "native service: " + error,
   });
-  const all: readonly NativeServiceLink[] = [
-    { native: host, bindings: hostBindings },
-    ...units,
-  ];
+  const all: NativeServiceLink[] = [];
+  all.push({ native: host, bindings: hostBindings });
+  for (const unit of units) all.push(unit);
   const offsets: number[] = [0],
     targets: Map<string, NativeServiceBinding>[] = [];
   let length = host.code.length;
