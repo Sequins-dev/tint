@@ -1,0 +1,36 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T15:13:47.089Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-expressions-optional-chaining-a2-native-v1.json",
+  "reportSha256": "2078eeb426e805aa2e9cbfb56abb1e0759f0f21b12a5b86f916a5e4cf1702fc1",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/optional-chaining",
+  "expectedVariants": 76,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 75,
+    "timeout": 1
+  },
+  "validationExitStatus": 0,
+  "selectionCompleteInParentPrefix": true,
+  "parentRunnerStillActiveAtExtraction": true,
+  "parentRootSelection": "language/expressions",
+  "parentRequestedVariants": 783,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "retainedTimeouts": 1,
+  "timeoutTriage": "docs/results/cluster-a2-optional-eval-timeout-triage-v1.json",
+  "recheckManifest": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v5.json",
+  "workspaceGate": {
+    "registryRecord": "2026-11-07T15:05Z bd619439 tint-check 4764/4764 PASS (K-run gate incl. $262.agent host and owner waitAsync; FF-merged)",
+    "commit": "bd619439e0a5ae1e0df7e812d75012f6d132f329",
+    "passedTests": 4764,
+    "exitStatus": 0,
+    "base": "c26d5bc2a4d42781cdedb7a485973e519abdedc2",
+    "codeChangesBetweenGateAndBase": []
+  }
+}
