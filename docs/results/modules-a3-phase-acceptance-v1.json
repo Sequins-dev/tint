@@ -1,0 +1,381 @@
+{
+  "kind": "native-module-phase-acceptance",
+  "conformance": false,
+  "generatedAt": "2026-11-07T21:09:39.875Z",
+  "implementationCommit": "35a65cce70fd52777f99aa83d9213e39e1c41c21",
+  "scope": "Complete pinned source/deferred feature inventories. A3 totals deduplicate those new reports with retained complete family evidence across frozen toolchains; they are not a fresh whole-scope run. Whole-family reruns follow implementation landing.",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "inventories": [
+    {
+      "feature": "source-phase-imports",
+      "files": 253,
+      "variants": 475,
+      "syntaxNegative": 282,
+      "report": "docs/results/test262-source-phase-a3-native-v1.json",
+      "totals": {
+        "total": 475,
+        "passed": 475,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "expectedVariantIdentitySha256": "e96caf81295e6f758243952c08f6e1b917f17dbae1071ce7c8d74a3deda67150"
+    },
+    {
+      "feature": "import-defer",
+      "files": 252,
+      "variants": 388,
+      "syntaxNegative": 174,
+      "report": "docs/results/test262-deferred-import-a3-native-v1.json",
+      "totals": {
+        "total": 388,
+        "passed": 388,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "expectedVariantIdentitySha256": "feaa6635bf56726cb7a30db89cbe98c4a06b21db61155ba0a2c269123a6b6dfd"
+    }
+  ],
+  "outsideFamilyVariants": [
+    {
+      "path": "built-ins/AbstractModuleSource/length.js",
+      "variant": "module",
+      "sha256": "e7169f48e791e47ce00d8aa6170149e3d8b6068b2176ff93a45355ae6f1839c4",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/name.js",
+      "variant": "module",
+      "sha256": "9fdd2179c08004f33e47c345078443ca5cde28f2e1ba26460f6e98facfdb0ff3",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/proto.js",
+      "variant": "module",
+      "sha256": "2a5e21fb569805504733865a07b0c9d84ebd4c2dcd556137f390c94e15a855c7",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/Symbol.toStringTag.js",
+      "variant": "module",
+      "sha256": "4b5dabb617f6679467465602387772849a8ce9879dc3002d16b175398dec5adb",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/constructor.js",
+      "variant": "module",
+      "sha256": "a69052071183bab1174fb23d501f6a1526c5c8cbb149d91500715ab1f4ccefa5",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype/proto.js",
+      "variant": "module",
+      "sha256": "2ad218a3b288a26dfdedc5f388a686e5231e15c6a120a90493af822d96ec4d85",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/prototype.js",
+      "variant": "module",
+      "sha256": "b03a94bb55ce21b86bc548b4200c7d26f5bb027cbc69c75751f8a9ee95b3edfc",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "built-ins/AbstractModuleSource/throw-from-constructor.js",
+      "variant": "module",
+      "sha256": "84450c8583e11867ba5d015dc702a2d33cbb8de1f2c462cd307dd766f47f551e",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "language/expressions/assignmenttargettype/direct-importcall-source.js",
+      "variant": "module",
+      "sha256": "74f0ed0e64d0744a7ce8be6af9d036a7b0dc3dbae0f2b6cf4213d5bd6a738b36",
+      "syntaxNegative": true,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "language/expressions/assignmenttargettype/parenthesized-importcall-source.js",
+      "variant": "module",
+      "sha256": "06cbdcbf60340ddf4719dd7986241385091c388d0a407022291d3377f51f2f85",
+      "syntaxNegative": true,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "staging/source-phase-imports/import-source-source-text-module.js",
+      "variant": "sloppy",
+      "sha256": "324bb2dad79e40239e00f716666f4e39d6f10cf7d6cfe6c99ef84578c3ce4b10",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "staging/source-phase-imports/import-source-source-text-module.js",
+      "variant": "strict",
+      "sha256": "324bb2dad79e40239e00f716666f4e39d6f10cf7d6cfe6c99ef84578c3ce4b10",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "staging/source-phase-imports/module-source-prototype-chain.js",
+      "variant": "sloppy",
+      "sha256": "375d0c13e9180be9f45e18129ab49a7541a2b776528472773fdae65858361f38",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "staging/source-phase-imports/module-source-prototype-chain.js",
+      "variant": "strict",
+      "sha256": "375d0c13e9180be9f45e18129ab49a7541a2b776528472773fdae65858361f38",
+      "syntaxNegative": false,
+      "status": "pass",
+      "report": "docs/results/test262-source-phase-a3-native-v1.json"
+    },
+    {
+      "path": "language/expressions/assignmenttargettype/direct-importcall-defer.js",
+      "variant": "module",
+      "sha256": "0390cfd83967e4838a43449b655faa99e1567e81003fcb64ed23e6e6ac2c3707",
+      "syntaxNegative": true,
+      "status": "pass",
+      "report": "docs/results/test262-deferred-import-a3-native-v1.json"
+    },
+    {
+      "path": "language/expressions/assignmenttargettype/parenthesized-importcall-defer.js",
+      "variant": "module",
+      "sha256": "f4a3baa21a251b6d5f7a8dd20cfa31bca0f6ad2562da26c179576b15c256c220",
+      "syntaxNegative": true,
+      "status": "pass",
+      "report": "docs/results/test262-deferred-import-a3-native-v1.json"
+    }
+  ],
+  "allMeasuredTotals": {
+    "total": 2683,
+    "passed": 2671,
+    "failed": 0,
+    "unsupported": 12,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.995527394707417
+  },
+  "a3": {
+    "totals": {
+      "total": 2667,
+      "passed": 2655,
+      "failed": 0,
+      "unsupported": 12,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 0.9955005624296963
+    },
+    "unmeasured": 0,
+    "gainedPasses": 394,
+    "priorAudit": "docs/results/modules-a3-scope-audit-v1.json",
+    "selections": [
+      {
+        "selection": "language/module-code",
+        "totals": {
+          "total": 602,
+          "passed": 602,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        }
+      },
+      {
+        "selection": "language/import",
+        "totals": {
+          "total": 135,
+          "passed": 125,
+          "failed": 0,
+          "unsupported": 10,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 0.9259259259259259
+        }
+      },
+      {
+        "selection": "language/export",
+        "totals": {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        }
+      },
+      {
+        "selection": "language/expressions/import.meta",
+        "totals": {
+          "total": 27,
+          "passed": 27,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        }
+      },
+      {
+        "selection": "language/expressions/dynamic-import",
+        "totals": {
+          "total": 1900,
+          "passed": 1898,
+          "failed": 0,
+          "unsupported": 2,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 0.9989473684210526
+        }
+      }
+    ],
+    "blockers": [
+      {
+        "path": "language/import/import-attributes/text-empty.js",
+        "variant": "module",
+        "sha256": "c73d71cf20672c142acd54bf50ee402456c391535966cee3f48f60bee042d36d",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-attributes/text-javascript.js",
+        "variant": "module",
+        "sha256": "bf3937c139014e441b5c9d143baa8b51ec0dde6a2c2f16c407eb66112cd97b41",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-attributes/text-self.js",
+        "variant": "module",
+        "sha256": "ce190f0ba63c080f0129b889a4a87d9308e71d9e9bd4c5cec285a331d5b7a16f",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-attributes/text-string.js",
+        "variant": "module",
+        "sha256": "69dee9bbd3613fa8dba26e5224ddc2529c17575a566741c21a43c8265402a9d6",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-attributes/text-via-namespace.js",
+        "variant": "module",
+        "sha256": "b131a7decfee45a3082905bc79c7e3d185e419fac6e932f0b6c5c150a3815284",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-bytes/bytes-from-empty.js",
+        "variant": "module",
+        "sha256": "7d0e094516abdec944a1c0e0943ff9bd25ebf12629d1ca44e33135980faff6ab",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-bytes/bytes-from-js.js",
+        "variant": "module",
+        "sha256": "8b751a1daf3aef18267bec3b5797ce58ef869c78b6f78e7ed1e340c410a5a2fc",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-bytes/bytes-from-json.js",
+        "variant": "module",
+        "sha256": "d5e8f343899b704fdcc21c2fef1fd7df56b0d5b1301b7d355f3854b96f16963d",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-bytes/bytes-from-png.js",
+        "variant": "module",
+        "sha256": "fd8f42c8267d13ba4afe3b4f74af0833f5197d13856cf047fbba260392903230",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/import/import-bytes/bytes-from-txt.js",
+        "variant": "module",
+        "sha256": "5f13652c000a09695759126bf0e1b7ce82f82ef5929f4da51e21ac808d5235b1",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-language-import-a3-native-v1.json"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+        "variant": "sloppy",
+        "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json"
+      },
+      {
+        "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+        "variant": "strict",
+        "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+        "syntaxNegative": false,
+        "status": "unsupported",
+        "report": "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json"
+      }
+    ]
+  },
+  "validation": {
+    "workspaceGate": {
+      "command": "~/.t3/tint-slots/tint-check",
+      "implementationCommit": "651255c3bc8786d4c1c349c358f916fb5de1d3b1",
+      "exitStatus": 0,
+      "tests": 4861,
+      "passed": 4861,
+      "log": ".tint-bootstrap/a3/phases-tint-check-v17.log"
+    },
+    "selfBuild": "docs/results/modules-a3-phase-selfbuild-v1.json",
+    "developmentObservations": "docs/results/modules-a3-phase-development-observations-v1.json",
+    "sourcePublication": "docs/results/modules-a3-source-phase-publication-validation-v1.json",
+    "deferredPublication": "docs/results/modules-a3-deferred-publication-validation-v1.json"
+  },
+  "fullFamilyReruns": "pending after landing; exact 2667-variant manifest retained in .tint-bootstrap/a3/a3-full-scope-variants-v17.json"
+}
