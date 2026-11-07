@@ -344,21 +344,23 @@ test("Script surface instantiations match the real linked export namespaces and 
   // and signature class. Parsed-unit template ownership adds one TemplateSite
   // list provider with its eight operations. Owner-agent asynchronous waits add
   // one PendingAtomicWait list and its eight operations.
-  assert.equal(census.value.anchors.length, 99);
-  assert.equal(census.value.collections.length, 50);
+  // DateTimeFormat adds five aliases for its readonly pattern-token list class
+  // and eight operations through the formatter slot on OrdinaryObject.
+  assert.equal(census.value.anchors.length, 104);
+  assert.equal(census.value.collections.length, 51);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [42, 2, 6],
+    [43, 2, 6],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    422,
+    430,
   );
 
   assert.ok(
@@ -386,7 +388,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  assert.equal(facts.value.runtimes.length, 52);
+  assert.equal(facts.value.runtimes.length, 53);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -400,7 +402,7 @@ test("Script surface instantiations match the real linked export namespaces and 
 
   assert.equal(
     facts.value.runtimes.reduce((sum, row) => sum + row.operations.length, 0),
-    445,
+    453,
   );
   assert.ok(
     facts.value.runtimes.every((row) =>
@@ -546,7 +548,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 99);
+  assert.equal(collectionNames.length, 104);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -584,19 +586,19 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      assert.equal(names.value.providers.length, 52);
-      assert.equal(names.value.targets.length, 397);
+      assert.equal(names.value.providers.length, 53);
+      assert.equal(names.value.targets.length, 405);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
         "$ScriptRuntime",
       );
       assert.ok(exported.ok, JSON.stringify(exported));
-      assert.equal(exported.value.slots.length, 445);
-      assert.equal(exported.value.stubs.declarations.length, 440);
+      assert.equal(exported.value.slots.length, 453);
+      assert.equal(exported.value.stubs.declarations.length, 448);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
-        397,
+        405,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
@@ -608,7 +610,7 @@ test("Script surface instantiations match the real linked export namespaces and 
           (sum, provider) => sum + provider.targets.length,
           0,
         ),
-        445,
+        453,
       );
       assert.deepEqual(
         names.value.providers.slice(-2).map((provider) => provider.key.kind),
@@ -647,12 +649,12 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 112);
-  assert.equal(collectionOperations.length, 99);
+  assert.equal(collectionOperations.length, 104);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    44,
+    45,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 374);
+  assert.equal(new Set(collectionOperations.flat()).size, 382);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(
