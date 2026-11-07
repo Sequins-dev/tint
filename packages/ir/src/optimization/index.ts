@@ -139,23 +139,38 @@ function cleanupFunctions(module: ModuleIR, budget: number): Optimization {
       spent = 0;
     for (let phase = 0; phase < 4; phase++) {
       const remaining = allowance - spent;
-      const result =
-        phase === 0
-          ? forwardLocalLoads(current, remaining, effects)
-          : phase === 1
+      let next: FunctionIR | undefined,
+        work = 0,
+        changes = 0;
+      if (phase === 0) {
+        const result = forwardLocalLoads(current, remaining, effects);
+        if (result !== undefined) {
+          next = result.fn;
+          work = result.visited;
+          changes = result.forwarded;
+        }
+      } else {
+        const result =
+          phase === 1
             ? removeUnreadStores(current, remaining)
             : phase === 2
               ? removeDeadScalars(current, remaining)
               : compactSlots(current, remaining);
-      if (result === undefined) {
+        if (result !== undefined) {
+          next = result.fn;
+          work = result.visited;
+          changes = result.removed;
+        }
+      }
+      if (next === undefined) {
         // An unfinished attempt publishes no changes and consumes its allowance.
         spent = allowance;
         skipped++;
         break;
       }
-      current = result.fn;
-      spent += result.visited;
-      rewritten += "forwarded" in result ? result.forwarded : result.removed;
+      current = next;
+      spent += work;
+      rewritten += changes;
     }
     visited += spent;
     if (current !== fn) changed = true;
