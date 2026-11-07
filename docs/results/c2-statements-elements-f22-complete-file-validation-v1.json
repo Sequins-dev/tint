@@ -1,0 +1,26 @@
+{
+  "kind": "c2-native-complete-file-harvest-validation",
+  "generatedAt": "2026-11-07T21:01:31.456Z",
+  "manifest": "docs/results/c2-statements-elements-f22-complete-file-harvest-v1.json",
+  "acceptedReports": 358,
+  "acceptedVariants": 708,
+  "counts": {
+    "pass": 708
+  },
+  "rejected": [],
+  "disjointFrom": [],
+  "combinedCompleteFiles": 358,
+  "combinedUniqueVariants": 708,
+  "configuredBatchSize": 64,
+  "debuggerLaunch": "debugserver-direct",
+  "toolchain": "docs/results/c2-frozen-toolchain-v22-statements-elements-v1.json",
+  "implementationAlreadyOnMain": "876d1500bd3d8ce7aa87118bb1f194f9f34c70db",
+  "nonDocChangesAtFreeze": [],
+  "completenessPolicy": "Official per-file extracts omit the full-run complete marker; exact pinned per-file variant sets establish completeness. Explicit false markers are rejected.",
+  "initialValidatorAttempt": {
+    "exitStatus": 1,
+    "log": ".tint-bootstrap/c2/statements-elements-f22-validation-v1.log",
+    "reason": "Validator assumed the full-run complete marker. No native observation or report was changed."
+  },
+  "policy": "Complete pinned files only; source, ordered harness, metadata, exact per-file variant sets and native judgments accepted by the canonical ledger. Includes all original non-passes. No new execution during extraction, and no parent-directory completeness claim."
+}
