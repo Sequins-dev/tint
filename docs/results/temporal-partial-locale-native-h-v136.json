@@ -1,0 +1,91 @@
+{
+  "kind": "native-partial-date-locale-regression",
+  "conformance": false,
+  "time": "2026-11-07T21:43:39.878Z",
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v136.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "42af4dea2c2ea2a2b3b71e22c2569f68a3353c13343de5fa851f281cd03dd98f",
+      "files": 601
+    },
+    "imageSha256": "f13ec6817d7f7603f22757642fef14c37d5069f18c835a54a278b606d7212e75",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const C of [Temporal.PlainYearMonth,Temporal.PlainMonthDay]){const d=Object.getOwnPropertyDescriptor(C.prototype,\"toLocaleString\");if(!d||!d.writable||d.enumerable||!d.configurable||typeof d.value!==\"function\"||d.value.name!==\"toLocaleString\"||d.value.length!==0)throw 1;let bad=false;try{new d.value();}catch(e){bad=e instanceof TypeError;}if(!bad)throw 2;}",
+        "sha256": "cad0d1e4e29ac316337971cc5bba99934db3fc4d2b04510004a12a27ec6d9930"
+      },
+      {
+        "index": 1,
+        "source": "for(const C of [Temporal.PlainYearMonth,Temporal.PlainMonthDay]){const f=C.prototype.toLocaleString;for(const value of [undefined,null,true,\"\",1,Symbol(),1n,{},C,C.prototype]){let bad=false;try{f.call(value);}catch(e){bad=e instanceof TypeError;}if(!bad)throw 1;}}",
+        "sha256": "4ac49bfad4464a3a905c71f8f5fd7e9a07b659a13929cb9a999c69eedc4e7676"
+      },
+      {
+        "index": 2,
+        "source": "const poison=new Proxy({},{get(){throw 1;}});for(const pair of [[new Temporal.PlainYearMonth(2024,2),\"2024-02\"],[new Temporal.PlainMonthDay(2,29),\"02-29\"]]){const value=pair[0];value.toString=function(){throw 2;};if(value.toLocaleString(poison,poison)!==pair[1])throw 3;}",
+        "sha256": "6c8d97172fa5f7aa2af9d324db5291aec3eff66bb49b789b0f0b52b5e6c15ef3"
+      }
+    ]
+  },
+  "manifestSha256": "a8e4f6e32543d08b3c1a7be84571c7c99e05cbe475e22491cbcef7eb405c121e",
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExit42ValidatedBy": "executeNativeFile",
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}
