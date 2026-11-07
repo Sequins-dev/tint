@@ -1,0 +1,36 @@
+{
+  "kind": "native-self-build-validation-index",
+  "conformance": false,
+  "time": "2026-11-07T10:57:38.149Z",
+  "proofs": [
+    {
+      "service": "temporal-date-time-format",
+      "report": "docs/results/temporal-date-time-format-selfbuild-h-v54.json",
+      "sourceSnapshot": {
+        "sha256": "57b07d9b1454eece234999f666e2f6e3325f261cb4e41bda058973a8eff3b467",
+        "files": 603
+      },
+      "bytes": 60112098,
+      "byteIdentical": true,
+      "success": true,
+      "debuggerLaunch": "debugserver-direct",
+      "log": "docs/results/temporal-date-time-selfbuild-h-v54-restored.log.gz"
+    },
+    {
+      "service": "duration-format",
+      "report": "docs/results/duration-format-selfbuild-h-v62.json",
+      "sourceSnapshot": {
+        "sha256": "348fa7f5bd72d92d68181fc1458e373c08e874cbf6e8eb7bf119b39a12045f66",
+        "files": 607
+      },
+      "bytes": 60112098,
+      "byteIdentical": true,
+      "success": true,
+      "debuggerLaunch": "debugserver-direct",
+      "log": "docs/results/duration-format-selfbuild-h-v62-restored.log.gz"
+    }
+  ],
+  "integratedCurrentCompiler": "integrated-formatting-callback-selfbuild-h-v69.json",
+  "originalFixtureResourceFailuresRetained": true,
+  "mergeStatus": "Engine held for coordinator-requested main/branch non-Intl runtime footprint measurements. Subsequent formatting slices not yet posted."
+}
