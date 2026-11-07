@@ -3,6 +3,8 @@ import test from "node:test";
 import type { FunctionIR, Instruction } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
 import { numericHelper } from "../src/aarch64/scalar/numeric.ts";
+import { emitModule } from "@tint/codegen/aarch64/scalar";
+import { encode } from "@tint/codegen/aarch64/isa";
 const s = { start: 0, end: 0 };
 test("transparent numeric kernels preserve volatile pointer homes", () => {
   for (const kind of ["to-uint32", "remainder"] as const) {
@@ -111,6 +113,56 @@ test("reference pressure uses only the five volatile integer homes", () => {
     new Uint8Array([2, 2, 2, 2, 2, 2, 1]),
   )!;
   assert.deepEqual([...plan.slice(0, 6)], [36, 37, 38, 39, 40, 0]);
+});
+test("block-local pointer homes do not leak into later opaque temporaries", () => {
+  const caller: FunctionIR = {
+    ...fn([], 0),
+    returnType: "reference",
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "reference-wrap", id: 1, value: 0, ...s },
+          { kind: "reference-value", id: 2, value: 1, ...s },
+          { kind: "store", slot: 0, value: 2, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...s },
+          { kind: "call", id: 4, target: 1, arguments: [3], ...s },
+        ],
+        terminator: { kind: "return", value: 4, ...s },
+      },
+    ],
+  };
+  const identity: FunctionIR = {
+    ...fn([{ kind: "load", id: 0, slot: 0, ...s }], 0),
+    id: 1,
+    name: "identity",
+    exported: false,
+    returnType: "reference",
+  };
+  const result = emitModule(
+    { functions: [caller, identity] },
+    { closedRoots: [0] },
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const load = encode({ op: "ldr", width: 64, rt: 4, rn: "sp", offset: 48 });
+  assert.ok(load.ok);
+  const body = result.value.functions[0]!,
+    view = new DataView(result.value.code.buffer);
+  let directLoads = 0;
+  for (
+    let offset = body.offset;
+    offset < body.offset + body.byteLength;
+    offset += 4
+  )
+    if (view.getUint32(offset, true) === load.value) directLoads++;
+  assert.equal(directLoads, 1);
 });
 test("reference analysis budget fallback retains the original numeric plan", () => {
   const f = fn(

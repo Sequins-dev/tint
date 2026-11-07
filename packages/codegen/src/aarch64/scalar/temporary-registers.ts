@@ -36,7 +36,8 @@ function referenceTransparent(op: Instruction): boolean {
  * single-word reference. References must die before every safepoint and opaque
  * use, including call arguments. Numeric allocation is unchanged and takes
  * priority. Additional reference analysis falls back to that complete plan on
- * exhaustion. Private numeric/array helpers preserve d16..d31 and x4..x8. */
+ * exhaustion. FP homes use d16..d31; pointer homes encode x4..x8 as 32 + register.
+ * Transparent numeric/array kernels preserve both banks. */
 export function temporaryRegisters(
   fn: FunctionIR,
   candidates: Uint8Array,
