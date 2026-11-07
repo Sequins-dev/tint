@@ -1,0 +1,41 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T15:56:17.316Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+  "reportSha256": "2a37355be46ecac4364048fc50eb46a5bc0d93073b72c0141600a88e0ad4a77c",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions",
+  "expectedVariants": 783,
+  "manifest": "docs/results/cluster-a2-remaining-expressions-variants-v1.json",
+  "subset": {
+    "rootSelection": "language/expressions",
+    "requestedVariants": 783,
+    "variantSubsetSha256": "59ef3ab771b6949c7186568f4d3a1aacc0d994a5ab1eda0086977c3a26bf0107"
+  },
+  "subsetIdentityVerified": true,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 775,
+    "timeout": 8
+  },
+  "validationExitStatus": 0,
+  "complete": true,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "90fac57766837f123afda05e9e1e80e983ec7263",
+    "passedTests": 4779,
+    "exitStatus": 0,
+    "proof": "docs/results/cluster-j-string-position-rebased-acceptance-v23.json",
+    "log": "docs/results/cluster-j-string-position-check-v23b.log",
+    "logSha256": "c4974bef105d8ff319cc6f95ce776d3bfd2adee5a9ae092128ec4488d782a25d",
+    "base": "547eb17cbdcee0521bca7545c20629333b6934ec",
+    "codeChangesBetweenCheckedCommitAndBase": [],
+    "basis": "Merged J gate covers all current-main code; only docs differ after its proof commit."
+  }
+}
