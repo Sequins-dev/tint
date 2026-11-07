@@ -405,6 +405,8 @@ The [complete object report](results/test262-language-object-direct-a2-native-v1
 
 The [focused object-literal recheck](results/test262-object-load-timeout-recheck-a2-native-v1.json) passes **2/2** on the new direct-launch snapshot. The [original connected prefix](results/cluster-a2-object-connected-supersession-interruption-v1.json) retains its load-induced timeout and pre-entry failure for that file.
 
+The [A2 scope audit](results/cluster-a2-scope-complete-final-v1.md) combines complete reports and separate focused rechecks from frozen runs: **4,973/4,973** latest passing variants across 18 owned expression families (3,753 runtime; 1,220 native syntax/early-error variants). Original reports and timeout observations remain unchanged.
+
 These selections overlap other reports and cannot be added into an overall coverage percentage. The group inventory retains the other complete selections.
 
 | Selection                    |      Passed / total | Remaining                           | Report                                                                       |
