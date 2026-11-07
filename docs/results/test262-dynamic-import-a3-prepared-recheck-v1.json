@@ -1,0 +1,2036 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-resumed-v7/source-snapshot.json",
+  "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 48,
+        "kind": "execution",
+        "compileMs": 150028.92225,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/dynamic-import [explicit variant subset]",
+  "rootSelection": "language/expressions/dynamic-import",
+  "requestedVariants": 48,
+  "variantSubsetSha256": "e493ae74aa49006ca01b54c05e6d8e167cb7712fc12ac51ee6aede86f61514b1",
+  "complete": true,
+  "totals": {
+    "total": 48,
+    "passed": 46,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9583333333333334
+  },
+  "observations": [
+    {
+      "path": "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+      "sha256": "48c178f53f697d173631217a0fd5fe1c6cd67f1b52bb3a68d12b3466f22dc72c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152163.374333,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/assignment-expression/unary-expr.js",
+      "sha256": "48c178f53f697d173631217a0fd5fe1c6cd67f1b52bb3a68d12b3466f22dc72c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152530.150875,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-eval-script-code-target.js",
+      "sha256": "85df298bd88365a90b053a310d941fbb5090be6396c05bebda9c48e760f06cc1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152898.540542,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-eval-script-code-target.js",
+      "sha256": "b8316a8b356c182f9b4d442d8c72847400ee77bd068838211629de946da9b44a",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153265.75445900002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-eval-script-code-target.js",
+      "sha256": "2e5c3c92757234a154bee374ce24b514d180a8c8a579b763d68969884f3edc65",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153643.008875,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-function-await-eval-script-code-target.js",
+      "sha256": "4b170f520bf502b0b1d42ccfaa1a302b8a7946cf157c5c6d71b8cb53a5cfeb90",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154019.351916,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-function-eval-script-code-target.js",
+      "sha256": "665d1112d5ac0b967016dc3aef3fe9411fbd718762de004ea62088f7678c1101",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154439.901375,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-eval-script-code-target.js",
+      "sha256": "ed4bd78012074d0d9d1f63b0ad7918b9a8f45cc413996b04003d95ba45265794",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154828.296542,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-eval-script-code-target.js",
+      "sha256": "6dd3415f549055e3e6b76887e405488e450d8ae211028d31dd2e2ed9c29eb323",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155213.996042,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-eval-script-code-target.js",
+      "sha256": "faaf8341e48319a18310d4cab66e030ec38e62908911ff1ffe81f6e94e7a3146",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155579.017167,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-eval-script-code-target.js",
+      "sha256": "bde7dfc2dcd5c86989b7e0521474a67faa533f018f7138a51cd993e0bf01de57",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155952.08558400001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-block-labeled-eval-script-code-target.js",
+      "sha256": "8d401876cfe70670a3d12c79caf5aa418c449301a128ef32f451362c59ab94fd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156327.91912500001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-do-while-eval-script-code-target.js",
+      "sha256": "b72ba7a1336a88977d7f5fc979510e227a640cf05ffe2f1a7b533dbb2eb7b338",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156705.1025,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-eval-script-code-target.js",
+      "sha256": "f5b1a771a8d9e7f5a0a36c2218dd99d7f61363c71fd134645a816a5db35d8077",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157075.27275,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-eval-script-code-target.js",
+      "sha256": "4b23050514782ae86fc00791617097b64f8483d259b21b3189f976f50c025772",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157432.40187499998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-eval-script-code-target.js",
+      "sha256": "2f05d1644f9989cbcfdba1bb61be498164583cb4dfb65b81a1aaec9caf7bbc6b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157789.722,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-eval-script-code-target.js",
+      "sha256": "007026493b355eaf6bfea86485571f569c8f7ef0cb427cf1845eb0666a175508",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158176.629583,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/catch/top-level-import-catch-eval-script-code-target.js",
+      "sha256": "d805f6f065fe0a6503081bdac19d0bbacc02d2c9376c54931f35e0c2617a0ba3",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module",
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "script-code_FIXTURE.js",
+          "sha256": "d7bccaa15f19bddbe301653e3ff79a7f10ae6493886552d917e3fb110cfd8d92"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158589.753208,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-evaluation-sequence.js",
+      "sha256": "046c83149a26f9dbbe7081cac4e8494345acd0b4e33ba1a894f373d629a8c9b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "dynamic-import",
+          "import-attributes"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159028.814917,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-evaluation-sequence.js",
+      "sha256": "046c83149a26f9dbbe7081cac4e8494345acd0b4e33ba1a894f373d629a8c9b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "dynamic-import",
+          "import-attributes"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159410.691875,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "sha256": "d41403f828a98f68800f7224bd595ff3c0cdafce04d9b3748d56dc0cfb15cf9f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "json-modules",
+          "Symbol",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159774.34683300002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-enumeration-enumerable.js",
+      "sha256": "d41403f828a98f68800f7224bd595ff3c0cdafce04d9b3748d56dc0cfb15cf9f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "json-modules",
+          "Symbol",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160152.6735,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+      "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 160514.461167,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+      "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import",
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "2nd-param_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 160896.303375,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+      "sha256": "f88cc90a6755753ff88bcff5312d4322eed5cf23b4407fcdbf7e80b591c51d33",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "top-level-await",
+          "dynamic-import"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js",
+          "sha256": "9ececceed2f87cb4b633f86c1bbcb1728f19ccf3e3a2a73dd079e817af36b045"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-b_FIXTURE.js",
+          "sha256": "d1d9542bfa9fe11b766da08371b5ed3af3aaee79a7b2be15f43e2fc74833631d"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-c_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-main_FIXTURE.js",
+          "sha256": "dc3e5a297676f3e9bc9d4b72dfaaf2490d6564e3bb2c9a805f0cf21593679279"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-x_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161251.088375,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+      "sha256": "f88cc90a6755753ff88bcff5312d4322eed5cf23b4407fcdbf7e80b591c51d33",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "top-level-await",
+          "dynamic-import"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-a_FIXTURE.js",
+          "sha256": "9ececceed2f87cb4b633f86c1bbcb1728f19ccf3e3a2a73dd079e817af36b045"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-b_FIXTURE.js",
+          "sha256": "d1d9542bfa9fe11b766da08371b5ed3af3aaee79a7b2be15f43e2fc74833631d"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-c_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-main_FIXTURE.js",
+          "sha256": "dc3e5a297676f3e9bc9d4b72dfaaf2490d6564e3bb2c9a805f0cf21593679279"
+        },
+        {
+          "name": "import-fulfilled-member-of-errored-cycle-x_FIXTURE.js",
+          "sha256": "e703bf8bf5fe921f47b8836d00b6ed2ccf2767fc1984de4e73c36cca92b8a7c8"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161585.177125,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-nested-imports.js",
+      "sha256": "e0a251211dd139fb7e686f3c2adfe69fae96bd770b3c61f3e146d785a409dce7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161898.03395799999,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-nested-imports.js",
+      "sha256": "e0a251211dd139fb7e686f3c2adfe69fae96bd770b3c61f3e146d785a409dce7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162216.0185,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-block-nested-imports.js",
+      "sha256": "7bc13c8b31759f5f64e13f159c2797154de73df50241eb0f829a5c8b4295ccaa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162553.823,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-block-nested-imports.js",
+      "sha256": "7bc13c8b31759f5f64e13f159c2797154de73df50241eb0f829a5c8b4295ccaa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162901.258,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-nested-imports.js",
+      "sha256": "c79d49ac200ee6125d84b1e697650cbe0cffa14615e3db71a2ce981db1ed7243",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163228.394334,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-nested-imports.js",
+      "sha256": "c79d49ac200ee6125d84b1e697650cbe0cffa14615e3db71a2ce981db1ed7243",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163552.940458,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-nested-imports.js",
+      "sha256": "a29d788faaf6259d7a0de2d6fec22ca7821f1149858a06f4a6fad085fd5bc6a5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163867.38291699998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-nested-imports.js",
+      "sha256": "a29d788faaf6259d7a0de2d6fec22ca7821f1149858a06f4a6fad085fd5bc6a5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164193.894833,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-else-nested-imports.js",
+      "sha256": "81f16f7da242462c089eee6b65e1530b4e753d234e1c0727a9e961e1860feb97",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164537.862459,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-else-nested-imports.js",
+      "sha256": "81f16f7da242462c089eee6b65e1530b4e753d234e1c0727a9e961e1860feb97",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164893.01620900002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-nested-imports.js",
+      "sha256": "72919a40705c807da9dd2181db54e9d83439c12b1457b769384d45edc04e85b1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165231.396125,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-nested-imports.js",
+      "sha256": "72919a40705c807da9dd2181db54e9d83439c12b1457b769384d45edc04e85b1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165571.5825,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-if-nested-imports.js",
+      "sha256": "f7dedf787bfca6dc376ff95bd8be1d04289a613b3389054d66e2d228d52e8f38",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165892.36525,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-if-nested-imports.js",
+      "sha256": "f7dedf787bfca6dc376ff95bd8be1d04289a613b3389054d66e2d228d52e8f38",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166222.22104200002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-while-nested-imports.js",
+      "sha256": "edd8d1858e05c2f6564178483371efb550bd5fff42945e802e574109d7192987",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166560.760208,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-while-nested-imports.js",
+      "sha256": "edd8d1858e05c2f6564178483371efb550bd5fff42945e802e574109d7192987",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166898.797625,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-nested-imports.js",
+      "sha256": "3833d8ed41a07cbc859bed53f74371fcad835d2d46e77aad8b3696383284011d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "noStrict"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 167252.411916,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/nested-with-nested-imports.js",
+      "sha256": "de3a43bb515481c7aecae5e24f64482a6f4358637d8d8068e52d0d3ffd9bea80",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "noStrict"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 167590.35662500001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/top-level-nested-imports.js",
+      "sha256": "2c198029191438dd611a86b7b4c32f90e43415507a7aad018194bc4478e8f158",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 167920.68737499998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/syntax/valid/top-level-nested-imports.js",
+      "sha256": "2c198029191438dd611a86b7b4c32f90e43415507a7aad018194bc4478e8f158",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "empty_FIXTURE.js",
+          "sha256": "a2094af42316bee0dfd33e1d4e5dd95cb42c51df911929ee01afe9f36714f52d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 168252.69837499998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/usage-from-eval.js",
+      "sha256": "3e884a5bd18579c1c490210151f98ce5ca36dabfb324073894e2d5aa004b1982",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "module-code_FIXTURE.js",
+          "sha256": "1fcb9dc69fdb07c40aad6a6222574c496fefa8d717605d3945c76e2727f5dca3"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 189263.34983300001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/dynamic-import/usage-from-eval.js",
+      "sha256": "3e884a5bd18579c1c490210151f98ce5ca36dabfb324073894e2d5aa004b1982",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "async"
+        ],
+        "features": [
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "module-code_FIXTURE.js",
+          "sha256": "1fcb9dc69fdb07c40aad6a6222574c496fefa8d717605d3945c76e2727f5dca3"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 210288.74758300002,
+      "batch": 0
+    }
+  ]
+}
