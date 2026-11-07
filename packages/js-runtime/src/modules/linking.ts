@@ -5,7 +5,7 @@ import {
 } from "../environments/records/index.ts";
 import { createRuntimeError } from "../objects/errors.ts";
 import { runScriptContext } from "../objects/jobs.ts";
-import { loadedModule, type ModuleRecord } from "./records.ts";
+import { loadedModule, getModuleSource, type ModuleRecord } from "./records.ts";
 import { resolveExport, type ResolvedBinding } from "./resolve.ts";
 import { getModuleNamespace } from "./namespace.ts";
 export type ModuleLinkResult =
@@ -20,6 +20,7 @@ interface LinkStack {
 interface ImportBindingPlan {
   readonly name: string;
   readonly resolution: ResolvedBinding;
+  readonly sourceValue: unknown;
 }
 function syntaxFailure(module: ModuleRecord): ModuleLinkResult {
   const active = module.realm.agent.activeContext;
@@ -46,15 +47,27 @@ function initializeEnvironment(module: ModuleRecord): ModuleLinkResult {
     if (entry === undefined) throw "MODULE_SHAPE_INVARIANT";
     const target = loadedModule(module, entry.request);
     let resolution: ResolvedBinding;
-    if (entry.importName === undefined)
-      resolution = { module: target, bindingName: undefined };
-    else {
+    if (module.shape.requests[entry.request]?.phase === "source")
+      resolution = { module: target, bindingName: undefined, source: true };
+    else if (entry.importName === undefined) {
+      if (module.shape.requests[entry.request]?.phase === "defer")
+        resolution = { module: target, bindingName: undefined, deferred: true };
+      else resolution = { module: target, bindingName: undefined };
+    } else {
       const resolved = resolveExport(target, entry.importName);
       if (resolved === undefined || typeof resolved === "string")
         return syntaxFailure(module);
       resolution = resolved;
     }
-    const plan: ImportBindingPlan = { name: entry.localName, resolution };
+    if (resolution.source && resolution.module.moduleSource === undefined)
+      return syntaxFailure(module);
+    const plan: ImportBindingPlan = {
+      name: entry.localName,
+      resolution,
+      sourceValue: resolution.source
+        ? getModuleSource(resolution.module)
+        : undefined,
+    };
     imports.push(plan);
   }
   // All observable resolution failures precede mutation of this environment.
@@ -62,7 +75,13 @@ function initializeEnvironment(module: ModuleRecord): ModuleLinkResult {
     if (entry === undefined) throw "MODULE_SHAPE_INVARIANT";
     const resolution = entry.resolution;
     if (resolution.bindingName === undefined) {
-      const namespace = getModuleNamespace(resolution.module);
+      let namespace: unknown;
+      if (resolution.source) namespace = entry.sourceValue;
+      else
+        namespace = getModuleNamespace(
+          resolution.module,
+          resolution.deferred ? "defer" : undefined,
+        );
       createImmutableBinding<unknown>(module.environment, entry.name, true);
       initializeBinding<unknown>(module.environment, entry.name, namespace);
     } else
@@ -110,6 +129,7 @@ function innerLink(
   else stack.modules[stack.depth] = module;
   stack.depth++;
   for (let request = 0; request < module.shape.requests.length; request++) {
+    if (module.shape.requests[request]?.phase === "source") continue;
     const dependency = loadedModule(module, request),
       linked = innerLink(dependency, stack, index);
     if (!linked.ok) return { ok: false, error: linked.error };

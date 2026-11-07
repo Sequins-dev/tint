@@ -1,4 +1,5 @@
 import {
+  createRuntimeError,
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "../objects/errors.ts";
@@ -13,6 +14,73 @@ import { loadedModule, type ModuleRecord } from "./records.ts";
 interface EvaluationStack {
   readonly modules: ModuleRecord[];
   depth: number;
+}
+
+function moduleSCCEvaluated(module: ModuleRecord): boolean {
+  const root = module.cycleRoot;
+  return root === undefined
+    ? module.status === "evaluated"
+    : root.status === "evaluated";
+}
+
+/** Deferred access checks the entire graph before executing any synchronous body. */
+export function readyForSyncExecution(
+  module: ModuleRecord,
+  seen: ModuleRecord[] = [],
+): boolean {
+  if (module.synthetic || seen.includes(module)) return true;
+  seen.push(module);
+  if (moduleSCCEvaluated(module)) return true;
+  if (module.status === "evaluating" || module.status === "evaluating-async")
+    return false;
+  if (module.status !== "linked" && module.status !== "evaluated")
+    throw "MODULE_SYNC_STATUS_INVARIANT";
+  if (module.shape.hasTopLevelAwait) return false;
+  for (let index = 0; index < module.shape.requests.length; index++) {
+    if (module.shape.requests[index]?.phase === "source") continue;
+    if (!readyForSyncExecution(loadedModule(module, index), seen)) return false;
+  }
+  return true;
+}
+
+export function evaluateModuleSync(
+  module: ModuleRecord,
+  hooks: ObjectHooks<unknown>,
+): void {
+  const active = module.realm.agent.activeContext,
+    realm = active === undefined ? module.realm : active.realm;
+  if (!readyForSyncExecution(module)) throw createRuntimeError(realm, "type");
+  const outcome = settledModulePromise(evaluateModule(module, hooks), realm);
+  if (outcome.kind === "pending") throw "MODULE_SYNC_PENDING_INVARIANT";
+  if (outcome.kind === "rejected") throw outcome.error;
+}
+
+/** Post-order collection stops at each unexecuted TLA module, across deferred edges too. */
+export function gatherAsynchronousDependencies(
+  module: ModuleRecord,
+  seen: ModuleRecord[] = [],
+): ModuleRecord[] {
+  if (seen.includes(module)) return [];
+  seen.push(module);
+  if (
+    module.synthetic ||
+    module.status === "evaluating" ||
+    moduleSCCEvaluated(module)
+  )
+    return [];
+  if (module.shape.hasTopLevelAwait) return [module];
+  const result: ModuleRecord[] = [];
+  for (let index = 0; index < module.shape.requests.length; index++) {
+    if (module.shape.requests[index]?.phase === "source") continue;
+    for (const dependency of gatherAsynchronousDependencies(
+      loadedModule(module, index),
+      seen,
+    )) {
+      if (dependency === undefined) throw "MODULE_EVALUATION_INVARIANT";
+      if (!result.includes(dependency)) result.push(dependency);
+    }
+  }
+  return result;
 }
 type EvaluationResult =
   | { readonly ok: true; readonly index: number }
@@ -32,7 +100,8 @@ function preflight(module: ModuleRecord, visited: ModuleRecord[]): void {
     );
   }
   for (let request = 0; request < module.shape.requests.length; request++)
-    preflight(loadedModule(module, request), visited);
+    if (module.shape.requests[request]?.phase !== "source")
+      preflight(loadedModule(module, request), visited);
 }
 function runSynchronousBody(
   module: ModuleRecord,
@@ -238,8 +307,22 @@ function innerEvaluation(
   index++;
   stack.modules[stack.depth] = module;
   stack.depth++;
+  const evaluationList: ModuleRecord[] = [];
   for (let request = 0; request < module.shape.requests.length; request++) {
-    let dependency = loadedModule(module, request);
+    if (module.shape.requests[request]?.phase === "source") continue;
+    const dependency = loadedModule(module, request);
+    if (module.shape.requests[request]?.phase === "defer") {
+      for (const asynchronous of gatherAsynchronousDependencies(dependency)) {
+        if (asynchronous === undefined) throw "MODULE_EVALUATION_INVARIANT";
+        if (!evaluationList.includes(asynchronous))
+          evaluationList.push(asynchronous);
+      }
+    } else if (!evaluationList.includes(dependency))
+      evaluationList.push(dependency);
+  }
+  for (const required of evaluationList) {
+    if (required === undefined) throw "MODULE_EVALUATION_INVARIANT";
+    let dependency = required;
     if (dependency.synthetic) {
       const active = dependency.realm.agent.activeContext,
         realm = active === undefined ? dependency.realm : active.realm;

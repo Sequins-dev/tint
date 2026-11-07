@@ -461,3 +461,36 @@ test("JSON support keeps text and bytes module proposals explicitly unsupported"
     /if\(requestedType==="text"\|\|requestedType==="bytes"\)return rejectUnsupportedExecution\(realm\);/,
   );
 });
+
+test("source-phase runtime advertises its captured intrinsic and module-source contract", () => {
+  const snapshot = workspaceSources();
+  assert.equal(native.nativeSourcePhaseCapability(snapshot), true);
+  assert.equal(
+    native.nativeScriptAdapter(
+      native.capturedScriptEvaluation(snapshot),
+      true,
+      true,
+      true,
+      true,
+      true,
+    ),
+    "native-script-v20-source-phase",
+  );
+});
+
+test("deferred modules require captured synchronous evaluation and async-dependency contracts", () => {
+  const snapshot = workspaceSources();
+  assert.equal(native.nativeDeferredModuleCapability(snapshot), true);
+  assert.equal(
+    native.nativeScriptAdapter(
+      native.capturedScriptEvaluation(snapshot),
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ),
+    "native-script-v21-module-phases",
+  );
+});

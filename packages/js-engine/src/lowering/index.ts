@@ -3231,27 +3231,23 @@ function lowerScriptEntry(
         return temporary(id(input, node), true);
       }
       case "import-call": {
-        if (node.phase === "defer")
-          return fail(node, "import.defer requires P-DEFER");
-        if (node.phase === "source")
-          return fail(node, "import.source requires P-SOURCE");
         const specifier = temporary(value(node.specifier), true);
         const options =
           node.options === undefined
             ? id("undefined", node)
             : temporary(value(node.options), true);
         usesImportCall = true;
+        const arguments_: Expression[] = [
+          specifier,
+          options,
+          member(id("$global"), "hooks", node),
+          id("$errors"),
+        ];
+        const phase = node.phase;
+        if (phase === "source") arguments_.push(text("source", node));
+        else if (phase === "defer") arguments_.push(text("defer", node));
         return temporary(
-          runtimeCall(
-            "evaluateImportCall",
-            [
-              specifier,
-              options,
-              member(id("$global"), "hooks", node),
-              id("$errors"),
-            ],
-            node,
-          ),
+          runtimeCall("evaluateImportCall", arguments_, node),
           true,
         );
       }
@@ -5282,24 +5278,27 @@ function lowerScriptEntry(
       ],
       [
         array(
-          shape.requests.map((request) =>
-            object(
-              ["specifier", "attributes"],
-              [
-                text(request.specifier),
-                array(
-                  request.attributes.map((attribute) =>
-                    object(
-                      ["key", "value"],
-                      [text(attribute.key), text(attribute.value)],
-                      generated,
-                    ),
+          shape.requests.map((request) => {
+            const names: string[] = ["specifier", "attributes"];
+            const values: Expression[] = [
+              text(request.specifier),
+              array(
+                request.attributes.map((attribute) =>
+                  object(
+                    ["key", "value"],
+                    [text(attribute.key), text(attribute.value)],
+                    generated,
                   ),
                 ),
-              ],
-              generated,
-            ),
-          ),
+              ),
+            ];
+            const phase = request.phase;
+            if (phase !== undefined) {
+              names.push("phase");
+              values.push(text(phase));
+            }
+            return object(names, values, generated);
+          }),
         ),
         array(
           shape.imports.map((entry) =>

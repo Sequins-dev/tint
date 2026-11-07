@@ -36,6 +36,8 @@ export interface DynamicImportState {
   readonly kind: "dynamic";
   readonly capability: ModuleCapability;
   readonly hooks: ObjectHooks<unknown>;
+  readonly phase?: ModuleRequest["phase"];
+  readonly realm?: ErrorRealm;
   finished: boolean;
 }
 export type ModuleLoadPayload = GraphLoadingState | DynamicImportState;
@@ -76,6 +78,7 @@ export function allImportAttributesSupported(
 function continueLoading(
   state: GraphLoadingState,
   completion: ModuleCompletion,
+  sourcePhase: boolean = false,
 ): void {
   if (!state.isLoading) return;
   if (!completion.ok) {
@@ -83,11 +86,19 @@ function continueLoading(
     state.capability.functions.reject(completion.error);
     return;
   }
-  innerLoading(completion.module, state);
+  innerLoading(completion.module, state, sourcePhase);
 }
-function innerLoading(module: ModuleRecord, state: GraphLoadingState): void {
+function innerLoading(
+  module: ModuleRecord,
+  state: GraphLoadingState,
+  sourcePhase: boolean = false,
+): void {
   if (module.kind !== "module") throw "MODULE_KIND_INVARIANT";
-  if (module.status === "new" && !state.visited.includes(module)) {
+  if (
+    !sourcePhase &&
+    module.status === "new" &&
+    !state.visited.includes(module)
+  ) {
     state.visited.push(module);
     state.pendingModulesCount += module.shape.requests.length;
     for (let index = 0; index < module.shape.requests.length; index++) {
@@ -103,7 +114,11 @@ function innerLoading(module: ModuleRecord, state: GraphLoadingState): void {
       else {
         const loaded = module.loaded[index];
         if (loaded !== undefined)
-          continueLoading(state, { ok: true, module: loaded });
+          continueLoading(
+            state,
+            { ok: true, module: loaded },
+            request.phase === "source",
+          );
         else {
           const loader = module.realm.moduleLoader;
           if (loader === undefined) rejectUnsupportedExecution(realm);
@@ -165,5 +180,5 @@ export function finishLoadingImportedModule(
   }
   if (!known) throw "MODULE_REQUEST_INVARIANT";
   if (completion.ok) recordLoadedModule(referrer, request, completion.module);
-  continueLoading(payload, completion);
+  continueLoading(payload, completion, request.phase === "source");
 }

@@ -1,5 +1,6 @@
 import type { RealmReferrer } from "../modules/referrer.ts";
 import type { ModuleLoader } from "../modules/loading.ts";
+import { installModuleSourceIntrinsic } from "./module-source.ts";
 import type { NamedTimeZoneProvider } from "./named-time-zones.ts";
 import {
   createRegExpLegacyState,
@@ -77,6 +78,13 @@ export type DynamicFunctionCompiler = (
 
 /** Realm-local intrinsic identities and sticky embedding diagnostics. */
 export interface ErrorRealm {
+  readonly objectHooks: ObjectHooks<unknown>;
+  abstractModuleSourceConstructor:
+    OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  readonly abstractModuleSourcePrototype: OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
   moduleLoader: ModuleLoader | undefined;
   realmReferrer: RealmReferrer | undefined;
   readonly supportedImportAttributes: readonly string[];
@@ -341,6 +349,11 @@ export function createErrorRealm(
     importAttributes.push(attribute);
   }
   const realm: ErrorRealm = {
+    objectHooks: hooks,
+    abstractModuleSourceConstructor: undefined,
+    abstractModuleSourcePrototype: createObject<ScriptPropertyKey, unknown>(
+      objectPrototype,
+    ),
     moduleLoader: undefined,
     realmReferrer: undefined,
     supportedImportAttributes: importAttributes,
@@ -500,6 +513,7 @@ export function createErrorRealm(
     unsupported: false,
   };
   installObjectPrototype(realm, hooks);
+  installModuleSourceIntrinsic(realm, hooks);
   installIteratorIntrinsics(realm, hooks);
   installGeneratorIntrinsics(realm, hooks);
   installAsyncGeneratorIntrinsics(realm, hooks);

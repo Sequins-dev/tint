@@ -2642,7 +2642,7 @@ function parseSource(
     } else if (
       at("source") &&
       current(1).kind === "identifier" &&
-      !at("from", 1)
+      (!at("from", 1) || at("from", 2))
     ) {
       take();
       phase = "source";

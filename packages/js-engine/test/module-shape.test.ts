@@ -87,15 +87,38 @@ test("export string names and attribute order preserve exact UTF-16 values", () 
     ["𐀀", "\uE000"],
   );
 });
-test("proposal import phases remain explicitly unsupported", () => {
-  for (const source of [
-    'import defer * as ns from "m";',
-    'import source x from "m";',
-  ]) {
-    const parsed = parseModule(createSourceTextView(source));
-    assert.ok(parsed.ok, JSON.stringify(parsed));
-    const result = sourceModuleShape(parsed.value);
-    assert.equal(result.ok, false);
-    if (!result.ok) assert.match(result.error.message, /import phases/);
-  }
+test("eager and deferred namespace re-exports retain different requests for the same resource", () => {
+  const result = shape(
+    'import * as eager from "m"; import defer * as deferred from "m"; export {eager,deferred};',
+  );
+  assert.deepEqual(result.requests, [
+    { specifier: "m", attributes: [] },
+    { specifier: "m", attributes: [], phase: "defer" },
+  ]);
+  assert.deepEqual(
+    result.indirectExports.map((entry) => entry.request),
+    [0, 1],
+  );
+});
+
+test("source-phase bindings and their re-exports retain a distinct request", () => {
+  const result = shape(
+    'import "m"; import source value from "m"; export {value};',
+  );
+  assert.deepEqual(result.requests, [
+    { specifier: "m", attributes: [] },
+    { specifier: "m", attributes: [], phase: "source" },
+  ]);
+  assert.equal(result.imports[0]?.request, 1);
+  assert.equal(result.indirectExports[0]?.request, 1);
+});
+
+test("deferred namespace imports retain phase through an indirect re-export", () => {
+  const result = shape('import defer * as ns from "m"; export {ns};');
+  assert.deepEqual(result.requests, [
+    { specifier: "m", attributes: [], phase: "defer" },
+  ]);
+  assert.deepEqual(result.indirectExports, [
+    { exportName: "ns", request: 0, importName: undefined },
+  ]);
 });

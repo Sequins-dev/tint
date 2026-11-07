@@ -331,7 +331,15 @@ function lowerEntries(
         checked.types[id]?.kind !== "ArrayBuffer")
     )
       fail(
-        "type requires an unsupported native representation (type " + id + ")",
+        "type requires an unsupported native representation (type " +
+          id +
+          ", kind " +
+          (checked.types[id]?.kind ?? "missing") +
+          ", encoding " +
+          (type ?? "none") +
+          ", context " +
+          (layout === undefined ? "entry" : "closure") +
+          ")",
       );
     if (type === "primitive" && recordTarget?.primitives === undefined)
       fail("mixed primitive unions require primitive runtime bindings");

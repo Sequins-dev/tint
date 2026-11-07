@@ -22,11 +22,14 @@ import {
   type Descriptor,
 } from "../descriptors/index.ts";
 import type { Binding } from "../environments/records/index.ts";
-import type { ModuleRecord } from "./records.ts";
+import { getModuleSource, type ModuleRecord } from "./records.ts";
 import { getExportedNames, resolveExport } from "./resolve.ts";
+import { evaluateModuleSync } from "./evaluation.ts";
 interface NamespaceExport {
   readonly binding: Binding<unknown> | undefined;
   readonly namespaceModule: ModuleRecord | undefined;
+  readonly source?: true;
+  readonly deferred?: true;
 }
 function symbolOrder(key: ScriptPropertyKey): number {
   return typeof key === "string" ? -1 : -2;
@@ -35,8 +38,10 @@ function symbolOrder(key: ScriptPropertyKey): number {
 /** One exotic namespace per module; reads observe its defining binding cells. */
 export function getModuleNamespace(
   module: ModuleRecord,
+  phase?: "defer",
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const cached = module.namespace;
+  const deferred = phase === "defer";
+  const cached = deferred ? module.deferredNamespace : module.namespace;
   if (cached !== undefined) return cached;
   const exports_ = new Map<string, NamespaceExport>(),
     names: string[] = [];
@@ -45,9 +50,21 @@ export function getModuleNamespace(
     const resolution = resolveExport(module, name);
     if (resolution === undefined || typeof resolution === "string") continue;
     let entry: NamespaceExport;
-    if (resolution.bindingName === undefined)
-      entry = { binding: undefined, namespaceModule: resolution.module };
-    else {
+    if (resolution.bindingName === undefined) {
+      if (resolution.source)
+        entry = {
+          binding: undefined,
+          namespaceModule: resolution.module,
+          source: true,
+        };
+      else if (resolution.deferred)
+        entry = {
+          binding: undefined,
+          namespaceModule: resolution.module,
+          deferred: true,
+        };
+      else entry = { binding: undefined, namespaceModule: resolution.module };
+    } else {
       const binding = resolution.module.environment.bindings.get(
         resolution.bindingName,
       );
@@ -63,10 +80,14 @@ export function getModuleNamespace(
     return compareModuleNames(left, right);
   });
   function read(name: string): unknown {
+    if (deferred) evaluateModuleSync(module, module.realm.objectHooks);
     const entry = exports_.get(name);
     if (entry === undefined) return undefined;
     const target = entry.namespaceModule;
-    if (target !== undefined) return getModuleNamespace(target);
+    if (target !== undefined)
+      return entry.source
+        ? getModuleSource(target)
+        : getModuleNamespace(target, entry.deferred ? "defer" : undefined);
     const binding = entry.binding;
     if (binding === undefined) throw "MODULE_BINDING_INVARIANT";
     if (!binding.initialized) {
@@ -79,6 +100,7 @@ export function getModuleNamespace(
     return binding.value;
   }
   function descriptor(name: string): Descriptor<unknown> | undefined {
+    if (deferred) evaluateModuleSync(module, module.realm.objectHooks);
     if (!exports_.has(name)) return undefined;
     return {
       accessor: false,
@@ -90,6 +112,10 @@ export function getModuleNamespace(
       configurable: false,
     };
   }
+  function hasExport(name: string): boolean {
+    if (deferred) evaluateModuleSync(module, module.realm.objectHooks);
+    return exports_.has(name);
+  }
   const methods: ObjectInternalMethods<ScriptPropertyKey, unknown> = {
     getPrototype: (
       _object,
@@ -98,16 +124,16 @@ export function getModuleNamespace(
     isExtensible: (_object): boolean => false,
     preventExtensions: (_object): boolean => true,
     hasProperty: (object, key): boolean =>
-      typeof key === "string"
-        ? exports_.has(key)
+      typeof key === "string" && !(deferred && key === "then")
+        ? hasExport(key)
         : ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(object, key) !==
           undefined,
     getOwnProperty: (object, key): Descriptor<unknown> | undefined =>
-      typeof key === "string"
+      typeof key === "string" && !(deferred && key === "then")
         ? descriptor(key)
         : ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(object, key),
     get: (object, key, receiver, hooks): unknown =>
-      typeof key === "string"
+      typeof key === "string" && !(deferred && key === "then")
         ? read(key)
         : ordinaryGetProperty<ScriptPropertyKey, unknown>(
             object,
@@ -117,8 +143,8 @@ export function getModuleNamespace(
           ),
     set: (_object, _key, _value, _receiver, _hooks): boolean => false,
     deleteProperty: (object, key): boolean =>
-      typeof key === "string"
-        ? !exports_.has(key)
+      typeof key === "string" && !(deferred && key === "then")
+        ? !hasExport(key)
         : ordinaryDeleteProperty<ScriptPropertyKey, unknown>(object, key),
     defineOwnProperty: (
       object,
@@ -126,7 +152,7 @@ export function getModuleNamespace(
       update,
       hooks,
     ): PropertyDefinitionResult => {
-      if (typeof key !== "string")
+      if (typeof key !== "string" || (deferred && key === "then"))
         return ordinaryDefineOwnProperty<ScriptPropertyKey, unknown>(
           object,
           key,
@@ -151,6 +177,7 @@ export function getModuleNamespace(
       return "accepted";
     },
     ownKeys: (object): ScriptPropertyKey[] => {
+      if (deferred) evaluateModuleSync(module, module.realm.objectHooks);
       const keys: ScriptPropertyKey[] = [];
       for (const name of names) {
         if (name === undefined) throw "MODULE_SHAPE_INVARIANT";
@@ -174,7 +201,7 @@ export function getModuleNamespace(
   const tag = wellKnownSymbol(module.realm.symbolRegistry, "toStringTag");
   const tagDescriptor: Descriptor<unknown> = {
     accessor: false,
-    value: "Module",
+    value: deferred ? "Deferred Module" : "Module",
     writable: false,
     get: undefined,
     set: undefined,
@@ -184,6 +211,7 @@ export function getModuleNamespace(
   // Construction initializes the ordinary symbol backing store before sealing.
   namespace.properties.set(tag, tagDescriptor);
   namespace.extensible = false;
-  module.namespace = namespace;
+  if (deferred) module.deferredNamespace = namespace;
+  else module.namespace = namespace;
   return namespace;
 }

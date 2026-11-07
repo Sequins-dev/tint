@@ -56,7 +56,6 @@ test("module preparation lowers the root once and preserves named fixture identi
 test("module preparation screens attributes and unsupported root syntax before discovery", () => {
   for (const source of [
     'import data from "./data.png" with {type:"bytes"};',
-    'import defer * as ns from "./dep.js";',
     "@decorator class C {}",
   ]) {
     let calls = 0;
@@ -179,7 +178,7 @@ test("module preparation discovers unchanged cyclic sibling fixtures and hashes 
 });
 
 test("module preparation rejects requests outside the closed graph with a precise unsupported reason", () => {
-  for (const specifier of ["./missing.js", "./sub/x.js", "external"]) {
+  for (const specifier of ["./missing.js", "./sub/x.js"]) {
     const source = "import " + JSON.stringify(specifier) + ";";
     const result = native.prepareNativeModuleProgram(
       plan(source),
@@ -380,10 +379,7 @@ test("parsed fixtures with binding early errors require a native syntax verdict"
 });
 
 test("native fixture proofs do not convert unsupported syntax into early errors", () => {
-  for (const source of [
-    "@decorator class C {}",
-    'import defer * as ns from "./other.js";',
-  ]) {
+  for (const source of ["@decorator class C {}"]) {
     const result = native.prepareNativeModuleProgram(
       plan('import "./dep.js";'),
       [],
@@ -611,4 +607,56 @@ test("JSON support screens binary and text proposals before fixture discovery", 
     assert.equal(discovered, false);
     assert.ok(!result.ok && result.outcome.kind === "unsupported");
   }
+});
+
+test("source-phase host placeholders survive preparation for resolution by the module loader", () => {
+  const source = 'import source value from "<module source>"; export {value};';
+  const result = native.prepareNativeModuleProgram(
+    plan(source),
+    [],
+    "root.js",
+    () => ({ root: "root.js", nodes: [], siblings: ["root.js"], absent: [] }),
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  if (result.ok) assert.equal(result.entries.length, 1);
+});
+
+test("runtime-compiled source imports retain a Script-root loader", () => {
+  const source = "eval(\"import.source('<module source>')\");";
+  const result = native.prepareNativeScriptProgram(
+    {
+      source,
+      goal: "script",
+      harness: [],
+      asynchronous: false,
+      canSuspend: true,
+    },
+    "sloppy",
+    [],
+    "root.js",
+    () => ({ root: "root.js", nodes: [], siblings: [], absent: [] }),
+    true,
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  if (result.ok) assert.ok(result.root);
+});
+
+test("a discovered absent static dependency reaches the native host and remains in input identity", () => {
+  const source = 'import defer * as ns from "./missing.js";';
+  const result = native.prepareNativeModuleProgram(
+    plan(source),
+    [],
+    "root.js",
+    () => ({
+      root: "root.js",
+      nodes: [],
+      siblings: ["root.js"],
+      absent: ["missing.js"],
+    }),
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.deepEqual(result.absent, ["missing.js"]);
 });

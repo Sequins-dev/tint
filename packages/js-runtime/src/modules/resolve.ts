@@ -3,6 +3,8 @@ export interface ResolvedBinding {
   readonly module: ModuleRecord;
   /** undefined denotes the module namespace rather than a local binding. */
   readonly bindingName: string | undefined;
+  readonly source?: true;
+  readonly deferred?: true;
 }
 export type ExportResolution = ResolvedBinding | "ambiguous" | undefined;
 interface ResolveVisit {
@@ -85,8 +87,13 @@ export function resolveExport(
     if (entry === undefined) throw "MODULE_SHAPE_INVARIANT";
     if (entry.exportName !== exportName) continue;
     const target = loadedModule(module, entry.request);
-    if (entry.importName === undefined)
+    if (module.shape.requests[entry.request]?.phase === "source")
+      return { module: target, bindingName: undefined, source: true };
+    if (entry.importName === undefined) {
+      if (module.shape.requests[entry.request]?.phase === "defer")
+        return { module: target, bindingName: undefined, deferred: true };
       return { module: target, bindingName: undefined };
+    }
     return resolveExport(target, entry.importName, visited);
   }
   if (exportName === "default") return undefined;
@@ -103,7 +110,9 @@ export function resolveExport(
     if (found === undefined) found = candidate;
     else if (
       found.module !== candidate.module ||
-      found.bindingName !== candidate.bindingName
+      found.bindingName !== candidate.bindingName ||
+      found.source !== candidate.source ||
+      found.deferred !== candidate.deferred
     )
       return "ambiguous";
   }

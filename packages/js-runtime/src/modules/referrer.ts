@@ -1,5 +1,5 @@
 import {
-  moduleRequestsEqual,
+  moduleRequestKeysEqual,
   type ModuleRequest,
 } from "@tint/foundation/modules";
 import {
@@ -55,23 +55,34 @@ export function recordLoadedModule(
   request: ModuleRequest,
   module: ModuleRecord,
 ): void {
+  let staticRequest = false;
   if (referrer.kind === "module") {
     for (let index = 0; index < referrer.shape.requests.length; index++) {
       const known = referrer.shape.requests[index];
       if (known === undefined) throw "MODULE_REQUEST_INVARIANT";
-      if (!moduleRequestsEqual(known, request)) continue;
+      if (!moduleRequestKeysEqual(known, request)) continue;
+      staticRequest = true;
       const previous = referrer.loaded[index];
       if (previous !== undefined && previous !== module)
         throw "MODULE_LOAD_IDENTITY_INVARIANT";
-      referrer.loaded[index] = module;
-      return;
     }
   }
+  let dynamicRequest = false;
   for (const loaded of referrer.loadedRequests) {
     if (loaded === undefined) throw "MODULE_REQUEST_INVARIANT";
-    if (!moduleRequestsEqual(loaded.request, request)) continue;
+    if (!moduleRequestKeysEqual(loaded.request, request)) continue;
     if (loaded.module !== module) throw "MODULE_LOAD_IDENTITY_INVARIANT";
+    dynamicRequest = true;
+  }
+  if (referrer.kind === "module" && staticRequest) {
+    for (let index = 0; index < referrer.shape.requests.length; index++) {
+      const known = referrer.shape.requests[index];
+      if (known === undefined) throw "MODULE_REQUEST_INVARIANT";
+      if (moduleRequestKeysEqual(known, request))
+        referrer.loaded[index] = module;
+    }
     return;
   }
+  if (dynamicRequest) return;
   referrer.loadedRequests.push({ request, module });
 }

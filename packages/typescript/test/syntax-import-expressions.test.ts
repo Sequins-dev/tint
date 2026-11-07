@@ -113,3 +113,18 @@ test("static phased imports preserve namespace and source bindings", () => {
     assert.equal(result.value.imports[0]?.phase, undefined);
   }
 });
+
+test("source imports distinguish a binding named from from the ordinary source binding", () => {
+  for (const local of ["source", "from"]) {
+    const result = parseModule(
+      source(`import source ${local} from "x";`),
+      "javascript",
+    );
+    assert.ok(result.ok, JSON.stringify(result));
+    assert.equal(result.value.imports[0]?.phase, "source");
+    assert.equal(result.value.imports[0]?.bindings[0]?.local, local);
+  }
+  const ordinary = parseModule(source('import source from "x";'), "javascript");
+  assert.ok(ordinary.ok);
+  assert.equal(ordinary.value.imports[0]?.phase, undefined);
+});

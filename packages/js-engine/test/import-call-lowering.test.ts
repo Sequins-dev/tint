@@ -41,13 +41,11 @@ function calls(module: Module, name: string) {
   return result;
 }
 
-test("dynamic import proposal phases fail explicitly before operand lowering", () => {
-  for (const [source, message] of [
-    ['import.defer("x");', "import.defer requires P-DEFER"],
-    ['import.source("x");', "import.source requires P-SOURCE"],
-  ]) {
-    const script = parse(source!);
-    const parsed = parseDynamicFunction("normal", [], source!);
+test("proposal import phases lower through Script, module, eval and Function entries", () => {
+  for (const phase of ["source", "defer"]) {
+    const source = "import." + phase + '("x");';
+    const script = parse(source),
+      parsed = parseDynamicFunction("normal", [], source);
     assert.ok(parsed.ok);
     const results = [
       lowering.lowerEvalScript(script, source),
@@ -56,18 +54,14 @@ test("dynamic import proposal phases fail explicitly before operand lowering", (
         fieldInitializer: false,
       }),
       lowering.lowerDynamicFunctionImplementation(parsed.value),
+      lowering.lowerScript(script, source),
+      lowering.lowerSourceTextModule(parse(source, true), source),
     ];
-    if (source !== 'import("x");')
-      results.push(
-        lowering.lowerScript(script, source),
-        lowering.lowerSourceTextModule(parse(source!, true), source),
-      );
     for (const result of results) {
-      assert.equal(result.ok, false);
-      if (!result.ok) {
-        assert.equal(result.error.message, message);
-        assert.equal(result.error.start, result === results[2] ? 25 : 0);
-      }
+      assert.ok(result.ok, JSON.stringify(result));
+      const value = calls(result.value, "evaluateImportCall")[0]?.arguments[4];
+      assert.equal(value?.kind, "string");
+      if (value?.kind === "string") assert.equal(value.value, phase);
     }
   }
 });
@@ -296,5 +290,47 @@ test("eval and dynamic function entries import through their active Script or mo
     const imported = calls(result.value, "evaluateImportCall")[0]!;
     assert.equal(imported.arguments.length, 4);
     assert.notDeepEqual(imported.arguments[0], imported.arguments[1]);
+  }
+});
+
+test("source import lowering pins operands and passes the source phase to the shared helper", () => {
+  for (const module of [false, true]) {
+    const output = lower("import.source(spec, options);", module);
+    const found = calls(output, "evaluateImportCall");
+    assert.equal(found.length, 1);
+    assert.equal(found[0]?.arguments.length, 5);
+    const phase = found[0]?.arguments[4];
+    assert.equal(phase?.kind, "string");
+    if (phase?.kind === "string") assert.equal(phase.value, "source");
+  }
+});
+
+test("native module factories retain source phases in their emitted shape", () => {
+  const output = lower('import source value from "m"; export {value};', true);
+  let retained = false;
+  rewriteModule(output, {
+    expression(node) {
+      if (node.kind === "object")
+        for (const property of node.properties)
+          if (
+            property.kind !== "spread" &&
+            property.name === "phase" &&
+            property.value.kind === "string" &&
+            property.value.value === "source"
+          )
+            retained = true;
+      return node;
+    },
+  });
+  assert.equal(retained, true);
+});
+
+test("dynamic deferred imports pass their phase through Script, module and runtime-compiled entries", () => {
+  for (const module of [false, true]) {
+    const output = lower('import.defer("m");', module),
+      found = calls(output, "evaluateImportCall");
+    const phase = found[0]?.arguments[4];
+    assert.equal(phase?.kind, "string");
+    if (phase?.kind === "string") assert.equal(phase.value, "defer");
   }
 });

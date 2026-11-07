@@ -42,6 +42,8 @@ import {
   nativeDynamicImportCapability,
   nativeTopLevelAwaitCapability,
   nativeJSONModuleCapability,
+  nativeSourcePhaseCapability,
+  nativeDeferredModuleCapability,
   nativeDebuggerEntitlement,
 } from "./test262-native.ts";
 import {
@@ -112,6 +114,9 @@ try {
   const topLevelAwait =
     moduleExecution && nativeTopLevelAwaitCapability(snapshot);
   const jsonModules = moduleExecution && nativeJSONModuleCapability(snapshot);
+  const sourcePhases = moduleExecution && nativeSourcePhaseCapability(snapshot);
+  const deferredModules =
+    moduleExecution && nativeDeferredModuleCapability(snapshot);
   const scriptEvaluation = capturedScriptEvaluation(snapshot);
   const engine = nativeScriptAdapter(
     scriptEvaluation,
@@ -119,6 +124,8 @@ try {
     dynamicImport,
     topLevelAwait,
     jsonModules,
+    sourcePhases,
+    deferredModules,
   );
   const nativeLinkingIdentity = {
     nativeLinkingMode: "monolithic",
@@ -341,7 +348,10 @@ try {
         moduleProgram === undefined || "thrown" in moduleProgram
           ? scriptMetadata?.fixtures
           : moduleProgram.fixtures;
-      const absent = scriptMetadata?.absent;
+      const absent =
+        moduleProgram === undefined || "thrown" in moduleProgram
+          ? scriptMetadata?.absent
+          : moduleProgram.absent;
       const input: ObservationInput = {
         path,
         sha256,
@@ -389,6 +399,9 @@ try {
                   value: {
                     scripts: moduleProgram.harness,
                     modules: moduleProgram.entries,
+                    ...(moduleProgram.absent === undefined
+                      ? {}
+                      : { moduleAbsent: moduleProgram.absent }),
                     asynchronous: plan.asynchronous,
                     canSuspend: plan.canSuspend,
                   },
@@ -483,23 +496,27 @@ try {
             ? "Complete pinned suite. "
             : "Selected variants only; no whole-suite coverage claim. ") +
           "Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals." +
-          (engine === "native-script-v18-managed-dynamic-import" ||
-          engine === "native-script-v19-managed-templates"
-            ? (engine === "native-script-v19-managed-templates"
-                ? " Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache."
-                : "") +
-              (moduleExecution
-                ? " Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported."
-                : " Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.")
-            : engine === "native-script-v17-import-resolution"
-              ? " Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. JSON is parsed natively at load and exposes one default export; type attributes are checked before cached records are used. Unresolved bare specifiers reject their import promises with TypeError. Source modules support top-level await and direct eval. Text/bytes, source/defer phases, undiscovered relative specifiers and runtime compilation of loaded modules remain unsupported. Native fixture syntax and early-error checks remain lazy at load."
-              : engine === "native-script-v15-top-level-await"
-                ? " Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. Async module evaluation drains the existing job queue. Native fixture syntax and early-error checks remain lazy at load. JSON, attributes beyond option validation and proposal phases remain unsupported."
-                : engine === "native-script-v14-fixture-binding-verdicts"
-                  ? " Module and Script-root dynamic imports use the captured runtime, checked referrer views and lazy sibling table loader. Literal absent siblings and empty specifiers reject with TypeError; other undiscovered specifiers remain unsupported. Native fixture syntax checks remain lazy at load. JSON, attributes beyond option validation, top-level await and proposal phases remain unsupported."
-                  : moduleExecution
-                    ? " Module variants load sibling fixtures through a synchronous table loader; fixtures that bootstrap cannot parse are judged only by the native syntax verdict at load, and native acceptance stays unsupported; JSON, attributes, top-level await, import() and import.meta are unsupported."
-                    : ""),
+          (deferredModules
+            ? " Module requests retain source, defer and evaluation phases. Deferred namespaces trigger synchronous evaluation on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides the Test262 module-source host representation and AbstractModuleSource intrinsic; JavaScript source requests reject with SyntaxError. JSON, attributes, top-level await and direct eval are enabled. Text/bytes and undiscovered relative specifiers remain unsupported."
+            : sourcePhases
+              ? " Module and Script-root imports preserve source/evaluation phases. Source Text Modules reject source requests with SyntaxError without linking or evaluation; the Test262 host provides its <module source> representation and realm-owned AbstractModuleSource intrinsic. JSON, attributes, top-level await and direct eval are enabled. Defer phases, text/bytes and undiscovered relative specifiers remain unsupported."
+              : engine === "native-script-v18-managed-dynamic-import" ||
+                  engine === "native-script-v19-managed-templates"
+                ? (engine === "native-script-v19-managed-templates"
+                    ? " Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache."
+                    : "") +
+                  (moduleExecution
+                    ? " Module and Script-root dynamic imports use a lazy sibling table loader, including imports from runtime-compiled eval and Function bodies. Import helpers and checked referrer views come from the image-owned managed surface. JSON/type validation, top-level await and direct eval are enabled. Proposal phases, text/bytes and undiscovered relative specifiers stay unsupported."
+                    : " Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.")
+                : engine === "native-script-v17-import-resolution"
+                  ? " Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. JSON is parsed natively at load and exposes one default export; type attributes are checked before cached records are used. Unresolved bare specifiers reject their import promises with TypeError. Source modules support top-level await and direct eval. Text/bytes, source/defer phases, undiscovered relative specifiers and runtime compilation of loaded modules remain unsupported. Native fixture syntax and early-error checks remain lazy at load."
+                  : engine === "native-script-v15-top-level-await"
+                    ? " Module and Script-root dynamic imports use checked referrer views and a lazy sibling table loader. Async module evaluation drains the existing job queue. Native fixture syntax and early-error checks remain lazy at load. JSON, attributes beyond option validation and proposal phases remain unsupported."
+                    : engine === "native-script-v14-fixture-binding-verdicts"
+                      ? " Module and Script-root dynamic imports use the captured runtime, checked referrer views and lazy sibling table loader. Literal absent siblings and empty specifiers reject with TypeError; other undiscovered specifiers remain unsupported. Native fixture syntax checks remain lazy at load. JSON, attributes beyond option validation, top-level await and proposal phases remain unsupported."
+                      : moduleExecution
+                        ? " Module variants load sibling fixtures through a synchronous table loader; fixtures that bootstrap cannot parse are judged only by the native syntax verdict at load, and native acceptance stays unsupported; JSON, attributes, top-level await, import() and import.meta are unsupported."
+                        : ""),
         variantPolicy:
           (subset === undefined
             ? "All syntaxVariants from tools/test262.ts; "

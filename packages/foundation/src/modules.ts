@@ -1,6 +1,8 @@
 /** Pure module linkage metadata shared by analysis and execution. No host or heap state. */
 export interface ModuleRequest {
   readonly specifier: string;
+  /** Omitted is the ordinary evaluation phase. */
+  readonly phase?: "source" | "defer";
   readonly attributes: readonly {
     readonly key: string;
     readonly value: string;
@@ -53,9 +55,20 @@ export function canonicalModuleRequest(request: ModuleRequest): ModuleRequest {
     }
     attributes[index] = attribute;
   }
-  return { specifier: request.specifier, attributes };
+  return {
+    specifier: request.specifier,
+    attributes,
+    ...(request.phase === undefined ? {} : { phase: request.phase }),
+  };
 }
 export function moduleRequestsEqual(
+  left: ModuleRequest,
+  right: ModuleRequest,
+): boolean {
+  return left.phase === right.phase && moduleRequestKeysEqual(left, right);
+}
+/** A loaded resource keeps one identity across source, defer and evaluation requests. */
+export function moduleRequestKeysEqual(
   left: ModuleRequest,
   right: ModuleRequest,
 ): boolean {

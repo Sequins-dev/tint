@@ -29,8 +29,63 @@ import {
   type ModuleCompletion,
 } from "./loading.ts";
 import { linkModule } from "./linking.ts";
-import { evaluateModule } from "./evaluation.ts";
+import {
+  evaluateModule,
+  gatherAsynchronousDependencies,
+} from "./evaluation.ts";
 import { getModuleNamespace } from "./namespace.ts";
+import type { ModuleRequest } from "./records.ts";
+
+/** The module protocol combines intrinsic promises without observable Promise methods. */
+function allModuleEvaluations(
+  evaluations: readonly OrdinaryObject<ScriptPropertyKey, unknown>[],
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const capability = createModuleCapability(realm, hooks);
+  const remaining = { count: evaluations.length };
+  const protocol = createScriptPromiseHooks(
+    realm,
+    hooks,
+    (promise, operation): void =>
+      realm.promiseRejectionTracker(promise, operation),
+  );
+  const fulfilled = builtinFunction(
+    realm.functionPrototype,
+    "",
+    1,
+    (_receiver, _arguments): unknown => {
+      remaining.count--;
+      if (remaining.count === 0) capability.functions.resolve(undefined);
+      return undefined;
+    },
+    hooks,
+  );
+  const rejected = builtinFunction(
+    realm.functionPrototype,
+    "",
+    1,
+    (_receiver, arguments_): unknown => {
+      capability.functions.reject(arguments_[0]);
+      return undefined;
+    },
+    hooks,
+  );
+  for (const evaluation of evaluations) {
+    if (evaluation === undefined) throw "MODULE_PROMISE_INVARIANT";
+    const promise = evaluation.internalPromiseData;
+    if (promise === undefined) throw "MODULE_PROMISE_INVARIANT";
+    performPromiseThen<unknown>(
+      promise,
+      fulfilled,
+      rejected,
+      undefined,
+      protocol,
+    );
+  }
+  if (evaluations.length === 0) capability.functions.resolve(undefined);
+  return capability.promise;
+}
 
 /** Host completion continues through ordinary Promise jobs, never inline module
  * execution. Each dynamic call owns its capability, even for a cached module. */
@@ -41,6 +96,15 @@ export function continueDynamicImport(
 ): void {
   if (!completion.ok) {
     state.capability.functions.reject(completion.error);
+    return;
+  }
+  if (state.phase === "source") {
+    const source = completion.module.moduleSource;
+    if (source === undefined)
+      state.capability.functions.reject(
+        createRuntimeError(state.realm ?? realm, "syntax"),
+      );
+    else state.capability.functions.resolve(source);
     return;
   }
   const active = realm.agent.activeContext,
@@ -70,7 +134,12 @@ export function continueDynamicImport(
     "",
     0,
     (_receiver, _args): unknown => {
-      state.capability.functions.resolve(getModuleNamespace(module));
+      state.capability.functions.resolve(
+        getModuleNamespace(
+          module,
+          state.phase === "defer" ? "defer" : undefined,
+        ),
+      );
       return undefined;
     },
     hooks,
@@ -85,7 +154,23 @@ export function continueDynamicImport(
         state.capability.functions.reject(linked.error);
         return undefined;
       }
-      const evaluation = evaluateModule(module, hooks).internalPromiseData;
+      let evaluated: OrdinaryObject<ScriptPropertyKey, unknown>;
+      if (state.phase === "defer") {
+        const dependencies = gatherAsynchronousDependencies(module);
+        if (dependencies.length === 0) {
+          state.capability.functions.resolve(
+            getModuleNamespace(module, "defer"),
+          );
+          return undefined;
+        }
+        const evaluations: OrdinaryObject<ScriptPropertyKey, unknown>[] = [];
+        for (const dependency of dependencies) {
+          if (dependency === undefined) throw "MODULE_EVALUATION_INVARIANT";
+          evaluations.push(evaluateModule(dependency, hooks));
+        }
+        evaluated = allModuleEvaluations(evaluations, current, hooks);
+      } else evaluated = evaluateModule(module, hooks);
+      const evaluation = evaluated.internalPromiseData;
       if (evaluation === undefined) throw "MODULE_PROMISE_INVARIANT";
       performPromiseThen<unknown>(
         evaluation,
@@ -114,6 +199,7 @@ export function evaluateImportCall(
   options: unknown,
   hooks: ObjectHooks<unknown>,
   realm: ErrorRealm,
+  phase?: ModuleRequest["phase"],
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const active = realm.agent.activeContext,
     current = active === undefined ? realm : active.realm,
@@ -171,6 +257,7 @@ export function evaluateImportCall(
   const request = canonicalModuleRequest({
     specifier: convertedSpecifier,
     attributes,
+    ...(phase === undefined ? {} : { phase }),
   });
   const loader = referrer.realm.moduleLoader;
   if (loader === undefined) rejectUnsupportedExecution(current);
@@ -178,6 +265,8 @@ export function evaluateImportCall(
     kind: "dynamic",
     capability,
     hooks,
+    phase,
+    realm: current,
     finished: false,
   });
   return capability.promise;

@@ -39,6 +39,7 @@ export function sourceModuleShape(module: Module): ModuleShapeResult {
     const request = canonicalModuleRequest({
       specifier: declaration.specifier,
       attributes: declaration.attributes ?? [],
+      ...(declaration.phase === undefined ? {} : { phase: declaration.phase }),
     });
     for (let index = 0; index < requests.length; index++) {
       const known = requests[index];
@@ -50,11 +51,6 @@ export function sourceModuleShape(module: Module): ModuleShapeResult {
   }
   for (const declaration of module.imports) {
     if (declaration === undefined) throw "MODULE_SHAPE_INPUT_INVARIANT";
-    if (declaration.phase !== undefined)
-      return unsupported(
-        declaration,
-        "import phases require their proposal slice",
-      );
     if (declaration.typeOnly)
       return unsupported(
         declaration,

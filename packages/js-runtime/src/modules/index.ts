@@ -1,6 +1,7 @@
 export {
   createSourceTextModule,
   loadedModule,
+  getModuleSource,
   type ModuleRequest,
   type ImportEntry,
   type LocalExportEntry,
@@ -30,6 +31,9 @@ export {
 } from "./loading.ts";
 export {
   evaluateModule,
+  evaluateModuleSync,
+  readyForSyncExecution,
+  gatherAsynchronousDependencies,
   settledModulePromise,
   type HostModuleOutcome,
 } from "./evaluation.ts";
@@ -37,6 +41,7 @@ export {
 export {
   canonicalModuleRequest,
   moduleRequestsEqual,
+  moduleRequestKeysEqual,
 } from "@tint/foundation/modules";
 
 export {

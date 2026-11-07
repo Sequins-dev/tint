@@ -14,7 +14,7 @@ import {
   createDeclarativeEnvironment,
   type DeclarativeEnvironment,
 } from "../environments/records/index.ts";
-import type { ErrorRealm } from "../objects/errors.ts";
+import { createRuntimeError, type ErrorRealm } from "../objects/errors.ts";
 import type { OrdinaryObject } from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
 
@@ -36,6 +36,8 @@ export interface ModuleRecord {
   readonly realm: ErrorRealm;
   readonly hostDefined: unknown;
   readonly shape: SourceModuleShape;
+  /** Embedding-provided source representation; ordinary JavaScript has none. */
+  moduleSource: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   readonly environment: DeclarativeEnvironment<unknown>;
   readonly loaded: (ModuleRecord | undefined)[];
   readonly loadedRequests: LoadedModuleRequest[];
@@ -55,6 +57,7 @@ export interface ModuleRecord {
   dfsAncestorIndex: number;
   environmentInitialized: boolean;
   namespace: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  deferredNamespace: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   importMeta: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
 }
 /** Allocate local cells before linking, so cyclic imports can share their identity.
@@ -141,6 +144,7 @@ function createModuleRecord(
     realm,
     hostDefined,
     shape,
+    moduleSource: undefined,
     environment,
     loaded,
     loadedRequests: [],
@@ -159,6 +163,7 @@ function createModuleRecord(
     dfsAncestorIndex: -1,
     environmentInitialized: false,
     namespace: undefined,
+    deferredNamespace: undefined,
     importMeta: undefined,
   };
 }
@@ -169,7 +174,23 @@ export function loadedModule(
 ): ModuleRecord {
   if (module.status === "new") throw "MODULE_LOADED_INVARIANT";
   const target = module.loaded[request];
-  if (target === undefined || target.status === "new")
+  if (
+    target === undefined ||
+    (target.status === "new" &&
+      module.shape.requests[request]?.phase !== "source")
+  )
     throw "MODULE_LOADED_INVARIANT";
   return target;
+}
+
+export function getModuleSource(
+  module: ModuleRecord,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const source = module.moduleSource;
+  if (source !== undefined) return source;
+  const active = module.realm.agent.activeContext;
+  throw createRuntimeError(
+    active === undefined ? module.realm : active.realm,
+    "syntax",
+  );
 }

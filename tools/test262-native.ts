@@ -372,6 +372,7 @@ function prepareNativeFixtureEntries(
   requested: readonly string[],
   initial: readonly NativeModuleEntry[] = [],
   jsonModules: boolean = false,
+  absent: readonly string[] = [],
 ):
   | { ok: true; entries: NativeModuleEntry[] }
   | { ok: false; outcome: ExecutionOutcome } {
@@ -433,7 +434,11 @@ export function create(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm
   }
   const known = new Set(entries.map((entry) => "./" + entry.name));
   for (const specifier of requests)
-    if (!known.has(specifier))
+    if (
+      specifier.startsWith("./") &&
+      !known.has(specifier) &&
+      !absent.includes(specifier.slice(2))
+    )
       return unsupportedNativePreparation(
         "module request outside the discovered fixture graph: " + specifier,
       );
@@ -480,7 +485,10 @@ export function prepareNativeScriptProgram(
   const test = prepared.modules[prepared.modules.length - 1];
   if (test === undefined) throw "NATIVE_TEST_ENTRY_INVARIANT";
   if (
-    !(runtimeImportCalls && /\bimport\s*\(/.test(plan.source)) &&
+    !(
+      runtimeImportCalls &&
+      /\bimport\s*(?:\.\s*(?:source|defer)\s*)?\(/.test(plan.source)
+    ) &&
     !test.module.imports.some(
       (declaration) =>
         declaration.specifier === "@tint/js-runtime/modules" &&
@@ -501,6 +509,7 @@ export function prepareNativeScriptProgram(
     [],
     [],
     jsonModules,
+    graph.absent,
   );
   if (!entries.ok)
     return {
@@ -532,6 +541,7 @@ export function prepareNativeModuleProgram(
         readonly name: string;
         readonly sha256: string;
       }[];
+      readonly absent?: readonly string[];
     }
   | {
       readonly ok: false;
@@ -540,6 +550,7 @@ export function prepareNativeModuleProgram(
         readonly name: string;
         readonly sha256: string;
       }[];
+      readonly absent?: readonly string[];
     } {
   const unsupported = (reason: string) => ({
     ok: false as const,
@@ -564,13 +575,18 @@ export function prepareNativeModuleProgram(
   const rejectedGraph = (failure: {
     readonly ok: false;
     readonly outcome: ExecutionOutcome;
-  }) => ({ ...failure, ...(fixtures.length === 0 ? {} : { fixtures }) });
+  }) => ({
+    ...failure,
+    ...(fixtures.length === 0 ? {} : { fixtures }),
+    ...(graph.absent.length === 0 ? {} : { absent: graph.absent }),
+  });
   const preparedEntries = prepareNativeFixtureEntries(
     graph.nodes,
     graph.root,
     requested,
     entries,
     jsonModules,
+    graph.absent,
   );
   if (!preparedEntries.ok) return rejectedGraph(preparedEntries);
   return {
@@ -578,6 +594,7 @@ export function prepareNativeModuleProgram(
     harness: prepared.modules,
     entries: preparedEntries.entries,
     fixtures,
+    ...(graph.absent.length === 0 ? {} : { absent: graph.absent }),
   };
 }
 
@@ -590,6 +607,7 @@ export interface NativeModuleEntry {
   readonly module: SourceModule;
 }
 export interface NativeTestCase {
+  readonly moduleAbsent?: readonly string[];
   readonly scriptRoot?: { readonly absent: readonly string[] };
   readonly modules?: readonly NativeModuleEntry[];
   readonly scripts: readonly SourceModule[];
@@ -627,6 +645,7 @@ export function nativeTestRuntimeSource(
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
   agentProvider?: string,
+  sourcePhases: boolean = false,
 ): string {
   if (
     scriptEvaluation?.directEval === true &&
@@ -725,6 +744,17 @@ export function nativeTestRuntimeSource(
  }
 `;
   const tableLoading = ` const records=new Map<string,ModuleRecord>();${
+    sourcePhases
+      ? `
+ function hostModuleSource():ModuleRecord {
+  const existing=records.get("<module source>");if(existing!==undefined)return existing;
+  const module=createSyntheticModule(realm,[],(_module:ModuleRecord):void=>{},undefined);
+  const prototype=createObject<ScriptPropertyKey,unknown>(realm.abstractModuleSourcePrototype);
+  module.moduleSource=createModuleSourceObject(realm,prototype,"Test262ModuleSource");
+  records.set("<module source>",module);return module;
+ }`
+      : ""
+  }${
     topLevelAwait
       ? `
  const instantiated:ModuleRecord[]=[];
@@ -765,7 +795,7 @@ export function nativeTestRuntimeSource(
   const moduleRunner = moduleExecution
     ? `
 type NativeModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleRecord;${jsonModules ? "\ntype NativeJSONModuleFactory=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,realm:ErrorRealm,hostDefined:unknown)=>ModuleCompletion;" : ""}
-export function runNativeModuleTest(scripts:readonly NativeScript[],names:readonly string[],creates:readonly (NativeModuleFactory|undefined)[],asynchronous:boolean,canSuspend:boolean=true,verdicts:readonly ((()=>number)|undefined)[]=[]${jsonModules ? ",jsonCreates:readonly (NativeJSONModuleFactory|undefined)[]=[]" : ""}):number {
+export function runNativeModuleTest(scripts:readonly NativeScript[],names:readonly string[],creates:readonly (NativeModuleFactory|undefined)[],asynchronous:boolean,canSuspend:boolean=true,verdicts:readonly ((()=>number)|undefined)[]=[]${jsonModules ? ",jsonCreates:readonly (NativeJSONModuleFactory|undefined)[]=[]" : ""}${sourcePhases ? ",absent:readonly string[]=[]" : ""}):number {
 ${runnerSetup}${runnerHarness("index<scripts.length")} function anyUnsupported():boolean {for(const active of realms){if(active!==undefined&&active.unsupported)return true;}return false;}
  if(names.length===0||creates.length!==names.length||creates[0]===undefined)return 69;
  if(verdicts.length!==0&&verdicts.length!==names.length)return 69;
@@ -778,12 +808,16 @@ ${
 ${tableLoading} try {
   const root=record(0);
   realm.moduleLoader=(referrer:${dynamicImport ? "ModuleReferrer" : "ModuleRecord"},request:ModuleRequest,hostDefined:unknown,payload:${dynamicImport ? "ModuleLoadPayload" : "GraphLoadingState"}):void=>{
-   ${dynamicImport ? 'if(referrer.kind!=="module")rejectUnsupportedExecution(realm);\n   ' : ""}${
+   ${sourcePhases ? 'if(request.specifier==="<module source>"){finishLoadingImportedModule(referrer,request,payload,{ok:true,module:hostModuleSource()});return;}\n   ' : ""}${
+     dynamicImport
+       ? 'if(referrer.kind!=="module")rejectUnsupportedExecution(realm);\n   '
+       : ""
+   }${
      jsonModules
        ? 'if(!request.specifier.startsWith("./")){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}'
        : 'if(!request.specifier.startsWith("./"))rejectUnsupportedExecution(realm);'
    }
-   const index=names.indexOf(request.specifier.slice(2));if(index<0)rejectUnsupportedExecution(realm);
+   const index=names.indexOf(request.specifier.slice(2));if(index<0){${sourcePhases ? 'if(absent.indexOf(request.specifier.slice(2))>=0){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}' : ""}rejectUnsupportedExecution(realm);}
    finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));
   };
   const loading=loadRequestedModules(root,hooks,undefined);
@@ -822,7 +856,7 @@ ${
     : " for(let i=0;i<names.length;i++){if((creates[i]===undefined)===(verdicts[i]===undefined))return 69;}"
 }
 ${tableLoading} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
-  if(referrer.realm!==realm)rejectUnsupportedExecution(realm);
+  ${sourcePhases ? 'if(request.specifier==="<module source>"){finishLoadingImportedModule(referrer,request,payload,{ok:true,module:hostModuleSource()});return;}\n  ' : ""}if(referrer.realm!==realm)rejectUnsupportedExecution(realm);
   const specifier=request.specifier,name=specifier.startsWith("./")?specifier.slice(2):undefined;
   const index=name===undefined?-1:names.indexOf(name);
   if(index>=0){finishLoadingImportedModule(referrer,request,payload,loadEntry(index${jsonModules ? ",request" : ""}));return;}
@@ -842,7 +876,7 @@ ${runnerHarness("index+1<scripts.length")} const script=scripts[scripts.length-1
 ${topLevelAwait ? moduleJobCheckpoint + runnerCompletion : runnerJobs}}
 `
     : "";
-  return `${moduleExecution ? `import {type ModuleRecord,type ModuleRequest,type GraphLoadingState,${dynamicImport ? "type ModuleReferrer,type ModuleLoadPayload," : ""}type ModuleCompletion,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise} from "modules";` : ""}
+  return `${moduleExecution ? `import {${sourcePhases ? "createSyntheticModule," : ""}type ModuleRecord,type ModuleRequest,type GraphLoadingState,${dynamicImport ? "type ModuleReferrer,type ModuleLoadPayload," : ""}type ModuleCompletion,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise} from "modules";` : ""}
 ${
   scriptEvaluation === undefined
     ? ""
@@ -868,7 +902,7 @@ import {createNativeFileHost,readlinkSync} from "native-fs";
 import {readFile} from "files";
 import {createTzifZone,type TzifZone} from "tzif";
 import {readTimeZoneIdentifiers} from "zone-identifiers";
-import {${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
+import {${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
 ${
   sharedBuffers
     ? `let sharedBlocks:NativeSharedBlockService|undefined=undefined;
@@ -1060,7 +1094,7 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  const evaluateScript=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    ${scriptEvaluation === undefined ? "rejectUnsupportedExecution(realm);\n   return undefined;" : "return host.evaluate(args[0]);"}
  });
- createDataProperty<ScriptPropertyKey,unknown>(api,"evalScript",evaluateScript,hooks);
+ ${sourcePhases ? 'createDataProperty<ScriptPropertyKey,unknown>(api,"AbstractModuleSource",realm.abstractModuleSourceConstructor,hooks);\n ' : ""}createDataProperty<ScriptPropertyKey,unknown>(api,"evalScript",evaluateScript,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(host.object,"$262",api,hooks);
 ${agentProvider === undefined ? "" : " installNativeAgent(host,api);\n"} return api;
 }
@@ -1094,6 +1128,7 @@ function nativeTestRuntime(
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
   agentProvider?: string,
+  sourcePhases: boolean = false,
 ): SourceModule {
   const text = nativeTestRuntimeSource(
     scriptEvaluation,
@@ -1114,6 +1149,7 @@ function nativeTestRuntime(
     topLevelAwait,
     jsonModules,
     agentProvider,
+    sourcePhases,
   );
   return parsedNativeHost(
     id,
@@ -1195,6 +1231,8 @@ function nativeTestHost(
   moduleEntries?: readonly NativeModuleEntry[],
   scriptRoot?: { readonly absent: readonly string[] },
   threaded: boolean = false,
+  moduleAbsent?: readonly string[],
+  jsonModules: boolean = false,
 ): SourceModule {
   const header = threaded
     ? "export function run(argument:number):number{if(argument!==0)return runNativeAgent(argument);try{"
@@ -1211,6 +1249,7 @@ function nativeTestHost(
       throw Error("missing root module");
     const hasVerdicts = moduleInputs.some((entry) => entry.verdict === true);
     const hasJSON = moduleInputs.some((entry) => entry.json === true);
+    const hasAbsence = moduleAbsent !== undefined;
     const imports = [
       ...scripts.map(
         (module, index) =>
@@ -1225,7 +1264,7 @@ function nativeTestHost(
       id,
       `${imports}
 import {${runner}${helpers}} from "runtime";
-${header}return ${runner}([${scripts.map((_, index) => "script" + index).join(",")}],${JSON.stringify(moduleInputs.map((entry) => entry.name))},[${moduleInputs.map((entry, index) => (entry.verdict === true || entry.json === true ? "undefined" : "module" + index)).join(",")}],${scriptRoot === undefined ? "" : JSON.stringify(scriptRoot.absent) + ","}${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"}${hasVerdicts || hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.verdict === true ? "verdict" + index : "undefined")).join(",")}]` : ""}${hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.json === true ? "module" + index : "undefined")).join(",")}]` : ""});${footer}
+${header}return ${runner}([${scripts.map((_, index) => "script" + index).join(",")}],${JSON.stringify(moduleInputs.map((entry) => entry.name))},[${moduleInputs.map((entry, index) => (entry.verdict === true || entry.json === true ? "undefined" : "module" + index)).join(",")}],${scriptRoot === undefined ? "" : JSON.stringify(scriptRoot.absent) + ","}${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"}${hasVerdicts || hasJSON || hasAbsence ? `,[${moduleInputs.map((entry, index) => (entry.verdict === true ? "verdict" + index : "undefined")).join(",")}]` : ""}${hasJSON || (hasAbsence && jsonModules) ? `,[${moduleInputs.map((entry, index) => (entry.json === true ? "module" + index : "undefined")).join(",")}]` : ""}${hasAbsence ? "," + JSON.stringify(moduleAbsent) : ""});${footer}
 `,
       new Map([
         ["runtime", runtime],
@@ -1278,6 +1317,7 @@ export function prepareNativeBatch(
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
   agentProvider?: string,
+  sourcePhases: boolean = false,
 ): SourceModule[] {
   if (cases.length === 0) throw new Error("empty native test batch");
   const scriptRoots = cases.some((item) => item.scriptRoot !== undefined);
@@ -1305,6 +1345,7 @@ export function prepareNativeBatch(
       topLevelAwait,
       jsonModules,
       agentProvider,
+      sourcePhases,
     ),
   ];
   const hosts: string[] = [];
@@ -1368,6 +1409,13 @@ export function prepareNativeBatch(
           module: scripts[item.scripts.length + i]!,
         })),
         item.scriptRoot,
+        false,
+        sourcePhases &&
+          item.scriptRoot === undefined &&
+          item.modules !== undefined
+          ? (item.moduleAbsent ?? [])
+          : undefined,
+        jsonModules,
       ),
     );
     hosts.push(id);
@@ -1575,13 +1623,23 @@ export function nativeScriptAdapter(
   dynamicImport: boolean = false,
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
+  sourcePhases: boolean = false,
+  deferredModules: boolean = false,
 ): string {
+  if (sourcePhases && !moduleExecution)
+    throw Error("source-phase host requires module execution");
+  if (deferredModules && (!moduleExecution || !dynamicImport || !topLevelAwait))
+    throw Error(
+      "deferred module host requires dynamic imports and async evaluation",
+    );
   if (jsonModules && !moduleExecution)
     throw Error("JSON host requires module execution");
   if (topLevelAwait && !moduleExecution)
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  if (deferredModules) return "native-script-v21-module-phases";
+  if (sourcePhases) return "native-script-v20-source-phase";
   if (evaluation?.templateSites === true)
     return "native-script-v19-managed-templates";
   if (evaluation?.dynamicImport === true)
@@ -1647,8 +1705,56 @@ export function nativeTopLevelAwaitCapability(
   return true;
 }
 
+/** Source-phase loading is enabled only by its complete frozen runtime contract. */
+export function nativeSourcePhaseCapability(
+  snapshot: WorkspaceSourceSnapshot,
+): boolean {
+  const module = capturedPublicEntry(
+    snapshot.publicEntries ?? snapshot.mappings,
+    "@tint/js-runtime/modules",
+  );
+  if (module === undefined) return false;
+  const exports = capturedModuleExports(
+    workspaceModules([module], snapshot),
+  ).get(module);
+  if (!exports?.has("getModuleSource")) return false;
+  const objects = capturedModuleExports(
+    workspaceModules([objectModule], snapshot),
+  ).get(objectModule);
+  if (
+    !nativeModuleCapability(snapshot) ||
+    !exports.has("createSyntheticModule") ||
+    !objects?.has("createModuleSourceObject")
+  )
+    throw Error("incomplete captured source-phase contract");
+  return true;
+}
+
 /** JSON parsing is a captured host capability; partial older synthetic support
  * does not enable JSON factories in a historical snapshot. */
+export function nativeDeferredModuleCapability(
+  snapshot: WorkspaceSourceSnapshot,
+): boolean {
+  const module = capturedPublicEntry(
+    snapshot.publicEntries ?? snapshot.mappings,
+    "@tint/js-runtime/modules",
+  );
+  if (module === undefined) return false;
+  const exports = capturedModuleExports(
+    workspaceModules([module], snapshot),
+  ).get(module);
+  if (!exports?.has("evaluateModuleSync")) return false;
+  if (
+    !exports.has("readyForSyncExecution") ||
+    !exports.has("gatherAsynchronousDependencies") ||
+    !nativeModuleCapability(snapshot) ||
+    !nativeTopLevelAwaitCapability(snapshot)
+  )
+    throw Error("incomplete captured deferred module contract");
+  return true;
+}
+
+/** JSON parsing and synthetic exports are frozen as one host capability. */
 export function nativeJSONModuleCapability(
   snapshot: WorkspaceSourceSnapshot,
 ): boolean {
@@ -1906,12 +2012,17 @@ export function createNativeBatchBuilder(
   const topLevelAwait =
     moduleExecution && nativeTopLevelAwaitCapability(snapshot);
   const jsonModules = moduleExecution && nativeJSONModuleCapability(snapshot);
+  const sourcePhases = moduleExecution && nativeSourcePhaseCapability(snapshot);
+  const deferredModules =
+    moduleExecution && nativeDeferredModuleCapability(snapshot);
   nativeScriptAdapter(
     scriptEvaluation,
     moduleExecution,
     dynamicImport,
     topLevelAwait,
     jsonModules,
+    sourcePhases,
+    deferredModules,
   );
   const capabilities = capturedNativeRuntimeCapabilities(snapshot);
   const agentProvider =
@@ -1963,6 +2074,7 @@ export function createNativeBatchBuilder(
         topLevelAwait,
         jsonModules,
         agentProvider,
+        sourcePhases,
       ),
     );
 }

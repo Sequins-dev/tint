@@ -69,6 +69,7 @@ export interface OrdinaryObject<Key, Value> {
   internalSourceText: string | undefined;
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
+  internalModuleSourceClassName: string | undefined;
   readonly internalConstruct: ObjectConstruct<Value> | undefined;
   readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
   /** Presence of [[ErrorData]], independent of the object's prototype chain. */
@@ -363,6 +364,7 @@ function allocateObject<Key, Value>(
     internalInitialName: undefined,
     internalSourceText: undefined,
     internalRawJSON: undefined,
+    internalModuleSourceClassName: undefined,
     internalConstruct,
     internalExecutionContext,
     internalErrorData: false,
