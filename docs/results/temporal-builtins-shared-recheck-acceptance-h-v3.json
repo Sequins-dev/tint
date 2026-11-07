@@ -1,0 +1,53 @@
+{
+  "kind": "builtin-temporal-partial-locale-and-shared-recheck-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T22:36:45.848030+00:00",
+  "accepted": true,
+  "change": "Define own branded PlainYearMonth and PlainMonthDay core toLocaleString methods, using intrinsic partial-date text and ignoring locale/options. No Intl engine dependency.",
+  "report": "test262-temporal-builtins-shared-recheck-h-v1.json",
+  "totals": {
+    "total": 168,
+    "passed": 168,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "completeAffectedMethods": [
+    {
+      "selection": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "selection": "built-ins/Temporal/PlainMonthDay/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    }
+  ],
+  "oldNonPassStatusesNowPassing": {
+    "crash": 1,
+    "unsupported": 101,
+    "fail": 30,
+    "timeout": 2
+  },
+  "oldNonPassTotalNowPassing": 134,
+  "additionalCoverage": "14 previously unmeasured PlainMonthDay locale variants and ten namespace variants; ten YearMonth method variants were already passing.",
+  "conformanceToolchain": "frozen-node-toolchain-temporal-builtins-h-v136.json",
+  "refreshedValidationToolchain": "frozen-node-toolchain-temporal-builtins-h-v138.json",
+  "currentPortableInputsByteAudited": 601,
+  "workspaceGate": "temporal-partial-locale-check-h-v138.json",
+  "workspaceTestsPassed": 4869,
+  "nativeRegression": "temporal-partial-locale-native-h-v138.json",
+  "nativeRegressionCases": 3,
+  "selfbuild": "temporal-partial-locale-selfbuild-h-v137.json",
+  "selfbuildByteIdentical": true,
+  "olderValidationRetained": "temporal-partial-locale-validation-h-v136.json",
+  "scope": "built-ins/Temporal only; Intl formatting engines remain parked.",
+  "remaining": "2,906 v18 unmeasured variants across six families; PlainDateTime 798 is running separately.",
+  "ownedImplementationBytesIdenticalAcrossAll": "packages/js-runtime/src/objects/temporal-partial-date.ts",
+  "compilerGraphReuseProof": "temporal-partial-locale-full-compiler-graph-h-v138.json",
+  "observability": "The refreshed native fixture compile crossed the 150-second advisory stall threshold, then completed. Investigation observed active compiler CPU; the original log is retained. All three native executions completed with entry-stop and exit-42 checks."
+}
