@@ -497,6 +497,7 @@ export function resolveDateTimeStylePattern(
   if (date === undefined)
     return time === undefined ? undefined : descriptor(time);
   if (time === undefined) return descriptor(date);
+  if (dateStyle === undefined) throw "DATE_TIME_STYLE_DATE_INVARIANT";
   const glue =
     dateTimeCalendarValue(profile, "styles", "A." + dateStyle) ??
     dateTimeCalendarValue(profile, "styles", "C." + dateStyle);
