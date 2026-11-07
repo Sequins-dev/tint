@@ -1,0 +1,173 @@
+{
+  "kind": "cluster-j-approved-native-toolchain-transition",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T21:38:48.028056+00:00",
+  "authorization": "User approved verified between-variant stop, preservation, boundary manifest refresh and fresh current-main freeze.",
+  "original": {
+    "kind": "verified-native-boundary-stop",
+    "at": "2026-11-07T21:36:36.487687+00:00",
+    "authorizedBy": "User explicitly approved safe transition after merged reset",
+    "pid": 14434,
+    "ack": {
+      "pid": 14434,
+      "state": "between-variants"
+    },
+    "childrenAtBoundary": [],
+    "inferiorAlive": false,
+    "signal": "SIGTERM to Node host only after acknowledgement",
+    "originalProcessGone": true,
+    "observerStopped": 34909,
+    "originalObserved": 390,
+    "originalTotals": {
+      "total": 390,
+      "passed": 390,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0
+    },
+    "originalSelectionComplete": false,
+    "originalRequested": 1226,
+    "journalUnchangedAcrossStop": true,
+    "originalJournalSha256": "7d8cc576597ea8b5a0b529102ef6436084c8af6a8e5cde7896ce18bce4f7fb02",
+    "originalSourceSnapshot": {
+      "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+      "files": 591
+    },
+    "originalFrozenToolchainSha256": "37e5a1e2111e97a61dd98ab7bae6bd9cd1eb4a8e168e0120f9612588bad9795d",
+    "originalJournalReadOnly": true,
+    "originalResumedOnChangedGraph": false,
+    "discardedCompiledBatch": {
+      "kind": "compilation",
+      "compilation": {
+        "id": 50,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 150514.79962499999,
+        "outcome": "compiled"
+      }
+    },
+    "wrapperExit": 143,
+    "wrapperExitReason": "Expected SIGTERM after verified user-approved boundary stop; not a Test262 observation",
+    "oldWrapperAndRunnerAndObserverGone": true,
+    "startedAt": "2026-11-07T13:00:47.085Z",
+    "sealedJournal": "docs/results/cluster-j-property-transition-v35-evidence/original-journal.jsonl",
+    "latestCompleteFileSlice": "docs/results/cluster-j-property-complete-files-390-v20-r1.json",
+    "requestedVariants": 1226,
+    "observed": 390,
+    "completeFiles": 195,
+    "selectionComplete": false
+  },
+  "replacement": {
+    "sourceSnapshot": {
+      "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+      "files": 601
+    },
+    "frozenToolchainManifestSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+    "frozenToolchainRecord": "docs/results/frozen-node-toolchain-cluster-j-v35.json",
+    "mainAtCapture": "38a5c71c4424226d32ccb6987b5d51d78c8e47fd",
+    "portableChangesFromMain": [],
+    "requestedVariants": 836,
+    "completeFiles": 418,
+    "manifest": "docs/results/cluster-j-property-remaining-manifest-v35.json",
+    "variantSubsetSha256": "ecda37f64330150956227ffcb86bca3e1dfdf16e14ab0cc9e369943aabf38481",
+    "journal": ".tint-bootstrap/cluster-j-property-remaining-v35.jsonl",
+    "stdout": ".tint-bootstrap/test262-cluster-j-property-remaining-native-v35.json",
+    "stderr": ".tint-bootstrap/cluster-j-property-remaining-v35.stderr",
+    "batchSize": 8,
+    "debuggerLaunch": "debugserver-direct",
+    "heartbeatMs": 30000,
+    "stallMs": 150000,
+    "started": true,
+    "selectionComplete": false
+  },
+  "populationAudit": {
+    "originalPlusRemainingVariants": 1226,
+    "originalPlusRemainingFiles": 613,
+    "crossGraphFileOverlap": 0,
+    "oldPrefixPartialFiles": 0,
+    "removedNonPasses": 0,
+    "proposalDifference": "The review proposal at389 observed variants included419 files/838 variants to wholly remeasure its partial file. That file completed before the approved boundary at390, so the refreshed manifest excludes it and contains418 files/836 variants.",
+    "policy": "Original journal is readonly and never resumed on changed sources. Every remaining file includes all pinned syntaxVariants, with source SHA256 validated by the standard subset resolver. Full-family denominator is retained; neither this operation nor the incomplete replacement is a complete family conformance report."
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/boundary-stop.json",
+      "bytes": 1534,
+      "sha256": "9468a50f023a8cc7b12cfd10a38b009d0ae8e31fa3c1c736287a2fa9c4bba752"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/boundary-stop.log",
+      "bytes": 1267,
+      "sha256": "6547b29f6ce12f47e86ad246776a3083fb014e9f1f0a8a8fa3a707ea25b0f840"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/original-journal.jsonl",
+      "bytes": 227680,
+      "sha256": "7d8cc576597ea8b5a0b529102ef6436084c8af6a8e5cde7896ce18bce4f7fb02"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/original-rechecks.json",
+      "bytes": 126,
+      "sha256": "67ebb49b142dc4561a4941dbd3923987333d7aaf66db8749c5e83e8cf4b337b7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/original-resources.jsonl",
+      "bytes": 181405,
+      "sha256": "dacd3926590e422b6fcaf8b948c21108b3742153d8e88a4a1d5a3dcb2aab44d3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/original-stderr.log",
+      "bytes": 408237,
+      "sha256": "8319d099fe05e8ed5daae9d351cab65631bc9b40154e50ad8653b363839332a1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/original-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/pause-ack.json",
+      "bytes": 41,
+      "sha256": "bcd49fe18e3a39b3d0a9a53b6c0d2c6fe12e4bf71994e3bf8ee3038a41f895bb"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/pause-request.txt",
+      "bytes": 154,
+      "sha256": "913df2548061e92e0973788a02d15154c3123e5f30214a72ed760ed5c6bf46de"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/prepare-remaining.ts",
+      "bytes": 2875,
+      "sha256": "f4b146102b1b7ed161f5ddb1e9e6c0397bbb988db125e8dcf00e817e6de4e19d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/prepared-transition.json",
+      "bytes": 3254,
+      "sha256": "8c158749d93affa4650af5ef41fef37e1aa1f11db1ed05900525b87ce773d4d6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/processes-at-boundary.txt",
+      "bytes": 632,
+      "sha256": "c57f70a2bd706e79283df45a28f99f91fc876f94ceb4f603d8d407577ee8838d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/replacement-build.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/replacement-start.json",
+      "bytes": 2097,
+      "sha256": "2c1d7c3fedd3b8a20b70ab042632bf2fee6175408e6af8cdf8daae8d743cf216"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v35-evidence/seal-boundary.py",
+      "bytes": 3575,
+      "sha256": "b06379ad32fd3c1deb084ee0c2ee0f31b82b7d4ed70ecf099179e29e26c8a1c8"
+    }
+  ],
+  "processSnapshotPolicy": "Only old J wrapper, runner and observer rows retained; unrelated host processes omitted."
+}

@@ -1,0 +1,49 @@
+{
+  "kind": "verified-native-boundary-stop",
+  "at": "2026-11-07T21:36:36.487687+00:00",
+  "authorizedBy": "User explicitly approved safe transition after merged reset",
+  "pid": 14434,
+  "ack": {
+    "pid": 14434,
+    "state": "between-variants"
+  },
+  "childrenAtBoundary": [],
+  "inferiorAlive": false,
+  "signal": "SIGTERM to Node host only after acknowledgement",
+  "originalProcessGone": true,
+  "observerStopped": 34909,
+  "originalObserved": 390,
+  "originalTotals": {
+    "total": 390,
+    "passed": 390,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "originalSelectionComplete": false,
+  "originalRequested": 1226,
+  "journalUnchangedAcrossStop": true,
+  "originalJournalSha256": "7d8cc576597ea8b5a0b529102ef6436084c8af6a8e5cde7896ce18bce4f7fb02",
+  "originalSourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "originalFrozenToolchainSha256": "37e5a1e2111e97a61dd98ab7bae6bd9cd1eb4a8e168e0120f9612588bad9795d",
+  "originalJournalReadOnly": true,
+  "originalResumedOnChangedGraph": false,
+  "discardedCompiledBatch": {
+    "kind": "compilation",
+    "compilation": {
+      "id": 50,
+      "variants": 8,
+      "kind": "execution",
+      "compileMs": 150514.79962499999,
+      "outcome": "compiled"
+    }
+  },
+  "wrapperExit": 143,
+  "wrapperExitReason": "Expected SIGTERM after verified user-approved boundary stop; not a Test262 observation",
+  "oldWrapperAndRunnerAndObserverGone": true
+}

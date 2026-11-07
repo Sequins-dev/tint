@@ -1,0 +1,54 @@
+{
+  "kind": "prepared-property-toolchain-transition",
+  "at": "2026-11-07T21:37:01.783Z",
+  "authorized": true,
+  "oldRunnerContinues": false,
+  "originalJournal": ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl",
+  "originalObserved": 390,
+  "originalPrefixSha256": "7d8cc576597ea8b5a0b529102ef6436084c8af6a8e5cde7896ce18bce4f7fb02",
+  "policy": "Exclude only complete files from the original graph; include every syntax variant of each remaining file. Any partial old file is remeasured wholly. Manifest refreshed at the user-approved verified boundary. Do not resume the original journal on changed sources.",
+  "remainingFiles": 418,
+  "remainingVariants": 836,
+  "subset": {
+    "rootSelection": "built-ins/RegExp/property-escapes",
+    "requestedVariants": 836,
+    "variantSubsetSha256": "ecda37f64330150956227ffcb86bca3e1dfdf16e14ab0cc9e369943aabf38481"
+  },
+  "manifest": ".tint-bootstrap/j-property-remaining-v35-manifest.json",
+  "candidate": {
+    "kind": "frozen-node-toolchain",
+    "at": "2026-11-07T21:34:58.918Z",
+    "sourceSnapshot": {
+      "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+      "files": 601
+    },
+    "toolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v35",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v35/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v35/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v35/source-snapshot.json",
+      "sha256": "cab44755a1217546ec817896d86f66e3e4091fce3a14109553030cc6d67ecc5d"
+    },
+    "mainAtCapture": "38a5c71c4424226d32ccb6987b5d51d78c8e47fd",
+    "head": "bf9342c6bf067f84f787dc5865cff1ecd3eeb459",
+    "portableChangesFromMain": [],
+    "portableChangesFromV34": [],
+    "mergedReset": "3bd24154156c8a180cdc87c791162800a9b92b46",
+    "debuggerLaunch": "debugserver-direct",
+    "basis": "Fresh freeze from portable sources identical to current main after user-approved safe transition. Main already contains guarded array reset and A3 source-phase/import-defer. Only unmerged changes are complete-file evidence docs. Rebuilt graph before freeze; previous current-graph native fixture and stage-image equivalence validate identical source36d432ce/601. Old frozen20 journal is preserved and will never resume on changed sources."
+  },
+  "nativeValidation": "docs/results/cluster-j-property-reset-integration-v34.json",
+  "performance": "docs/results/cluster-j-property-throughput-v33.json",
+  "proposedExecution": {
+    "runner": ".tint-bootstrap/cluster-j-toolchain-v35/tools/test262-native-run.ts",
+    "checkout": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "selection": "built-ins/RegExp/property-escapes",
+    "batchSize": 8,
+    "debuggerLaunch": "debugserver-direct",
+    "sources": ".tint-bootstrap/cluster-j-toolchain-v35/source-snapshot.json",
+    "journal": ".tint-bootstrap/cluster-j-property-remaining-v35.jsonl",
+    "slot": "runner 8",
+    "heartbeatMs": 30000,
+    "stallMs": 150000
+  }
+}
