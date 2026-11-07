@@ -1,0 +1,21 @@
+{
+  "kind": "pure-date-time-pattern-validation",
+  "nativeConformance": false,
+  "tests": 6,
+  "passed": 6,
+  "initialRed": "module absent; new feature tests failed before implementation",
+  "intermediateFailure": "The interval test incorrectly counted the second day at token9; token8 begins the second endpoint. Corrected expected split and retained failed log.",
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "implemented": [
+    "LDML quoting and repeated field syntax with Unicode literals",
+    "ECMA-402 component descriptors, distinguishing implicit AM/PM from flexible dayPeriod",
+    "BasicFormatMatcher penalties and stable selection",
+    "CLDR interval splitting without conflating cyclic and related years"
+  ],
+  "references": [
+    "https://tc39.es/ecma402/#sec-basicformatmatcher",
+    "https://unicode.org/reports/tr35/tr35-dates.html#Date_Format_Patterns"
+  ],
+  "scope": "Pure engine only; public DateTimeFormat construction and rendering are being implemented separately. Native execution remains held."
+}
