@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createSourceText } from "@tint/source/text";
-import { parseModule } from "@tint/typescript/syntax";
+import { parseModule, rewriteModule, type Span } from "@tint/typescript/syntax";
 import { bindModule } from "@tint/typescript/binding";
 import { specializeModule } from "@tint/ts-native/modules";
 import { checkClosureModule } from "@tint/typescript/checker";
@@ -199,4 +199,39 @@ test("specialization identities distinguish call and construct signatures", () =
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(result.value.specializations.length, 3);
   assert.ok(checkClosureModule(result.value.module).ok);
+});
+
+test("local specialization output assigns fresh hashes after generated declarations are inserted", () => {
+  const result = prepare(
+    `function outer(start:number):number{function id<T>(value:T):T{return value;}const number=id<number>(start);const text=id<string>("x");return number+text.length;}function run():number{return outer(4);}`,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const objects = new Set<Span>(),
+    hashes = new Map<number, Span>();
+  let missing = 0,
+    duplicates = 0;
+  function record<T extends Span>(mapped: T, original: Span): T {
+    if (objects.has(original)) return mapped;
+    objects.add(original);
+    if (original.nodeHash === undefined) missing++;
+    else {
+      const previous = hashes.get(original.nodeHash);
+      if (previous !== undefined && previous !== original) duplicates++;
+      hashes.set(original.nodeHash, original);
+    }
+    return mapped;
+  }
+  rewriteModule(result.value.module, {
+    expression: record,
+    type: record,
+    statement: record,
+  });
+  assert.equal(missing, 0, missing + " generated nodes have no hash");
+  assert.equal(
+    duplicates,
+    0,
+    duplicates + " distinct generated nodes share hashes",
+  );
+  const checked = checkClosureModule(result.value.module);
+  assert.ok(checked.ok, JSON.stringify(checked));
 });

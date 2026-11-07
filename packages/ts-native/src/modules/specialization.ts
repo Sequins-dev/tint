@@ -458,7 +458,10 @@ export function specializeModule(
     return {
       ok: true,
       value: {
-        module: completed,
+        // Local declarations are inserted by the postorder block callback above,
+        // after that traversal has already assigned hashes to existing children.
+        // Rehash the completed tree before rebinding and indexing generated copies.
+        module: rewriteModule(completed, { hashes: true }),
         specializations: instances,
         roots: rootNames,
       },
