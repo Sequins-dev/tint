@@ -1,0 +1,60 @@
+{
+  "kind": "native-agent-child-validation",
+  "schemaVersion": 1,
+  "scope": "Focused host isolation/failure containment regression; not unchanged Test262.",
+  "pairedReport": "native-script-agent-child-pair-v1.json",
+  "pairedDriverExit": 0,
+  "accepted": 2,
+  "total": 2,
+  "cases": [
+    "Successful child evaluation completes",
+    "Caught child code-budget failure exits gracefully with70; OS faults are not accepted"
+  ],
+  "toolchain": "frozen-node-toolchain-cluster-k-agent-host-v4.json",
+  "portableSnapshot": {
+    "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+    "files": 593
+  },
+  "selfbuild": "cluster-k-agent-selfbuild-v1.json",
+  "selfbuildReuse": "Portable compiler/runtime graph unchanged; only the Node-only fixture cases changed.",
+  "gate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4764,
+    "passed": 4764,
+    "codeBase": "f3491700",
+    "mainBase": "6bf4d5f1",
+    "log": ".tint-bootstrap/cluster-k/check-agent-child-failure-v1.log",
+    "laterFixtureChange": "Add matching successful child-evaluation case; no production or existing unit-test changes.",
+    "deltaChecks": [
+      {
+        "command": "tsc -p tsconfig.tests.json --noEmit",
+        "exit": 0
+      },
+      {
+        "command": "prettier --check tools/build-native-agent-child-failure-fixture.ts",
+        "exit": 0
+      }
+    ]
+  },
+  "emissionProbe": {
+    "scope": "Node-hosted emission diagnostic; not native execution",
+    "outerWorkerCodeBytes": 134424,
+    "childCodeBytes": 646728,
+    "budget": 262144,
+    "log": ".tint-bootstrap/cluster-k/probe-child-outer-budget-v1.log"
+  },
+  "guardDisabledControl": {
+    "report": "native-script-agent-child-control-v1.json",
+    "driverExit": 1,
+    "observed": "graceful host failure exit70",
+    "initialExpected": "completed",
+    "conclusion": "The initial control hypothesis was rejected. Removing the additional worker sticky checks still preserves this failure through existing propagation. The paired fixture validates required behavior; it is not evidence that this particular budget case regressed without the additional checks.",
+    "toolchain": "frozen-node-toolchain-cluster-k-agent-child-control-v1.json"
+  },
+  "retainedStress": "cluster-k-agent-child-stress-observation-v1.json",
+  "coverageReports": [
+    "test262-typedarray-entries-cluster-k-v1.json",
+    "test262-typedarray-every-cluster-k-v1.json"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "kind": "native-agent-child-evaluation-pair",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+      "files": 595
+    },
+    "imageSha256": "fd15f85e8e753ad20e5cfea5060c0af2a24725f57c4ebf0b1ae9b93bae507b40",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "$262.agent.start(\"var child=$262.createRealm();try{child.evalScript(\\\"0\\\");}catch(error){}$262.agent.leaving();\");",
+        "sha256": "b508e88ce5921a6e5aad3284e2f9e025f9e10c159f0ea7f826a61f93f5e730a9"
+      },
+      {
+        "index": 1,
+        "source": "$262.agent.start(\"var child=$262.createRealm();try{child.evalScript(\\\"var x=0;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;x=x+1;\\\");}catch(error){}$262.agent.leaving();\");",
+        "sha256": "b8bfc6d39ed371363f692e057bccbb66ae27ecd3f83a9c7f89b3913ace66a62d"
+      }
+    ]
+  },
+  "toolchain": "frozen-node-toolchain-cluster-k-agent-host-v4.json",
+  "observations": [
+    {
+      "index": 0,
+      "expected": "completed",
+      "accepted": true,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "expected": "graceful host failure exit70; no OS fault accepted",
+      "accepted": true,
+      "outcome": {
+        "kind": "crash",
+        "detail": "unexpected native exit status 70"
+      }
+    }
+  ],
+  "scope": "Two separate fresh native processes under LLDB. The same outer worker evaluates a child Script: a successful child completes, while a caught child code-budget failure remains terminal. Not unchanged Test262."
+}

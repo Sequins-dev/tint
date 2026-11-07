@@ -205,6 +205,7 @@ shared-block mappings remain valid until all referencing agents have exited.
 See [Atomics](atomics.md) for the explicit service contracts, native regression
 reports, platform boundary and complete-selection rerun status. The combined
 [frozen self-build](results/cluster-k-agent-selfbuild-v1.json) has identical stages;
-the [validation record](results/cluster-k-agent-host-validation-v1.json) retains
-the large child-realm compilation timeouts and their recheck limitation. Test262
-conformance remains separate from those infrastructure fixtures.
+the [paired child-realm validation](results/cluster-k-agent-child-validation-v1.json)
+covers successful evaluation and caught host failure. The large compilation stress
+timeouts remain separate observations. Test262 conformance remains separate from
+those infrastructure fixtures.

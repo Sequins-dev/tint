@@ -122,11 +122,12 @@ byte-identical stages and verifies signing and DWARF. These are regression and
 self-hosting evidence, not complete unchanged Test262 selections.
 
 The [combined validation record](results/cluster-k-agent-host-validation-v1.json)
-records the full workspace gate and expected worker error/rejection exits. A
-large child-realm compilation timed out twice after entry; the focused recheck
-received less than a fifth of a CPU core. Both processes were contained, but that
-stress case does not establish the caught child-realm sticky-error path. Its
-original observations and CPU samples remain available for a later recheck.
+records the full workspace gate and expected worker error/rejection exits. The
+[paired child-realm fixture](results/cluster-k-agent-child-validation-v1.json)
+completes a successful child evaluation and rejects a caught child code-budget
+failure with the expected graceful host status. The original large child-realm
+stress input retains three post-entry timeouts and CPU samples; it remains a
+separate compilation-cost observation.
 
 The measured [waitAsync baseline](results/test262-wait-async-immediate-native-v1.json)
 remains 88/202 until its complete rerun. It retains 106 missing-agent harness errors
