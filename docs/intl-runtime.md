@@ -209,6 +209,14 @@ recorded and future flag changes with identical offsets. Short country labels us
 explicit CLDR alternate selectors. [Zone-name validation](results/intl-date-time-zone-name-native-resume-h-v42.md)
 passes 48 focused and 4751 workspace tests; native images remain compiled only.
 
+`date-time-range.ts` selects compact CLDR intervals and tags shared/start/end
+parts. It compares fields through the requested precision, preserves reversed
+arguments and composes shared dates with time intervals or time-only fallback.
+Related and cyclic years retain their separate part identities. Structural
+date/time connector metadata avoids inferring composition from rendered text.
+[Range validation](results/intl-date-time-range-native-resume-h-v43.md) passes 57
+focused and 4760 workspace tests; native images remain compiled only.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
