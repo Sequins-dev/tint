@@ -1,0 +1,40 @@
+{
+  "kind": "workspace-gate-observation",
+  "conformance": false,
+  "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "stages": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "format": 0
+  },
+  "tests": {
+    "total": 4598,
+    "passed": 4598,
+    "failed": 0
+  },
+  "input": {
+    "at": "2026-11-06T23:56:27.367Z",
+    "base": "4e763648d83214efa4c8ac44555145f981b44bd9",
+    "head": "966e30a05e13eb2308e46c7cf0dfd4f2dbe70d52",
+    "sourceSnapshot": {
+      "sha256": "be57410832dd689dd21395f1151fb45c962003771f0daab51f4511746870cfd7",
+      "files": 568
+    }
+  },
+  "queueRebase": {
+    "at": "2026-11-07T00:00:30.961Z",
+    "base": "9cb47a05b26c7dfaf9fc14bb9af9800a883c1d56",
+    "head": "c340592d0d2b64688f1acb5c299816b207d1654f",
+    "sourceSnapshot": {
+      "sha256": "be57410832dd689dd21395f1151fb45c962003771f0daab51f4511746870cfd7",
+      "files": 568
+    },
+    "reason": "Main added explicit native variant manifests and its tests. Inspected stopped group: slot/inner shells only, no Node or native process; rebase completed before check execution."
+  },
+  "log": {
+    "path": "docs/results/temporal-h-check-v12.log",
+    "sha256": "e15dbb7d9e24f292c14b028dcf4b1dda372e5b49c6b5b920dd2a3105f4107865"
+  }
+}

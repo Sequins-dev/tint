@@ -182,7 +182,7 @@ These are bespoke cases; unchanged full selections are measured separately.
 The [YearMonth arithmetic fixture](results/native-temporal-year-month-arithmetic-green-h-v1.json)
 passes five native cases covering lower-unit rejection, coercion/option order,
 reference-day normalization, intrinsic allocation and derived-date boundaries.
-The [cumulative validation](results/temporal-partial-runtime-validation-h-v2.json)
+The [cumulative validation](results/temporal-partial-runtime-validation-h-v3.json)
 includes a byte-identical native self-build and stage2 smoke, with workspace gates
 and complete selection measurement still pending. The fixture contributes no
 Test262 passes.

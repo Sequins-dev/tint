@@ -1,0 +1,47 @@
+{
+  "kind": "temporal-partial-runtime-validation",
+  "conformance": false,
+  "scope": "ISO partial-date reference comparison/equality, required-field date conversion, YearMonth arithmetic, partial updates and YearMonth differences.",
+  "workspaceGate": "docs/results/temporal-h-check-v12.json",
+  "native": {
+    "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v9.json",
+    "sourceSnapshot": {
+      "sha256": "06b46d7cf7d8323835bc07c4b39ea83d43646c2d2f054a342cd3599acbe5ec70",
+      "files": 568
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "regressions": {
+      "report": "docs/results/native-temporal-cumulative-direct-green-h-v9.json",
+      "passed": 21,
+      "total": 21
+    },
+    "selfBuild": {
+      "report": "docs/results/temporal-partial-selfbuild-h-v9.json",
+      "success": true,
+      "byteIdentical": true,
+      "stage1Sha256": "912949206589c4b8818b9713f2ca32e3b10feb9dc030ac8e990deb905578394a",
+      "stage2Sha256": "912949206589c4b8818b9713f2ca32e3b10feb9dc030ac8e990deb905578394a",
+      "smokeExit": 42
+    }
+  },
+  "currentWorkspaceSourceSnapshot": {
+    "sha256": "be57410832dd689dd21395f1151fb45c962003771f0daab51f4511746870cfd7",
+    "files": 568
+  },
+  "sourceProvenance": {
+    "runtimeMatchesNativeSnapshot": true,
+    "mainChangesSinceNativeSnapshot": [
+      "packages/ir/src/optimization/reference-list-access.ts",
+      "packages/ir/src/optimization/reference-list-contract.ts",
+      "packages/ir/src/optimization/reference-lists.ts"
+    ],
+    "note": "The frozen self-build and 21 native cases precede main’s three dense-list IR optimizer files. All runtime source bytes match the native proof. The refreshed complete workspace gate covers integration with current main; no newer native self-build is claimed."
+  },
+  "coverage": {
+    "directManifest": "docs/results/test262-temporal-preentry-recheck-direct-h-v1.json",
+    "directPasses": 49,
+    "directTotal": 49,
+    "wholeTemporalFamiliesComplete": false
+  },
+  "retainedPriorGateFailure": "docs/results/temporal-h-check-v9.json"
+}
