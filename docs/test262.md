@@ -108,7 +108,7 @@ For-await-of has [passing native observations for 2,431/2,431 pinned variant key
 
 The complete [`language/statements/for-of` selection](results/test262-cluster-f-for-of-statements-v1.json) passes **1,442/1,442**, with zero failures, unsupported variants or infrastructure errors. The [validation record](results/cluster-f-for-of-complete-validation-v1.json) verifies all pinned variants and source identities; the runner and slot launcher exited 0.
 
-Iterator focused rechecks: [fresh direct runs](results/cluster-f-iterator-focused-rechecks-v2.json) record 0/2 passing and 2 after-entry timeouts, each measured individually on a fresh main toolchain. The timeouts each received over 250 native CPU seconds; shared execution/preparation profiling remains the next step (D/P). Original family totals remain 1,364/1,368. The remaining 2 requested rechecks are pending.
+Iterator focused rechecks: [fresh direct runs](results/cluster-f-iterator-focused-rechecks-v3.json) record 0/3 passing and 3 after-entry timeouts, each measured individually on a fresh main toolchain. The timeouts each received over 250 native CPU seconds; shared execution/preparation profiling remains the next step (D/P). Original family totals remain 1,364/1,368. The remaining 1 requested rechecks are pending.
 
 These complete generator and async builtin families retain all variants and non-passes; each was extracted with all pinned variants and source/harness identities from one frozen subset run.
 
