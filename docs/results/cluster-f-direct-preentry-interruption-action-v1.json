@@ -1,0 +1,53 @@
+{
+  "at": "2026-11-07T01:12:45.063174+00:00",
+  "pid": 14275,
+  "observedVariants": 133,
+  "processes": [
+    {
+      "pid": 18272,
+      "ppid": 18219,
+      "cpu": "0.0",
+      "time": "0:00.01",
+      "state": "T",
+      "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver --kill-on-error --no-stdio --unix-socket /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/port -- 127.0.0.1:0 /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test 5"
+    },
+    {
+      "pid": 18219,
+      "ppid": 14275,
+      "cpu": "0.0",
+      "time": "0:00.44",
+      "state": "T",
+      "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb --no-lldbinit --batch -o settings set target.disable-aslr false -o log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/packets.log\" gdb-remote packets process -o log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/state.log\" lldb process state -o script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"5\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\") -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped -o continue -o script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp/outcome.json\",'w').write(json.dumps({'state':'exited' if s==lldb.eStateExited else str(s),'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test"
+    },
+    {
+      "pid": 14275,
+      "ppid": 64903,
+      "cpu": "0.0",
+      "time": "17:12.21",
+      "state": "T",
+      "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node .tint-bootstrap/node-toolchain-cluster-f-for-await-unobserved-direct-v1/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/statements/for-await-of 64"
+    },
+    {
+      "pid": 18273,
+      "ppid": 18272,
+      "cpu": "0.0",
+      "time": "0:00.00",
+      "state": "T",
+      "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test 5"
+    }
+  ],
+  "sessions": [
+    {
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-TUi1cp",
+      "regularFiles": {
+        "state.log": 0,
+        "debugserver-pid": 5,
+        "packets.log": 0,
+        "debugserver.log": 0
+      }
+    }
+  ],
+  "action": "Stopped Node host and launch controllers; verified all inferiors were still stopped before entry with zero CPU and no initial-stop/protocol records. Cleaned only these parked pre-entry attempts, then terminated the host. No executing native test was signaled.",
+  "boundary": "Pre-entry abort, not a completed test; current attempt remains unobserved. Earlier timeout observations remain intact.",
+  "reason": "Every launch of batch2 image stalled before debugserver port handoff; retained signed image for focused protocol diagnosis."
+}

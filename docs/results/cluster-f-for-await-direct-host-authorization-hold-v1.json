@@ -1,0 +1,263 @@
+{
+  "kind": "native-run-interruption",
+  "conformance": false,
+  "recordedAt": "2026-11-07T01:29:10.081892+00:00",
+  "selection": "language/statements/for-await-of [explicit variant subset]",
+  "rootSelection": "language/statements/for-await-of",
+  "requestedVariants": 1805,
+  "variantSubsetSha256": "b8bf5532491e8065d1881715045064526b7452d9fcaad16bfea709e9248a4569",
+  "complete": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "sourceSnapshot": {
+    "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+    "files": 568
+  },
+  "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c",
+  "frozenManifest": "docs/results/frozen-node-toolchain-cluster-f-for-await-unobserved-direct-v1.json",
+  "debuggerLaunch": "debugserver-direct",
+  "journal": "docs/results/cluster-f-for-await-unobserved-direct-interrupted-prefix-v1.jsonl",
+  "stderr": "docs/results/cluster-f-for-await-unobserved-direct-interrupted-v1.log.gz",
+  "observations": 133,
+  "totals": {
+    "total": 133,
+    "passed": 128,
+    "failed": 0,
+    "unsupported": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "timeouts": 5
+  },
+  "unobservedVariants": 1672,
+  "lastRecord": "observation",
+  "exitStatus": 143,
+  "originalSession": 93195,
+  "stop": "docs/results/cluster-f-direct-preentry-interruption-action-v1.json",
+  "boundary": "Guarded pre-entry abort, not a between-variant completion. The sixth launch remained unobserved; no executing native test was signaled.",
+  "blocker": {
+    "kind": "host-authorization",
+    "coordinatorRecord": "2026-11-07T00:45Z HOST AUTHORIZATION STALL: debugservers blocked in task_for_pid, zero inferior CPU; Developer Tools prompt active.",
+    "interpretation": "Five measurement timeouts occurred in the recorded host authorization window. Retained-image and independently known-good small-smoke controls both reproduced a pre-entry timeout. This rules out attributing these observations to for-await semantics; exact host diagnosis is the coordinator record.",
+    "rule": "Do not start new native runs until load-events.md contains HOST AUTHORIZATION RESTORED.",
+    "restorationRecorded": false
+  },
+  "nonpasses": [
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-let-ary-ptrn-elem-obj-prop-id-init.js",
+      "sha256": "a9ecd8bc85b88daa749676091025ead15998044695b8f39760bd869097fd5bae",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HdSxjR/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-let-ary-ptrn-elem-obj-prop-id-init.js",
+      "sha256": "a9ecd8bc85b88daa749676091025ead15998044695b8f39760bd869097fd5bae",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Y6LukA/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-let-ary-ptrn-elem-obj-prop-id.js",
+      "sha256": "2ae26843f6b9548564603f620255c4303cb0722c8063fb2d79e3779bca00be72",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-BD4U9C/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-let-ary-ptrn-elem-obj-prop-id.js",
+      "sha256": "2ae26843f6b9548564603f620255c4303cb0722c8063fb2d79e3779bca00be72",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"3\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-2oJVvi/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "path": "language/statements/for-await-of/async-func-dstr-let-ary-ptrn-elem-obj-val-null.js",
+      "sha256": "836080c30b3a82c9b9c9046a896413e8dd63b1085361588ff0c14da7642c1e34",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Ky9LSX/test\\\",\\\"4\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UjUhnl/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    }
+  ],
+  "completeFileIndex": "docs/results/cluster-f-for-await-unobserved-direct-completed-files-v2.json",
+  "recheckManifest": "docs/results/cluster-f-for-await-preentry-and-host-stall-variant-input-v1.json",
+  "recheckVariants": 61,
+  "resume": {
+    "prerequisite": "Coordinator records HOST AUTHORIZATION RESTORED after user resolves the host Developer Tools prompt. Resume using the original frozen toolchain; do not re-freeze or replace prior observations.",
+    "workdir": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90",
+    "environment": {
+      "PATH": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin:$PATH",
+      "TINT_TEST262_SOURCES": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/node-toolchain-cluster-f-for-await-unobserved-direct-v1/source-snapshot.json",
+      "TINT_TEST262_JOURNAL": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-for-await-unobserved-direct-v1.jsonl",
+      "TINT_TEST262_VARIANTS": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/docs/results/cluster-f-for-await-unobserved-variant-input-v1.json",
+      "TINT_TEST262_RESUME": "1",
+      "TINT_TEST262_MODULES": "1",
+      "TINT_TEST262_DEBUGGER_LAUNCH": "debugserver-direct",
+      "TINT_TEST262_DEBUGGER_TRACE": "1",
+      "TINT_TEST262_CONTAINMENT_MS": "300000",
+      "TINT_TEST262_HEARTBEAT_MS": "30000",
+      "TINT_TEST262_STALL_MS": "150000"
+    },
+    "argv": [
+      "/Users/stephenbelanger/.t3/tint-slots/slot",
+      "runner",
+      "6",
+      "--",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/node-toolchain-cluster-f-for-await-unobserved-direct-v1/tools/test262-native-run.ts",
+      "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+      "language/statements/for-await-of",
+      "64"
+    ],
+    "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-for-await-unobserved-direct-v1.json",
+    "stderrAppend": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-for-await-unobserved-direct-v1.log"
+  },
+  "next": [
+    "Resume remaining1672 on original frozen toolchain after host restoration.",
+    "Re-freeze from current main and run61 explicit pre-entry/host-stall variants in direct mode as a separate complete report.",
+    "Run complete for-of, then remaining generator/async families and built-ins; do not start them during host authorization hold."
+  ],
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-interrupted-prefix-v1.jsonl",
+      "source": ".tint-bootstrap/test262-cluster-f-for-await-unobserved-direct-v1.jsonl",
+      "bytes": 113978,
+      "sha256": "9409ca8a5916a4b1ed0fc3e7a398951232ddf5badb02a786a7ccdd1dd258a369",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-interrupted-v1.log.gz",
+      "source": ".tint-bootstrap/test262-cluster-f-for-await-unobserved-direct-v1.log",
+      "bytes": 162735,
+      "sha256": "e5f7db70662082745dedc87a6d8673f94538563550d388706bd57f111f186e1e",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-direct-preentry-interruption-action-v1.json",
+      "source": ".tint-bootstrap/cluster-f-direct-preentry-interruption-action-v1.json",
+      "bytes": 5337,
+      "sha256": "349c1bde024730fdec8ed67d7039d5f738577bea2450445cf383e67881c02520",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-direct-first-launch-stall-v1.json",
+      "source": ".tint-bootstrap/cluster-f-direct-first-launch-stall-v1.json",
+      "bytes": 4588,
+      "sha256": "bf4b2732f68278bf009bced2ddd5a428277616dd72e04787c054008d5b249a02",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-direct-stalled-image-capture-v1.json",
+      "source": ".tint-bootstrap/cluster-f-direct-stalled-image-capture-v1.json",
+      "bytes": 714,
+      "sha256": "d38c07df4a5e93b1cdf9d908965603f6201b2fb0ba3fc2edf50a4c7ca80ddc47",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-direct-image-signature-and-ports-v1.json",
+      "source": ".tint-bootstrap/cluster-f-direct-image-signature-and-ports-v1.json",
+      "bytes": 1011,
+      "sha256": "e65762269369fc26ddeb7440beae52432a48f89559bd8cf248bb419c22305e5c",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-direct-lldb-sample-interruption-v1.json",
+      "source": ".tint-bootstrap/cluster-f-direct-lldb-sample-interruption-v1.json",
+      "bytes": 296,
+      "sha256": "31a638586bc58bd75078cfb918e692edd458a9a3848dd3fc1d0ab01db7dce634",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-retained-image-direct-probe-v1.json",
+      "source": ".tint-bootstrap/cluster-f-retained-image-direct-probe-v1.json",
+      "bytes": 3659,
+      "sha256": "e88130aa08c65586deeacd2a1881223ccc6dc1f9b8bacd04dcf36c62db06869f",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-small-smoke-direct-control-v1.json",
+      "source": ".tint-bootstrap/cluster-f-small-smoke-direct-control-v1.json",
+      "bytes": 3663,
+      "sha256": "ee6f21840ef78787905c9800749c0b8a5606c3ef78d3d7dc6fef4741d21ca49b",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-retained-image-direct-probe-v1.mjs",
+      "source": ".tint-bootstrap/cluster-f-retained-image-direct-probe-v1.mjs",
+      "bytes": 2098,
+      "sha256": "f30ff616a6d4a435c9b92c5e649ef7ef1d4b4be4736bd3d59bf689734fd45ac1",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-small-smoke-direct-control-v1.mjs",
+      "source": ".tint-bootstrap/cluster-f-small-smoke-direct-control-v1.mjs",
+      "bytes": 2105,
+      "sha256": "1690e01372c3b9a2a9e46bb76028d9d1cacdc92f34084d17efebad352b3e2590",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-debugserver-root-sample-result-v1.json",
+      "source": ".tint-bootstrap/cluster-f-debugserver-root-sample-result-v1.json",
+      "bytes": 128,
+      "sha256": "fbbd547761badd17b9ecb8dd864668b08a4d9cec5429c1ed23f08a9303eb8bf1",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-v1-exit.json",
+      "source": ".tint-bootstrap/cluster-f-for-await-unobserved-direct-v1-exit.json",
+      "bytes": 76,
+      "sha256": "69998926759d489edcbf5c2f4dd6065ba7b465924382e021e80363635aaad4ff",
+      "compression": null
+    },
+    {
+      "path": "docs/results/cluster-f-native-cpu-progress-v1.jsonl.gz",
+      "source": ".tint-bootstrap/cluster-f-native-cpu-progress-v1.jsonl",
+      "bytes": 44694,
+      "sha256": "454b3111826b27c7fdec795fb347300d7d6158bdbc53060128f95b78ec6c02f1",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-retained-image-direct-probe-v1.stderr.log.gz",
+      "source": ".tint-bootstrap/cluster-f-retained-image-direct-probe-v1.stderr.log",
+      "bytes": 2940,
+      "sha256": "bb8f895d08a633a90ba81bb33a1fa68cd1f5c759f84b2f6a5170a816ccdbd0ab",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-small-smoke-direct-control-v1.stderr.log.gz",
+      "source": ".tint-bootstrap/cluster-f-small-smoke-direct-control-v1.stderr.log",
+      "bytes": 2797,
+      "sha256": "a2bb3ba04ee8cdaeab9ff9e33c984465f9394abc8e78237e4ca79f4679e8e798",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-direct-v1-stall-2-0.txt.gz",
+      "source": ".tint-bootstrap/cluster-f-for-await-unobserved-direct-v1-stall-2-0.txt",
+      "bytes": 412924,
+      "sha256": "048f23567b8976966ddd5404f2cb0043c2a14aa5ed943366bbae639c32b19cea",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/cluster-f-host-load-events-snapshot-v1.md",
+      "source": "/Users/stephenbelanger/.t3/tint-briefs/load-events.md",
+      "bytes": 2446,
+      "sha256": "0be17684b93438446baff471d087488b584537415b2588c8b054491fee16f6fd",
+      "compression": null
+    }
+  ],
+  "coverage": "The133-row interrupted prefix is not a complete subset or full-family result. The64 complete-file reports provide128/128 native passes separately. Diagnostic controls are not conformance evidence."
+}

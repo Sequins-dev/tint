@@ -1,0 +1,23 @@
+{
+  "kind": "native-launch-protocol-diagnostic",
+  "conformance": false,
+  "startedAt": "2026-11-07T01:15:49.096Z",
+  "completedAt": "2026-11-07T01:20:49.162Z",
+  "debuggerLaunch": "debugserver-direct",
+  "driverSha256": "f30ff616a6d4a435c9b92c5e649ef7ef1d4b4be4736bd3d59bf689734fd45ac1",
+  "adapterFrozenDescriptor": "docs/results/frozen-node-toolchain-cluster-f-direct-launch-diagnostic-v1.json",
+  "adapterSourceSnapshot": {
+    "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+    "files": 569
+  },
+  "imageBuildSourceSnapshot": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+  "imageSha256": "60c84a3cd3348b3dfdb1e94e0ded62f8b59cbb8b8fd2548ece7efd037ed2c818",
+  "imageBytes": 195585791,
+  "caseIndex": 0,
+  "timeoutMs": 300000,
+  "scope": "Same original batch2 bytes, fresh atomic executable path and current frozen direct-launch adapter. Protocol diagnosis only; original timeout observations remain unchanged. Completion still requires recorded initial stop and exit42.",
+  "outcome": {
+    "kind": "timeout",
+    "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-RZ4kBk/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-RZ4kBk/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/packets.log\" gdb-remote packets process\n(lldb) log enable -f \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/state.log\" lldb process state\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-RZ4kBk/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-UzOY7a/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}
