@@ -1,0 +1,1603 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-numeric-operands-throughput-v1",
+  "createdUTC": "2026-11-07T10:31:03.216055+00:00",
+  "slice": "numeric",
+  "operationBenchmark": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V0 user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": ".tint-bootstrap/perf/numeric-register-benchmark-v2/before",
+        "manifest": {
+          "kind": "bounded-optimization-native-operation-benchmark",
+          "conformance": false,
+          "fixtureSha256": "38aa399227173b9786ca514dc66fcdf88bd1321a5d1fa98e4b60a572afc70878",
+          "imageSha256": "aafe52506ed727ef82091f0cea370496cbbb920dc814b156332dc05c96c7d0be",
+          "iterations": 500000000,
+          "optimizationBudget": 1000,
+          "passes": [
+            {
+              "phase": "scalar",
+              "pass": "function-local-cleanup",
+              "visited": 1000,
+              "rewritten": 83,
+              "skipped": 75
+            }
+          ],
+          "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+          "scalarCodeBytes": 344,
+          "frameBytes": 128,
+          "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+        }
+      },
+      {
+        "binary": ".tint-bootstrap/perf/numeric-register-benchmark-v2/after",
+        "manifest": {
+          "kind": "bounded-optimization-native-operation-benchmark",
+          "conformance": false,
+          "fixtureSha256": "38aa399227173b9786ca514dc66fcdf88bd1321a5d1fa98e4b60a572afc70878",
+          "imageSha256": "3daa7ce572397760d438ec79d6ac4c823efd1d488dac335126a39b85620aa77c",
+          "iterations": 500000000,
+          "optimizationBudget": 1000,
+          "passes": [
+            {
+              "phase": "scalar",
+              "pass": "function-local-cleanup",
+              "visited": 1000,
+              "rewritten": 83,
+              "skipped": 75
+            }
+          ],
+          "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+          "scalarCodeBytes": 296,
+          "frameBytes": 128,
+          "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [9.9267578125, 5.3984375, 2.9296875],
+        "loadAverageAfter": [9.9267578125, 5.3984375, 2.9296875],
+        "initial": {
+          "state": "stopped",
+          "pid": 68174
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1508.1285,
+        "cpuLowerBoundMs": 1458.561,
+        "unobservedCPUWallBoundMs": 0.019375,
+        "probes": 1171,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2706
+        },
+        "lastCPU": {
+          "userTicks": 34902102,
+          "systemTicks": 106068
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [9.9267578125, 5.3984375, 2.9296875],
+        "loadAverageAfter": [9.9267578125, 5.3984375, 2.9296875],
+        "initial": {
+          "state": "stopped",
+          "pid": 68281
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1271.414292,
+        "cpuLowerBoundMs": 1216.628625,
+        "unobservedCPUWallBoundMs": 0.026584,
+        "probes": 996,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3645
+        },
+        "lastCPU": {
+          "userTicks": 29086090,
+          "systemTicks": 116642
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [9.9267578125, 5.3984375, 2.9296875],
+        "loadAverageAfter": [9.8525390625, 5.4580078125, 2.96484375],
+        "initial": {
+          "state": "stopped",
+          "pid": 68319
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1241.268625,
+        "cpuLowerBoundMs": 1193.6708333333333,
+        "unobservedCPUWallBoundMs": 0.014625,
+        "probes": 977,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1461
+        },
+        "lastCPU": {
+          "userTicks": 28549956,
+          "systemTicks": 99605
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [9.8525390625, 5.4580078125, 2.96484375],
+        "loadAverageAfter": [9.8525390625, 5.4580078125, 2.96484375],
+        "initial": {
+          "state": "stopped",
+          "pid": 68341
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1468.221375,
+        "cpuLowerBoundMs": 1411.1737083333333,
+        "unobservedCPUWallBoundMs": 1.538333,
+        "probes": 1133,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1907
+        },
+        "lastCPU": {
+          "userTicks": 33745135,
+          "systemTicks": 124941
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [9.8525390625, 5.4580078125, 2.96484375],
+        "loadAverageAfter": [9.8525390625, 5.4580078125, 2.96484375],
+        "initial": {
+          "state": "stopped",
+          "pid": 68978
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1548.983917,
+        "cpuLowerBoundMs": 1496.859875,
+        "unobservedCPUWallBoundMs": 1.327375,
+        "probes": 1220,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2718
+        },
+        "lastCPU": {
+          "userTicks": 35774778,
+          "systemTicks": 152577
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [9.8525390625, 5.4580078125, 2.96484375],
+        "loadAverageAfter": [10.0244140625, 5.56640625, 3.017578125],
+        "initial": {
+          "state": "stopped",
+          "pid": 69009
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1258.641917,
+        "cpuLowerBoundMs": 1208.1964583333333,
+        "unobservedCPUWallBoundMs": 1.297208,
+        "probes": 974,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1779
+        },
+        "lastCPU": {
+          "userTicks": 28909156,
+          "systemTicks": 89338
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [10.0244140625, 5.56640625, 3.017578125],
+        "loadAverageAfter": [10.0244140625, 5.56640625, 3.017578125],
+        "initial": {
+          "state": "stopped",
+          "pid": 69050
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1310.78225,
+        "cpuLowerBoundMs": 1262.9465833333334,
+        "unobservedCPUWallBoundMs": 1.294792,
+        "probes": 1027,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1599
+        },
+        "lastCPU": {
+          "userTicks": 30180822,
+          "systemTicks": 131495
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [10.0244140625, 5.56640625, 3.017578125],
+        "loadAverageAfter": [10.0244140625, 5.56640625, 3.017578125],
+        "initial": {
+          "state": "stopped",
+          "pid": 69065
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1530.146583,
+        "cpuLowerBoundMs": 1481.3425833333333,
+        "unobservedCPUWallBoundMs": 1.316708,
+        "probes": 1203,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1551
+        },
+        "lastCPU": {
+          "userTicks": 35469259,
+          "systemTicks": 84514
+        }
+      }
+    ]
+  },
+  "operationSummary": [
+    {
+      "label": "before",
+      "runs": 4,
+      "cpuMs": {
+        "median": 1469.9517916666666,
+        "min": 1411.1737083333333,
+        "max": 1496.859875
+      },
+      "wallMsMedian": 1519.1375415,
+      "unobservedCPUWallBoundMs": 1.538333,
+      "exits": [
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        }
+      ]
+    },
+    {
+      "label": "after",
+      "runs": 4,
+      "cpuMs": {
+        "median": 1212.4125416666666,
+        "min": 1193.6708333333333,
+        "max": 1262.9465833333334
+      },
+      "wallMsMedian": 1265.0281045,
+      "unobservedCPUWallBoundMs": 1.297208,
+      "exits": [
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        {
+          "state": "exited",
+          "exitStatus": 42
+        }
+      ]
+    }
+  ],
+  "counterBenchmark": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": ".tint-bootstrap/perf/numeric-register-benchmark-v2/before",
+        "manifest": {
+          "kind": "bounded-optimization-native-operation-benchmark",
+          "conformance": false,
+          "fixtureSha256": "38aa399227173b9786ca514dc66fcdf88bd1321a5d1fa98e4b60a572afc70878",
+          "imageSha256": "aafe52506ed727ef82091f0cea370496cbbb920dc814b156332dc05c96c7d0be",
+          "iterations": 500000000,
+          "optimizationBudget": 1000,
+          "passes": [
+            {
+              "phase": "scalar",
+              "pass": "function-local-cleanup",
+              "visited": 1000,
+              "rewritten": 83,
+              "skipped": 75
+            }
+          ],
+          "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+          "scalarCodeBytes": 344,
+          "frameBytes": 128,
+          "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+        }
+      },
+      {
+        "binary": ".tint-bootstrap/perf/numeric-register-benchmark-v2/after",
+        "manifest": {
+          "kind": "bounded-optimization-native-operation-benchmark",
+          "conformance": false,
+          "fixtureSha256": "38aa399227173b9786ca514dc66fcdf88bd1321a5d1fa98e4b60a572afc70878",
+          "imageSha256": "3daa7ce572397760d438ec79d6ac4c823efd1d488dac335126a39b85620aa77c",
+          "iterations": 500000000,
+          "optimizationBudget": 1000,
+          "passes": [
+            {
+              "phase": "scalar",
+              "pass": "function-local-cleanup",
+              "visited": 1000,
+              "rewritten": 83,
+              "skipped": 75
+            }
+          ],
+          "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+          "scalarCodeBytes": 296,
+          "frameBytes": 128,
+          "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [12.6162109375, 12.0732421875, 8.27197265625],
+        "loadAverageAfter": [12.6162109375, 12.0732421875, 8.27197265625],
+        "initial": {
+          "state": "stopped",
+          "pid": 153
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1735.989708,
+        "cpuLowerBoundMs": 1653.6368333333332,
+        "unobservedCPUWallBoundMs": 1.567167,
+        "instructions": 18559018911,
+        "cycles": 5614400519,
+        "probes": 1140,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3683,
+          "instructions": 236121,
+          "cycles": 581860
+        },
+        "lastCPU": {
+          "userTicks": 39177016,
+          "systemTicks": 513951,
+          "instructions": 18559255032,
+          "cycles": 5614982379
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [12.6162109375, 12.0732421875, 8.27197265625],
+        "loadAverageAfter": [12.88671875, 12.13818359375, 8.31689453125],
+        "initial": {
+          "state": "stopped",
+          "pid": 253
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1447.2025,
+        "cpuLowerBoundMs": 1360.8238333333331,
+        "unobservedCPUWallBoundMs": 0.032167,
+        "instructions": 13545742302,
+        "cycles": 4590037624,
+        "probes": 922,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3124,
+          "instructions": 239884,
+          "cycles": 496692
+        },
+        "lastCPU": {
+          "userTicks": 32257489,
+          "systemTicks": 405407,
+          "instructions": 13545982186,
+          "cycles": 4590534316
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [12.88671875, 12.13818359375, 8.31689453125],
+        "loadAverageAfter": [12.88671875, 12.13818359375, 8.31689453125],
+        "initial": {
+          "state": "stopped",
+          "pid": 334
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1651.875292,
+        "cpuLowerBoundMs": 1488.6627916666666,
+        "unobservedCPUWallBoundMs": 0.028,
+        "instructions": 13539069235,
+        "cycles": 4589932365,
+        "probes": 1009,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2181,
+          "instructions": 119050,
+          "cycles": 280608
+        },
+        "lastCPU": {
+          "userTicks": 35333447,
+          "systemTicks": 396641,
+          "instructions": 13539188285,
+          "cycles": 4590212973
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [12.88671875, 12.13818359375, 8.31689453125],
+        "loadAverageAfter": [12.88671875, 12.13818359375, 8.31689453125],
+        "initial": {
+          "state": "stopped",
+          "pid": 462
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2037.585083,
+        "cpuLowerBoundMs": 1843.6418333333334,
+        "unobservedCPUWallBoundMs": 1.559875,
+        "instructions": 18540383846,
+        "cycles": 5593579386,
+        "probes": 1189,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2141,
+          "instructions": 105289,
+          "cycles": 226363
+        },
+        "lastCPU": {
+          "userTicks": 43828925,
+          "systemTicks": 420620,
+          "instructions": 18540489135,
+          "cycles": 5593805749
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [12.88671875, 12.13818359375, 8.31689453125],
+        "loadAverageAfter": [13.3759765625, 12.251953125, 8.37939453125],
+        "initial": {
+          "state": "stopped",
+          "pid": 593
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 2006.9745,
+        "cpuLowerBoundMs": 1844.454125,
+        "unobservedCPUWallBoundMs": 1.549708,
+        "instructions": 18543218904,
+        "cycles": 5573987941,
+        "probes": 1184,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2346,
+          "instructions": 124147,
+          "cycles": 316571
+        },
+        "lastCPU": {
+          "userTicks": 43942713,
+          "systemTicks": 326532,
+          "instructions": 18543343051,
+          "cycles": 5574304512
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [13.3759765625, 12.251953125, 8.37939453125],
+        "loadAverageAfter": [13.3759765625, 12.251953125, 8.37939453125],
+        "initial": {
+          "state": "stopped",
+          "pid": 688
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1593.726959,
+        "cpuLowerBoundMs": 1472.2252916666666,
+        "unobservedCPUWallBoundMs": 0.015792,
+        "instructions": 13536331666,
+        "cycles": 4588665995,
+        "probes": 967,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1782,
+          "instructions": 120260,
+          "cycles": 229013
+        },
+        "lastCPU": {
+          "userTicks": 35041936,
+          "systemTicks": 293253,
+          "instructions": 13536451926,
+          "cycles": 4588895008
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [13.3759765625, 12.251953125, 8.37939453125],
+        "loadAverageAfter": [13.505859375, 12.29736328125, 8.41796875],
+        "initial": {
+          "state": "stopped",
+          "pid": 801
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1535.018667,
+        "cpuLowerBoundMs": 1443.269125,
+        "unobservedCPUWallBoundMs": 0.031792,
+        "instructions": 13531346677,
+        "cycles": 4579186976,
+        "probes": 945,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2127,
+          "instructions": 129693,
+          "cycles": 276401
+        },
+        "lastCPU": {
+          "userTicks": 34399191,
+          "systemTicks": 241395,
+          "instructions": 13531476370,
+          "cycles": 4579463377
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [13.505859375, 12.29736328125, 8.41796875],
+        "loadAverageAfter": [13.505859375, 12.29736328125, 8.41796875],
+        "initial": {
+          "state": "stopped",
+          "pid": 896
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 1895.604167,
+        "cpuLowerBoundMs": 1807.23075,
+        "unobservedCPUWallBoundMs": 0.017292,
+        "instructions": 18533208274,
+        "cycles": 5574835637,
+        "probes": 1138,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1818,
+          "instructions": 135550,
+          "cycles": 199580
+        },
+        "lastCPU": {
+          "userTicks": 43108887,
+          "systemTicks": 266469,
+          "instructions": 18533343824,
+          "cycles": 5575035217
+        }
+      }
+    ]
+  },
+  "selfbuild": {
+    "manifest": {
+      "kind": "frozen-matched-native-numeric-operand-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/source-snapshot.json",
+        "sha256": "9839de560f7307d8ec9fd1f2d2a743ed7de7992bc85f5137119857c6d76d0399"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+        "files": 569
+      },
+      "scope": "Same compiler TypeScript implementation and source inputs, generated by two frozen production hosts; no loader adapters. Build-only preparation while host authorization is disabled."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 95305,
+          "monotonicNs": 1496857250
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 289959056000
+        },
+        "loadBefore": [13.41455078125, 11.94580078125, 7.40380859375],
+        "loadAfter": [18.94873046875, 14.27978515625, 9.62353515625],
+        "cpu": {
+          "pid": 95305,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6649239744,
+            "systemTicks": 67363496,
+            "instructions": 2896253789460,
+            "cycles": 903652873705
+          },
+          "cpuMsLowerBound": 279858.4683333333,
+          "finalUnobservedWallBoundMs": 103.727417,
+          "probes": 2698,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 288462.19875,
+        "outputSha256": "00ceb07857e4780b4fc999e65b76dd6f5485961b7a55f4be97d776b18a31aa43",
+        "outputBytes": 59914162,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 8531,
+          "monotonicNs": 2969802666
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 282472696250
+        },
+        "loadBefore": [18.94873046875, 14.27978515625, 9.62353515625],
+        "loadAfter": [13.9375, 13.337890625, 10.4951171875],
+        "cpu": {
+          "pid": 8531,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6492889498,
+            "systemTicks": 68034353,
+            "instructions": 2836920426663,
+            "cycles": 878723975346
+          },
+          "cpuMsLowerBound": 273371.827125,
+          "finalUnobservedWallBoundMs": 110.068083,
+          "probes": 2604,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 279502.893584,
+        "outputSha256": "00ceb07857e4780b4fc999e65b76dd6f5485961b7a55f4be97d776b18a31aa43",
+        "outputBytes": 59914162,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 1.0237282725017867,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "gate": {
+    "exit": {
+      "startedUTC": "2026-11-07T10:04:46.490Z",
+      "endedUTC": "2026-11-07T10:12:36.688Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+      "args": [],
+      "status": 0,
+      "signal": null
+    },
+    "inputs": {
+      "pid": 45743,
+      "args": [
+        ".tint-bootstrap/perf/record-background-exit-v1.mjs",
+        ".tint-bootstrap/perf/check-numeric-operands-ready-v2-exit.json",
+        "/Users/stephenbelanger/.t3/tint-slots/tint-check"
+      ],
+      "utc": "2026-11-07T10:04:46.354Z",
+      "head": "85b0a5cce22423091adceee6bf66861916f10abf",
+      "main": "2c8ffbba98188753374e6b65afd670d20f38cbd6"
+    }
+  },
+  "nativeSelection": {
+    "before": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "b51e0f947c1832410b2da6f96c6606b3474ac4b3fddfbed86ecc3d9bf49b4c6e",
+        "files": 568
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/source-snapshot.json",
+      "frozenToolchainSha256": "947ed2ebb8920500dbb9576906df4a997c0086309e2b561ff1a0c6c881020fb0",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 6,
+            "kind": "execution",
+            "compileMs": 338719.470792,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 6,
+      "variantSubsetSha256": "5389f7b9bfbc8caece1a4b69a70910617cadd59f0f9398c29cd316a4ee19cff8",
+      "complete": true,
+      "totals": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 340594.67691700003,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 340917.405875,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 341237.97329199995,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 341560.92283399997,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 341895.076875,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 342237.993334,
+          "batch": 0
+        }
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "kind": "runtime-execution",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v19-managed-templates",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": false,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+      "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+      "sourceSnapshot": {
+        "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+        "files": 569
+      },
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+      "frozenToolchainSha256": "abed8b3169d41c4e2027a4bde1cfd2c9dba621f7ea584e2cbb9783d702705dec",
+      "resumption": {
+        "restoredVariants": 0,
+        "events": []
+      },
+      "diagnosticPauses": [],
+      "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "executionResources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 16777216,
+        "sharedMemoryBlocks": 1024,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      },
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 6,
+            "kind": "execution",
+            "compileMs": 229021.81062499998,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "dirty": false,
+      "selection": "language/expressions [explicit variant subset]",
+      "rootSelection": "language/expressions",
+      "requestedVariants": 6,
+      "variantSubsetSha256": "5389f7b9bfbc8caece1a4b69a70910617cadd59f0f9398c29cd316a4ee19cff8",
+      "complete": true,
+      "totals": {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "observations": [
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 231344.677708,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+          "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 231906.964166,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 232469.627125,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/division/S11.5.2_A4_T5.js",
+          "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 232985.011,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "sloppy",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 233480.195709,
+          "batch": 0
+        },
+        {
+          "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+          "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+          "variant": "strict",
+          "metadata": {
+            "flags": [],
+            "features": [],
+            "includes": []
+          },
+          "canSuspend": true,
+          "harness": [
+            {
+              "name": "assert.js",
+              "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+            },
+            {
+              "name": "sta.js",
+              "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+            }
+          ],
+          "outcome": {
+            "kind": "completed"
+          },
+          "status": "pass",
+          "elapsedMs": 234011.23525,
+          "batch": 0
+        }
+      ]
+    },
+    "observationsEqual": true,
+    "observations": [
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/addition/S11.6.1_A3.1_T1.1.js",
+        "sha256": "372c671432da039f55a8a41e1bfd49fca48fb46b909acf40ea44b867f05b2a0f",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "sha256": "3ab06eb6b4917799accdd1be35458bd057c42f24729b97836d382df41d63460d",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      },
+      {
+        "path": "language/expressions/strict-equals/S11.9.4_A2.1_T3.js",
+        "sha256": "e73391ed47494972c0074bbb34aa71f0b0b0cf97e563c41ae94bf46d4c8083c9",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass"
+      }
+    ],
+    "scope": "Same six pinned variants across addition, division and strict equality; adjacent throughput toolchains, unchanged sources/harnesses, strictness goals, timeouts and resource limits. Complete canonical explicit-subset reports, not whole-family coverage."
+  },
+  "sourceIR": "Identical operation IR/fixture hash in each benchmark pair; different optimizer hosts for cleanup, identical frozen optimizer with different emitters for numeric operands.",
+  "runtimeCPUImprovementRatio": 1.2124188270487277,
+  "wholeSuiteProjectionHours": null,
+  "projectionLimit": "Operation-loop ratios cannot be applied to the full suite. Node-hosted fixed compilation remains a separate dominant cost; no representative full-suite execution mix was measured.",
+  "assets": [
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-cleanup-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-cleanup-v1.json",
+      "uncompressedSha256": "1e1eb729e53186e33ae57abe73a761cb91e4f0ea73fcdec53279475c7b62113a"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-cleanup-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-cleanup-v1.jsonl",
+      "uncompressedSha256": "896e467640e6ab4bc3313704857ff99f1ec031fd4d2098d385c407fce7564708"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-cleanup-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-cleanup-v1.log",
+      "uncompressedSha256": "cc1d2241cd7ba8a4a581ca3ff3d6bc58d94fbd349aec147e26534e6afe934335"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-cleanup-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-cleanup-v1-inputs.json",
+      "uncompressedSha256": "77d2722f01b5a66aafa2c25581a54a1048d70e79728422003f391b6470367239"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-numeric-v1.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.json",
+      "uncompressedSha256": "0c185f88e16baaf4da9f75dba53ff34769ba2291c70df68601e46ae2cf57ea54"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-numeric-v1.jsonl.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.jsonl",
+      "uncompressedSha256": "cb5c830d4144924711e2503fd6ad07bd668375c6a479bbd9054714655fc58a55"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-numeric-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1.log",
+      "uncompressedSha256": "ad50043d72cfa849b6980c9e18fb40064ea7ebd4d661e2ebf26bfcb3b1f50ce3"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-operation-equivalence-numeric-v1-inputs.json.gz",
+      "source": ".tint-bootstrap/perf/restored-operation-equivalence-numeric-v1-inputs.json",
+      "uncompressedSha256": "38751a13106a67c75ab722d22e2f985f8ffe5cd4b411ed7def417e2e4e19da71"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-check-numeric-operands-ready-v2.log.gz",
+      "source": ".tint-bootstrap/perf/check-numeric-operands-ready-v2.log",
+      "uncompressedSha256": "7c2ab2d15adb64b05cc3e7730ab0da15dbf24316a5b3a369cae48d34c037054a"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-native-checks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-native-checks-v1.log",
+      "uncompressedSha256": "5a45ba53cfc6803255cb930b9456aa40e9c7c8981c93890ab37159a51eb10b86"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-long-benchmarks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-long-benchmarks-v1.log",
+      "uncompressedSha256": "65f77e8ebc20079526150b3169a662e324978b9623c39d395816e4a8bd797c8e"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-counter-benchmarks-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-counter-benchmarks-v1.log",
+      "uncompressedSha256": "3801405e6e964d5b398ddeb3fcde9209c1f940c6f91ac4b25d422dcf7abc75e1"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-time-cpu-micro.ts.gz",
+      "source": ".tint-bootstrap/perf/time-cpu-micro.ts",
+      "uncompressedSha256": "affa6a7e0fdbbc658220c2412695c01a4bf73c1bc6bf3c8895056738ff5b9018"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-time-cpu-counters-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "uncompressedSha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-observe-selfbuild-cpu-v2.py.gz",
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "uncompressedSha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-selfbuild-numeric-operands-restored-v1.ts.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-numeric-operands-restored-v1.ts",
+      "uncompressedSha256": "1733b8f48c1617dc24ffc690dc3f0a9633834f51deca7df8e8f5b7cb30b8c0e3"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-selfbuild-numeric-operands-restored-v1.log.gz",
+      "source": ".tint-bootstrap/perf/selfbuild-numeric-operands-restored-v1.log",
+      "uncompressedSha256": "10257c3a403401292f3e0875304710a45c6db611a165de05d0e3e8727be94bf6"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-build-numeric-register-benchmark-v2.mjs.gz",
+      "source": ".tint-bootstrap/perf/build-numeric-register-benchmark-v2.mjs",
+      "uncompressedSha256": "b6fb44314c93aef1f33e20f862e6449197901ef427480ea152cf4cf181df3ee5"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-scalar-semantics-v1.log.gz",
+      "source": ".tint-bootstrap/perf/restored-scalar-semantics-v1.log",
+      "uncompressedSha256": "15673ac46e3a3e8f0e2fd8556d8119e347adff43473d243ca4cdbfed10539164"
+    },
+    {
+      "path": "docs/results/native-numeric-operands-throughput-v1-restored-scalar-semantics-v1-exit.json.gz",
+      "source": ".tint-bootstrap/perf/restored-scalar-semantics-v1-exit.json",
+      "uncompressedSha256": "68829c08f8d8d5070d9f975c939dcc637a8495cfbdb321b400210f1fd99a25fd"
+    }
+  ]
+}
