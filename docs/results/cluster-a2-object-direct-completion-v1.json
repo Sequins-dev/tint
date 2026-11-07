@@ -1,0 +1,39 @@
+{
+  "kind": "native-object-resumption-completion",
+  "generatedAt": "2026-11-07T11:17:28.267178+00:00",
+  "report": "docs/results/test262-language-object-direct-a2-native-v1.json",
+  "completeJournal": "docs/results/cluster-a2-object-direct-complete-journal-v1.jsonl",
+  "completeJournalSha256": "811490ee101f31464e78790bfe81a012b4581eb47f7a2c293209e78c283061b9",
+  "totals": {
+    "total": 2252,
+    "passed": 2249,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 3,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9986678507992895
+  },
+  "restoredObservations": 815,
+  "newObservations": 1437,
+  "newPasses": 1437,
+  "nonPasses": "Only the three original host-authorization pre-entry timeouts; original outcomes retained. Recheck separately using TINT_TEST262_VARIANTS on current main.",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v4.json",
+  "wrapperExitStatus": 1,
+  "wrapperDiagnostic": "slot:29: parse error near `)' after native report completion",
+  "currentWrapperSyntaxCheck": {
+    "command": "zsh -n ~/.t3/tint-slots/slot",
+    "exitStatus": 0,
+    "sha256": "43b4a2a25faf25f69068eca64f8a83b17e8398eb2e318f5d37cf1bc946e4d377",
+    "modifiedAt": "2026-11-07T10:32:27.073757+00:00"
+  },
+  "classification": "Wrapper error after the journal complete record and complete stdout report; no native result discarded. The current wrapper syntax check passes. No automatic retry of the original run.",
+  "allOwnedNativeProcessesExited": true,
+  "stderr": "docs/results/cluster-a2-object-direct-complete-stderr-v1.log.gz",
+  "cpuEvidence": "docs/results/cluster-a2-object-direct-resumed-cpu-v1.jsonl.gz",
+  "hostSample": "docs/results/cluster-a2-object-batch24-host-sample-v1.txt.gz",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "rawStdout": "docs/results/cluster-a2-object-direct-raw-stdout-v1.json.gz",
+  "rawStdoutSha256": "0e11ca19c0a59113e94472f832be287848225ad25b5db58c718aae15144280db"
+}
