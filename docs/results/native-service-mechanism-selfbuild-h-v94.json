@@ -1,0 +1,131 @@
+{
+  "kind": "native-self-build-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-native-service-h-v94.json",
+  "sourceSnapshot": {
+    "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+    "files": 595
+  },
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/source-native-service-mechanism-h-v94",
+  "session": "/tmp/tint-h94-ZWwW4b",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 10800000,
+  "checks": [
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "dwarfdump --verify",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "prepare-frozen-smoke",
+      "code": 0,
+      "signal": null,
+      "logTail": "allocator\nruntime\nprogram\nstartup\nimage\n{\"snapshot\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/source-native-service-mechanism-h-v94\",\"root\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/.tint-bootstrap/smoke-project\",\"output\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/.tint-bootstrap/smoke-node\",\"bytes\":1769842}\n"
+    },
+    {
+      "command": "stage2-smoke-compiler",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native",
+        "--debug-symbols"
+      ],
+      "expectedExit": 0,
+      "session": "/tmp/tint-h94-smoke-PU28Lx",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 8290
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 0,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h94-smoke-PU28Lx/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h94-smoke-PU28Lx/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h94-smoke-PU28Lx/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/.tint-bootstrap/smoke-project\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h94-smoke-PU28Lx/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h94-smoke-PU28Lx/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h94-smoke-PU28Lx/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h94-smoke-PU28Lx/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n30\n(lldb) continue\nProcess 8290 resuming\nProcess 8290 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h94-smoke-PU28Lx/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n"
+    },
+    {
+      "command": "compare smoke images",
+      "byteIdentical": true,
+      "nodeSha256": "1a264908a250be8f43af86221edff85a7278beeb7623cafe4ccead70b1daf839",
+      "nativeSha256": "1a264908a250be8f43af86221edff85a7278beeb7623cafe4ccead70b1daf839"
+    },
+    {
+      "command": "smoke-execution",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native",
+      "args": [],
+      "expectedExit": 42,
+      "session": "/tmp/tint-h94-smoke-SCVGvJ",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 8368
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h94-smoke-SCVGvJ/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h94-smoke-SCVGvJ/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h94-smoke-SCVGvJ/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/smoke-native-service-mechanism-h-v94/smoke-native\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h94-smoke-SCVGvJ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h94-smoke-SCVGvJ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h94-smoke-SCVGvJ/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h94-smoke-SCVGvJ/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n30\n(lldb) continue\nProcess 8368 resuming\nProcess 8368 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h94-smoke-SCVGvJ/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n59\n"
+    }
+  ],
+  "bootstrapProof": "docs/results/native-service-mechanism-bootstrap-build-only-h-v94.json",
+  "bootstrap": {
+    "kind": "native-compiler-bootstrap-build-only",
+    "conformance": false,
+    "time": "2026-11-07T15:17:20.859Z",
+    "frozenToolchain": "frozen-node-toolchain-native-service-h-v94.json",
+    "sourceSnapshot": {
+      "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+      "files": 595
+    },
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94",
+    "bytes": 54554242,
+    "sha256": "2e389bafb29b997ab3e29ed48cf2a2b6ef20635280cdb4a3f54289af0995d6f3",
+    "exit": 0
+  },
+  "snapshotVerified": true,
+  "debugger": {
+    "code": 0,
+    "signal": null
+  },
+  "initial": {
+    "stopped": true,
+    "pid": 87660
+  },
+  "result": {
+    "exited": true,
+    "exitStatus": 0,
+    "stopDescription": null
+  },
+  "debuggerLog": "/tmp/tint-h94-ZWwW4b/debugger.log",
+  "debuggerTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h94-ZWwW4b/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h94-ZWwW4b/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h94-ZWwW4b/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage1-native-service-mechanism-h-v94\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/source-native-service-mechanism-h-v94\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/stage2-native-service-mechanism-h-v94\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h94-ZWwW4b/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h94-ZWwW4b/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h94-ZWwW4b/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h94-ZWwW4b/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 87660 resuming\nProcess 87660 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h94-ZWwW4b/result.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n",
+  "stage1Sha256": "2e389bafb29b997ab3e29ed48cf2a2b6ef20635280cdb4a3f54289af0995d6f3",
+  "stage2Sha256": "2e389bafb29b997ab3e29ed48cf2a2b6ef20635280cdb4a3f54289af0995d6f3",
+  "bytes": 54554242,
+  "byteIdentical": true,
+  "success": true,
+  "elapsedMs": 349990,
+  "timedOut": false
+}

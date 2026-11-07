@@ -1,0 +1,58 @@
+{
+  "kind": "native-service-mechanism-validation",
+  "conformance": false,
+  "time": "2026-11-07T15:26:00.708575+00:00",
+  "baseMain": "1e36673c1eda5508b1ce0b03951c52eabf6f1eb8",
+  "frozenToolchain": "frozen-node-toolchain-native-service-h-v94.json",
+  "sourceSnapshot": {
+    "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+    "files": 595
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "tests": 4779,
+    "pass": 4779,
+    "fail": 0,
+    "types": 0,
+    "boundaries": 0,
+    "format": 0,
+    "log": "native-service-mechanism-check-h-v2.log.gz"
+  },
+  "nativeFixture": {
+    "outcome": "completed",
+    "entryStopped": true,
+    "exitStatus": 42,
+    "report": "native-service-unit-native-h-v94.json",
+    "checks": [
+      "two independent managed factory instances in one heap context",
+      "host callback imported by the unit",
+      "64 MiB allocation with an 8 MiB copying heap",
+      "independent state retained across moving GC",
+      "throw completion and permanent UTF16 literal retained across GC",
+      "cache hit with identical artifact digest",
+      "unit index and linking mode recorded in build identity"
+    ]
+  },
+  "nativeSelfBuild": {
+    "success": true,
+    "report": "native-service-mechanism-selfbuild-h-v94.json",
+    "byteIdentical": true,
+    "bytes": 54554242,
+    "sha256": "2e389bafb29b997ab3e29ed48cf2a2b6ef20635280cdb4a3f54289af0995d6f3",
+    "codesign": 0,
+    "dwarf": 0,
+    "smokeByteIdentical": true,
+    "smokeExit": 42
+  },
+  "retainedObservations": [
+    "native-service-mechanism-validation-red-h-v84.json",
+    "native-service-compiler-check-h-v85.json through v91.json",
+    "native-service-build-check-h-v92.json and v93.json",
+    "native-service-fixture-build-h-v94.log.gz: CWD setup failure before compilation; separate v94b build completed"
+  ],
+  "pending": [
+    "DateTimeFormat service migration",
+    "main vs unit compile CPU acceptance",
+    "monolithic vs unit Intl per-variant equivalence"
+  ]
+}

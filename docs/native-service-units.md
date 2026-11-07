@@ -1,6 +1,6 @@
 # Cached native service units
 
-Status: AOT prelink, host-owned contracts and per-context factories approved by the coordinator on 2026-11-07. The mechanism is in native validation; DateTimeFormat migration and the compile-cost/equivalence acceptance gates remain pending.
+Status: AOT prelink, host-owned contracts and per-context factories approved by the coordinator on 2026-11-07. The mechanism passes its workspace gate (4,779 tests), native cached-factory fixture and frozen compiler fixed point; see [validation](results/native-service-mechanism-validation-h-v94.json). DateTimeFormat migration and the compile-cost/equivalence acceptance gates remain pending.
 
 ## Problem and evidence
 
@@ -149,7 +149,7 @@ select or forge the binding.
    managed preflight/composition and factory lifecycle. Unit tests plus a native
    counter service with independent instances, moving GC, nested callbacks and
    thrown completion. Prove rejection before metadata reads for invalid ownership,
-   and include two simultaneously live context instances. Run the workspace gate
+   with two simultaneously live factory instances in one heap context. Independent heap-context state is owned by each host factory invocation; this fixture does not claim a cross-context exchange test. Run the workspace gate
    and frozen self-build/stage comparison for compiler-graph changes.
 2. **DateTimeFormat:** contract/body separation and service composition. Re-run
    existing native formatter fixtures and current workspace gates. Compare all
