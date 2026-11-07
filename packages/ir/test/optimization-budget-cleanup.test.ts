@@ -128,3 +128,58 @@ test("completed cleanup retains observable host effects and ABI slots", () => {
     ["load", "host-call"],
   );
 });
+
+test("local cleanup preserves guarded transfers and abrupt-completion storage", () => {
+  const fn: FunctionIR = {
+    ...copies(0),
+    parameters: [1],
+    slots: ["number", "reference", "number", "general"],
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 1, ...span }],
+        exception: { target: 2, slot: 3 },
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 2, ...span }],
+        terminator: { kind: "return", value: 1, ...span },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  };
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [fn, ...Array.from({ length: 49 }, (_, id) => copies(id + 1))],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const output = optimizeModule(input, 500);
+  assert.deepEqual(verify(output.module), { ok: true });
+  const cleaned = output.module.functions[0]!;
+  assert.deepEqual(cleaned.parameters, [0]);
+  assert.deepEqual(cleaned.slots, ["reference", "number", "general"]);
+  assert.deepEqual(cleaned.blocks[0]!.exception, { target: 2, slot: 2 });
+  const term = cleaned.blocks[0]!.terminator;
+  assert.equal(term.kind, "record");
+  if (term.kind === "record") {
+    assert.equal(term.slot, 1);
+    assert.equal(term.consequent, 1);
+    assert.equal(term.alternate, 2);
+  }
+});
