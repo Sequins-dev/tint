@@ -129,6 +129,7 @@ export function scriptRuntimeImports(
         "createDerivedClass",
         "classHeritage",
         "createClassMethod",
+        "prepareClassAutoAccessor",
         "initializeClassPrivateMethods",
         "defineClassMethod",
         "defineClassMethodValue",

@@ -2091,11 +2091,10 @@ function lowerScriptEntry(
       node.elements.some(
         (element) =>
           element.kind !== "static-block" &&
-          ((element.decorators?.length ?? 0) !== 0 ||
-            (element.kind === "field" && element.accessor === true)),
+          (element.decorators?.length ?? 0) !== 0,
       )
     )
-      fail(node, "decorators and auto-accessors are not implemented");
+      fail(node, "decorators are not implemented");
     const outerScope = scope,
       outerLexical = lexical,
       outerStrict = strict;
@@ -2425,7 +2424,47 @@ function lowerScriptEntry(
         });
         const fieldNames = ["name", "initialize"];
         const fieldValues: Expression[] = [key, implementation];
-        if (element.private) {
+        if (element.accessor) {
+          const storage = temporary(
+            runtimeCall("createPrivateName", [text("", element)], element),
+          );
+          const privateKey = element.key;
+          if (element.private && privateKey.kind !== "string")
+            throw "PRIVATE_NAME_INVARIANT";
+          const prepared = temporary(
+            runtimeCall(
+              "prepareClassAutoAccessor",
+              [
+                element.static ? result : prototype,
+                key,
+                storage,
+                element.private && privateKey.kind === "string"
+                  ? privateName(privateKey.value, element)
+                  : id("undefined"),
+                id("$errors"),
+                member(id("$global"), "hooks", element),
+              ],
+              element,
+            ),
+            false,
+            false,
+            named("ClassPrivateMethod"),
+          );
+          if (element.private)
+            expression({
+              ...at(element),
+              kind: "call",
+              callee: member(
+                element.static ? staticPrivate : instancePrivate,
+                "push",
+                element,
+              ),
+              arguments: [prepared],
+              typeArguments: [],
+            });
+          fieldNames.push("privateName");
+          fieldValues.push(storage);
+        } else if (element.private) {
           const privateKey = element.key;
           if (privateKey.kind !== "string") throw "PRIVATE_NAME_INVARIANT";
           fieldNames.push("privateName");

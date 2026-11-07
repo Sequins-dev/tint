@@ -12,6 +12,14 @@ function check(text: string) {
   assert.ok(parsed.ok, JSON.stringify(parsed));
   return checkClosureModule(parsed.value);
 }
+test("typed auto-accessors require explicit storage and accessor lowering", () => {
+  const result = check("class C{accessor x:number=1;}");
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, "UNSUPPORTED");
+    assert.match(result.error.message, /auto-accessor/);
+  }
+});
 test("annotated base class bodies check instance/static receivers and construction", () => {
   for (const source of [
     "class C{x:number=42;getValue():number{return this.x;}}function run():number{return new C().getValue();}",

@@ -714,15 +714,10 @@ function bindProgram(
         node.elements.some(
           (element) =>
             element.kind !== "static-block" &&
-            ((element.decorators?.length ?? 0) !== 0 ||
-              (element.kind === "field" && element.accessor === true)),
+            (element.decorators?.length ?? 0) !== 0,
         ))
     )
-      fail(
-        node,
-        "UNSUPPORTED",
-        "decorators and auto-accessors are not implemented",
-      );
+      fail(node, "UNSUPPORTED", "decorators are not implemented");
     for (const decorator of node.decorators ?? []) {
       if (decorator === undefined) throw "CLASS_DECORATOR_INVARIANT";
       expr(decorator, parent);

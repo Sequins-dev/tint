@@ -189,6 +189,7 @@ export { copyDataProperties } from "./copy.ts";
 export {
   createBaseClass,
   createClassMethod,
+  prepareClassAutoAccessor,
   initializeClassPrivateMethods,
   type ClassPrivateMethod,
   defineClassMethod,

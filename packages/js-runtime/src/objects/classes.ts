@@ -28,6 +28,10 @@ import { makeMethod } from "./methods.ts";
 import { constructorPrototype } from "./functions.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { functionMetadata, builtinProperty } from "./intrinsics.ts";
+import {
+  getPrivateObjectValue,
+  setPrivateObjectValue,
+} from "./private-values.ts";
 
 /** Evaluated public field key and initializer, capturing its lexical environment.
  * Keys are prepared once during class definition; initializers run per instance. */
@@ -38,6 +42,79 @@ export interface ClassField {
 }
 
 export type ClassPrivateMethod = PrivateMethod<unknown>;
+
+/** Auto-accessor closures share an anonymous private backing field. Public
+ * accessors are installed at definition time; private pairs are installed by
+ * InitializeInstanceElements before the backing field is initialized. */
+export function prepareClassAutoAccessor(
+  target: OrdinaryObject<ScriptPropertyKey, unknown>,
+  name: ScriptPropertyKey,
+  storage: PrivateName,
+  privateName: PrivateName | undefined,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): ClassPrivateMethod {
+  const getter = createClassMethod(
+    target,
+    "get " + propertyFunctionName(name),
+    0,
+    (receiver, args): unknown => {
+      const result = getPrivateObjectValue(
+        receiver,
+        storage,
+        hooks,
+        realm.objectPrototype,
+      );
+      if (result.error !== "none")
+        throw createRuntimeError(realm, result.error);
+      return result.value;
+    },
+    realm,
+    hooks,
+  );
+  const setter = createClassMethod(
+    target,
+    "set " + propertyFunctionName(name),
+    1,
+    (receiver, args): unknown => {
+      const error = setPrivateObjectValue(
+        receiver,
+        storage,
+        args[0],
+        hooks,
+        realm.objectPrototype,
+      );
+      if (error !== "none") throw createRuntimeError(realm, error);
+      return undefined;
+    },
+    realm,
+    hooks,
+  );
+  if (
+    privateName === undefined &&
+    defineOwnProperty<ScriptPropertyKey, unknown>(
+      target,
+      name,
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: getter,
+        set: setter,
+        enumerable: false,
+        configurable: true,
+      },
+      hooks,
+    ) !== "accepted"
+  )
+    throw createRuntimeError(realm, "type");
+  return {
+    name: privateName ?? storage,
+    kind: "accessor",
+    get: getter,
+    set: setter,
+  };
+}
 
 /** Install methods and complete accessor pairs before any instance/static fields.
  * Stage 3 nonextensible-applies-to-private: a non-empty batch first requires

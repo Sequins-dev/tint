@@ -314,6 +314,12 @@ export function resolveInterfaceTypes(
       }
       let type: number;
       if (member.kind === "field") {
+        if (member.accessor)
+          fail(
+            member,
+            "UNSUPPORTED",
+            "typed auto-accessors require private storage and accessor lowering",
+          );
         const annotation = member.type;
         if (annotation === undefined)
           fail(
