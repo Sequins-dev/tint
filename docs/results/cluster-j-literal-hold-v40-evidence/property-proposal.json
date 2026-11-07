@@ -1,0 +1,66 @@
+{
+  "kind": "prepared-property-toolchain-transition",
+  "at": "2026-11-07T23:12:24.154Z",
+  "authorized": true,
+  "oldRunnerContinues": false,
+  "originalJournal": ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl;.tint-bootstrap/cluster-j-property-remaining-v35.jsonl;.tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl",
+  "originalObserved": 443,
+  "priorJournals": [
+    ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl",
+    ".tint-bootstrap/cluster-j-property-remaining-v35.jsonl",
+    ".tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl"
+  ],
+  "originalPrefixSha256": "f800afda5db8754b26749b587d890e1d17026b7b56b5c6954dfc779a22949b58",
+  "policy": "Exclude only complete files observed on all three preserved property graphs; include every syntax variant of each remaining file. Any partial old file is remeasured wholly. Manifest refreshed at the user-approved verified boundary. Do not resume the original journal on changed sources.",
+  "remainingFiles": 392,
+  "remainingVariants": 784,
+  "subset": {
+    "rootSelection": "built-ins/RegExp/property-escapes",
+    "requestedVariants": 784,
+    "variantSubsetSha256": "741a744376914811a985ee6bdb107194df40e88af64a81f3fda615ae951b9699"
+  },
+  "manifest": ".tint-bootstrap/j-property-remaining-v41-manifest.json",
+  "candidate": {
+    "kind": "frozen-node-toolchain",
+    "at": "2026-11-07T23:12:01.419Z",
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    },
+    "toolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v41",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v41/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v41/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v41/source-snapshot.json",
+      "sha256": "8f735966831332153c73490430fc9fbe0b30a888c046746779b576b50700d959"
+    },
+    "mainAtCapture": "dd6369b13a5f05eb0e9f8f559e712630cfae8301",
+    "head": "dd6369b13a5f05eb0e9f8f559e712630cfae8301",
+    "portableChangesFromMain": [],
+    "portableChangesFromV40": [
+      "packages/js-engine/src/lowering/index.ts",
+      "packages/js-runtime/src/objects/errors.ts",
+      "packages/js-runtime/src/objects/functions.ts",
+      "packages/js-runtime/src/objects/jobs.ts",
+      "packages/js-runtime/src/objects/operations.ts"
+    ],
+    "mergedReset": "3bd24154156c8a180cdc87c791162800a9b92b46",
+    "mergedRangeCache": "a4a36b884efa092a4f8c88dfcddbd1986ce4bb54",
+    "debuggerLaunch": "debugserver-direct",
+    "basis": "Fresh current-main freeze for remaining complete generated property files, after preserved literal performance observations and confirmed P shared-JIT handoff. All implementation is already merged. Three original property journals remain immutable; old graph observations are not resumed on changed sources. Remaining whole-file manifest preserves full original1226variant denominator."
+  },
+  "nativeValidation": "docs/results/cluster-j-property-reset-integration-v34.json",
+  "performance": "docs/results/cluster-j-property-throughput-v33.json",
+  "proposedExecution": {
+    "runner": ".tint-bootstrap/cluster-j-toolchain-v41/tools/test262-native-run.ts",
+    "checkout": "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "selection": "built-ins/RegExp/property-escapes",
+    "batchSize": 8,
+    "debuggerLaunch": "debugserver-direct",
+    "sources": ".tint-bootstrap/cluster-j-toolchain-v41/source-snapshot.json",
+    "journal": ".tint-bootstrap/cluster-j-property-remaining-v41.jsonl",
+    "slot": "runner 8",
+    "heartbeatMs": 30000,
+    "stallMs": 150000
+  }
+}

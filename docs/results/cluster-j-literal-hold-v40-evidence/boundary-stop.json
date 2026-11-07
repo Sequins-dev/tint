@@ -1,0 +1,33 @@
+{
+  "kind": "verified-native-between-file-stop",
+  "at": "2026-11-07T23:12:01.822549+00:00",
+  "ack": {
+    "pid": 14070,
+    "state": "between-variants"
+  },
+  "noChildOrInferior": true,
+  "hostStoppedAfterAck": true,
+  "observerStopped": 14112,
+  "wrapperExpectedExit": 143,
+  "originalSourceSnapshot": {
+    "sha256": "0935103af5790160ecb6ac9537853d760fc9fb783173ee4682ef256a0603d2a5",
+    "files": 601
+  },
+  "originalFrozenToolchainSha256": "9be3997828fda3d5df16b919691291a7bff043257cc827a411ec674efd668fc3",
+  "journalSha256": "140b3622a7dde07d7f4932eee33bba10920937ed4e590d2515ecc03fd3255787",
+  "journalUnchanged": true,
+  "journalReadOnly": true,
+  "originalObserved": 12,
+  "originalExpected": 94,
+  "completeFiles": 6,
+  "totals": {
+    "total": 12,
+    "passed": 10,
+    "timeouts": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "crashes": 0,
+    "harnessErrors": 0
+  },
+  "policy": "Retain all observations including real timeouts; exclude only whole observed files from replacement breadth. Two timeouts remain explicit P blockers for focused fresh-main rechecks after breadth. Never resume40 journal on changed sources. Next82variant literal manifest preserves all pending files; original nonpasses remain in separate recheck list."
+}

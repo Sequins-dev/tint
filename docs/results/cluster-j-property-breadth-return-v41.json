@@ -1,0 +1,196 @@
+{
+  "kind": "cluster-j-prioritize-property-breadth-checkpoint",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T23:14:13.787798+00:00",
+  "reason": "COVERAGE PRIORITY: return sole J runner to largest unmeasured property gap while P investigates confirmed shared native-JIT preparation. Original journals and failures retained.",
+  "heldLiteral": {
+    "kind": "verified-native-between-file-stop",
+    "at": "2026-11-07T23:12:01.822549+00:00",
+    "ack": {
+      "pid": 14070,
+      "state": "between-variants"
+    },
+    "noChildOrInferior": true,
+    "hostStoppedAfterAck": true,
+    "observerStopped": 14112,
+    "wrapperExpectedExit": 143,
+    "originalSourceSnapshot": {
+      "sha256": "0935103af5790160ecb6ac9537853d760fc9fb783173ee4682ef256a0603d2a5",
+      "files": 601
+    },
+    "originalFrozenToolchainSha256": "9be3997828fda3d5df16b919691291a7bff043257cc827a411ec674efd668fc3",
+    "journalSha256": "140b3622a7dde07d7f4932eee33bba10920937ed4e590d2515ecc03fd3255787",
+    "journalUnchanged": true,
+    "journalReadOnly": true,
+    "originalObserved": 12,
+    "originalExpected": 94,
+    "completeFiles": 6,
+    "totals": {
+      "total": 12,
+      "passed": 10,
+      "timeouts": 2,
+      "failed": 0,
+      "unsupported": 0,
+      "crashes": 0,
+      "harnessErrors": 0
+    },
+    "policy": "Retain all observations including real timeouts; exclude only whole observed files from replacement breadth. Two timeouts remain explicit P blockers for focused fresh-main rechecks after breadth. Never resume40 journal on changed sources. Next82variant literal manifest preserves all pending files; original nonpasses remain in separate recheck list."
+  },
+  "literalPopulation": {
+    "originalVariants": 480,
+    "completeFiles": 199,
+    "observed": 398,
+    "passed": 394,
+    "timeouts": 4,
+    "pendingFiles": 41,
+    "pendingVariants": 82,
+    "pendingManifest": "docs/results/cluster-j-literal-pending-manifest-after-v40.json",
+    "singleVariantRecheckSource": "docs/results/cluster-j-literal-shared-jit-recheck-manifest-v41.json",
+    "policy": "480=398+82. Missing current-graph variants remain queued, not claimed passing or excluded. Recheck four real timeouts singly on fresh main after shared fix; preserve original outcomes.",
+    "blocker": "docs/results/cluster-j-current-main-eval-profile-v40.json"
+  },
+  "priorPropertyJournals": [
+    {
+      "journal": ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl",
+      "sha256": "7d8cc576597ea8b5a0b529102ef6436084c8af6a8e5cde7896ce18bce4f7fb02",
+      "observed": 390,
+      "sourceSnapshot": {
+        "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+        "files": 591
+      },
+      "readOnly": true
+    },
+    {
+      "journal": ".tint-bootstrap/cluster-j-property-remaining-v35.jsonl",
+      "sha256": "7ccb0f41af985082899fda4d5e41bfc56e3d69f4bf276981a219e5a6ad5603ef",
+      "observed": 47,
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "readOnly": true
+    },
+    {
+      "journal": ".tint-bootstrap/cluster-j-property-remaining-v38-r1.jsonl",
+      "sha256": "f95dacfde5d22664cb933220bafe3249150f77a20a937204da29d5783fd82b01",
+      "observed": 6,
+      "sourceSnapshot": {
+        "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+        "files": 601
+      },
+      "readOnly": true
+    }
+  ],
+  "propertyPopulation": {
+    "originalFiles": 613,
+    "originalVariants": 1226,
+    "priorObserved": 443,
+    "duplicatePartialObservations": 1,
+    "priorCompleteFiles": 221,
+    "priorCompleteVariants": 442,
+    "remainingFiles": 392,
+    "remainingVariants": 784,
+    "fileSum": 613,
+    "variantSum": 1226,
+    "crossGraphCompleteFileOverlap": 0,
+    "removedNonpasses": 0
+  },
+  "newProperty": {
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    },
+    "frozenToolchainSha256": "8afc3cb4d1c7e6dfbb894b69d8d8457eccf8e20e82e90693a28eea0e95b57a0f",
+    "frozenToolchainRecord": "docs/results/frozen-node-toolchain-cluster-j-v41.json",
+    "mainAtCapture": "dd6369b13a5f05eb0e9f8f559e712630cfae8301",
+    "portableChangesFromMain": [],
+    "manifest": "docs/results/cluster-j-property-remaining-manifest-v41.json",
+    "variantSubsetSha256": "741a744376914811a985ee6bdb107194df40e88af64a81f3fda615ae951b9699",
+    "journal": ".tint-bootstrap/cluster-j-property-remaining-v41.jsonl",
+    "batchSize": 8,
+    "debuggerLaunch": "debugserver-direct",
+    "containmentMs": 300000,
+    "heartbeatMs": 30000,
+    "stallMs": 150000,
+    "started": true,
+    "selectionComplete": false
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/boundary-stop.json",
+      "bytes": 1250,
+      "sha256": "24ed72ba0e5f0b46f1d0f05e07bd24f05bfbc923f453b3a5c53bbfb81af10695"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/hold-at-boundary.py",
+      "bytes": 3173,
+      "sha256": "c2ce652750327dc9d317ae062603411df6b8ff7afdb14eb116639898346a2ac1"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/original-journal.jsonl",
+      "bytes": 14582,
+      "sha256": "140b3622a7dde07d7f4932eee33bba10920937ed4e590d2515ecc03fd3255787"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/original-rechecks.json",
+      "bytes": 4098,
+      "sha256": "5dea7f11b2f92100d068fd08cd4eea1debcb4cd0b156f4c2a27d6176d600703f"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/original-resources.jsonl",
+      "bytes": 26177,
+      "sha256": "8e26c78a7e0b4ed4af2ebb56886c7796ffde16bc60e55c525a10c4627c23d26d"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/original-stderr.log",
+      "bytes": 19454,
+      "sha256": "18a12ef6b3ad7876767d64060d5273f071d600e94d3b850ab8e45d18ffcf57eb"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/owned-processes.json",
+      "bytes": 616,
+      "sha256": "3eaa0361110dbe1fe0c39e6e8f060c5889ad8e29245da70994f34ff9bb1149c1"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/pause-ack.json",
+      "bytes": 41,
+      "sha256": "49e3b157f9e97be12ecb3966a7ec7be29a3e5e50694db63938af5fc8ce0eb703"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/pause-request.txt",
+      "bytes": 198,
+      "sha256": "fbe701086828c22cb5037f568deccf8e60ac8fc3d5de574a06a5ddae06b9992a"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/pending-proposal.json",
+      "bytes": 3839,
+      "sha256": "3bb1b3f2157fbe4d690fad3d30bd677a0baf1c420f6347089e178d8dd2560ed3"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/prepare-pending.ts",
+      "bytes": 2991,
+      "sha256": "d5bf633ac6e51d712c0a7bc5fe529a818f68ab87586cfdec92d58eee60d271dd"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/prepare-property.ts",
+      "bytes": 3061,
+      "sha256": "b9ce285b9483fd667fba937ad5e9e97819ee2a52058053cf118158488b85362a"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/property-proposal.json",
+      "bytes": 3881,
+      "sha256": "b4443ac4a7201bf1d6d4eae548a3b5a67955adacd88fe735cfcf5b71fd3f40ff"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/property-replacement-header.json",
+      "bytes": 2097,
+      "sha256": "620cd4df1409fcf62ab429ab76e9390cf0cbc99d82f085bdcb0bcaf9775a4747"
+    },
+    {
+      "path": "docs/results/cluster-j-literal-hold-v40-evidence/replacement-build.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    }
+  ]
+}
