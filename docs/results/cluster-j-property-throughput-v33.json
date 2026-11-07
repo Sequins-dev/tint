@@ -1,0 +1,942 @@
+{
+  "kind": "cluster-j-generated-property-throughput-diagnostic",
+  "version": 1,
+  "at": "2026-11-07T21:12:10.769050+00:00",
+  "complete": true,
+  "ledgerEligible": false,
+  "scope": "One generated file, diagnostic phase wrappers, portable native algorithm probe and array-reset regression fixtures. These are not additional Test262 variants or a complete property-escape family rerun. The original frozen20 runner was never stopped or modified.",
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+  "originalTestSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+  "originalHarnessIdentity": [
+    {
+      "filename": "assert.js",
+      "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+    },
+    {
+      "filename": "sta.js",
+      "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+    },
+    {
+      "filename": "regExpUtils.js",
+      "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+    }
+  ],
+  "instrumentation": "Original harness and test body retained; appended timing wrappers around buildString and testPropertyEscapes, Date.now phase markers, private file output and a final timing statement. Debug symbols enabled. The exact same diagnostic scripts were built for both graphs. Native-only algorithm fixture separately times construction and packed-table lookup.",
+  "baselineSource": {
+    "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+    "files": 600
+  },
+  "candidateSource": {
+    "sha256": "212f770d9e9e47d92b6d696fb3278e9ff678841065d03d0c8c11a65fb2b0d394",
+    "files": 600
+  },
+  "portableDifference": [
+    "packages/js-runtime/src/objects/arrays.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "nodeHostedBuilds": {
+    "baselineSymbolized": {
+      "wallMs": 178660.661333,
+      "processCpuSeconds": 211.626594,
+      "ok": true,
+      "stages": [
+        {
+          "kind": "node-compile-stage",
+          "stage": "allocator",
+          "wallMs": 0.6017920000012964,
+          "cpu": {
+            "user": 589,
+            "system": 15
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "runtime",
+          "wallMs": 224.4111670000002,
+          "cpu": {
+            "user": 481846,
+            "system": 11812
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "program",
+          "wallMs": 1139.4880830000002,
+          "cpu": {
+            "user": 2264811,
+            "system": 50310
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "startup",
+          "wallMs": 164579.56770800002,
+          "cpu": {
+            "user": 192748336,
+            "system": 1691148
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "image",
+          "wallMs": 164674.70041700001,
+          "cpu": {
+            "user": 193038062,
+            "system": 1706072
+          }
+        }
+      ]
+    },
+    "baselineV8Profile": {
+      "wallMs": 179127.86220899998,
+      "processCpuSeconds": 208.939504,
+      "ok": true,
+      "stages": [
+        {
+          "kind": "node-compile-stage",
+          "stage": "allocator",
+          "wallMs": 0.7983750000003056,
+          "cpu": {
+            "user": 781,
+            "system": 57
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "runtime",
+          "wallMs": 250.52779199999895,
+          "cpu": {
+            "user": 455075,
+            "system": 16906
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "program",
+          "wallMs": 1515.7749999999996,
+          "cpu": {
+            "user": 2685210,
+            "system": 98188
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "startup",
+          "wallMs": 165067.733833,
+          "cpu": {
+            "user": 185411166,
+            "system": 5373973
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "image",
+          "wallMs": 165190.002,
+          "cpu": {
+            "user": 185673017,
+            "system": 5389884
+          }
+        }
+      ]
+    },
+    "candidateSymbolized": {
+      "wallMs": 144358.371417,
+      "processCpuSeconds": 190.594499,
+      "ok": true,
+      "stages": [
+        {
+          "kind": "node-compile-stage",
+          "stage": "allocator",
+          "wallMs": 0.5968749999992724,
+          "cpu": {
+            "user": 594,
+            "system": 4
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "runtime",
+          "wallMs": 224.74075000000084,
+          "cpu": {
+            "user": 393488,
+            "system": 10067
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "program",
+          "wallMs": 1123.3748749999995,
+          "cpu": {
+            "user": 2553217,
+            "system": 52441
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "startup",
+          "wallMs": 132379.594042,
+          "cpu": {
+            "user": 171992088,
+            "system": 2822688
+          }
+        },
+        {
+          "kind": "node-compile-stage",
+          "stage": "image",
+          "wallMs": 132456.123959,
+          "cpu": {
+            "user": 172273692,
+            "system": 2840574
+          }
+        }
+      ]
+    }
+  },
+  "nativeRuns": {
+    "baseline1": {
+      "phaseMessages": [
+        "PHASE test-start",
+        "PHASE buildString ms=18",
+        "PHASE testPropertyEscapes ms=4 expression=\\p{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=3 expression=\\p{CWCF}",
+        "PHASE buildString ms=49090",
+        "PHASE testPropertyEscapes ms=1866 expression=\\P{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=2366 expression=\\P{CWCF}",
+        "PHASE test-total ms=53366"
+      ],
+      "matchingStringBuildMs": 18,
+      "positiveMatchingMs": [
+        4,
+        3
+      ],
+      "complementStringBuildMs": 49090,
+      "complementMatchingMs": [
+        1866,
+        2366
+      ],
+      "testTotalMs": 53366,
+      "otherTopLevelWorkIncludingAllRegExpConstructionMs": 19
+    },
+    "candidate1": {
+      "phaseMessages": [
+        "PHASE test-start",
+        "PHASE buildString ms=14",
+        "PHASE testPropertyEscapes ms=2 expression=\\p{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=3 expression=\\p{CWCF}",
+        "PHASE buildString ms=33644",
+        "PHASE testPropertyEscapes ms=2404 expression=\\P{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=2207 expression=\\P{CWCF}",
+        "PHASE test-total ms=38290"
+      ],
+      "matchingStringBuildMs": 14,
+      "positiveMatchingMs": [
+        2,
+        3
+      ],
+      "complementStringBuildMs": 33644,
+      "complementMatchingMs": [
+        2404,
+        2207
+      ],
+      "testTotalMs": 38290,
+      "otherTopLevelWorkIncludingAllRegExpConstructionMs": 16
+    },
+    "baseline2": {
+      "phaseMessages": [
+        "PHASE test-start",
+        "PHASE buildString ms=16",
+        "PHASE testPropertyEscapes ms=5 expression=\\p{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=2 expression=\\p{CWCF}",
+        "PHASE buildString ms=48361",
+        "PHASE testPropertyEscapes ms=2499 expression=\\P{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=2510 expression=\\P{CWCF}",
+        "PHASE test-total ms=53406"
+      ],
+      "matchingStringBuildMs": 16,
+      "positiveMatchingMs": [
+        5,
+        2
+      ],
+      "complementStringBuildMs": 48361,
+      "complementMatchingMs": [
+        2499,
+        2510
+      ],
+      "testTotalMs": 53406,
+      "otherTopLevelWorkIncludingAllRegExpConstructionMs": 13,
+      "cpuSampling": {
+        "sampleIntervalMs": 500,
+        "maximumObservedProcessCpuSeconds": 43.38,
+        "policy": "Cumulative ps CPU lower bound shortly before exit, not exact final rusage. Phase boundaries are the first poll after each completed marker; sampling can add up to one interval.",
+        "phaseBoundaries": [
+          {
+            "completedMarkers": 4,
+            "sampledCpuSeconds": 0.04,
+            "at": "2026-11-07T21:06:14.679Z"
+          },
+          {
+            "completedMarkers": 5,
+            "sampledCpuSeconds": 39.97,
+            "at": "2026-11-07T21:07:03.163Z"
+          },
+          {
+            "completedMarkers": 6,
+            "sampledCpuSeconds": 42.07,
+            "at": "2026-11-07T21:07:06.004Z"
+          }
+        ]
+      }
+    },
+    "candidate2": {
+      "phaseMessages": [
+        "PHASE test-start",
+        "PHASE buildString ms=19",
+        "PHASE testPropertyEscapes ms=3 expression=\\p{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=3 expression=\\p{CWCF}",
+        "PHASE buildString ms=34116",
+        "PHASE testPropertyEscapes ms=1854 expression=\\P{Changes_When_Casefolded}",
+        "PHASE testPropertyEscapes ms=1794 expression=\\P{CWCF}",
+        "PHASE test-total ms=37807"
+      ],
+      "matchingStringBuildMs": 19,
+      "positiveMatchingMs": [
+        3,
+        3
+      ],
+      "complementStringBuildMs": 34116,
+      "complementMatchingMs": [
+        1854,
+        1794
+      ],
+      "testTotalMs": 37807,
+      "otherTopLevelWorkIncludingAllRegExpConstructionMs": 18,
+      "cpuSampling": {
+        "sampleIntervalMs": 500,
+        "maximumObservedProcessCpuSeconds": 36.06,
+        "policy": "Cumulative ps CPU lower bound shortly before exit, not exact final rusage. Phase boundaries are the first poll after each completed marker; sampling can add up to one interval.",
+        "phaseBoundaries": [
+          {
+            "completedMarkers": 4,
+            "sampledCpuSeconds": 0.05,
+            "at": "2026-11-07T21:07:44.533Z"
+          },
+          {
+            "completedMarkers": 5,
+            "sampledCpuSeconds": 32.8,
+            "at": "2026-11-07T21:08:18.731Z"
+          },
+          {
+            "completedMarkers": 6,
+            "sampledCpuSeconds": 34.96,
+            "at": "2026-11-07T21:08:21.016Z"
+          }
+        ]
+      }
+    }
+  },
+  "allFourNativeDiagnosticOutcomes": "completed after initial stopped state and exit42",
+  "inputSizesCodePoints": [
+    1561,
+    1112551
+  ],
+  "nativeAlgorithmProbe": {
+    "constructRegExpIterations": 10000,
+    "constructRegExpMs": 130.1853750348091,
+    "propertyLookupAndMembershipIterations": 1000000,
+    "propertyLookupAndMembershipMs": 2316.4690839648247,
+    "outcome": "completed, exit42"
+  },
+  "findings": [
+    "Complement string construction dominates this file. Both baselines spend48.361\u201349.090s there; candidates33.644\u201334.116s. Matches remain1.794\u20132.510s per complement sweep. All RegExp construction plus other top-level work fits the13\u201319ms residual.",
+    "The corrected native sample identifies ArraySetLength -> ownKeys/ordinaryOwnKeys -> sparse-list allocation during repeated codePoints.length=0. The unchanged harness resets chunks of10000.",
+    "Unicode property-name lookup and packed-range membership are binary searches. RegExp compilation stores references, not materialized large per-pattern property sets.",
+    "A guarded zero-length reset now checks each remaining descriptor once and clears index storage together only if all keys except length are configurable indices. The existing descending-delete algorithm handles named/symbol keys, nonconfigurable indices and other shrink cases. Length coercion, writability, descriptor attributes and blocked-shrink behavior are preserved.",
+    "The repeated pair sampled43.38CPU-s baseline versus36.06CPU-s candidate, about16.9% lower at the final available samples. Both are lower bounds sampled shortly before exit; wall-time reductions also reflect differing CPU share. This is a one-file result, not a family-wide speedup claim.",
+    "Node compilation is shared compiler work: sampled inclusive-wall prepareCollectionRuntimes43.49s, lowerEntries41.73s, checkClosureModule34.25s at its largest callsite, emitModule22.85s, managed exports20.89s and managed table17.42s. Nested times overlap and must not be summed. Debug-symbol work is included. Connect this profile with A1 identifier compilation and P; no shared compiler algorithm was changed in this slice."
+  ],
+  "redFirst": {
+    "node": "1024-index reset classifies3073 keys before fix; one-budget assertion fails. Corrected focused suite10/10.",
+    "native": "Original fixture exits2 at the same classification budget. Corrected fixture completes exit42; also tests repeated reuse, maximum sparse index, readonly length and blocked descending shrink."
+  },
+  "validation": {
+    "buildExit": 0,
+    "gateExit": 0,
+    "tests": 4833,
+    "passed": 4833,
+    "boundariesExit": 0,
+    "formatExit": 0,
+    "nativeFixtureOutcome": "completed",
+    "selfBuild": {
+      "kind": "cluster-j-frozen-native-selfbuild",
+      "at": "2026-11-07T21:11:09.256774+00:00",
+      "sourceSnapshot": {
+        "sha256": "212f770d9e9e47d92b6d696fb3278e9ff678841065d03d0c8c11a65fb2b0d394",
+        "files": 600
+      },
+      "debuggerLaunch": "debugserver-direct",
+      "bootstrapExit": 0,
+      "bootstrapSeconds": 53.38206908298889,
+      "nativeExit": 0,
+      "nativeSeconds": 348.1746184580261,
+      "initial": {
+        "state": "stopped",
+        "pid": 6048
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      },
+      "stageComparisonExit": 0,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "images": [
+        {
+          "stage": 1,
+          "image": ".tint-bootstrap/j-string-stage1-v33",
+          "bytes": 53580274,
+          "sha256": "8947cdff5c515b4904ef8ce39f1272fed10d802f51396cb28bb24a860ec01fc0"
+        },
+        {
+          "stage": 2,
+          "image": ".tint-bootstrap/j-string-stage2-v33",
+          "bytes": 53580274,
+          "sha256": "8947cdff5c515b4904ef8ce39f1272fed10d802f51396cb28bb24a860ec01fc0"
+        }
+      ]
+    }
+  },
+  "preservedFailedObservations": [
+    "Initial throwaway spread-based fixture rejected by closure checker.",
+    "Initial foundation clock fixture omitted runtime declaration; corrected fixture passed.",
+    "Initial diagnostic added huge result.length reads, triggering eager String boxing and an allocation trap; excluded from throughput conclusions and conformance. Samples and logs retained.",
+    "Frozen32 candidate missing explicit generic type arguments: native regression and generated image rejected. Original full gate failed at managed Script fixture preparation.",
+    "Frozen32 selfbuild stopped during obsolete Node bootstrap after those portability failures, before native launch. Superseded by frozen33 successful selfbuild."
+  ],
+  "reproduction": "Probe source copies are archived under evidence/probe. Restore to .tint-bootstrap/j-property-phase-probe-v1 for their original relative imports. Rebuild each graph from its recorded frozen snapshot; do not modify frozen tools. Build only then execute under direct LLDB. Phase runs use distinct directories because private output files are exclusive. Raw V8 profile is gzip-compressed. Native binaries remain at recorded local paths and are identified by build logs/manifests.",
+  "evidence": [
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/fixtures/green.manifest.json",
+      "bytes": 732,
+      "sha256": "ad65fbc68ca1e58a525fa3b992be13e837d4d5248a9e5c3854e2e459eb6ec369"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/fixtures/green.source.ts",
+      "bytes": 2247,
+      "sha256": "2f68f2f95e8b39e07f69e784c8f4120c5c8c4ed86a116399785609de43129a1f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/fixtures/red.manifest.json",
+      "bytes": 732,
+      "sha256": "064bf02685ddc779253d54d6bf0ee2b9ec13b3ae9ad5f5ff801f93cf9b2e3c09"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/fixtures/red.source.ts",
+      "bytes": 2247,
+      "sha256": "2f68f2f95e8b39e07f69e784c8f4120c5c8c4ed86a116399785609de43129a1f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/analyze-cpu.mjs",
+      "bytes": 911,
+      "sha256": "39e9d7c1c61c31f4c8e75612da0651a496f698b512d44d1fa47628448cb2bc9c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-0.txt",
+      "bytes": 17,
+      "sha256": "37b27890b6f763ff9729fdf012d6bb07dc9c466a8604d437ec12d3c6314fac56"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-1.txt",
+      "bytes": 24,
+      "sha256": "6804623e8797365032b7a0d36f619c11aa1ae5a7f5d2acf6ac84ef88677ef2aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-2.txt",
+      "bytes": 70,
+      "sha256": "c291354e9fd5eec802bc11c5f1e424c999df6ca1c01a805ae27995e53d948407"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-3.txt",
+      "bytes": 51,
+      "sha256": "6c3eeb0cf625ce5ee01b04bbdc1d635f3cdd18318066e149d4b9b072fbe38e34"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-4.txt",
+      "bytes": 27,
+      "sha256": "2cba763b3d06720a25ed8aa2e77f4d289a59d4c56b918359155c6286111025d5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-5.txt",
+      "bytes": 73,
+      "sha256": "6637ae86fc3af16b82c939cd750629b7fd6feba839cde5e3ce7ba08496557611"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-6.txt",
+      "bytes": 54,
+      "sha256": "2e3a5c520a6e26f6f15e598516e3125552419c54da9e608aabbb38b59f55c676"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r2/phase-7.txt",
+      "bytes": 26,
+      "sha256": "e9f87df7a61916f7b82e9c8a51428ef558aa6db7d0ea5982972d516bf2eb8c58"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-0.txt",
+      "bytes": 17,
+      "sha256": "37b27890b6f763ff9729fdf012d6bb07dc9c466a8604d437ec12d3c6314fac56"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-1.txt",
+      "bytes": 24,
+      "sha256": "199c92b6c6b0dc11c70091c63690c50a87bd1cd55fe6b174a92c6699a396ea24"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-2.txt",
+      "bytes": 70,
+      "sha256": "708a40fc7788ff76cd081c468149747398ba59dfdbdead2219356e4a181fdb8c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-3.txt",
+      "bytes": 51,
+      "sha256": "67008a828ce868084e82838da96654327f71a6a96976b8d63e08e7d22930378b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-4.txt",
+      "bytes": 27,
+      "sha256": "10531df3f16bad4ebb0783f7b15d13bbe3e92c1860c4650b98649b5f23de32d2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-5.txt",
+      "bytes": 73,
+      "sha256": "39551abc452b1c2ebcba965d160177c2ac578494512da7d2a8a4964182d6e884"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-6.txt",
+      "bytes": 54,
+      "sha256": "aea5401613c424e7ce45d50a13a8f134fbded15a65d2e588a082fad794b9103f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3/phase-7.txt",
+      "bytes": 26,
+      "sha256": "52521401adffe4db8d3cefe4cf809ae970265ef0234279143b4744f00484962d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/baseline-r3-resources.jsonl",
+      "bytes": 32025,
+      "sha256": "475496ee83d67b586f31750f8fffe556bcf3c517bf444b627d16d4ee23eaa8cb"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/build.log",
+      "bytes": 1173,
+      "sha256": "d86a72a9210261bed896bf5a29c1fc0a3e70f05a5032cec5bb2370774f64d542"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/build.ts",
+      "bytes": 3892,
+      "sha256": "9d18ed7763165656b44848065db07ae728fb88fd284a10642a182dd29a92308f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-0.txt",
+      "bytes": 17,
+      "sha256": "37b27890b6f763ff9729fdf012d6bb07dc9c466a8604d437ec12d3c6314fac56"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-1.txt",
+      "bytes": 24,
+      "sha256": "afb5365e215eca387207929d211ef53062bf8f1e1db5e55b901e3b35bd4bd368"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-2.txt",
+      "bytes": 70,
+      "sha256": "9cde07ebe3ebc24b8b48828749a19f1e3303e21a882fb3c62448e47d3640991a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-3.txt",
+      "bytes": 51,
+      "sha256": "6c3eeb0cf625ce5ee01b04bbdc1d635f3cdd18318066e149d4b9b072fbe38e34"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-4.txt",
+      "bytes": 27,
+      "sha256": "cfbbf67edafd5ff496bec21f54795f4f085ef85712c4a452ad6d93eb63572ab5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-5.txt",
+      "bytes": 73,
+      "sha256": "3ebe0bd9e8afdddb8fb7f0d5ba2d61c9f2cc9e66f98475baab6df2e52b2ce877"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-6.txt",
+      "bytes": 54,
+      "sha256": "bbcfbb47913802f2542dc66be560d90138404e776e6ff4fdb4d8884484218f38"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r1/phase-7.txt",
+      "bytes": 26,
+      "sha256": "ac78700f07fcf43739037e31c229be2d61babcd356e89d61f6bf06fafcbbd48e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-0.txt",
+      "bytes": 17,
+      "sha256": "37b27890b6f763ff9729fdf012d6bb07dc9c466a8604d437ec12d3c6314fac56"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-1.txt",
+      "bytes": 24,
+      "sha256": "ed9afb27756143881fc332e404c4e98501e5ebb1d7fe6a311f36de92a117b231"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-2.txt",
+      "bytes": 70,
+      "sha256": "3b72f657ca41ec077843a80602368aef2185b6dfbc542e4ddec61b56bbcdeab3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-3.txt",
+      "bytes": 51,
+      "sha256": "6c3eeb0cf625ce5ee01b04bbdc1d635f3cdd18318066e149d4b9b072fbe38e34"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-4.txt",
+      "bytes": 27,
+      "sha256": "3a26dbeb7c6c0981a4eae62fbcf33190b76da6e4e4ea6476cdc8f3f932fa8203"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-5.txt",
+      "bytes": 73,
+      "sha256": "cdfce7225b0f3ce4bd7b9298cc3409494380ec1062b73154cf49fd5494c0b740"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-6.txt",
+      "bytes": 54,
+      "sha256": "fc01cbbf0f1d4e91e25ccc8cab866b953f440ed48f4ef1281302d7e162bd3c31"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2/phase-7.txt",
+      "bytes": 26,
+      "sha256": "0addf2842b9f022b630a878274614343c18ccea1c06cf5e1a2389643f46f35e6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-r2-resources.jsonl",
+      "bytes": 23432,
+      "sha256": "46fbde378672c8a6b630999ffc81a59c773a04ff7b7dce1dd8240ac1d502ed71"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/candidate-v33-resources.jsonl",
+      "bytes": 7721,
+      "sha256": "146b50f7b4058b2234c1a1e8b5d4351a09191939cbdd0cc81f8baf86b51439e2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/cpu-summary.json",
+      "bytes": 18748,
+      "sha256": "7faeb67966d5e697a57728cfde2529db17bf6420edfdfc0a34410d7aa573049b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/debugger-session.ts",
+      "bytes": 7087,
+      "sha256": "85db66d0ede22869729bb4bb59e09d3df43770583c0e9f567c3f9a887b60cf80"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/fixture.ts",
+      "bytes": 10260,
+      "sha256": "1cb2cacff9dd29b0052e2cb7ee038f97da8e6f360d1fff8ab5d848065db2b053"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-build-r2.log",
+      "bytes": 442,
+      "sha256": "3750564697cf72a4ab7282d2345e25a95e79686b7b46bb52a513cc647dcf3693"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-build.log",
+      "bytes": 1151,
+      "sha256": "026595f1dfa17504165ad294b4e6ecd062bd29cedd26426b562c6dcb60429b50"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-build.ts",
+      "bytes": 1892,
+      "sha256": "c37dacdebd5af233a0baf633e584f0986fb3ef54957ca0b842be61df46ea0528"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-construct-10k.txt",
+      "bytes": 47,
+      "sha256": "9809b9d681a1742269ff4e545202cfd22a907d50478f07c75a569d3432598f2b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-lookup-and-membership-1m.txt",
+      "bytes": 58,
+      "sha256": "6dc262575948560edde72bcbc6ad35b45eb486deff9edc4f664130f91ef816ff"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-run.log",
+      "bytes": 527,
+      "sha256": "922ef4babed86b4c09ead1bef4953d287dc4b8e4504da2845f9fb6e7a88b8864"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/foundation-run.ts",
+      "bytes": 536,
+      "sha256": "377b8e2225beac32c7e9ad7245226ca08ad3924dfd54f56297c5bf9961f544d3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/input.json",
+      "bytes": 25438,
+      "sha256": "05b5c46d18638a223df4f4b1fd00bda70fd4f42b125add6db0a472d7ea7e000a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-first.sample.txt",
+      "bytes": 493779,
+      "sha256": "d71416c0becf667c2bced34bb2bffe89fa75b150f8a3d8e53e9c38ff5fd5bd77"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-process.ts",
+      "bytes": 9972,
+      "sha256": "23278eb1d80b97478a9ca692f4c5b6ccf748d4e04016a35f3f2a1a4bd4319f61"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-profile.ts",
+      "bytes": 99185,
+      "sha256": "44f0bf69bd2616a449be3df115406085e311cb4d55c389932146bbe8f5e40c53"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-r2-buildString.sample.txt",
+      "bytes": 447609,
+      "sha256": "6ef7532d95834a1b1523cd047ca55637cc4618abf3a0cfea5afccc6df1b94495"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-run-baseline-r3.log",
+      "bytes": 782,
+      "sha256": "38218338784d5493f6c45e7c05d9b5c7850bd92be32076694f8507402a0a5b87"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-run-candidate-v33-r2.log",
+      "bytes": 798,
+      "sha256": "4ccdab4f265bf4316bf448f31d7e166a668d16e4df4049d356d616463fbaf468"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-run-candidate-v33.log",
+      "bytes": 798,
+      "sha256": "1f2f2fcaf8cc0569e1195a9fea01cd8750f49a81b8555898d2c4465d4d2d6905"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-run-r2.log",
+      "bytes": 782,
+      "sha256": "c9e077515ade83e22459af78dec59b15463b86770134f446355165e4388eebe0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-run.log",
+      "bytes": 5772,
+      "sha256": "f928a482c8bab6ace9d380f55ac3710218da6ce96ab00471f7e24469a7e79da3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-second.sample.txt",
+      "bytes": 220069,
+      "sha256": "c496a0fdce49ad00e2682b1beb5bb9597819677f2798e6d50bd9528dbe6de717"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/native-stdio.log",
+      "bytes": 3819,
+      "sha256": "aa9e34bc9f5eaf806b9bae28e4ef9b4dda797f68fab5b2e44a8ff7bab47e8d9a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/node-compile.cpuprofile.gz",
+      "bytes": 1170238,
+      "sha256": "1d42fb696c78cd748e1e65e432230bf54dccace249e922a9073821a4168a1caa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/observe-candidate.mjs",
+      "bytes": 1116,
+      "sha256": "924f9e0925b6b4894fdcabe686491c2f409ba976f29d0b52e5754d47e1333472"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file-build.log",
+      "bytes": 2512,
+      "sha256": "03cfe856d2f7ba137d05a15a1cf42aa639e6f6a9414c56a8733d8886dc27d431"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file-candidate-v32-build.log",
+      "bytes": 2123,
+      "sha256": "b51ea1e58dbd6f0d55286e42690c304f42db17b1e4a6507c1886613f3af1a0b0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file-candidate-v33-build.log",
+      "bytes": 2275,
+      "sha256": "def3334b9e740ea7fd5ec23f1ef82367607776416f2d153f070ad62ef98d29ab"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file-cpuprofile-build.log",
+      "bytes": 2388,
+      "sha256": "ecf4946760303d4c81b39636605bbfb773adf43af04f9cdf398224bd65e27ab1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file-phase-r2-build.log",
+      "bytes": 2391,
+      "sha256": "51856116b5b5f0d2b5ffd1e656b23532e99d66a338ac4d14a023def6022db506"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/one-file.ts",
+      "bytes": 3012,
+      "sha256": "b359308c2e48b4fe2e4bb8a7e43d123e7d115a2e90663df1483dfa6b122477fe"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/provenance-candidate-v32.json",
+      "bytes": 867,
+      "sha256": "a97ad0c9c90741eb6e296bcad5e396c103911c8d5ba965f33e29f88a163c7a96"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/provenance-candidate-v33.json",
+      "bytes": 867,
+      "sha256": "c388964b3385399d910f6362fc5e8fead7567ea4250d1863505749d1c8645b3f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/provenance-cpuprofile.json",
+      "bytes": 867,
+      "sha256": "d2b956fcc30326839e0593d3c0b97d8391f73873d1c4cccfa5f6612baed56cc4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/provenance-phase-r2.json",
+      "bytes": 867,
+      "sha256": "f8c9fa7885493102ae5b410acb0887abbd73ebba3930c8f9ad840ced6d372805"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/provenance.json",
+      "bytes": 867,
+      "sha256": "d2b956fcc30326839e0593d3c0b97d8391f73873d1c4cccfa5f6612baed56cc4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/run-candidate-v33.ts",
+      "bytes": 482,
+      "sha256": "24845f81792e3649a9b02ce63f8f00b4fc2958bec364a3616e855cd0596fc4c6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/run-r2.ts",
+      "bytes": 473,
+      "sha256": "118559ffd82f2fe976f22ef6bd2a442b7a68699c9f3d763287fe3aa80ee8dafa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/probe/run.ts",
+      "bytes": 422,
+      "sha256": "3177960b427dbd35f2f747522222b18f2e08dceea3776ebc08ae3522a1fb1c3f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-build-v32.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-build-v33.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-gates-v32.log",
+      "bytes": 404036,
+      "sha256": "b806da7f0056410a2cc42881c75cbb95e1e2fb7f9b5b7281c3363b17e9d74074"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-gates-v33.log",
+      "bytes": 404907,
+      "sha256": "4734f6a33c83f7ff0fb10b31d1cf51e463f8683f9fcb8f34fbecabaf0b46260c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-green-v1.log",
+      "bytes": 983,
+      "sha256": "37f0e7d941296638daddaa18d58ef6e6df0f1943a3ca0aced301df361588a5e6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-green-v33.log",
+      "bytes": 982,
+      "sha256": "f471c59f53236ba7f3a4c42d23df692388e332d414a09155f9d59e2205d19330"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-native-green-build-v32.log",
+      "bytes": 1136,
+      "sha256": "1bf0cd11336fbb8d8653c532641707c7ac8dc783cc3b4d8f95c389acbfaabb77"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-native-green-build-v33.log",
+      "bytes": 453,
+      "sha256": "98559bfd67c0b676a2ec546a0e8455f4ff31bda6e909eb988c8bb471d81b059c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-native-green-run-v33.log",
+      "bytes": 514,
+      "sha256": "63e7b6c5e3b68394603b0068592234a2b3342641b8ab2a6d7f6d5400d8308e96"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-native-red-build-v1.log",
+      "bytes": 429,
+      "sha256": "0883aaf8b740e1116327a4d105b78f411b8ef0dfaab7d1b89e4d808a6560bb24"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-native-red-run-v1.log",
+      "bytes": 536,
+      "sha256": "38a5b6d72a86219f1055a45aaef950dc18faecab48e7c85d8dc5072b4e1b83b6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-red-v1.log",
+      "bytes": 2711,
+      "sha256": "bec556dc044dd1327cf5803d3789c986e08721741054a159404de51182d5b75f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-array-reset-red-v1b.log",
+      "bytes": 1926,
+      "sha256": "9c4f89de53771f8e4ca80766f004a716672cbff23eb61537e0346a81c4acdf81"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v32-driver.log",
+      "bytes": 1090,
+      "sha256": "1aa59e9061503b3fe235443d14db7e6f1aecccb3849ee3e4c49a562f6e6e8281"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v32-superseded.json",
+      "bytes": 318,
+      "sha256": "93a08fec8fc04254c3551a6fc7a1b96668bf7f2534a3cb2ad3ec9891d1074af1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-bootstrap.log",
+      "bytes": 226,
+      "sha256": "3c7ffc6cce4a32837770de79cacbba7ccdbb2c693b8aaefebb3ad04ad78247a2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-driver.log",
+      "bytes": 5055,
+      "sha256": "3648093ff21d1b44e5c25a4c558beecb05bc9f54dfe471e87e0742767c71a0de"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-dwarf.log",
+      "bytes": 438,
+      "sha256": "c24ed1ee448935385ca6f6ed12209bd566d22518546144cff0a4d40fd3925d1d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-final.json",
+      "bytes": 36,
+      "sha256": "aa603f8d60adb6c2d575584df27495df53986e3c4a3330e2f36b05de6db8fa1e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-initial.json",
+      "bytes": 33,
+      "sha256": "4b2f5b8c20be4255ab878e82cb578ac5376d4dfe6ad46e06d77203e117cf0ad4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-native-active.sample.txt",
+      "bytes": 347984,
+      "sha256": "1966c6dc1e0a6767e35ca4809482161deaeccc20a9230e8a99488d8a86191602"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-native.log",
+      "bytes": 3414,
+      "sha256": "6d269bbb96c81204d15d32dffe62c7ad4545ea8be2336af45743ce78966050f0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33-result.json",
+      "bytes": 993,
+      "sha256": "beadbd31492ca21acda54466b023ccb5e0883c3c2396ac369c4c9368e1ddf694"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v33-evidence/validation/j-selfbuild-v33.py",
+      "bytes": 5350,
+      "sha256": "faf51f67b2be1f1c8ccfa629f5b605f9820496d144e00cabca3a40cca8d9d065"
+    }
+  ]
+}

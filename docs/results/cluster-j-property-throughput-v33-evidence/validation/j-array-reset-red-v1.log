@@ -1,0 +1,49 @@
+✔ array indices extend length but named properties and deletion do not (0.91625ms)
+✔ read-only lengths allow existing indices but reject extension (0.190792ms)
+✔ failed shrinking deletes higher indices first and restores a read-only boundary (0.202416ms)
+✔ length coercion occurs twice before reading the current length descriptor (0.36425ms)
+✔ sparse shrinking handles the largest valid array index without scanning holes (0.085208ms)
+✔ rejected index definitions do not grow length, and accessors do (0.073875ms)
+✔ abrupt length coercion leaves the old descriptor intact (0.113459ms)
+✔ array list copies create fresh dense own elements from an argument suffix (1.171166ms)
+✖ resetting configurable array indices uses one classification pass (3.742959ms)
+✖ reset preserves non-index properties and never invokes configurable accessors (0.197291ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 8
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 528.203542
+
+✖ failing tests:
+
+test at packages/js-runtime/test/ordinary-object-arrays.test.ts:184:1
+✖ resetting configurable array indices uses one classification pass (3.742959ms)
+  AssertionError [ERR_ASSERTION]: reset classified 3073 keys for 1024 indices
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-arrays.test.ts:206:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at packages/js-runtime/test/ordinary-object-arrays.test.ts:216:1
+✖ reset preserves non-index properties and never invokes configurable accessors (0.197291ms)
+  TypeError: objects.createScriptSymbol is not a function
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/js-runtime/test/ordinary-object-arrays.test.ts:224:26)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

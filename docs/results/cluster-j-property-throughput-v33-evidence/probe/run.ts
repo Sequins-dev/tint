@@ -1,0 +1,2 @@
+import {executeNativeFile}from'./native-process.ts';import{startNativeHeartbeat}from'../../tools/test262-native-heartbeat.ts';
+const heartbeat=startNativeHeartbeat('J one-file phase diagnostic native');try{heartbeat.phase('native generated file');console.log(JSON.stringify(executeNativeFile('.tint-bootstrap/j-property-phase-probe-v1/one-file',300000,0,phase=>heartbeat.phase(phase))));}finally{await heartbeat.close();}

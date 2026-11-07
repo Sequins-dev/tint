@@ -1,0 +1,18 @@
+✔ array indices extend length but named properties and deletion do not (0.992458ms)
+✔ read-only lengths allow existing indices but reject extension (0.202ms)
+✔ failed shrinking deletes higher indices first and restores a read-only boundary (0.263792ms)
+✔ length coercion occurs twice before reading the current length descriptor (0.419459ms)
+✔ sparse shrinking handles the largest valid array index without scanning holes (0.098833ms)
+✔ rejected index definitions do not grow length, and accessors do (0.085167ms)
+✔ abrupt length coercion leaves the old descriptor intact (0.136ms)
+✔ array list copies create fresh dense own elements from an argument suffix (1.141542ms)
+✔ resetting configurable array indices uses one classification pass (1.420917ms)
+✔ reset preserves non-index properties and never invokes configurable accessors (0.173541ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 371.660958

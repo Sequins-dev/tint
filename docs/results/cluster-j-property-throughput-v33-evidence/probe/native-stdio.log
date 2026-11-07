@@ -1,0 +1,43 @@
+(lldb) target create ".tint-bootstrap/j-property-phase-probe-v1/one-file"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-property-phase-probe-v1/one-file' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) script exec("import os, socket, subprocess, time\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--unix-socket\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/port\",\"--\",\"127.0.0.1:0\",\".tint-bootstrap/j-property-phase-probe-v1/one-file\",\"0\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/pid",'w').write(str(p.GetProcessID())); open("/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-dAyfRf/initial.json",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped
+5
+34
+(lldb) continue
+PHASE test-start
+PHASE buildString ms=16 units=1868
+PHASE testPropertyEscapes ms=3 units=1868 expression=\p{Changes_When_Casefolded}
+PHASE testPropertyEscapes ms=2 units=1868 expression=\p{CWCF}
+Process 20673 resuming
+Process 20673 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x102285420)
+       frame #0: 0x0000000102285420 one-file`program:packages/foundation/src/collections/key-index.ts:closure@3550 [closure_11744] at key-index.ts:118:34
+   115 	        rebuild(count * 2 >= slots.length ? slots.length * 2 : slots.length);
+   116 	        at = position(key, hashValue);
+   117 	      }
+-> 118 	      const entry: Entry<K, V> = {
+    	                                 ^
+   119 	        hash: hashValue,
+   120 	        key,
+   121 	        value,
+Target 0: (one-file) stopped.
+
+
+
+Debugserver: 
+Connection: Process 20673 stopped
+* thread #1, stop reason = signal SIGSTOP
+       frame #0: 0x000000010c23c9c0 dyld`_dyld_start
+dyld`_dyld_start:
+->  0x10c23c9c0 <+0>:  mov    x0, sp
+    0x10c23c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0
+    0x10c23c9c8 <+8>:  mov    x29, #0x0                 ; =0 
+    0x10c23c9cc <+12>: mov    x30, #0x0                 ; =0 
+Target 0: (one-file) stopped.
+
+Connection readiness: 
+Launch: 
+Process state: 
+Remote packets: 
