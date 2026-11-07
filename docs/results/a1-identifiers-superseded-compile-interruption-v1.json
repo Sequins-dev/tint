@@ -1,0 +1,31 @@
+{
+  "kind": "native-run-interruption",
+  "selection": "language/identifiers",
+  "requestedVariants": 535,
+  "observed": 359,
+  "passed": 359,
+  "unobserved": 176,
+  "complete": false,
+  "newNativeExecutions": 0,
+  "journal": "docs/results/test262-a1-v16-language-identifiers-v2.jsonl",
+  "stderr": "docs/results/test262-a1-v16-language-identifiers-v2.json.stderr.log",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-v16-language-identifiers-v2-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "journalSha256": "d4dd1c195baaee752266be676d9f5217e74946257a34091286a49a7bac29bd8d",
+  "coordinatorMergeMain": "94a204b99ea50bb0913493d46becab3d685f80e3",
+  "mergeVerification": "Main has exact implementation and test bytes; git cherry main HEAD marks every published READY commit merged.",
+  "at": "2026-11-07T21:57:36.553Z",
+  "stopVerification": {
+    "pid": 70721,
+    "state": "T",
+    "phase": "2026-11-07T21:57:21.234Z [Test262 STALL] selection=\"language/identifiers\" phase=\"compiling batch 23 (16 variants)\" elapsed=7422101ms done=359/535 pass=359 fail=0 unsupported=0 infra=0 waiting runner=70721 child/inferior=none",
+    "children": [],
+    "method": "SIGSTOP owned compiler; re-check stopped state, compile phase and zero children, then pending SIGTERM and SIGCONT. Supervisor/wrapper are not signalled."
+  },
+  "reason": "Coordinator authorised stopping superseded compile only after confirmed call-facts fix merge. No inferior or unjournaled completed observations existed. Entire original journal equals immutable359-observation prefix. Compiler had not completed batch23.",
+  "next": "New identity and fresh main freeze, explicit176-unobserved-variant manifest; no resume or mutation of this original journal."
+}
