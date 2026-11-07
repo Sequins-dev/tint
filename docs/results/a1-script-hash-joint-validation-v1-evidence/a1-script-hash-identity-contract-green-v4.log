@@ -1,0 +1,35 @@
+✔ dynamic implementation returns a non-constructible carrier without Script declarations (11.785459ms)
+✔ dynamic body retains constructor identity and nested source spans (2.140834ms)
+✔ dynamic implementation covers return new.target (0.984084ms)
+✔ dynamic implementation covers arguments[0]=2;return a (1.275667ms)
+✔ dynamic implementation covers return x+rest.length (2.341084ms)
+✔ dynamic implementation covers 'use strict'; return this (0.993708ms)
+✔ dynamic implementation rejects unsupported class elements explicitly (1.065542ms)
+✔ async dynamic bodies lower through a packed continuation carrier (2.081958ms)
+✔ generator dynamic bodies use a packed initializer with three callback arguments (1.090875ms)
+✔ async generator dynamic bodies use a packed three-argument initializer (1.843958ms)
+✔ eval entry changes only declaration scope and effective identity: var v=1;let x=2;function f(){return x+v}f(); (16.545375ms)
+✔ eval entry changes only declaration scope and effective identity: class A{m(){return 1}}new A().m(); (5.860708ms)
+✔ eval entry changes only declaration scope and effective identity: function* g(){yield 1}g(); (5.503958ms)
+✔ eval entry changes only declaration scope and effective identity: if(true){function f(){return 1}}f(); (5.029542ms)
+✔ eval entry changes only declaration scope and effective identity: eval(x)?.y; (3.861041ms)
+✔ eval entry changes only declaration scope and effective identity: var $evalLexical=1;$evalLexical; (2.018792ms)
+✔ eval strict declaration mode: 'use strict';var x; (0.57325ms)
+✔ eval strict declaration mode: 'use\x20strict';var x; (0.811917ms)
+✔ eval strict declaration mode: function f(){'use strict'}var x; (0.61375ms)
+✔ eval strict declaration mode: var x; (0.451125ms)
+✔ eval entries retain direct-eval guards and early-error rejection (0.774875ms)
+✔ only sloppy direct-eval owners separate their body lexicals from vars (2.874208ms)
+✔ sloppy parameter eval gets a variable record outside parameter bindings (2.064291ms)
+✔ nested eval candidates split their own block-bodied arrow only (3.146667ms)
+✔ runtime import vocabulary is shared with Script lowering (13.900125ms)
+✔ runtime import vocabulary has independent dense bindings and exact spans (0.354958ms)
+✔ Script entry completion uses the runtime's named identity (0.457125ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 295.860208

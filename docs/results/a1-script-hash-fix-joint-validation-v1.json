@@ -1,0 +1,292 @@
+{
+  "kind": "generated-script-syntax-hash-validation",
+  "sourceSnapshot": {
+    "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+    "files": 601
+  },
+  "implementationCommit": "594e89f0527ada4297c6c21a7b90619f6604c743",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-script-hash-after-v2-heartbeat-v1.json",
+  "gate": {
+    "code": 0,
+    "childPid": 93589,
+    "log": ".tint-bootstrap/a1-script-hash-tint-check-v4.log",
+    "at": "2026-11-07T22:59:22.499Z",
+    "passed": 4890
+  },
+  "redFirst": {
+    "log": "docs/results/a1-script-hash-joint-validation-v1-evidence/a1-script-hash-red-v1.log",
+    "comparisons": 2132122,
+    "references": 3116,
+    "budget": 12464,
+    "exitCode": 1
+  },
+  "focusedGreen": {
+    "lowering": {
+      "log": "docs/results/a1-script-hash-joint-validation-v1-evidence/a1-script-hash-green-v2.log",
+      "passed": 73,
+      "exitCode": 0
+    },
+    "engine": {
+      "log": "docs/results/a1-script-hash-joint-validation-v1-evidence/a1-script-hash-engine-green-v3.log",
+      "passed": 355,
+      "exitCode": 0
+    },
+    "identityContracts": {
+      "log": "docs/results/a1-script-hash-joint-validation-v1-evidence/a1-script-hash-identity-contract-green-v4.log",
+      "exitCode": 0
+    }
+  },
+  "retainedGateFailure": {
+    "log": "docs/results/a1-script-hash-validation-v1-evidence/a1-script-hash-tint-check-v2.log",
+    "passed": 4858,
+    "total": 4870,
+    "failed": 12,
+    "reason": "AST hash equality/snapshot assertions; frozen baseline semantic digest verified unchanged after removing nodeHash. Tests now retain all other AST fields and undefined properties."
+  },
+  "jointMainAtFreeze": "f89353e830e1ff5ec260939809e9ba70a9fe9923",
+  "currentPortableSourcesMatchFrozenSnapshot": true,
+  "priorNativeProof": "docs/results/a1-script-hash-native-selfbuild-v1.json",
+  "scaling": {
+    "before": {
+      "kind": "generated-script-linker-key-index-scaling",
+      "rows": [
+        {
+          "fields": 64,
+          "references": 1581,
+          "probes": 572272,
+          "indexMs": 6.088625,
+          "distinctHashes": 65
+        },
+        {
+          "fields": 128,
+          "references": 3117,
+          "probes": 2133884,
+          "indexMs": 21.799999999999997,
+          "distinctHashes": 129
+        },
+        {
+          "fields": 256,
+          "references": 6189,
+          "probes": 8228956,
+          "indexMs": 69.473417,
+          "distinctHashes": 257
+        },
+        {
+          "fields": 512,
+          "references": 12333,
+          "probes": 32316132,
+          "indexMs": 252.54829200000003,
+          "distinctHashes": 513
+        }
+      ]
+    },
+    "after": {
+      "kind": "generated-script-linker-key-index-scaling",
+      "rows": [
+        {
+          "fields": 64,
+          "references": 2034,
+          "probes": 2034,
+          "indexMs": 1.9726670000000013,
+          "distinctHashes": 2034
+        },
+        {
+          "fields": 128,
+          "references": 4018,
+          "probes": 4018,
+          "indexMs": 2.1212499999999963,
+          "distinctHashes": 4018
+        },
+        {
+          "fields": 256,
+          "references": 7986,
+          "probes": 7986,
+          "indexMs": 2.674708999999993,
+          "distinctHashes": 7986
+        },
+        {
+          "fields": 512,
+          "references": 15922,
+          "probes": 15922,
+          "indexMs": 4.660499999999999,
+          "distinctHashes": 15922
+        }
+      ]
+    },
+    "scope": "Node-hosted binding-key-index operation counts, not generated native program throughput. Lowering now materializes distinct nodes per occurrence, increasing the number of distinct references as intended. Wall times are one low-resource observation per size."
+  },
+  "native": {
+    "kind": "frozen-native-selfbuild-validation",
+    "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-script-hash-after-v2-heartbeat-v1.json",
+    "sourceSnapshot": {
+      "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+      "files": 601
+    },
+    "implementationCommit": "594e89f0527ada4297c6c21a7b90619f6604c743",
+    "checker": {
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-hashes-C170SO/script-hashes",
+      "args": [],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-1Z6vbx",
+      "initial": {
+        "state": "stopped",
+        "pid": 97950,
+        "monotonicNs": 1191091458
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 1435800500
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/checker-native-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/checker-native-final.json",
+      "buildManifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+          "files": 601
+        },
+        "imageSha256": "16d8f3cc12b9f4184c85984c3020a02c866099c83c5c3f7aecb43830116a9083",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-hashes-C170SO/script-hashes.source.ts",
+        "fixtureSha256": "0de956fd46f4ec2b0a0565b8c1a92480c296265983771a8a4a055cb0f75245d5",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-script-hash-after-v2-heartbeat-v1/tools/verify-hosted-script-hashes.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 33554432,
+          "allocationCapacity": 524288,
+          "stackBytes": 16777216
+        },
+        "debugSymbols": false
+      }
+    },
+    "selfbuild": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage1",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/bootstrap-source",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2",
+        "--debug-symbols"
+      ],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-ay3mOr",
+      "initial": {
+        "state": "stopped",
+        "pid": 10378,
+        "monotonicNs": 1364148625
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 262008480166
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-selfbuild-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-selfbuild-final.json"
+    },
+    "stageImageComparison": {
+      "identical": true,
+      "bytes": 53762178,
+      "sha256": "de6c715559a47bc8a78622b78973e6bdd207a482c107facb22dbca9d579c3593"
+    },
+    "smokeBuild": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/source/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-stage2",
+        "--debug-symbols"
+      ],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-c4rTVH",
+      "initial": {
+        "state": "stopped",
+        "pid": 20099,
+        "monotonicNs": 1120026291
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 5733610666
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-smoke-build-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-smoke-build-final.json"
+    },
+    "smoke": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-stage2",
+      "args": [],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-PlDDIo",
+      "initial": {
+        "state": "stopped",
+        "pid": 20210,
+        "monotonicNs": 3631737000
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 3726668000
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-native-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-native-final.json"
+    },
+    "smokeImageComparison": {
+      "identical": true,
+      "bytes": 1555186,
+      "sha256": "4ad68cf7ffd4985464a835ffb0c21a711a1b9d78855eb25f1e523fed8936ea98"
+    },
+    "records": [
+      {
+        "label": "checker-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/checker-build.log",
+        "at": "2026-11-07T22:56:40.958Z"
+      },
+      {
+        "label": "checker-native",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/checker-native.log",
+        "at": "2026-11-07T22:56:42.464Z"
+      },
+      {
+        "label": "stage1-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage1-build.log",
+        "at": "2026-11-07T22:57:43.763Z"
+      },
+      {
+        "label": "stage2-selfbuild",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-selfbuild.log",
+        "at": "2026-11-07T23:02:05.844Z"
+      },
+      {
+        "label": "stage1-codesign",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage1-codesign.log",
+        "at": "2026-11-07T23:02:05.923Z"
+      },
+      {
+        "label": "stage1-dwarf",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage1-dwarf.log",
+        "at": "2026-11-07T23:02:06.093Z"
+      },
+      {
+        "label": "smoke-prepare",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-prepare.log",
+        "at": "2026-11-07T23:02:08.142Z"
+      },
+      {
+        "label": "stage2-smoke-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/stage2-smoke-build.log",
+        "at": "2026-11-07T23:02:13.922Z"
+      },
+      {
+        "label": "smoke-native",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v2/smoke-native.log",
+        "at": "2026-11-07T23:02:17.702Z"
+      }
+    ],
+    "scope": "Fresh per-occurrence syntax hashes for generated Script output; native regression asserts bounded reference-key comparisons and exact lookup results. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources. No native throughput claim."
+  },
+  "scope": "Use the existing module rewrite with fresh hashes for Script output, preserving per-occurrence AST identities and preventing repeated source spans from causing quadratic identity-key-index collisions. Native fixture checks exact reference lookups with a linear comparison budget. Frozen stage images and smoke output compare byte-for-byte. OOM and interrupted conformance runs remain separate evidence."
+}
