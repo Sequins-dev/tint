@@ -347,7 +347,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // DateTimeFormat adds five aliases for its readonly pattern-token list class
   // and eight operations through the formatter slot on OrdinaryObject.
   // Temporal format caches add one optional-pattern list alias/provider.
-  assert.equal(census.value.anchors.length, 105);
+  // Unit profiles add one readonly-string list alias using an existing provider.
+  assert.equal(census.value.anchors.length, 106);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -549,7 +550,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 105);
+  assert.equal(collectionNames.length, 106);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -650,7 +651,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 112);
-  assert.equal(collectionOperations.length, 105);
+  assert.equal(collectionOperations.length, 106);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
     46,
