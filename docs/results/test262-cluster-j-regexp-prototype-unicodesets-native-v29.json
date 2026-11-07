@@ -1,0 +1,2231 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/RegExp/prototype/unicodeSets",
+  "sourceSnapshot": {
+    "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+    "files": 600
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v29/source-snapshot.json",
+  "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/cluster-j-regexp-prototype-prefix-972-v29.jsonl",
+    "journalSha256": "5ad14661982ead975907aa8b4e15decf70d6230342b4eaadea8fac234bc4138e",
+    "journalBytes": 563803,
+    "observedVariants": 972
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 58,
+        "kind": "syntax",
+        "compileMs": 7454.648167000001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 15,
+        "variants": 18,
+        "kind": "execution",
+        "compileMs": 146999.12087500002,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 76,
+    "passed": 76,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-01.js",
+      "sha256": "c9d8e0058f923aff7fc2286a25210fb28f6a330ab14d33f66c027f8aa3bc0c55",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11994.18375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-01.js",
+      "sha256": "c9d8e0058f923aff7fc2286a25210fb28f6a330ab14d33f66c027f8aa3bc0c55",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12869.876541999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-02.js",
+      "sha256": "1c1e7cdfdf92c8a410e7fc28084d28b22c91a1287ca1dc30cbd8da1066a5c91b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13245.261666,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-02.js",
+      "sha256": "1c1e7cdfdf92c8a410e7fc28084d28b22c91a1287ca1dc30cbd8da1066a5c91b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13607.647708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-03.js",
+      "sha256": "aaeada9ba14877ddbdfc393ba84f253dd893dff1679c7f11aab0c1a5dca68e8c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13973.310833000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-03.js",
+      "sha256": "aaeada9ba14877ddbdfc393ba84f253dd893dff1679c7f11aab0c1a5dca68e8c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14327.35075,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-04.js",
+      "sha256": "ebcd9ee35a87906d35ed46dbfb6eb3658eadaca637785c05f4b521ed24424be5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14709.846290999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-04.js",
+      "sha256": "ebcd9ee35a87906d35ed46dbfb6eb3658eadaca637785c05f4b521ed24424be5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15139.819125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-05.js",
+      "sha256": "0ca4867743ba3c3534f1d9f12e699eaf83f7bbadbe654e17c51a489718d672d4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15799.294458000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-05.js",
+      "sha256": "0ca4867743ba3c3534f1d9f12e699eaf83f7bbadbe654e17c51a489718d672d4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16242.041709,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-06.js",
+      "sha256": "fbcbeec4b5f93b8e2d9162ca83058708f6a1a93dbf2d60e84a3bb5a64560f59f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16688.512375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-06.js",
+      "sha256": "fbcbeec4b5f93b8e2d9162ca83058708f6a1a93dbf2d60e84a3bb5a64560f59f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18045.006917000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-07.js",
+      "sha256": "147842d475c863804e760f787534d238dd8255b8b926c71b62e3b0790f2f4093",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18502.969417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-07.js",
+      "sha256": "147842d475c863804e760f787534d238dd8255b8b926c71b62e3b0790f2f4093",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18937.670834000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-08.js",
+      "sha256": "fdc9ee11f8d8b04d1c80a90966c968f8b64887696a2c27328cf884a6182bbc46",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19347.776292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-08.js",
+      "sha256": "fdc9ee11f8d8b04d1c80a90966c968f8b64887696a2c27328cf884a6182bbc46",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19747.66225,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-09.js",
+      "sha256": "660b59666dcc4223c41293f4c63a04664a75dae240ebf4676f83fb733aa12df2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20144.98225,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-09.js",
+      "sha256": "660b59666dcc4223c41293f4c63a04664a75dae240ebf4676f83fb733aa12df2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20536.1915,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-10.js",
+      "sha256": "666c0a55fd69a8ee6ff161ed01f804e18b8a3c9de55768f5772c118142ea1f00",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20892.460124999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-10.js",
+      "sha256": "666c0a55fd69a8ee6ff161ed01f804e18b8a3c9de55768f5772c118142ea1f00",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21280.985458000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-11.js",
+      "sha256": "724f29e70e51b05e523870b308a202ba41d94346c10336b9fc4ac9869a43e16a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21673.438875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-11.js",
+      "sha256": "724f29e70e51b05e523870b308a202ba41d94346c10336b9fc4ac9869a43e16a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22086.37175,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-12.js",
+      "sha256": "4be53c55b45f26fdd1643bf368d9ebd156caafeb304e61aae57dcfc0da6fdd52",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22482.680624999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-12.js",
+      "sha256": "4be53c55b45f26fdd1643bf368d9ebd156caafeb304e61aae57dcfc0da6fdd52",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22871.528250000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-13.js",
+      "sha256": "f58858cda8af64d8ed8199dfb9a3043565adf48ab0a9af405a37fbbdc3ea5ba4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23248.150625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-13.js",
+      "sha256": "f58858cda8af64d8ed8199dfb9a3043565adf48ab0a9af405a37fbbdc3ea5ba4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23630.073540999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-14.js",
+      "sha256": "980772886f78da43cb996ae8b60fd580a8fd61c643572433b4b21fa9cdb5db17",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24020.274166000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-14.js",
+      "sha256": "980772886f78da43cb996ae8b60fd580a8fd61c643572433b4b21fa9cdb5db17",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24428.204041999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-15.js",
+      "sha256": "944993aa958238ce1246bfab1414f1991ed79c7500646c240b26473fd70d74f4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24824.510833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-15.js",
+      "sha256": "944993aa958238ce1246bfab1414f1991ed79c7500646c240b26473fd70d74f4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25224.581792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-16.js",
+      "sha256": "7aceb5c8b9c76880f7d98d1df5d1eba1cc6cd8388c2b244b14f9d914b2874300",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25600.857875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-16.js",
+      "sha256": "7aceb5c8b9c76880f7d98d1df5d1eba1cc6cd8388c2b244b14f9d914b2874300",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25987.593334,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-17.js",
+      "sha256": "e2e4d8ce5b332ccfb0f8f85c9822cfda5c7b06d27d30b5547369eaeab8207090",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26360.755167000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-17.js",
+      "sha256": "e2e4d8ce5b332ccfb0f8f85c9822cfda5c7b06d27d30b5547369eaeab8207090",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26745.421916999996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-18.js",
+      "sha256": "8c1b4b8871afd766e06dc314415643d3ff95d0dd47d694f7f458bf14dc9bbb1e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27142.698291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-18.js",
+      "sha256": "8c1b4b8871afd766e06dc314415643d3ff95d0dd47d694f7f458bf14dc9bbb1e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27532.168750000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-19.js",
+      "sha256": "4415ce6124c4654267f9276b0b0b1779ebb789ff00115a59245b013e42fac86a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27952.377542000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-19.js",
+      "sha256": "4415ce6124c4654267f9276b0b0b1779ebb789ff00115a59245b013e42fac86a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 28371.141915999997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-20.js",
+      "sha256": "231d93a5c1d7073556b63808c61325aa1ffcb0e15d243bca7a45cb6f12c8f8b5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 28785.904209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-20.js",
+      "sha256": "231d93a5c1d7073556b63808c61325aa1ffcb0e15d243bca7a45cb6f12c8f8b5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29211.554,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-21.js",
+      "sha256": "9e0192e05c564a9a052c8ec22b03719a5ddd929d4bec70efdc553fa78ca0bda7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 29885.559208,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-21.js",
+      "sha256": "9e0192e05c564a9a052c8ec22b03719a5ddd929d4bec70efdc553fa78ca0bda7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30550.603708,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-22.js",
+      "sha256": "75c39a8214fbb11ef5fa7f1f6aea9c2fb9fe98121a5b9db5a4a2877aef38e9d0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 30972.635333000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-22.js",
+      "sha256": "75c39a8214fbb11ef5fa7f1f6aea9c2fb9fe98121a5b9db5a4a2877aef38e9d0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 31405.019374999996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-23.js",
+      "sha256": "0e5d9d5587d33412854701c6a4610141550ced22aae3a56d0c072dfac4cfee85",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 31779.255750000004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-23.js",
+      "sha256": "0e5d9d5587d33412854701c6a4610141550ced22aae3a56d0c072dfac4cfee85",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32155.644874999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-24.js",
+      "sha256": "8f55711441f6b7883350b009f9942c170ed4709b6aaeba91a7cfc4dc8f5e5152",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32513.501874999998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-24.js",
+      "sha256": "8f55711441f6b7883350b009f9942c170ed4709b6aaeba91a7cfc4dc8f5e5152",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 32889.502958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-25.js",
+      "sha256": "8545aa538f74b17018999ce29f3e9d763475bea8c41a9e58841d4e10d2487250",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 33290.846,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-25.js",
+      "sha256": "8545aa538f74b17018999ce29f3e9d763475bea8c41a9e58841d4e10d2487250",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 33683.864667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-26.js",
+      "sha256": "986930012742c2b10cdf78af2228649d63483c7393a55fabbc2c468e09d40425",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 34054.380584,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-26.js",
+      "sha256": "986930012742c2b10cdf78af2228649d63483c7393a55fabbc2c468e09d40425",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 34417.447333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-27.js",
+      "sha256": "de379392fa8184b5cf251002b3b51b43173f6cfdb413e892b14abe08b9b05894",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 34776.460416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-27.js",
+      "sha256": "de379392fa8184b5cf251002b3b51b43173f6cfdb413e892b14abe08b9b05894",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 35136.018042,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-28.js",
+      "sha256": "428317ef852bc4aa6406da640e8e573978bda8d634b7e5a63f30e1f50f1ced12",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 35558.961166,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-28.js",
+      "sha256": "428317ef852bc4aa6406da640e8e573978bda8d634b7e5a63f30e1f50f1ced12",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 35937.890375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/cross-realm.js",
+      "sha256": "168023e4365a2f030101fcf063084777c2dbc8a3410b639d38570b9b0452abd5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag",
+          "cross-realm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149098.294458,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/cross-realm.js",
+      "sha256": "168023e4365a2f030101fcf063084777c2dbc8a3410b639d38570b9b0452abd5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag",
+          "cross-realm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149429.40150000015,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/length.js",
+      "sha256": "2f89c5ec91a92e1fa8d5332451b820da18322a3e1055d101612b9224bfd2f42b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149764.30733400024,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/length.js",
+      "sha256": "2f89c5ec91a92e1fa8d5332451b820da18322a3e1055d101612b9224bfd2f42b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150100.19845900033,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/name.js",
+      "sha256": "d64e98764736531efadb469c0cfd3c96da8e3d64ecace3231caf4c029d0647eb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150430.71025,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/name.js",
+      "sha256": "d64e98764736531efadb469c0cfd3c96da8e3d64ecace3231caf4c029d0647eb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150760.95633299975,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/prop-desc.js",
+      "sha256": "e037ae55e0c7ca4347dcf4c2421a1ba87d0bba76e9664122638b2a8198798f5d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151085.8551660003,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/prop-desc.js",
+      "sha256": "e037ae55e0c7ca4347dcf4c2421a1ba87d0bba76e9664122638b2a8198798f5d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151413.40233299974,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-invalid-obj.js",
+      "sha256": "21724b3ecf2d237e9037c61ef4deb9c3d2715e14366477761cac9746270d7906",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151761.56687500002,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-invalid-obj.js",
+      "sha256": "21724b3ecf2d237e9037c61ef4deb9c3d2715e14366477761cac9746270d7906",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152118.3707089997,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-non-obj.js",
+      "sha256": "a0ecf6fd96d3ee61608a6cd200beb0ce4bedcccf5be39992779f719ab40105ff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152473.93312499998,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-non-obj.js",
+      "sha256": "a0ecf6fd96d3ee61608a6cd200beb0ce4bedcccf5be39992779f719ab40105ff",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152830.80574999982,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-regexp-prototype.js",
+      "sha256": "9dfdc187a6ce5f2a8e0cc868a684b85e5c33d28e248d9eba323681239bb3be18",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153174.12783400016,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-regexp-prototype.js",
+      "sha256": "9dfdc187a6ce5f2a8e0cc868a684b85e5c33d28e248d9eba323681239bb3be18",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153632.12729199976,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-regexp.js",
+      "sha256": "2dd4aaad0e9f3dfce67015425a0f2daa9cd9ed110fcaca7606b94e06bd6df561",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153987.12591699976,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/this-val-regexp.js",
+      "sha256": "2dd4aaad0e9f3dfce67015425a0f2daa9cd9ed110fcaca7606b94e06bd6df561",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154338.79545800015,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/uv-flags-constructor.js",
+      "sha256": "d4d408c839865ee7cbb864534b7935dcd86563f8047be3bfbc0f251377f60260",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154698.09291699994,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/uv-flags-constructor.js",
+      "sha256": "d4d408c839865ee7cbb864534b7935dcd86563f8047be3bfbc0f251377f60260",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155052.7790000001,
+      "batch": 15
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/uv-flags.js",
+      "sha256": "3c2f27645c3fd4e32a9ba74b292320afd1f006492cd606e5a232eeaa76f0af46",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 36297.015792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/uv-flags.js",
+      "sha256": "3c2f27645c3fd4e32a9ba74b292320afd1f006492cd606e5a232eeaa76f0af46",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 36656.255249999995,
+      "batch": 0
+    }
+  ],
+  "startedAt": "2026-11-07T18:42:08.118Z",
+  "publicationStartAnchor": {
+    "stderr": ".tint-bootstrap/cluster-j-regexp-prototype-v29.stderr",
+    "startedAt": "2026-11-07T18:42:08.118Z",
+    "policy": "Authentic first heartbeat, not later publication time."
+  }
+}

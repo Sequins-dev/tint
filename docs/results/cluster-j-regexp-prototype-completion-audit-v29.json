@@ -1,0 +1,412 @@
+{
+  "kind": "cluster-j-complete-regexp-prototype-audit",
+  "at": "2026-11-07T19:42:07.120907+00:00",
+  "sourceSnapshot": {
+    "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+    "files": 600
+  },
+  "selection": "built-ins/RegExp/prototype",
+  "complete": true,
+  "expectedVariants": 972,
+  "report": "docs/results/test262-cluster-j-regexp-prototype-native-v29.json",
+  "totals": {
+    "total": 972,
+    "passed": 972,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "pinnedIdentityValidation": {
+    "exit": 0,
+    "method": "Standard native extractor verifies every expected source, harness, goal and variant; all observations/totals JSON-equivalent after ordering by pinned identity to completed runner output."
+  },
+  "journal": {
+    "path": "docs/results/cluster-j-regexp-prototype-evidence-v29/cluster-j-regexp-prototype-v29.jsonl",
+    "sha256": "5ad14661982ead975907aa8b4e15decf70d6230342b4eaadea8fac234bc4138e",
+    "terminalKind": "complete"
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "historicalNonpasses": [
+    {
+      "path": "built-ins/RegExp/prototype/Symbol.split/species-ctor-species-non-ctor.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/Symbol.split/species-ctor-species-non-ctor.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/Symbol.split/splitter-proto-from-ctor-realm.js",
+      "variant": "sloppy",
+      "oldStatus": "unsupported",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/Symbol.split/splitter-proto-from-ctor-realm.js",
+      "variant": "strict",
+      "oldStatus": "unsupported",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/exec/S15.10.6.2_A1_T9.js",
+      "variant": "sloppy",
+      "oldStatus": "unsupported",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/exec/S15.10.6.2_A1_T9.js",
+      "variant": "strict",
+      "oldStatus": "unsupported",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/cross-realm.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/cross-realm.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-empty.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-empty.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-line-terminator.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-line-terminator.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-slash.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-slash.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-u.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value-u.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value.js",
+      "variant": "sloppy",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/prototype/source/value.js",
+      "variant": "strict",
+      "oldStatus": "fail",
+      "currentStatus": "pass"
+    }
+  ],
+  "children": [
+    {
+      "selection": "built-ins/RegExp/prototype/dotAll",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-dotall-native-v29.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/exec",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-exec-native-v29.json",
+      "totals": {
+        "total": 158,
+        "passed": 158,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/flags",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-flags-native-v29.json",
+      "totals": {
+        "total": 32,
+        "passed": 32,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/global",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-global-native-v29.json",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/hasIndices",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-hasindices-native-v29.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/ignoreCase",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-ignorecase-native-v29.json",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/multiline",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-multiline-native-v29.json",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/*.js",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-root-native-v29.json",
+      "totals": {
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/source",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-source-native-v29.json",
+      "totals": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/sticky",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-sticky-native-v29.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/Symbol.match",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-symbol.match-native-v29.json",
+      "totals": {
+        "total": 106,
+        "passed": 106,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/Symbol.matchAll",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-symbol.matchall-native-v29.json",
+      "totals": {
+        "total": 52,
+        "passed": 52,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/Symbol.replace",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-symbol.replace-native-v29.json",
+      "totals": {
+        "total": 138,
+        "passed": 138,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/Symbol.search",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-symbol.search-native-v29.json",
+      "totals": {
+        "total": 46,
+        "passed": 46,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/Symbol.split",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-symbol.split-native-v29.json",
+      "totals": {
+        "total": 88,
+        "passed": 88,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/test",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-test-native-v29.json",
+      "totals": {
+        "total": 90,
+        "passed": 90,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/toString",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-tostring-native-v29.json",
+      "totals": {
+        "total": 18,
+        "passed": 18,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/unicode",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-unicode-native-v29.json",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/RegExp/prototype/unicodeSets",
+      "path": "docs/results/test262-cluster-j-regexp-prototype-unicodesets-native-v29.json",
+      "totals": {
+        "total": 76,
+        "passed": 76,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "evidenceIndex": "docs/results/cluster-j-regexp-prototype-evidence-v29/index.json",
+  "remainingScope": "Remaining RegExp root-gap, Unicode sets, modifiers, named groups and held property escapes continue. String latest-file coverage combines frozen graphs; Collator2 missing DateTimeFormat dependency failures remain handed to H. No whole-suite completion claim."
+}
