@@ -1,4 +1,9 @@
 import {
+  createUnitFormatProfile,
+  unitFormatPattern,
+  type UnitFormatProfile,
+} from "./unit-format.ts";
+import {
   partitionCurrencyNumber,
   type CurrencyNumberConfiguration,
   type CurrencyNumberOptions,
@@ -31,11 +36,12 @@ import {
   percentUnitPattern,
   type NumberAffixProfile,
   type NumberAffixPattern,
-  type PercentUnitWidth,
+  type NumberUnitWidth,
 } from "./number-affixes.ts";
 import {
   renderNumberAffixes,
   renderPercentUnit,
+  renderUnitPattern,
 } from "./number-affix-rendering.ts";
 import {
   createPluralRuleSet,
@@ -56,7 +62,9 @@ export interface DecimalNumberFormatter {
   readonly currency: CurrencyNumberConfiguration | undefined;
   readonly locale: string;
   readonly style: DecimalNumberStyle;
-  readonly unitDisplay: PercentUnitWidth;
+  readonly unitDisplay: NumberUnitWidth;
+  readonly unit: string;
+  readonly unitProfile: UnitFormatProfile | undefined;
   readonly affixProfile: NumberAffixProfile | undefined;
   readonly pluralRules: PluralRuleSet | undefined;
   readonly numberingSystem: string;
@@ -74,8 +82,9 @@ export function createDecimalNumberFormatter(
   useGrouping: NumberGrouping,
   signDisplay: NumberSignDisplay,
   style: DecimalNumberStyle = "decimal",
-  unitDisplay: PercentUnitWidth = "short",
+  unitDisplay: NumberUnitWidth = "short",
   currencyOptions: CurrencyNumberOptions | undefined = undefined,
+  unit: string = "percent",
 ): DecimalNumberFormatter | undefined {
   const profile = createNumberFormatProfile(locale, numberingSystem);
   if (profile === undefined) return undefined;
@@ -91,6 +100,12 @@ export function createDecimalNumberFormatter(
     throw "NUMBER_PERCENT_PROFILE_INVARIANT";
   if (style === "unit" && pluralRules === undefined)
     throw "NUMBER_UNIT_PLURAL_RULES_INVARIANT";
+  const unitProfile =
+    style === "unit" && unit !== "percent"
+      ? createUnitFormatProfile(locale)
+      : undefined;
+  if (style === "unit" && unit !== "percent" && unitProfile === undefined)
+    throw "NUMBER_UNIT_PROFILE_INVARIANT";
   let currency: CurrencyNumberConfiguration | undefined = undefined;
   if (style === "currency") {
     if (affixProfile === undefined || currencyOptions === undefined)
@@ -108,6 +123,8 @@ export function createDecimalNumberFormatter(
     locale,
     style,
     unitDisplay,
+    unit,
+    unitProfile,
     affixProfile,
     pluralRules,
     numberingSystem: profile.numberingSystem,
@@ -220,17 +237,31 @@ export function decimalNumberParts(
       throw "NUMBER_UNIT_PLURAL_OPERANDS_INVARIANT";
     category = selectPluralCategory(rules, operands);
   }
-  const template = percentUnitPattern(
-    formatter.locale,
-    formatter.unitDisplay,
-    category,
-  );
-  if (template === undefined) throw "NUMBER_PERCENT_UNIT_TEMPLATE_INVARIANT";
-  return renderPercentUnit(
-    template,
-    core,
-    formatter.profile.symbols.percentSign,
-  );
+  if (formatter.unit === "percent") {
+    const template = percentUnitPattern(
+      formatter.locale,
+      formatter.unitDisplay,
+      category,
+    );
+    if (template === undefined) throw "NUMBER_PERCENT_UNIT_TEMPLATE_INVARIANT";
+    return renderPercentUnit(
+      template,
+      core,
+      formatter.profile.symbols.percentSign,
+    );
+  }
+  const profile = formatter.unitProfile,
+    template =
+      profile === undefined
+        ? undefined
+        : unitFormatPattern(
+            profile,
+            formatter.unitDisplay,
+            formatter.unit,
+            category,
+          );
+  if (template === undefined) throw "NUMBER_UNIT_TEMPLATE_INVARIANT";
+  return renderUnitPattern(template, core);
 }
 export function formatDecimalNumber(
   formatter: DecimalNumberFormatter,
