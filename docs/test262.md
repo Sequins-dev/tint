@@ -108,6 +108,8 @@ For-await-of has [passing native observations for 2,431/2,431 pinned variant key
 
 The complete [`language/statements/for-of` selection](results/test262-cluster-f-for-of-statements-v1.json) passes **1,442/1,442**, with zero failures, unsupported variants or infrastructure errors. The [validation record](results/cluster-f-for-of-complete-validation-v1.json) verifies all pinned variants and source identities; the runner and slot launcher exited 0.
 
+Builtin subset checkpoint: [four complete family reports](results/cluster-f-builtins-complete-families-v1.json) record AsyncGeneratorPrototype 96/96, AsyncFromSyncIteratorPrototype 76/76, AsyncGeneratorFunction 44/46 and AsyncFunction 34/36. The [four retained after-entry timeouts](results/cluster-f-builtins-intrinsic-timeouts-v1.json) each consumed over 250 native CPU seconds; shared eval/Function profiling is the next step (D/P). The encompassing 448-variant subset is still running.
+
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
 with **27/28** native passes: one pre-entry timeout, no semantic failures or

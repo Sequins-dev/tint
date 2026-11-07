@@ -1,0 +1,182 @@
+{
+  "kind": "native-timeout-root-cause-triage",
+  "conformance": false,
+  "recordedAt": "2026-11-07T17:38:56.678122+00:00",
+  "sourceSnapshot": {
+    "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+    "files": 595
+  },
+  "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+  "parentSelection": "built-ins [explicit variant subset]",
+  "requestedVariants": 448,
+  "parentSubsetComplete": false,
+  "variantManifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/docs/results/cluster-f-remaining-generator-async-builtins-variant-input-v1.json",
+  "prefix": "docs/results/cluster-f-builtins-complete-families-prefix-v2.jsonl",
+  "prefixSha256": "dba46f27da15f153f9717b7487ac6826e696dbe2d5d9495cbc7a931013cd95b4",
+  "observations": [
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "status": "timeout",
+      "batch": 1,
+      "pid": 18668,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T17:09:55.258250+00:00",
+      "lastCpuSeconds": 276.59000000000003,
+      "lastWallSeconds": 292.0,
+      "cpuSample": [
+        "18668",
+        "18667",
+        "97.5",
+        "4:36.59",
+        "04:52",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DFnOlj/test 42"
+      ],
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "strict",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "status": "timeout",
+      "batch": 1,
+      "pid": 35005,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T17:14:58.093948+00:00",
+      "lastCpuSeconds": 282.48,
+      "lastWallSeconds": 295.0,
+      "cpuSample": [
+        "35005",
+        "35004",
+        "79.8",
+        "4:42.48",
+        "04:55",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DFnOlj/test 43"
+      ],
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "status": "timeout",
+      "batch": 2,
+      "pid": 65222,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T17:25:54.431421+00:00",
+      "lastCpuSeconds": 282.11,
+      "lastWallSeconds": 290.0,
+      "cpuSample": [
+        "65222",
+        "65219",
+        "97.6",
+        "4:42.11",
+        "04:50",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MQZHIO/test 8"
+      ],
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "variant": "strict",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "status": "timeout",
+      "batch": 2,
+      "pid": 77495,
+      "nativeTimeoutAfterInitialStop": true,
+      "lastCpuSampleAt": "2026-11-07T17:30:45.498549+00:00",
+      "lastCpuSeconds": 277.63,
+      "lastWallSeconds": 282.0,
+      "cpuSample": [
+        "77495",
+        "77493",
+        "98.9",
+        "4:37.63",
+        "04:42",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MQZHIO/test 9"
+      ],
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    }
+  ],
+  "confirmed": "Four direct-mode constructor variants timed out after the initial stop. Every native inferior received over 250 CPU seconds; source-matched same-image/batch controls pass. No pre-entry authorization block, assertion failure or unsupported result was observed.",
+  "hypothesis": "Both files add unchanged wellKnownIntrinsicObjects.js, which eagerly constructs and invokes 87 Function bodies. Repeated dynamic Function preparation is a source-based inference; exact hotspot is not symbolized. This newer source includes imported-callback changes but these workloads still exceed containment.",
+  "historicalRelatedTriage": "docs/results/cluster-f-intrinsic-enumeration-native-timeouts-v1.json",
+  "ownerHint": "D eval/Function and P shared native preparation/performance",
+  "nextStep": "Use exact retained images/source snapshots for a symbolized profile and shared pipeline fix, then recheck unchanged cases. Preserve these observations; do not modify harnesses, drop variants or silently retry.",
+  "caseReports": [
+    "docs/results/test262-cluster-f-builtin-asyncgenerator-constructor-timeouts-v1.json",
+    "docs/results/test262-cluster-f-builtin-asyncfunction-constructor-timeouts-v1.json"
+  ],
+  "sameBatchControls": [
+    "docs/results/test262-cluster-f-builtin-asyncfunction-constructor-control-v1.json",
+    "docs/results/test262-cluster-f-builtin-asyncgenerator-constructor-control-v1.json"
+  ],
+  "caseAndControlSourceHarnessFixtureVariantValidationExitStatus": 0,
+  "keyedObservationValidationExitStatus": 0,
+  "cpuSnapshots": "docs/results/cluster-f-builtins-intrinsic-cpu-observations-v1.jsonl.gz",
+  "samples": [
+    "docs/results/cluster-f-builtins-intrinsic-18668-sample-v1.txt.gz",
+    "docs/results/cluster-f-builtins-intrinsic-35005-sample-v1.txt.gz",
+    "docs/results/cluster-f-builtins-intrinsic-65222-sample-v1.txt.gz",
+    "docs/results/cluster-f-builtins-intrinsic-77495-sample-v1.txt.gz"
+  ],
+  "retainedPrivateImages": [
+    {
+      "kind": "native-image-diagnostic-copy",
+      "conformance": false,
+      "at": "2026-11-07T17:13:29.395190+00:00",
+      "process": [
+        "35005",
+        "35004",
+        "93.1",
+        "3:18.23",
+        "03:26",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DFnOlj/test 43"
+      ],
+      "original": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-DFnOlj/test",
+      "copy": ".tint-bootstrap/cluster-f-builtins-intrinsic-harness-image-v1",
+      "bytes": 175424719,
+      "sha256": "7eb10e2c7f85caa1dfe27b06878de9f357fb64bc756d05e746e1e6400bc57eef",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-remaining-generator-async-builtins-v1.jsonl",
+      "signatureVerificationExitStatus": 0
+    },
+    {
+      "kind": "native-image-diagnostic-copy",
+      "conformance": false,
+      "at": "2026-11-07T17:29:51.314601+00:00",
+      "process": [
+        "77495",
+        "77493",
+        "99.0",
+        "3:43.55",
+        "03:48",
+        "RX",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MQZHIO/test 9"
+      ],
+      "original": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-MQZHIO/test",
+      "copy": ".tint-bootstrap/cluster-f-builtins-asyncgenerator-intrinsic-image-v1",
+      "bytes": 179585743,
+      "sha256": "455c28e26be719f69a397dbfde2b90441ff06a2640dbd731da4e5c0d789a41d3",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "journal": "/Users/stephenbelanger/.t3/worktrees/tint/t3-ffc74d90/.tint-bootstrap/test262-cluster-f-remaining-generator-async-builtins-v1.jsonl",
+      "signatureVerificationExitStatus": 0
+    }
+  ],
+  "sourcesChanged": false,
+  "manualNativeKillsOrRetries": false
+}

@@ -1,0 +1,77 @@
+{
+  "kind": "complete-native-child-family-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T17:38:56.679767+00:00",
+  "scope": "Only listed complete disjoint families from one frozen native journal; explicit parent448 remains running, not whole-builtins coverage.",
+  "sourceSnapshot": {
+    "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+    "files": 595
+  },
+  "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+  "rootSelection": "built-ins",
+  "requestedParentVariants": 448,
+  "parentSubsetComplete": false,
+  "prefix": "docs/results/cluster-f-builtins-complete-families-prefix-v2.jsonl",
+  "prefixSha256": "dba46f27da15f153f9717b7487ac6826e696dbe2d5d9495cbc7a931013cd95b4",
+  "selections": [
+    {
+      "selection": "built-ins/AsyncGeneratorPrototype",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorPrototype.json",
+      "totals": {
+        "total": 96,
+        "passed": 96,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "built-ins/AsyncGeneratorFunction",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorFunction.json",
+      "totals": {
+        "total": 46,
+        "passed": 44,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9565217391304348
+      }
+    },
+    {
+      "selection": "built-ins/AsyncFunction",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFunction.json",
+      "totals": {
+        "total": 36,
+        "passed": 34,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 2,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9444444444444444
+      }
+    },
+    {
+      "selection": "built-ins/AsyncFromSyncIteratorPrototype",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFromSyncIteratorPrototype.json",
+      "totals": {
+        "total": 76,
+        "passed": 76,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "sourceHarnessFixtureAndVariantValidationExitStatus": 0,
+  "keyedObservationValidationExitStatus": 0,
+  "nonpassTriage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v1.json"
+}
