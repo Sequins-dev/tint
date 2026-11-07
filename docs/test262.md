@@ -92,7 +92,7 @@ These complete generator-language selections have zero failures, unsupported var
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
 | `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
 
-The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions have [612/612 native passes across 310 complete files](results/cluster-f-async-generator-expressions-completed-files-v5.json); the full 1,212-variant selection remains running.
+The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions have [740/740 native passes across 374 complete files](results/cluster-f-async-generator-expressions-completed-files-v6.json); the full 1,212-variant selection remains running.
 
 For-await-of has [passing native observations for 2,431/2,431 pinned variant keys](results/cluster-f-for-await-passing-variant-coverage-audit-v1.json), across three separate frozen snapshots. The fresh [61/61 direct recheck](results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json) covers all retained pre-entry failures; original [connected 570/626](results/cluster-f-for-await-connected-interruption-v1.json) and [direct unobserved 1,800/1,805](results/test262-cluster-f-for-await-unobserved-direct-v1.json) totals remain unchanged.
 
