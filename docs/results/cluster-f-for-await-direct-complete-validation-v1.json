@@ -1,0 +1,60 @@
+{
+  "kind": "native-subset-completion-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T11:26:16.773992+00:00",
+  "report": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.json",
+  "journal": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.jsonl",
+  "complete": true,
+  "rootSelection": "language/statements/for-await-of",
+  "requestedVariants": 1805,
+  "variantSubsetSha256": "b8bf5532491e8065d1881715045064526b7452d9fcaad16bfea709e9248a4569",
+  "totals": {
+    "total": 1805,
+    "passed": 1800,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 5,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.997229916897507
+  },
+  "sourceSnapshot": {
+    "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+    "files": 568
+  },
+  "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c",
+  "originalJournalPrefixUnchanged": true,
+  "originalNonpassRowsUnchanged": true,
+  "newNonpassesAfterResume": 0,
+  "nativeDataValidationExitStatus": 0,
+  "launcherExitStatus": 1,
+  "nativeRunnerExitStatus": null,
+  "launcherDiagnostic": "docs/results/cluster-f-for-await-direct-completion-launcher-exit-v1.json",
+  "gate": {
+    "sha": "83984a4f909c54fce87adf17b4a9e2843b3492b8",
+    "tests": 4717,
+    "record": "2026-11-07T11:17Z 83984a4f tint-check 4717/4717 PASS (P-run integrated gate incl. strict numeric value captures; merged as 7a7102bd)",
+    "exitStatus": 0
+  },
+  "publicationBase": "91daa55cb0f694b1d075839f9388f968da708224",
+  "wholeFamilyComplete": false,
+  "nextManifest": "docs/results/cluster-f-for-await-preentry-and-host-stall-variant-input-v1.json",
+  "nextVariants": 61,
+  "artifacts": [
+    {
+      "path": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.json",
+      "sha256": "988bf1ab44bb84b38c7d18277e31ad3644c0447572608ecca784286ed2ba48da",
+      "bytes": 1961848
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.jsonl",
+      "sha256": "4c1d7c9ea19c8cc7764e11b8f82f215172edf24e30674c6b7676e417bb0213c2",
+      "bytes": 1372434
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.log",
+      "sha256": "4c2b6a1c601d28cf6946e7f1e8c51d60eb999c4fc23e4f2ab16ef83997280ffc",
+      "bytes": 1621919
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "native-run-launcher-exit-diagnostic",
+  "conformance": false,
+  "recordedAt": "2026-11-07T11:25:10.458167+00:00",
+  "launcherExitStatus": 1,
+  "nativeRunnerExitStatus": null,
+  "canonicalCompletionValidated": true,
+  "observations": 1805,
+  "passed": 1800,
+  "retainedTimeouts": 5,
+  "newNonpassesAfterResume": 0,
+  "originalJournalPrefixUnchanged": true,
+  "originalNonpassRowsUnchanged": true,
+  "stderr": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.log",
+  "journal": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.jsonl",
+  "report": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.json",
+  "error": "slot:29: parse error near `)' after runner wrote complete journal and canonical report",
+  "currentSlotSyntaxExitStatus": 0,
+  "currentSlotLines": 28,
+  "currentSlotSha256": "43b4a2a25faf25f69068eca64f8a83b17e8398eb2e318f5d37cf1bc946e4d377",
+  "interpretation": "Current wrapper has28lines and passes zsh-n. It was modified during the long-running slot invocation to reload coordinator caps. The post-command parse error is consistent with an in-place shell-script edit changing the running interpreter file offset; this is an inference, not a new Test262 failure. Direct Node exit status was not separately captured, so it is unknown.",
+  "disposition": "Preserve actual launcher exit1 and complete native evidence separately; original1805variant denominator and five timeout observations remain unchanged."
+}
