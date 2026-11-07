@@ -35,15 +35,23 @@ test("managed tagged templates use the parsed-unit carrier and existing realm ca
   assert.ok(h.memory.state.reads > 0);
   assert.equal(h.state.writes, 1);
 });
-test("async template loops retain the shared per-entry code budget", () => {
+test("async template loops fit and retain the shared per-entry code budget", () => {
+  const module = lower(
+    "(async function(){function tag(s){return s;}const values=[];for(let i=0;i<2;i++){await 0;values.push(tag`same`);}return values[0]===values[1];})()",
+  );
+  const fitting = host();
+  assert.ok(
+    createScriptEntryCompiler(fixture, fitting.authority, {
+      maxScriptCodeBytes: 262144,
+    })(module).ok,
+  );
+  assert.equal(fitting.state.writes, 1);
+  // Smaller generated root traffic now fits the unchanged production budget.
+  // A deliberately tiny allowance still rejects before authority or publication.
   const oversized = host();
   const result = createScriptEntryCompiler(fixture, oversized.authority, {
-    maxScriptCodeBytes: 262144,
-  })(
-    lower(
-      "(async function(){function tag(s){return s;}const values=[];for(let i=0;i<2;i++){await 0;values.push(tag`same`);}return values[0]===values[1];})()",
-    ),
-  );
+    maxScriptCodeBytes: 1,
+  })(module);
   assert.deepEqual(result, { ok: false, stage: "budget" });
   assert.equal(oversized.memory.state.reads, 0);
   assert.equal(oversized.state.maps, 0);
