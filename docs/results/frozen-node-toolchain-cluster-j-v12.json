@@ -1,0 +1,27 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T00:16:57.108Z",
+  "sourceSnapshot": {
+    "sha256": "41e23d8a22f04726c868b4a62548673f34e48da5d5063a59c628d5457a149624",
+    "files": 569
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v12",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v12/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v12/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v12/source-snapshot.json",
+    "sha256": "15b601ef3dae56ba4bc8035d43b5db81f15fc93d64cd32bf8c570b744f580e55"
+  },
+  "base": "b81f2a9312de1c8dfadcc77b393530ab65c25a8a",
+  "head": "52282d5ead8de4bfd53530a595e96e985c094caf",
+  "debuggerLaunch": "debugserver-direct",
+  "portableChangesFromV11": [
+    "packages/js-runtime/src/objects/temporal-date-arithmetic.ts",
+    "packages/js-runtime/src/objects/temporal-date-difference.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date.ts",
+    "packages/js-runtime/src/objects/temporal-plain-date.ts",
+    "packages/js-runtime/src/objects/temporal-time-difference.ts"
+  ],
+  "basis": "Integration snapshot after independent main Temporal arithmetic merge and native variant manifests. All J source bytes are identical to the byte-compared selfbuild candidate v11; only the listed Temporal files changed. pnpm build exit0. Latest native fixture and gate results will be recorded against this graph."
+}
