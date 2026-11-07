@@ -139,8 +139,8 @@ lexical cleanup uses an internal operation only when it actually suspends.
    Promise types to the strict profile.
 3. Expand async-generator delegation and async iteration conformance, including
    iterator closing and rejection precedence.
-4. Add module and multi-agent host contracts without conflating them with the
-   existing in-process realm/job abstraction.
+4. Extend module scheduling and multi-agent embeddings through explicit host
+   contracts separate from the realm/job abstraction.
 
 Normative references: [Jobs and host scheduling](https://tc39.es/ecma262/multipage/executable-code-and-execution-contexts.html#sec-jobs),
 [Promise objects](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise-objects).
@@ -153,7 +153,7 @@ leaves all requests with the visible generator. The current
 [Node checkpoint](results/async-generator-function-node-checkpoint-v1.json)
 records validation separately from the queued native proofs and Test262 groups.
 
-## Native thread lifecycle boundary (cluster K, validation in progress)
+## Native thread lifecycle boundary
 
 Threaded hosted images explicitly opt in through `BuildRequest.threaded`. Their
 application entry takes one number: zero for the root process, or a copied scalar /
@@ -173,29 +173,38 @@ supply lifecycle authority. Calls return negative platform error numbers directl
 without consulting errno. Worker completion returns a scalar status in 0..255;
 managed abrupt completion or startup failure returns the hosted failure status.
 
-Each worker must construct its own ScriptAgent, realms, jobs and executable arena.
-Only raw shared-block capabilities and copied mailbox payloads cross that boundary.
-This lifecycle capability is a prerequisite for the agent API, not an implemented
-`$262.agent` host. Raw waiter enrollment and platform parking/wakeup now support synchronous
-Atomics.wait in native fixtures; the Test262 agent adapter and external-event pump
-remain to be connected. No Script completion is inferred from the existence of
-a thread. Whole-variant containment remains process-scoped: unsafe asynchronous
-thread cancellation cannot unwind a managed collector safely.
+Each worker constructs its own ScriptAgent, realms, jobs and executable arena.
+Only raw shared-block descriptors and copied mailbox payloads cross that boundary.
+The native Test262 host installs `$262.agent` from captured public capabilities.
+Worker readiness and broadcast retrieval have explicit acknowledgements. Reports
+and source text use exact copied UTF-16; SAB and BigInt wrappers are reconstructed
+in the receiving context. Parent checkpoints observe sticky worker failure and
+join completed threads before accepting a variant's result.
 
+Darwin supplies raw parking through its platform adapter. `parkNativeWord` and
+`wakeNativeWord` accept caller-owned aligned cells; kernel returns are advisory.
+Compare-and-enroll, notification and timeout compete in the native waiter registry.
+Whole-variant containment remains process-scoped: unsafe asynchronous cancellation
+cannot safely unwind a managed collector.
 
-Darwin now also supplies explicit raw word-parking authority through the platform
-adapter. `parkNativeWord` and `wakeNativeWord` operate only on caller-owned aligned
-raw cells; their kernel returns are advisory. The existing monotonic-clock leaf
-supplies deadline accounting. These capabilities do not expose a Script waiting
-API or settle promises. The subsequent waiter registry must compare-and-enroll
-under the same synchronization as notify, retain terminal-state ownership, and
-route completions onto the owner agent's queue.
+Positive Atomics.waitAsync registrations retain their intrinsic Promise capability
+only in the owner agent's managed pending list. Other threads publish scalar
+terminal state and completion order. Same-agent notify resolves only the exact
+notification transaction synchronously. Foreign notification and timeout are
+processed at an owner checkpoint, and reactions enter the existing Script job
+queue. Pending unobserved root waits do not keep a completed synchronous variant
+alive. Worker pending waits are pumped in their own context until completion or
+leaving; unhandled worker rejections are reported as failures.
 
+Copied mailbox payloads are detached under the raw queue mutex and reconstructed
+outside its critical section. No managed allocation, user callback or moving heap
+pointer occurs inside that section. The foundation string builder bounds copying
+cost for large messages while preserving NULs and lone surrogates. Raw registry and
+shared-block mappings remain valid until all referencing agents have exited.
 
-Copied native agent reports now have a raw FIFO mailbox. UTF-16 code units are
-copied into a separate mapping before publication, detached under a scalar mutex,
-then reconstructed and released by the receiver. Managed allocation never occurs
-inside the mailbox critical section. Four isolated native producers and one
-consumer pass the [400-message stress fixture](results/native-agent-mailbox-v1.json),
-including NUL and lone surrogates. This is an internal prerequisite; it does not yet
-install `$262.agent` or expose asynchronous waiting to Script.
+See [Atomics](atomics.md) for the explicit service contracts, native regression
+reports, platform boundary and complete-selection rerun status. The combined
+[frozen self-build](results/cluster-k-agent-selfbuild-v1.json) has identical stages;
+the [validation record](results/cluster-k-agent-host-validation-v1.json) retains
+the large child-realm compilation timeouts and their recheck limitation. Test262
+conformance remains separate from those infrastructure fixtures.

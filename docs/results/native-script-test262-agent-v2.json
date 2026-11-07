@@ -1,0 +1,97 @@
+{
+  "kind": "native-script-agent-fixture",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+      "files": 593
+    },
+    "imageSha256": "bd0d75c524d5d4b4dd9db7180477969ace27905a372ad41b95224ae5fe42bd6d",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "var secret = 123;\n$262.agent.start(\"$262.agent.report(typeof secret); $262.agent.leaving();\");\nvar report; while((report=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(report!==\"undefined\")throw new Error(\"agent global leaked\");",
+        "sha256": "10e134e18b99d2181158dc34799a910712fc993ca4e3b2c7199ef45b561c137b"
+      },
+      {
+        "index": 1,
+        "source": "var sab = new SharedArrayBuffer(8), view = new Int32Array(sab);\n$262.agent.start(`$262.agent.receiveBroadcast(function(sab,id){\nvar a=new Int32Array(sab);var result=Atomics.wait(a,0,0,10000);\n$262.agent.report(result+\":\"+id);$262.agent.leaving();});`);\n$262.agent.broadcast(sab,-9223372036854775809n);\nwhile(Atomics.notify(view,0,1)===0)$262.agent.sleep(1);\nvar report;while((report=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(report!==\"ok:-9223372036854775809\")throw new Error(\"cross-agent wait or id changed\");",
+        "sha256": "355f1fd7a31780a07d6e35d7679cd2d9af952c5d609dd59542da97e335aecf8c"
+      },
+      {
+        "index": 2,
+        "source": "$262.agent.start(\"$262.agent.report('x\\u0000\\ud800');$262.agent.report('second');$262.agent.leaving();\");\nvar a,b;while((a=$262.agent.getReport())===null)$262.agent.sleep(1);\nwhile((b=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(a.length!==3||a.charCodeAt(0)!==120||a.charCodeAt(1)!==0||a.charCodeAt(2)!==0xd800||b!==\"second\")throw new Error(\"copied report changed\");",
+        "sha256": "f362bd98b35862e7cbabd7db92bad182638c2742f07c03590fa7056cac29d140"
+      },
+      {
+        "index": 3,
+        "source": "var count=0;\n$262.agent.start({toString:function(){count++;return \"$262.agent.report({toString:function(){return 'converted';}});$262.agent.leaving();\";}});\nvar report;while((report=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(count!==1||report!==\"converted\")throw new Error(\"coercion changed\");",
+        "sha256": "44c50241e5386c6d027fa37026721a90f653d6f82734cf15eb516225cec4effd"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "scope": "Native Script host regression; four separate processes under LLDB, each with isolated worker threads. Not unchanged Test262 conformance."
+}

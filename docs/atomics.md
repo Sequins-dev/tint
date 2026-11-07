@@ -40,93 +40,96 @@ including exact 64-bit wraparound. The [complete baseline](results/test262-atomi
 report true. `pause` ignores Script arguments and optionally invokes one trusted,
 nonallocating CPU hint; the AArch64 adapter emits YIELD.
 
-## Remaining work
-
-Native pthread CAS contention [passes all three widths in the first observation](results/native-contention-validation-v1.json). A [corrected deterministic contention barrier](results/native-contention-validation-v2.json) passes u8/u16, retaining one u32 pre-entry failure. These are raw native race kernels, separate from Script-agent conformance. Generic hosted workers now have independent managed contexts and roots; the
-Script-agent host still needs per-thread realm/job creation and shared mailboxes. Payload/control mappings contain
-no moving managed pointers and currently have bounded engine-lifetime retention.
+## Waiting and notification
 
 `notify` validates Int32/BigInt64 views and converts index/count before returning
-zero for ordinary buffers. It deliberately does not revalidate after count hooks,
-which may detach ordinary backing. Shared notification requires an explicit
-`SharedBlockNotifications` capability, even for count zero. The Node reference
-adapter uses genuine Atomics.notify; a native waiter registry is still pending.
+zero for ordinary buffers. It does not revalidate after count hooks, which may
+detach ordinary backing. Shared notification requires explicit
+`SharedBlockNotifications` authority, including for count zero. Configured native
+services expose one raw waiter registry shared by their local facades.
+
 Waiter identity is shared block identity plus absolute byte offset, independently
-of wrapper and integer width. The [combined native fixture](results/atomics-notify-native-v1.json) passes
-ordinary-buffer notification, count-hook detachment, explicit rejection of a
-missing shared capability, and the earlier CAS/RMW width cases.
+of wrapper and integer width. Comparison and enrollment share the notification
+lock. FIFO follows registration tickets across recycled slots. Timeout and notify
+compete for one terminal transition; only the owning agent consumes that result.
+Raw blocks and waiter records remain mapped through engine shutdown, after every
+referencing worker has exited. Kernel wakes alone never complete a wait.
 
-The Script agent now stores its host-supplied suspension policy, shared across
-that agent’s realms. Test262 CanBlock flags select it independently per case.
-Both policies pass [native host validation](results/native-agent-policy-validation-v1.json).
+`wait` and `waitAsync` finish operand and timeout conversions before checking the
+synchronous suspension policy and revalidating access. Mismatch and nonpositive
+timeout return without enrollment. Positive synchronous waits use absolute
+monotonic deadlines and recheck terminal state after advisory kernel returns.
+Abrupt host failures release an outstanding enrollment.
 
-Wait and waitAsync implement their argument validation and coercion order,
-including the synchronous non-suspending-agent TypeError after conversions.
-After those checks, one sequentially consistent shared-word read now handles the
-no-enqueue cases: a mismatch returns `not-equal`; an equal value with nonpositive
-timeout returns `timed-out`. Integer conversion wraps to the actual 32/64-bit
-word before comparison. Async immediate results are fresh method-realm ordinary
-objects with `async: false` and a string value. The fast path linearizes at the
-read and never registers a waiter; it cannot lose a notification for a parked
-agent because it does not park. [Five native regressions](results/native-immediate-waits-validation-v1.json)
-cover conversion/order, results and cross-realm behavior. The matching-value synchronous path can now use explicit native waiter authority
-and an absolute monotonic deadline; positive-timeout asynchronous waiting still
-explicitly reports unsupported pending owner-agent delivery.
+Positive asynchronous waits return a method-realm intrinsic Promise. The owning
+ScriptAgent retains its capability and pending registrations. The shared registry
+contains only scalar identities, terminal states and completion sequence numbers.
+Same-agent notify resolves exactly its selected registrations before returning;
+foreign notifications are delivered at the owner's job checkpoint. Promise
+reactions use the existing Script job queue. Notification transaction ranges keep
+an unrelated same-agent notify from resolving an earlier foreign notification
+synchronously. Timeout completion also occurs on the owner agent and competes
+with notification under the same registry lock.
 
-The [complete unchanged waitAsync selection](results/test262-wait-async-immediate-native-v1.json) passes 88/202, with no semantic failures, crashes or timeouts. The remaining outcomes are 106 missing-agent harness errors and eight unsupported parking cases.
+Embeddings install parking, monotonic clock and waiter authority explicitly. A
+service without those capabilities rejects positive waits as unsupported. The
+native Test262 host discovers the public provider from its captured source graph;
+old snapshots do not gain capabilities from mutable workspace files.
 
-Real waiting and the Test262 agent host remain unimplemented. They need
-an engine-owned waiter registry, no-lost-wakeup registration, monotonic timeouts,
-and owning-agent job delivery. A worker host must execute actual Script sources;
-a precompiled native race kernel alone does not satisfy `$262.agent` conformance.
+## Native agents and platform ABI
 
-A fixture-only native waiter prototype also [passes its trace-enabled observation](results/native-waiter-w1-diagnostic-v2.json), with the [earlier pre-entry failure](results/native-waiter-w1-v1.json) retained. It exercises real pthread parking, FIFO notification, timeout and cross-width shared-location matching in a bounded two-record domain. It supplies no production waiting capability, managed workers or Script agents.
+The native Test262 host implements `$262.agent` with threads inside each fresh
+variant process. Each worker initializes its own managed heap, collector, roots,
+realm, jobs and executable arena. The parent passes a raw lifecycle record address
+to the hosted system-thread thunk. No managed reference crosses that boundary.
 
+Source and reports are copied as exact UTF-16 through raw mailboxes. The receiver
+detaches a message under a scalar mutex, reconstructs it outside the lock with the
+foundation string builder, then releases its mapping. Broadcasts carry a shared
+block handle and copied Int32/BigInt identifier. Each worker attaches local SAB and
+waiter facades, reconstructs the identifier, and acknowledges retrieval before
+calling its Script receiver. The parent waits for every live recipient's
+acknowledgement. Reports are FIFO; `getReport` returns a string or null.
 
-## Native lifecycle and parking prerequisites
+`start` waits for worker readiness. `leaving` records completion; engine cleanup
+joins workers and checks their scalar exit status. Exceptions and unhandled
+worker Promise rejections become sticky failures visible to the parent. Startup
+and broadcast deadlines are bounded. Unsafe asynchronous thread cancellation is
+not used; LLDB contains whole-variant faults and timeouts.
 
-Opt-in hosted worker startup initializes a fresh stack, heap, collector and
-ownership domain for each system thread. The
-[managed lifecycle fixture](results/native-isolated-thread-lifecycle-v2.json)
-checks eight simultaneously live contexts under allocation stress and a throwing
-worker. The [executable ownership fixture](results/native-isolated-thread-lifecycle-v3.json)
-also publishes and invokes a distinct executable mapping in each live worker,
-before and after collection. These are native infrastructure fixtures, not
-unchanged Test262 agent passes.
+The optional platform adapter supplies thread create/join, raw word wait/wake and
+monotonic time. macOS arm64 uses pthread and Darwin ulock symbols through Tint's
+own ABI, code generation and linking machinery. No C intermediary or platform
+linker is involved. Linux can supply its thread and futex implementation behind
+that boundary. Native resources record agent and waiter limits for reproducible
+runs.
 
-The Darwin platform adapter explicitly grants `__ulock_wait2` / `__ulock_wake`
-compare-and-park operations. Timeout arguments are relative nanoseconds (zero
-means indefinite). Raw statuses remain advisory; state, notification ownership
-and absolute deadlines belong to the waiter registry. The native leaf touches a
-caller-owned cell before waiting because XNU's locked atomic copy-in cannot fault
-an untouched page in. See Apple's [ABI header](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/ulock.h)
-and [kernel implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/sys_ulock.c).
-The [parking fixture](results/native-word-parking-v2.json) covers mismatch,
-timeout, empty wake and sixteen cross-thread publication/wake races. Its
-[initial failure](results/native-word-parking-v1.json) and
-[error-code diagnostic](results/native-word-parking-diagnostic-v1.json) retain the
-untouched-page EFAULT observation. Observable Atomics waiting remains unsupported
-until registry and owner-agent delivery are connected.
+## Validation and measured coverage
 
-The native engine now also has an explicit scalar waiter registry. Its facades
-are local managed objects; descriptors, ticket identities, location keys and
-terminal states live in raw engine-lifetime storage. Compare-and-enroll and notify
-share one registry lock. Notifications use registration order, including across
-recycled slots, and match block identity plus byte offset independently of width.
-Timeout and notification compete for one terminal state. Only the ticket owner
-consumes a terminal result, after its in-flight park has returned. Kernel wakes
-alone never complete a registration. The [native registry fixture](results/native-wait-registry-v1.json)
-checks two isolated worker facades, cross-width FIFO notification, native parking
-and timeout ownership. Script adapters and owner-agent promise delivery are still
-pending; this does not change the Test262 agent-host status above.
+Native regressions separately cover [eight isolated managed contexts](results/native-isolated-thread-lifecycle-v2.json),
+[private executable ownership](results/native-isolated-thread-lifecycle-v3.json),
+[parking races](results/native-word-parking-v2.json),
+[cross-width FIFO](results/native-wait-registry-v1.json),
+[synchronous Script waiting](results/native-sync-atomics-wait-resumed-v1.json),
+and [owner-agent waitAsync delivery](results/native-script-waitasync-agent-v2.json).
+The [Script agent bridge](results/native-script-test262-agent-v2.json) covers
+worker global isolation, copied reports, shared broadcasts, exact BigInt IDs and
+synchronous waiting. The first bridge observation remains preserved: its lone
+surrogate assertion used an unescaped source literal that the build encoder
+normalized; the corrected fixture checks code units directly.
+The combined [frozen self-build](results/cluster-k-agent-selfbuild-v1.json) produces
+byte-identical stages and verifies signing and DWARF. These are regression and
+self-hosting evidence, not complete unchanged Test262 selections.
 
+The [combined validation record](results/cluster-k-agent-host-validation-v1.json)
+records the full workspace gate and expected worker error/rejection exits. A
+large child-realm compilation timed out twice after entry; the focused recheck
+received less than a fifth of a CPU core. Both processes were contained, but that
+stress case does not establish the caught child-realm sticky-error path. Its
+original observations and CPU samples remain available for a later recheck.
 
-Native shared services opt in to waiting through a parking/clock capability and
-publish a scalar waiter descriptor for other agents to attach. Unconfigured
-services retain no notification or waiting authority. Synchronous `Atomics.wait`
-rechecks terminal state after every kernel return, retains its absolute deadline
-across bounded park intervals, and releases enrollment on abrupt host failure.
-The [Script-wait native fixture](results/native-sync-atomics-wait-v1.json) verifies
-a real notification from an isolated worker, finite deadlines, exact BigInt
-wrapping and immediate mismatch. This does not install `$262.agent` or make the
-positive-timeout `waitAsync` path available.
+The measured [waitAsync baseline](results/test262-wait-async-immediate-native-v1.json)
+remains 88/202 until its complete rerun. It retains 106 missing-agent harness errors
+and eight unsupported positive waits from the old host. The corresponding full
+Atomics and waitAsync reruns are pending; the dashboard retains their old totals.
+Earlier parking, debugger-launch and fixture failures remain in immutable reports.

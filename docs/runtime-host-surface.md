@@ -84,3 +84,20 @@ entrypoint, diagnostics can use the byte writer/stdout/stderr descriptors, and t
 can return an exit status. Node's wrapper may use process.argv/exitCode, while native
 startup supplies the equivalent values. Keep compiler-global state and environment
 variable access out of the core unless an explicit build input requires them.
+
+## Isolated native agents
+
+Threaded hosted images opt in through `BuildRequest.threaded` and a one-number
+application entry. `hostedThreadEntry` is an image-owned thunk that initializes a
+private managed context before forwarding its raw argument. Optional platform
+thread create/join and parking/wake symbols are declared in `HostRequest`; Darwin
+uses pthread and ulock through Tint's direct ABI and linker. Linux's corresponding
+facilities belong in a separate platform adapter. The monotonic clock shares one
+process-wide origin across those contexts.
+
+`@tint/native-runtime/agents` exposes context-local lifecycle and mailbox facades.
+Only scalar descriptors and copied UTF-16 travel through raw shared mappings.
+Shared blocks, waiter records and mailbox registries outlive referencing workers.
+Trusted raw memory and thread leaves are explicitly bound by the embedding and
+are never installed as Script globals. See [Atomics](atomics.md) and
+[async runtime](async-runtime.md) for job delivery and validation boundaries.

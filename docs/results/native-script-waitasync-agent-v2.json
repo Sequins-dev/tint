@@ -1,0 +1,97 @@
+{
+  "kind": "native-script-waitasync-agent-fixture",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+      "files": 593
+    },
+    "imageSha256": "65b4a6377f694415a946db490abb3845f0dfb9a2a484f3969c5019dc16ea76f5",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "var sab=new SharedArrayBuffer(4),a=new Int32Array(sab),events=[];\nvar result=Atomics.waitAsync(a,0,0,Infinity);\nif(!result.async||!(result.value instanceof Promise))throw new Error('missing promise');\nresult.value.then(function(value){if(value!==\"ok\")throw new Error('wrong wait result');events.push('wait');});\nAtomics.notify(a,0,1);\nPromise.resolve().then(function(){events.push('promise');});\nPromise.resolve().then(function(){if(events.join(',')!==\"wait,promise\")throw new Error('same-agent resolution order');print('Test262:AsyncTestComplete');});",
+        "sha256": "1d7b06753e50e2eac33f46ebd6d9bcb12240453bd104cc22408de4419fb875d4"
+      },
+      {
+        "index": 1,
+        "source": "var sab=new SharedArrayBuffer(4),a=new Int32Array(sab);\nvar result=Atomics.waitAsync(a,0,0,Infinity);\n$262.agent.start(`$262.agent.receiveBroadcast(function(sab){var a=new Int32Array(sab);Atomics.notify(a,0,1);$262.agent.leaving();});`);\nresult.value.then(function(value){if(value!==\"ok\")throw new Error('external resolution');print('Test262:AsyncTestComplete');});\n$262.agent.broadcast(sab,0);",
+        "sha256": "120ded23cb49b9033b1ee87a5a0898bf9c03a6d507eaceb89cfd812ca40f2dfb"
+      },
+      {
+        "index": 2,
+        "source": "var sab=new SharedArrayBuffer(4),a=new Int32Array(sab);\nvar result=Atomics.waitAsync(a,0,0,0.5);\nresult.value.then(function(value){if(value!==\"timed-out\")throw new Error('timeout result');if(Atomics.notify(a,0,1)!==0)throw new Error('stale waiter');print('Test262:AsyncTestComplete');});",
+        "sha256": "72e66a56705fa60839567f54499ac8f58eb197292961cda3fac1ed28ceba40c3"
+      },
+      {
+        "index": 3,
+        "source": "var sab=new SharedArrayBuffer(4);\n$262.agent.start(`$262.agent.receiveBroadcast(function(sab){var a=new Int32Array(sab);var result=Atomics.waitAsync(a,0,0,10000);result.value.then(function(value){$262.agent.report(value);$262.agent.leaving();});});`);\n$262.agent.broadcast(sab,0);var a=new Int32Array(sab);\nwhile(Atomics.notify(a,0,1)===0)$262.agent.sleep(1);\nvar report;while((report=$262.agent.getReport())===null)$262.agent.sleep(1);\nif(report!==\"ok\")throw new Error('worker async wait');print('Test262:AsyncTestComplete');",
+        "sha256": "27b3d1a7242331cae78aeca94ec766cbe28e91e14bc6c05a05a6f2e5b5def65a"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "scope": "Native Script host regression; four separate processes under LLDB; cross-agent cases additionally use isolated worker contexts. Not unchanged Test262 conformance."
+}

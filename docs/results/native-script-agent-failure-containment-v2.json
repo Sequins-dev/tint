@@ -1,0 +1,82 @@
+{
+  "kind": "native-agent-failure-containment-fixture",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+      "files": 593
+    },
+    "imageSha256": "ef22f168672a12a1f0024b5432fa6e9ba238e27df4b5fd845e30cb7254ca00b9",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "$262.agent.start(\"throw new Error('worker failed');\");",
+        "sha256": "fac2c4b5c69fb682031f8969838eb9481935b70ddf6f716e8da0ce4261c34739"
+      },
+      {
+        "index": 1,
+        "source": "$262.agent.start(\"Promise.resolve().then(function(){throw new Error('late worker failure');});$262.agent.leaving();\");",
+        "sha256": "df4159d43953ea2b45c1e0921641038c39e8fb7059fe97bc8eef97f5cd2c2866"
+      },
+      {
+        "index": 2,
+        "source": "$262.agent.start(`var realm=$262.createRealm();try{realm.evalScript('\"'+'x'.repeat(300000)+'\"');}catch(error){}$262.agent.leaving();`);",
+        "sha256": "7e73a3220863df424894c040d1f464ae3dec5a5a5f6a786869ac26595ced055f"
+      },
+      {
+        "index": 3,
+        "source": "$262.agent.start(\"Promise.reject('handled').catch(function(){});$262.agent.leaving();\");",
+        "sha256": "64b6bba6bb3580e67ed67b33b0a27de0c471466e88f01922eaaaec020381250d"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 2,
+      "expected": "graceful host failure exit70",
+      "accepted": false,
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aD53oX/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aD53oX/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-aD53oX/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-bV2Xlp/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 23156 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010acdc9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10acdc9c0 <+0>:  mov    x0, sp\n    0x10acdc9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10acdc9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10acdc9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    }
+  ],
+  "scope": "Intentional worker failures must terminate gracefully through the host failure status; no OS fault is accepted. Focused recheck of the retained child-realm compilation timeout, in a fresh process under LLDB. Original four-case report is retained."
+}

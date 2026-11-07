@@ -1,0 +1,77 @@
+{
+  "kind": "native-agent-host-validation",
+  "schemaVersion": 1,
+  "scope": "Isolated native agent host and owner-agent Atomics.waitAsync delivery; bespoke regression fixtures, not complete unchanged Test262 coverage.",
+  "codeGateBase": "efa5249f",
+  "portableSnapshot": {
+    "sha256": "fbafa7afa4a2374777ef733387081743f45d8095e4b73b1c6801e0b5b92a5ea7",
+    "files": 593
+  },
+  "gates": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4764,
+    "passed": 4764,
+    "types": 0,
+    "boundaries": 0,
+    "format": 0,
+    "log": ".tint-bootstrap/cluster-k/check-agent-host-v2.log"
+  },
+  "earlierGate": {
+    "exit": 1,
+    "passed": 4757,
+    "failed": 7,
+    "reason": "Six disabled-host generated text hashes changed accidentally; restored byte-for-byte legacy output. One exact managed surface census changed for the new pending-wait collection; inspected and updated its counts. All seven pass in the complete gate above.",
+    "log": ".tint-bootstrap/cluster-k/check-agent-host-v1.log"
+  },
+  "selfbuild": "cluster-k-agent-selfbuild-v1.json",
+  "positiveFixtures": [
+    {
+      "report": "native-script-test262-agent-v2.json",
+      "passed": 4,
+      "total": 4,
+      "driverExit": 0
+    },
+    {
+      "report": "native-script-waitasync-agent-v2.json",
+      "passed": 4,
+      "total": 4,
+      "driverExit": 0
+    }
+  ],
+  "failureFixtures": {
+    "report": "native-script-agent-failure-containment-v1.json",
+    "driverExit": 1,
+    "accepted": 3,
+    "total": 4,
+    "outcomes": [
+      "Uncaught worker error: expected graceful exit70",
+      "Late job error after leaving: expected graceful exit70",
+      "Large caught child-realm compilation: post-entry timeout",
+      "Handled rejection: completed"
+    ]
+  },
+  "retainedLimit": {
+    "report": "native-script-agent-failure-containment-v2.json",
+    "driverExit": 1,
+    "case": 2,
+    "outcome": "post-entry timeout",
+    "cpuEvidence": "cluster-k-agent-failure-recheck-cpu-v2.jsonl.gz",
+    "lastLiveSample": "46.71 CPU seconds after247 wall seconds; original case has no final CPU sample",
+    "interpretation": "The large child-realm compile remains inconclusive under low CPU availability. Both processes were contained by LLDB; no native fault was observed. This does not prove the caught child-realm sticky-error path. Recheck when load improves or native compilation performance changes.",
+    "sample": "cluster-k-agent-failure-case2-recheck.sample.txt.gz"
+  },
+  "sourceProvenance": {
+    "positiveFixturesAndSelfbuild": "frozen-node-toolchain-cluster-k-agent-host-v1.json",
+    "failureFixtures": "frozen-node-toolchain-cluster-k-agent-host-v2.json",
+    "currentPortableSnapshotMatchesSelfbuild": true,
+    "toolingOnlyAfterSelfbuild": "Preserve disabled-host text hashes; check all worker child realms and script compiler fault state. No portable package changes."
+  },
+  "pendingConformance": [
+    "TypedArray2890 complete parent report",
+    "TypedArrayConstructors1446",
+    "Atomics778",
+    "Atomics/waitAsync202",
+    "Explicit original pre-entry error rechecks"
+  ]
+}
