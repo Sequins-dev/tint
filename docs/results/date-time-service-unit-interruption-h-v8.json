@@ -1,0 +1,28 @@
+{
+  "kind": "native-run-interruption",
+  "conformance": false,
+  "time": "2026-11-07T20:09:32.855060+00:00",
+  "journal": "docs/results/test262-intl-date-time-format-unit-family-h-v8.jsonl",
+  "observations": 168,
+  "passed": 168,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v131.json",
+  "debuggerLaunch": "debugserver-direct",
+  "containmentMs": 300000,
+  "supervisorExit": 143,
+  "cause": "I terminated only the obsolete supervisor PID36187, expecting its child to continue. After the execution-tool session ended, its cleanup terminated descendant wrapper36189, runner36208 and the active debugger/native process tree. This was an orchestration mistake, not an authorization or semantic failure.",
+  "lastStartedVariant": {
+    "path": "intl402/DateTimeFormat/prototype/format/temporal-zoneddatetime-not-supported.js",
+    "variant": "sloppy"
+  },
+  "nativeEntryObserved": {
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-1VFgP9",
+    "initial": {
+      "state": "stopped",
+      "pid": 68300
+    },
+    "debugserverPid": 68299,
+    "finalOutcome": null
+  },
+  "correctionToPlanAmendment": "The continuing-process assertion was true immediately after the parent signal but invalidated by later tool cleanup; nativeInferiorInterrupted false was incorrect. Original amendment retained.",
+  "resume": "Same frozen131, same AOT unit index and300000 containment, TINT_TEST262_RESUME=1. Preserve168 recorded observations and retry only the interrupted unrecorded variant."
+}
