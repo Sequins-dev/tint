@@ -88,10 +88,14 @@ The regular-calendar services separate field resolution, conversion queries and
 arithmetic from the Temporal adapters. Gregorian-derived calendars retain ISO
 month arithmetic and era offsets; Coptic, Ethiopic and Ethioaa use an exact
 four-year cycle with thirteen months. Their epagomenal month has five or six days.
+The Indian calendar uses Shaka years, a March new year tied to Gregorian leap
+years and twelve months. Its field resolution and canonical reference selection
+share the regular-calendar resolver with the Coptic families.
 PlainDate, PlainDateTime, partial dates, ZonedDateTime and Duration relative
 context use the same service, including calendar-grid rounding and canonical
 reference dates. [Semantic validation](results/temporal-coptic-semantic-validation-h-v1.json)
-passes 131 focused tests. Native execution of these new arithmetic families is
+passes 131 focused tests; the [Indian extension](results/temporal-indian-semantic-validation-h-v1.json)
+passes 138 focused tests. Native execution of these new arithmetic families is
 held for host Developer Tools authorization; this is not native conformance evidence.
 
 ## List formatting

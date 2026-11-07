@@ -1055,11 +1055,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/calendar-indian.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/calendar-query.ts",
       packageId: "js-runtime",
     },
     {
       id: "packages/js-runtime/src/objects/calendar-records.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/calendar-regular-fields.ts",
       packageId: "js-runtime",
     },
     {

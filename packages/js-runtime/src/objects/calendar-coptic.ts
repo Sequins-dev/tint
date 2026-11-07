@@ -1,14 +1,13 @@
 import {
   epochDayFromGregorianCoordinate,
-  gregorianCoordinateFromEpochDay,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
 import { copticEpochDay, copticCalendarYearOffsets } from "./calendar-data.ts";
 import { localeTableValue } from "./locale-canonicalization.ts";
 import {
-  resolveCalendarYear,
-  resolveRegularCalendarMonth,
-} from "./calendar-field-resolution.ts";
+  regularCalendarDateFromFields,
+  type RegularCalendarAlgorithms,
+} from "./calendar-regular-fields.ts";
 import type {
   CalendarDateFields,
   CalendarInputFields,
@@ -123,100 +122,28 @@ export function copticCalendarFields(
     ? undefined
     : copticCalendarFieldsAtEpoch(calendar, epoch);
 }
-/** Every valid month/day appears within a four-year cycle before 1973. */
-function monthDayReference(
-  calendar: string,
-  month: number,
-  day: number,
-): GregorianDate | undefined {
-  const last = epochDayFromGregorianCoordinate(1972, 12, 31);
-  if (last === undefined) throw "CALENDAR_REFERENCE_DATE_INVARIANT";
-  const anchor = copticCalendarFieldsAtEpoch(calendar, last);
-  if (anchor === undefined) return undefined;
-  let selected: number | undefined = undefined;
-  for (let years = 0; years <= 4; years++) {
-    const candidate = copticCalendarEpochDay(
-      calendar,
-      anchor.year - years,
-      month,
-      day,
-    );
-    if (candidate === undefined) continue;
-    const iso = gregorianCoordinateFromEpochDay(candidate);
-    if (
-      iso !== undefined &&
-      iso.year >= 1900 &&
-      iso.year <= 1972 &&
-      (selected === undefined || candidate > selected)
-    )
-      selected = candidate;
-  }
-  return selected === undefined
-    ? undefined
-    : gregorianCoordinateFromEpochDay(selected);
-}
+const algorithms: RegularCalendarAlgorithms = {
+  months: 13,
+  yearStart: copticCalendarYearStart,
+  daysInMonth: copticCalendarDaysInMonth,
+  maximumDaysInMonth: (month): number | undefined =>
+    month >= 1 && month <= 13 ? (month === 13 ? 6 : 30) : undefined,
+  epochDay: copticCalendarEpochDay,
+  fieldsAtEpoch: copticCalendarFieldsAtEpoch,
+};
 export function copticCalendarDateFromFields(
   calendar: string,
   fields: CalendarInputFields,
   kind: "date" | "year-month" | "month-day",
   overflow: "constrain" | "reject",
 ): CalendarDateConversion {
-  const failure = (
-    error: "type" | "range" | "unsupported",
-  ): CalendarDateConversion => ({ value: undefined, error });
-  if (!isCopticCalendar(calendar)) return failure("unsupported");
-  const resolvedYear = resolveCalendarYear(calendar, fields, kind);
-  if (resolvedYear.error !== "none") return failure(resolvedYear.error);
-  const year = resolvedYear.value;
-  const resolvedMonth = resolveRegularCalendarMonth(fields, 13);
-  if (resolvedMonth.error !== "none") return failure(resolvedMonth.error);
-  let month = resolvedMonth.value;
-  if (month === undefined) throw "CALENDAR_MONTH_RESOLUTION_INVARIANT";
-  if (overflow === "constrain") month = Math.min(month, 13);
-  if (month > 13) return failure("range");
-  if (kind === "month-day" && year !== undefined) {
-    const start = copticCalendarYearStart(calendar, year),
-      next = copticCalendarYearStart(calendar, year + 1);
-    if (
-      start === undefined ||
-      next === undefined ||
-      next <= -100000001 ||
-      start > 100000000
-    )
-      return failure("range");
-  }
-  let day = kind === "year-month" ? 1 : fields.day;
-  if (day === undefined) return failure("type");
-  if (!Number.isInteger(day) || day <= 0) return failure("range");
-  const maximum =
-    year === undefined
-      ? month === 13
-        ? 6
-        : 30
-      : copticCalendarDaysInMonth(calendar, year, month);
-  if (maximum === undefined) return failure("range");
-  if (overflow === "constrain") day = Math.min(day, maximum);
-  if (day > maximum) return failure("range");
-  if (kind === "month-day") {
-    const date = monthDayReference(calendar, month, day);
-    return date === undefined
-      ? failure("range")
-      : { value: date, error: "none" };
-  }
-  if (year === undefined) throw "CALENDAR_YEAR_RESOLUTION_INVARIANT";
-  const epoch = copticCalendarEpochDay(calendar, year, month, day);
-  if (epoch === undefined) return failure("range");
-  const date = gregorianCoordinateFromEpochDay(epoch);
-  if (date === undefined) return failure("range");
-  if (kind === "date" && (epoch < -100000001 || epoch > 100000000))
-    return failure("range");
-  if (
-    kind === "year-month" &&
-    (date.year < -271821 ||
-      date.year > 275760 ||
-      (date.year === -271821 && date.month < 4) ||
-      (date.year === 275760 && date.month > 9))
-  )
-    return failure("range");
-  return { value: date, error: "none" };
+  if (!isCopticCalendar(calendar))
+    return { value: undefined, error: "unsupported" };
+  return regularCalendarDateFromFields(
+    calendar,
+    fields,
+    kind,
+    overflow,
+    algorithms,
+  );
 }

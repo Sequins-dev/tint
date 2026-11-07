@@ -1,4 +1,11 @@
 import {
+  indianCalendarYearStart,
+  indianCalendarDaysInMonth,
+  indianCalendarFields,
+  indianCalendarDateFromFields,
+  indianCalendarEpochDay,
+} from "./calendar-indian.ts";
+import {
   daysInGregorianMonth,
   gregorianYearStartEpochDay,
   epochDayFromGregorianCoordinate,
@@ -25,7 +32,11 @@ import type {
   CalendarDateConversion,
 } from "./calendar-records.ts";
 export function calendarAlgorithmsAvailable(calendar: string): boolean {
-  return isGregorianCalendar(calendar) || isCopticCalendar(calendar);
+  return (
+    isGregorianCalendar(calendar) ||
+    isCopticCalendar(calendar) ||
+    calendar === "indian"
+  );
 }
 export function calendarFieldsFromISO(
   calendar: string,
@@ -33,8 +44,9 @@ export function calendarFieldsFromISO(
 ): CalendarDateFields | undefined {
   if (isGregorianCalendar(calendar))
     return gregorianCalendarFields(calendar, date);
-  return isCopticCalendar(calendar)
-    ? copticCalendarFields(calendar, date)
+  if (isCopticCalendar(calendar)) return copticCalendarFields(calendar, date);
+  return calendar === "indian"
+    ? indianCalendarFields(calendar, date)
     : undefined;
 }
 export function calendarDateFromFields(
@@ -47,6 +59,8 @@ export function calendarDateFromFields(
     return gregorianCalendarDateFromFields(calendar, fields, kind, overflow);
   if (isCopticCalendar(calendar))
     return copticCalendarDateFromFields(calendar, fields, kind, overflow);
+  if (calendar === "indian")
+    return indianCalendarDateFromFields(calendar, fields, kind, overflow);
   return { value: undefined, error: "unsupported" };
 }
 export function calendarMonthsInYear(
@@ -54,7 +68,7 @@ export function calendarMonthsInYear(
   year: number,
 ): number | undefined {
   if (!Number.isSafeInteger(year)) return undefined;
-  return isGregorianCalendar(calendar)
+  return isGregorianCalendar(calendar) || calendar === "indian"
     ? 12
     : isCopticCalendar(calendar)
       ? 13
@@ -71,8 +85,10 @@ export function calendarDaysInMonth(
       isoYear === undefined ? 0 : daysInGregorianMonth(isoYear, month);
     return days === 0 ? undefined : days;
   }
-  return isCopticCalendar(calendar)
-    ? copticCalendarDaysInMonth(calendar, year, month)
+  if (isCopticCalendar(calendar))
+    return copticCalendarDaysInMonth(calendar, year, month);
+  return calendar === "indian"
+    ? indianCalendarDaysInMonth(calendar, year, month)
     : undefined;
 }
 export function calendarYearStartEpochDay(
@@ -85,8 +101,10 @@ export function calendarYearStartEpochDay(
       ? undefined
       : gregorianYearStartEpochDay(isoYear);
   }
-  return isCopticCalendar(calendar)
-    ? copticCalendarYearStart(calendar, year)
+  if (isCopticCalendar(calendar))
+    return copticCalendarYearStart(calendar, year);
+  return calendar === "indian"
+    ? indianCalendarYearStart(calendar, year)
     : undefined;
 }
 export function calendarDaysInYear(
@@ -123,8 +141,11 @@ export function calendarDateAt(
       return undefined;
     return { year: isoYear, month, day };
   }
-  if (!isCopticCalendar(calendar)) return undefined;
-  const epoch = copticCalendarEpochDay(calendar, year, month, day);
+  const epoch = isCopticCalendar(calendar)
+    ? copticCalendarEpochDay(calendar, year, month, day)
+    : calendar === "indian"
+      ? indianCalendarEpochDay(calendar, year, month, day)
+      : undefined;
   return epoch === undefined
     ? undefined
     : gregorianCoordinateFromEpochDay(epoch);

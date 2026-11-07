@@ -1,0 +1,45 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T01:46:44.899824+00:00",
+  "family": "indian",
+  "initialRed": {
+    "tests": 6,
+    "failed": 6
+  },
+  "focusedGreen": {
+    "tests": 138,
+    "passed": 138
+  },
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "hostTypesExit": 0,
+  "implementation": "Shaka era and year offset, March new year with Gregorian leap handling, regular 12-month arithmetic, exact ISO conversion, canonical partial references and all shared Temporal consumers. Regular field resolution and reference selection extracted from Coptic backend, retaining Coptic regressions.",
+  "references": [
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/indiancal.cpp",
+    "https://tc39.es/proposal-intl-era-monthcode/"
+  ],
+  "nativeStatus": "Compile-only fixture prepared; native execution and self-build comparison held for HOST AUTHORIZATION RESTORED. No Test262 passes claimed.",
+  "logs": {
+    "calendar-indian-core-red-h-v1": {
+      "path": "docs/results/calendar-indian-core-red-h-v1.log.gz",
+      "sha256": "a15139087486b7f9826faffd3738bc87e3017b0dd4c8b059ea4e4f4e058d3cbb"
+    },
+    "calendar-indian-core-green-h-v1": {
+      "path": "docs/results/calendar-indian-core-green-h-v1.log.gz",
+      "sha256": "37f31e57c430ccd793e2b387122b0fd47506b921d6ee3b89b1b082059a2858e3"
+    },
+    "temporal-indian-focused-h-v1": {
+      "path": "docs/results/temporal-indian-focused-h-v1.log.gz",
+      "sha256": "e943b6044763beb77241e516ac5b5d1556576c3031bc4783edd29992681f2f95"
+    },
+    "temporal-indian-test-types-h-v1": {
+      "path": "docs/results/temporal-indian-test-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "temporal-indian-host-types-h-v1": {
+      "path": "docs/results/temporal-indian-host-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
