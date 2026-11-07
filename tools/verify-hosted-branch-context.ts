@@ -35,8 +35,11 @@ if(1/and(-0,99)!==-Infinity||and(NaN,99)===and(NaN,99))return 18;
 if(or(NaN,99)!==99)return 19;
 function nullable(v:number|undefined):number{if(v??7)return 1;return 0;}
 if(nullable(undefined)!==1||nullable(0)!==0||nullable(NaN)!==0)return 20;
-if(!("0"&&"x")||(""&&"x"))return 21;
-if((0&&4)||!(2&&4)||(NaN&&4))return 22;
+if(!("0"&&"x"))return 21;
+if(""&&"x")return 21;
+if(0&&4)return 22;
+if(!(2&&4))return 22;
+if(NaN&&4)return 22;
 return 42;}`,
   "branch-context",
   [],
