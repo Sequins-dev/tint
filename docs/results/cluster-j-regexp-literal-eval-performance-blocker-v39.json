@@ -1,0 +1,164 @@
+{
+  "kind": "cluster-j-native-regexp-literal-eval-performance-blocker",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T22:56:30.689514+00:00",
+  "conformanceJournal": ".tint-bootstrap/cluster-j-regexp-literals-v39.jsonl",
+  "firstRetainedTimeout": {
+    "kind": "observation",
+    "path": "language/literals/regexp/S7.8.5_A1.1_T2.js",
+    "sha256": "d390daa8a7d708348f4c3164dce87d46bb4414a2ab57d3cc9fb007947b515367",
+    "variant": "sloppy",
+    "metadata": {
+      "flags": [],
+      "features": [],
+      "includes": []
+    },
+    "canSuspend": true,
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      }
+    ],
+    "outcome": {
+      "kind": "timeout",
+      "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-KuV8M3/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-KuV8M3/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-KuV8M3/test\\\",\\\"8\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-6Raf7L/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 73776 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c1c89c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c1c89c0 <+0>:  mov    x0, sp\n    0x10c1c89c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c1c89c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c1c89cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+    },
+    "status": "timeout",
+    "elapsedMs": 439055.066042,
+    "batch": 6
+  },
+  "observedCpuBeforeTimeoutSeconds": 284.09,
+  "observedCpuAtElapsedSeconds": 294,
+  "classification": "Real slowness: >250CPU seconds in300wall budget, host load~16. Strict variant and remaining full selection still running. No original observation retried away.",
+  "owner": "P shared eval/JIT preparation; J continues full480 native breadth",
+  "boundedDiagnostic": {
+    "manifest": {
+      "kind": "bounded-eval-profile-fixture",
+      "conformance": false,
+      "sourceSnapshot": {
+        "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+        "files": 601
+      },
+      "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);var pattern=eval(\"/\"+xx+\"/\");if(pattern.source!==xx)throw 1;}",
+      "sourceSha256": "79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-rc0RVG/test",
+      "imageSha256": "4ecaf630df5ee5cd4b3ad6d149d0297cc6d8f381beeec50b26db148e447bf0a3",
+      "iterations": 1000,
+      "modifiedTool": "Private tools clone adds debugSymbols:true only; frozen39 toolchain is untouched",
+      "debuggerLaunch": "debugserver-direct",
+      "timeoutMs": 60000
+    },
+    "buildExit": 0,
+    "nativeDriverExit": 1,
+    "initialStopVerified": {
+      "state": "stopped",
+      "pid": 86994
+    },
+    "requestedContainmentSeconds": 60,
+    "outerContainmentSeconds": 65,
+    "outcome": "timeout; own diagnostic processes cleaned up after outer budget",
+    "finalExpectedExitVerified": false,
+    "lastCpuSample": {
+      "at": "2026-11-07T22:55:01.644541+00:00",
+      "process": "86994   0:55.16 01:01 RX"
+    },
+    "lateSampleOutcome": "Failed after diagnostic cleanup; retained. This is not an authorization failure or Test262 observation.",
+    "interpretation": "1000 unique eval diagnostic did not complete within65wall. First0.5second sample is entirely scriptCompiler initialization/readManagedSurfaceDirectory;590samples with517(87.6%) under canonicalizeManagedSurfaceTypes/serializeManagedSurfaceTypes. This one early snapshot is not a whole-run percentage. scriptState.compile caches the compiler once, so no claim that directory reads recur per eval. Regex matching is not on this sampled stack.",
+    "unchangedFrozenToolchain": true,
+    "privateDiagnosticToolChange": "debugSymbols:true only; cloned tools refer to immutable frozen39 packages and explicit source graph"
+  },
+  "nextStep": "P optimize shared first-eval preparation/managed-surface type planning. After merge, fresh-main single-variant rechecks with TINT_TEST262_VARIANTS; keep these timeout observations in original full report.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/attribute.ts",
+      "bytes": 454,
+      "sha256": "aa99322c6699bbe88c9571fcce0812a2695050e95c18e06c36b12634a9481868"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/build.stderr",
+      "bytes": 946,
+      "sha256": "86da104754185ce760d200029514e656ef73613f8363e3a877df9b81dd464645"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/build.stdout",
+      "bytes": 730,
+      "sha256": "74e0f90cc97856a7dcee884ef2551828abca9df0844cc62de39032abb429c824"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/build.ts",
+      "bytes": 1818,
+      "sha256": "6bf236d9131ee7f70f66d181579417a2ed1b684b0d90aa4a2e9d1a506ba4b396"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/cpu.jsonl",
+      "bytes": 41246,
+      "sha256": "fea650fbd4a1d442fbaf33c67f57e5545b52e953a60e730247a871b7803b2b55"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/exclusive-profile.json",
+      "bytes": 11234,
+      "sha256": "d505d88518741cb71a5cd4960201c20f58aa3b17b0a55e551c9907910811b388"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/initial.json",
+      "bytes": 34,
+      "sha256": "90bff35c07dcd4fe5950f289cbcac6db0d0bb955e6f3135685b1e2ca45eb13ce"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/launch.json",
+      "bytes": 1670,
+      "sha256": "bbbe7012948c64de072111d867d539d2f6e623f12338c46c91f2a3288264b06c"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/manifest.json",
+      "bytes": 790,
+      "sha256": "c8c49998895c7fcba6a3eb59cc0140ee16f7ccba6cd1c342fa64cc0711795614"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/native.log",
+      "bytes": 2290,
+      "sha256": "075717d98ad6ef0a1fa341a394abb2d783e785fa3de19f88ad0b13c8828ac669"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/native.sample.txt.gz",
+      "bytes": 25841,
+      "sha256": "9a4e95fc622d664d079b70390cec625eb325c2079c9e2e600112e61f4cdbb7e6"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/original-inferior-early.sample.txt",
+      "bytes": 84367,
+      "sha256": "625184a99b544fbc8f625c288c2703303afe2967b1c2ae92a0c39e96b55f5562"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/original-inferior-stall.sample.txt",
+      "bytes": 313155,
+      "sha256": "02c9d9b465987dc64b4b81a904d2f35dad8250e971ead24d553d161bea842aee"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/run.py",
+      "bytes": 3615,
+      "sha256": "a08e9ab1f80fd8cd348dd1f3dbe9b6fe4b54f3f254d7f94525892f8fe80c0a8c"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/run.stdout",
+      "bytes": 875,
+      "sha256": "14b70b04e5ddbb29bee9ed706a9f07384642a86895c5bcffa187d8b1b5ee132d"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/sample-command.log",
+      "bytes": 289,
+      "sha256": "4045c900bfd9c3095d906d14f4ace0da42e3414a0455e005783dbcc4be05364c"
+    },
+    {
+      "path": "docs/results/cluster-j-regexp-literal-eval-profile-v39-evidence/sample-late-command.log",
+      "bytes": 137,
+      "sha256": "9ca589276b686c528063ecae50804e12a7bfb73e1709b306eca6148036283c2e"
+    }
+  ]
+}

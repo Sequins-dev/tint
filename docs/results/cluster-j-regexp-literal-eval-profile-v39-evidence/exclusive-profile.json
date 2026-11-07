@@ -1,0 +1,375 @@
+{
+  "samples": 590,
+  "leafGroups": [
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+      "samples": 81,
+      "percent": 13.728813559322035
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+      "samples": 69,
+      "percent": 11.694915254237289
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+      "samples": 57,
+      "percent": 9.661016949152541
+    },
+    {
+      "function": "program:helper:string-concat-copy",
+      "samples": 38,
+      "percent": 6.440677966101695
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+      "samples": 35,
+      "percent": 5.932203389830509
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+      "samples": 23,
+      "percent": 3.8983050847457625
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/lexer.ts:next",
+      "samples": 19,
+      "percent": 3.2203389830508473
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:tokenAt",
+      "samples": 17,
+      "percent": 2.8813559322033897
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+      "samples": 16,
+      "percent": 2.711864406779661
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+      "samples": 15,
+      "percent": 2.542372881355932
+    },
+    {
+      "function": "program:helper:string-equal",
+      "samples": 12,
+      "percent": 2.0338983050847457
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+      "samples": 11,
+      "percent": 1.8644067796610169
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+      "samples": 10,
+      "percent": 1.694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+      "samples": 10,
+      "percent": 1.694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+      "samples": 9,
+      "percent": 1.5254237288135593
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+      "samples": 9,
+      "percent": 1.5254237288135593
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+      "samples": 9,
+      "percent": 1.5254237288135593
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+      "samples": 8,
+      "percent": 1.3559322033898304
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+      "samples": 8,
+      "percent": 1.3559322033898304
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:position",
+      "samples": 7,
+      "percent": 1.1864406779661016
+    },
+    {
+      "function": "runtime:helper:to-uint32",
+      "samples": 7,
+      "percent": 1.1864406779661016
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+      "samples": 7,
+      "percent": 1.1864406779661016
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+      "samples": 6,
+      "percent": 1.0169491525423728
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+      "samples": 6,
+      "percent": 1.0169491525423728
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+      "samples": 6,
+      "percent": 1.0169491525423728
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:at",
+      "samples": 5,
+      "percent": 0.847457627118644
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:typeReference",
+      "samples": 5,
+      "percent": 0.847457627118644
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+      "samples": 5,
+      "percent": 0.847457627118644
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+      "samples": 5,
+      "percent": 0.847457627118644
+    },
+    {
+      "function": "program:helper:string-starts-with",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1039",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/typescript/src/checker/interfaces.ts:named",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:current",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:statement",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "runtime:helper:memory-move",
+      "samples": 4,
+      "percent": 0.6779661016949152
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:validIndex",
+      "samples": 3,
+      "percent": 0.5084745762711864
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+      "samples": 3,
+      "percent": 0.5084745762711864
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:closure@899",
+      "samples": 2,
+      "percent": 0.3389830508474576
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:take",
+      "samples": 2,
+      "percent": 0.3389830508474576
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:type",
+      "samples": 2,
+      "percent": 0.3389830508474576
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+      "samples": 2,
+      "percent": 0.3389830508474576
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+      "samples": 2,
+      "percent": 0.3389830508474576
+    },
+    {
+      "function": "program:helper:string-code-unit",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:createKeyIndex",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:index",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:resizeList",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:rotateLeft",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:writeList",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:advance",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:closure@1348",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:closure@855",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/foundation/src/text/text-scanner.ts:valid",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/source/src/text.ts:createSourceTextView",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/checker/interfaces.ts:canonical",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/checker/interfaces.ts:resolveInterfaceTypes",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/reify/print.ts:quote",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/lexer.ts:quotedText",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/lexer.ts:start",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:end",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:parseSource",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:propertiesBody",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/syntax/parser.ts:restrictedIdentifier",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "program:packages/typescript/src/types/index.ts:copyType",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2559",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+      "samples": 1,
+      "percent": 0.1694915254237288
+    }
+  ]
+}

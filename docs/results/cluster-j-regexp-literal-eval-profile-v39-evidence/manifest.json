@@ -1,0 +1,16 @@
+{
+  "kind": "bounded-eval-profile-fixture",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "9354da7055b23d9f6096a51c4b02ca45048d21d009d47aa3029088d3c88b3e46",
+    "files": 601
+  },
+  "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);var pattern=eval(\"/\"+xx+\"/\");if(pattern.source!==xx)throw 1;}",
+  "sourceSha256": "79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+  "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-rc0RVG/test",
+  "imageSha256": "4ecaf630df5ee5cd4b3ad6d149d0297cc6d8f381beeec50b26db148e447bf0a3",
+  "iterations": 1000,
+  "modifiedTool": "Private tools clone adds debugSymbols:true only; frozen39 toolchain is untouched",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 60000
+}
