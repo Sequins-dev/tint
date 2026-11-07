@@ -29,7 +29,7 @@ import {
   temporalEpochMilliseconds,
   validTemporalEpoch,
 } from "./temporal-epoch.ts";
-import { requireGregorianCalendar } from "./temporal-coercion.ts";
+import { requireCalendarAlgorithms } from "./temporal-coercion.ts";
 import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import { installTemporalClockAccessors } from "./temporal-clock-fields.ts";
 import {
@@ -78,7 +78,7 @@ export function installTemporalZonedDateTime(
       if (!validTemporalEpoch(epoch.integer))
         throw createRuntimeError(realm, "range");
       const zone = temporalTimeZone(args[1], realm);
-      const calendar = requireGregorianCalendar(args[2], realm);
+      const calendar = requireCalendarAlgorithms(args[2], realm);
       return createTemporalZonedObject(
         epoch,
         zone,

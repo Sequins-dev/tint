@@ -16,7 +16,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   temporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import {
@@ -173,7 +173,7 @@ export function installZonedCopyMethods(
           }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            const nextCalendar = requireGregorianCalendar(
+            const nextCalendar = requireCalendarAlgorithms(
               temporalCalendarIdentifier(args[0], realm),
               realm,
             );

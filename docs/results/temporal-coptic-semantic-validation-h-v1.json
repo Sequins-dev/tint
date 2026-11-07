@@ -1,0 +1,113 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T01:36:17.065266+00:00",
+  "families": [
+    "coptic",
+    "ethiopic",
+    "ethioaa"
+  ],
+  "implementation": [
+    "exact 1461-day cycle and 13-month arithmetic, proleptic negative years and eras",
+    "ISO/calendar conversion across Temporal date limits, canonical partial references",
+    "shared calendar add/until used by all Temporal date classes and Duration context",
+    "exact calendar-grid rounding and totals including six-day epagomenal month"
+  ],
+  "results": {
+    "pureInitialRed": {
+      "tests": 7,
+      "failed": 7
+    },
+    "publicInitialRed": {
+      "tests": 6,
+      "failed": 6
+    },
+    "publicGreen": {
+      "tests": 9,
+      "passed": 9
+    },
+    "focusedGreen": {
+      "tests": 131,
+      "passed": 131
+    },
+    "workspaceBuildExit": 0,
+    "testTypesExit": 0,
+    "hostTypesExit": 0
+  },
+  "retainedFailures": [
+    "First pure green had one incorrect expected +1Y1M date (September 17 instead of 16); independent ICU reference coordinates confirmed implementation. Corrected expectation passed.",
+    "Public partial v2 failed to load because calendarDateAt was missing from service exports; export added.",
+    "Focused v1 retained one stale ISO relativeTo record expectation after explicit calendar preservation. Expectation updated.",
+    "Test type checks v2/v3 found a TypeScript inferred loop-binding error; tuple endpoint records now explicitly typed."
+  ],
+  "coverage": "Full four-year cycle roundtrips for each family; six boundary epoch samples; full-domain difference reconstruction; public calendar arithmetic, partial refs, rounding ties, fixed and named UTC zones.",
+  "references": [
+    "https://tc39.es/proposal-intl-era-monthcode/",
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/cecal.cpp",
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/coptccal.cpp",
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/ethpccal.cpp"
+  ],
+  "nativeStatus": "Held pending HOST AUTHORIZATION RESTORED. Build-only fixture and frozen bootstrap prepared separately; no native execution or Test262 gains claimed.",
+  "logs": {
+    "calendar-coptic-core-red-h-v1": {
+      "path": "docs/results/calendar-coptic-core-red-h-v1.log.gz",
+      "uncompressedSha256": "5c2930118967d3dd9694eb832ce1029f62697a918b193ec1b9a7d8ab8bf5eaa1"
+    },
+    "calendar-coptic-core-green-h-v1": {
+      "path": "docs/results/calendar-coptic-core-green-h-v1.log.gz",
+      "uncompressedSha256": "e235e32eb11a69a0ebdd595cc0f2dc1c1dafee8c043c797cdfb03d499150ae76"
+    },
+    "calendar-coptic-core-green-h-v2": {
+      "path": "docs/results/calendar-coptic-core-green-h-v2.log.gz",
+      "uncompressedSha256": "73f6584afb97ea5d4aa16b017315c7f57c16d99f61f2e138d5c31a9e7bf2282e"
+    },
+    "calendar-coptic-core-green-h-v3": {
+      "path": "docs/results/calendar-coptic-core-green-h-v3.log.gz",
+      "uncompressedSha256": "0bc0434d8d22ba79fa597b863fead8b3408dd94e18b03d7feb1d27f294422a96"
+    },
+    "temporal-coptic-public-red-h-v1": {
+      "path": "docs/results/temporal-coptic-public-red-h-v1.log.gz",
+      "uncompressedSha256": "f42cb3465877dd96305f438f4975c08c271a589d862e596c765b2db1890d92d8"
+    },
+    "temporal-coptic-public-partial-h-v1": {
+      "path": "docs/results/temporal-coptic-public-partial-h-v1.log.gz",
+      "uncompressedSha256": "5ab883307c11f6b4e074a580d7ecda6d7a5eb69de3ae3e2baa0b20498e8fd7d8"
+    },
+    "temporal-coptic-public-partial-h-v2": {
+      "path": "docs/results/temporal-coptic-public-partial-h-v2.log.gz",
+      "uncompressedSha256": "bf1e3c32bc57cbcf4b6b29ca2fb467c9f9ce1846414a3ab94532df4c91f47919"
+    },
+    "temporal-coptic-public-partial-h-v3": {
+      "path": "docs/results/temporal-coptic-public-partial-h-v3.log.gz",
+      "uncompressedSha256": "df1fffdf6fc157ee8e491eee1c7085172bf496f95519e8aeaed809098f554bd6"
+    },
+    "temporal-coptic-public-boundaries-h-v1": {
+      "path": "docs/results/temporal-coptic-public-boundaries-h-v1.log.gz",
+      "uncompressedSha256": "1347422b1a6e77ad94953aeabaacfbf68322a2e659f0f229d335b14134719381"
+    },
+    "temporal-coptic-focused-h-v1": {
+      "path": "docs/results/temporal-coptic-focused-h-v1.log.gz",
+      "uncompressedSha256": "fe37baf017c8dd592261270982ce04c00d29a0ff35e6a59d65e46693870b9dae"
+    },
+    "temporal-coptic-focused-h-v2": {
+      "path": "docs/results/temporal-coptic-focused-h-v2.log.gz",
+      "uncompressedSha256": "8bb2e7459dab6d19212ca3d46f42fea1b8aca70eb2cf021195fa82e1eeb6db7b"
+    },
+    "temporal-coptic-test-types-h-v2": {
+      "path": "docs/results/temporal-coptic-test-types-h-v2.log.gz",
+      "uncompressedSha256": "e70a975a1720d6d1a28fb0bcd03a97c3b11903a02b63503c5f7ff2c30cb641c3"
+    },
+    "temporal-coptic-test-types-h-v3": {
+      "path": "docs/results/temporal-coptic-test-types-h-v3.log.gz",
+      "uncompressedSha256": "94f458868e53c958e0c9313350173442c9dcb18d829505816bbad3c1127a3e0e"
+    },
+    "temporal-coptic-test-types-h-v4": {
+      "path": "docs/results/temporal-coptic-test-types-h-v4.log.gz",
+      "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "temporal-coptic-host-types-h-v4": {
+      "path": "docs/results/temporal-coptic-host-types-h-v4.log.gz",
+      "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

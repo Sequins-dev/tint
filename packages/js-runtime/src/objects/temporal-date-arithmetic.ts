@@ -1,4 +1,9 @@
 import {
+  calendarDateAdd,
+  calendarFieldsFromISO,
+  calendarDateAt,
+} from "./calendar.ts";
+import {
   add,
   divide,
   fromNumber,
@@ -6,7 +11,6 @@ import {
   toNumber,
 } from "@tint/foundation/numeric/big-integer";
 import {
-  addGregorianDate,
   epochDayFromGregorian,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
@@ -28,9 +32,11 @@ function calendarAdd(
   subtract: boolean,
   policy: string,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): GregorianDate {
   const sign = subtract ? -1 : 1;
-  const result = addGregorianDate(
+  const result = calendarDateAdd(
+    calendar,
     date,
     sign * duration.years,
     sign * duration.months,
@@ -47,13 +53,22 @@ export function plainDateArithmetic(
   subtract: boolean,
   policy: string,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): GregorianDate {
   const day = fromNumber(86400000000000);
   if (day === undefined) throw "TEMPORAL_DAY_FACTOR_INVARIANT";
   const split = divide(durationTimeNanoseconds(duration), day);
   if (split === undefined) throw "TEMPORAL_DATE_DURATION_DIVISION_INVARIANT";
   const days = toNumber(split.quotient) * (subtract ? -1 : 1);
-  const result = calendarAdd(date, duration, days, subtract, policy, realm);
+  const result = calendarAdd(
+    date,
+    duration,
+    days,
+    subtract,
+    policy,
+    realm,
+    calendar,
+  );
   const epoch = epochDayFromGregorian(result.year, result.month, result.day);
   if (epoch === undefined || epoch < -100000001 || epoch > 100000000)
     throw createRuntimeError(realm, "range");
@@ -67,6 +82,7 @@ export function plainYearMonthArithmetic(
   subtract: boolean,
   policy: string,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): GregorianDate {
   if (
     duration.weeks !== 0 ||
@@ -79,12 +95,19 @@ export function plainYearMonthArithmetic(
     duration.nanoseconds !== 0
   )
     throw createRuntimeError(realm, "range");
+  const fields = calendarFieldsFromISO(calendar, date);
+  const first =
+    fields === undefined
+      ? undefined
+      : calendarDateAt(calendar, fields.year, fields.month, 1);
+  if (first === undefined) throw createRuntimeError(realm, "range");
   return plainDateArithmetic(
-    { year: date.year, month: date.month, day: 1 },
+    first,
     duration,
     subtract,
     policy,
     realm,
+    calendar,
   );
 }
 export function plainDateTimeArithmetic(
@@ -105,6 +128,7 @@ export function plainDateTimeArithmetic(
     subtract,
     policy,
     realm,
+    dateTime.calendar ?? "iso8601",
   );
   return combineTemporalDateTime(
     date,

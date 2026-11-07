@@ -19,7 +19,7 @@ import {
 import { regulateTemporalTime } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
@@ -140,7 +140,7 @@ export function zonedDateTimeFrom(
       const zone = fields.timeZone;
       if (zone === undefined) throw "ZONED_TIME_ZONE_INVARIANT";
       const policy = readZonedOptions(options, realm, hooks);
-      requireGregorianCalendar(calendar, realm);
+      requireCalendarAlgorithms(calendar, realm);
       const data = combineTemporalDateTime(
         regulateCalendarDateFields(
           fields,
@@ -182,7 +182,7 @@ export function zonedDateTimeFrom(
   )
     throw createRuntimeError(realm, "range");
   const zone = temporalTimeZone(data.timeZone, realm);
-  requireGregorianCalendar(data.calendar, realm);
+  requireCalendarAlgorithms(data.calendar, realm);
   const policy = readZonedOptions(options, realm, hooks);
   return interpretZonedOffset(
     data,

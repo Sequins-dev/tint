@@ -200,6 +200,7 @@ test("ISO preparation ignores era fields and keeps existing date conversion", ()
   assert.deepEqual(readTemporalRelativeTo(bag, f.realm, f.hooks), {
     kind: "plain",
     date: { year: 2020, month: 5, day: 2 },
+    calendar: "iso8601",
   });
 });
 

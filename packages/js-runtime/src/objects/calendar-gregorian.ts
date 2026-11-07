@@ -5,14 +5,15 @@ import {
 } from "@tint/foundation/chrono/gregorian-calendar";
 
 import { japaneseGregorianEraData } from "./calendar-data.ts";
-import { calendarYearForEra } from "./calendar-era.ts";
-export interface GregorianCalendarDate {
-  readonly year: number;
-  readonly month: number;
-  readonly day: number;
-  readonly era: string | undefined;
-  readonly eraYear: number | undefined;
-}
+import type {
+  CalendarDateFields as GregorianCalendarDate,
+  CalendarInputFields as GregorianCalendarInput,
+  CalendarDateConversion as GregorianCalendarConversion,
+} from "./calendar-records.ts";
+import {
+  resolveCalendarYear,
+  resolveRegularCalendarMonth,
+} from "./calendar-field-resolution.ts";
 export function isGregorianCalendar(calendar: string): boolean {
   return (
     calendar === "iso8601" ||
@@ -99,19 +100,6 @@ export function gregorianCalendarFields(
   return { year, month: date.month, day: date.day, era, eraYear };
 }
 
-export interface GregorianCalendarInput {
-  readonly year?: number | undefined;
-  readonly month?: number | undefined;
-  readonly monthCode?:
-    { readonly month: number; readonly leap: boolean } | undefined;
-  readonly day?: number | undefined;
-  readonly era?: string | undefined;
-  readonly eraYear?: number | undefined;
-}
-export interface GregorianCalendarConversion {
-  readonly value: GregorianDate | undefined;
-  readonly error: "none" | "type" | "range" | "unsupported";
-}
 export function gregorianCalendarDateFromFields(
   calendar: string,
   fields: GregorianCalendarInput,
@@ -123,47 +111,13 @@ export function gregorianCalendarDateFromFields(
   ): GregorianCalendarConversion => ({ value: undefined, error });
   if (!isGregorianCalendar(calendar)) return failure("unsupported");
   const nonISO = calendar !== "iso8601";
-  const needsYear =
-    kind !== "month-day" ||
-    (nonISO && (fields.month !== undefined || fields.monthCode === undefined));
-  const hasEra = fields.era !== undefined,
-    hasEraYear = fields.eraYear !== undefined;
-  // Missing required fields and incomplete era pairs precede consistency/ranges.
-  if (
-    needsYear &&
-    fields.year === undefined &&
-    (!nonISO || !hasEra || !hasEraYear)
-  )
-    return failure("type");
-  if (nonISO && hasEra !== hasEraYear) return failure("type");
-  if (kind !== "year-month" && fields.day === undefined) return failure("type");
-  if (fields.month === undefined && fields.monthCode === undefined)
-    return failure("type");
-  let arithmeticYear = fields.year;
-  if (nonISO && fields.era !== undefined && fields.eraYear !== undefined) {
-    const year = calendarYearForEra(calendar, fields.era, fields.eraYear);
-    if (
-      year === undefined ||
-      (arithmeticYear !== undefined && arithmeticYear !== year)
-    )
-      return failure("range");
-    arithmeticYear = year;
-  }
-  let month = fields.month;
-  const code = fields.monthCode;
-  if (code !== undefined) {
-    if (
-      code.leap ||
-      !Number.isInteger(code.month) ||
-      code.month < 1 ||
-      code.month > 12 ||
-      (month !== undefined && month !== code.month)
-    )
-      return failure("range");
-    month = code.month;
-  }
-  if (month === undefined) return failure("type");
-  if (!Number.isInteger(month) || month <= 0) return failure("range");
+  const resolvedYear = resolveCalendarYear(calendar, fields, kind);
+  if (resolvedYear.error !== "none") return failure(resolvedYear.error);
+  const arithmeticYear = resolvedYear.value;
+  const resolvedMonth = resolveRegularCalendarMonth(fields, 12);
+  if (resolvedMonth.error !== "none") return failure(resolvedMonth.error);
+  let month = resolvedMonth.value;
+  if (month === undefined) throw "CALENDAR_MONTH_RESOLUTION_INVARIANT";
   if (overflow === "constrain") month = Math.min(month, 12);
   if (month > 12) return failure("range");
   const isoYear =

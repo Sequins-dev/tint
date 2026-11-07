@@ -9,7 +9,7 @@ import {
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
@@ -132,7 +132,7 @@ export function plainDateFrom(
       calendar,
     );
     const policy = overflow(options);
-    requireGregorianCalendar(calendar, realm);
+    requireCalendarAlgorithms(calendar, realm);
     return {
       date: regulateCalendarDateFields(fields, calendar, "date", policy, realm),
       calendar,
@@ -143,7 +143,7 @@ export function plainDateFrom(
   const value = parsed.value;
   if (parsed.error !== "none" || value === undefined || value.utc)
     throw createRuntimeError(realm, "range");
-  const calendar = requireGregorianCalendar(value.calendar, realm);
+  const calendar = requireCalendarAlgorithms(value.calendar, realm);
   overflow(options);
   return {
     date: validate(value.date.year, value.date.month, value.date.day),

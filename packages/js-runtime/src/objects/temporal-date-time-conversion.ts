@@ -11,7 +11,7 @@ import { type ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
@@ -163,7 +163,7 @@ export function plainDateTimeFrom(
       calendar,
     );
     const policy = overflow();
-    requireGregorianCalendar(calendar, realm);
+    requireCalendarAlgorithms(calendar, realm);
     const isoDate = regulateCalendarDateFields(
         fields,
         calendar,
@@ -179,7 +179,7 @@ export function plainDateTimeFrom(
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined || data.utc)
     throw createRuntimeError(realm, "range");
-  const calendar = requireGregorianCalendar(data.calendar, realm);
+  const calendar = requireCalendarAlgorithms(data.calendar, realm);
   overflow();
   return combineTemporalDateTime(data.date, data, realm, calendar);
 }

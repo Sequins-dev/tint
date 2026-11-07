@@ -1,6 +1,10 @@
 import {
-  differenceGregorianDates,
-  addGregorianDate,
+  calendarDateAdd,
+  calendarDateUntil,
+  calendarDateAt,
+  calendarFieldsFromISO,
+} from "./calendar.ts";
+import {
   epochDayFromGregorian,
   type GregorianDate,
   type GregorianDateDifference,
@@ -58,6 +62,7 @@ export function roundCalendarDifference(
   since: boolean,
   realm: ErrorRealm,
   clockRemainder?: Integer,
+  calendar: string = "iso8601",
 ): Duration {
   const zero = fromNumber(0),
     length = fromNumber(clockRemainder === undefined ? 1 : 86400000000000);
@@ -85,7 +90,8 @@ export function roundCalendarDifference(
           : d.weeks + Math.trunc(d.days / 7);
   let startCount = Math.trunc(count / increment) * increment;
   function endpoint(value: number): number {
-    const date = addGregorianDate(
+    const date = calendarDateAdd(
+      calendar,
       one,
       unit === "year" ? value : years,
       unit === "month" ? value : months,
@@ -149,7 +155,15 @@ export function roundCalendarDifference(
     settings.largestUnit === "year" &&
     (shifted || value === startCount + direction * increment)
   ) {
-    const boundary = addGregorianDate(one, y + direction, 0, 0, 0, "constrain");
+    const boundary = calendarDateAdd(
+      calendar,
+      one,
+      y + direction,
+      0,
+      0,
+      0,
+      "constrain",
+    );
     if (boundary === undefined) throw createRuntimeError(realm, "range");
     const boundaryDay = epochDayFromGregorian(
       boundary.year,
@@ -175,6 +189,7 @@ export function bubbleCalendarDifference(
   nudgedDay: number,
   largest: string,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): GregorianDateDifference {
   let years = d.years,
     months = d.months,
@@ -187,7 +202,7 @@ export function bubbleCalendarDifference(
     const y = unit === "year" ? years + direction : years,
       m = unit === "year" ? 0 : unit === "month" ? months + direction : months,
       w = unit === "week" ? weeks + direction : 0;
-    const boundary = addGregorianDate(one, y, m, w, 0, "constrain");
+    const boundary = calendarDateAdd(calendar, one, y, m, w, 0, "constrain");
     if (boundary === undefined) throw createRuntimeError(realm, "range");
     const boundaryDay = epochDayFromGregorian(
       boundary.year,
@@ -213,6 +228,7 @@ export function plainDateDifference(
   settings: TemporalDifferenceSettings,
   since: boolean,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): Duration {
   const first = epochDayFromGregorian(one.year, one.month, one.day),
     last = epochDayFromGregorian(two.year, two.month, two.day);
@@ -228,7 +244,7 @@ export function plainDateDifference(
   )
     throw createRuntimeError(realm, "range");
   const sign = since ? -1 : 1;
-  const d = differenceGregorianDates(one, two, largest);
+  const d = calendarDateUntil(calendar, one, two, largest);
   if (d === undefined) throw createRuntimeError(realm, "range");
   if (settings.smallestUnit === "day" && settings.increment === 1) {
     return dateDuration(
@@ -239,7 +255,17 @@ export function plainDateDifference(
   const day = settings.smallestUnit === "day";
   const week = largest === "week" && settings.smallestUnit === "week";
   if (!day && !week)
-    return roundCalendarDifference(one, first, last, d, settings, since, realm);
+    return roundCalendarDifference(
+      one,
+      first,
+      last,
+      d,
+      settings,
+      since,
+      realm,
+      undefined,
+      calendar,
+    );
   const quantumDays = settings.increment * (week ? 7 : 1),
     delta = day ? d.days : last - first;
   if (week) {
@@ -265,7 +291,15 @@ export function plainDateDifference(
     days = sign * rounded;
   // Uniform day rounding produces a duration, not a new date object. Its
   // endpoint can exceed the date range; only calendar boundary probes add dates.
-  const anchor = addGregorianDate(one, years, months, weeks, 0, "constrain");
+  const anchor = calendarDateAdd(
+    calendar,
+    one,
+    years,
+    months,
+    weeks,
+    0,
+    "constrain",
+  );
   if (anchor === undefined) throw createRuntimeError(realm, "range");
   const anchorDay = epochDayFromGregorian(
     anchor.year,
@@ -283,6 +317,7 @@ export function plainDateDifference(
       nudgedDay,
       largest,
       realm,
+      calendar,
     );
     years = balanced.years;
     months = balanced.months;
@@ -302,11 +337,22 @@ export function plainYearMonthDifference(
   settings: TemporalDifferenceSettings,
   since: boolean,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): Duration {
   if (one.year === two.year && one.month === two.month && one.day === two.day)
     return dateDuration([], realm);
-  const first = { year: one.year, month: one.month, day: 1 },
-    last = { year: two.year, month: two.month, day: 1 };
+  const a = calendarFieldsFromISO(calendar, one),
+    b = calendarFieldsFromISO(calendar, two);
+  const first =
+      a === undefined
+        ? undefined
+        : calendarDateAt(calendar, a.year, a.month, 1),
+    last =
+      b === undefined
+        ? undefined
+        : calendarDateAt(calendar, b.year, b.month, 1);
+  if (first === undefined || last === undefined)
+    throw createRuntimeError(realm, "range");
   for (const date of [first, last]) {
     if (date === undefined) throw "YEAR_MONTH_DIFFERENCE_DATE_INVARIANT";
     const day = epochDayFromGregorian(date.year, date.month, date.day);
@@ -317,7 +363,7 @@ export function plainYearMonthDifference(
     const largest = settings.largestUnit;
     if (largest !== "year" && largest !== "month")
       throw createRuntimeError(realm, "range");
-    const difference = differenceGregorianDates(first, last, largest);
+    const difference = calendarDateUntil(calendar, first, last, largest);
     if (difference === undefined) throw createRuntimeError(realm, "range");
     const sign = since ? -1 : 1;
     return dateDuration(
@@ -325,7 +371,7 @@ export function plainYearMonthDifference(
       realm,
     );
   }
-  return plainDateDifference(first, last, settings, since, realm);
+  return plainDateDifference(first, last, settings, since, realm, calendar);
 }
 export function installDateDifferenceMethods(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
@@ -366,6 +412,7 @@ export function installDateDifferenceMethods(
                   settings,
                   name === "since",
                   realm,
+                  other.calendar,
                 )
               : plainDateDifference(
                   own,
@@ -373,6 +420,7 @@ export function installDateDifferenceMethods(
                   settings,
                   name === "since",
                   realm,
+                  other.calendar,
                 );
           const object = createObject<ScriptPropertyKey, unknown>(
             realm.temporalDurationPrototype,

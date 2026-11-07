@@ -7,7 +7,7 @@ import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts"
 import { plainDateFrom } from "./temporal-plain-date-conversion.ts";
 import {
   temporalInteger,
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   temporalCalendarSlot,
 } from "./temporal-coercion.ts";
 import { temporalCalendarAnnotation } from "./temporal-date-time-format.ts";
@@ -54,7 +54,7 @@ export function installTemporalPlainDate(
       const year = temporalInteger(args[0], realm, hooks),
         month = temporalInteger(args[1], realm, hooks),
         day = temporalInteger(args[2], realm, hooks);
-      const calendar = requireGregorianCalendar(args[3], realm);
+      const calendar = requireCalendarAlgorithms(args[3], realm);
       const epoch = epochDayFromGregorian(year, month, day);
       if (epoch === undefined || epoch < -100000001 || epoch > 100000000)
         throw createRuntimeError(realm, "range");
@@ -106,6 +106,7 @@ export function installTemporalPlainDate(
               name === "subtract",
               policy,
               realm,
+              temporalCalendarSlot(receiver, realm),
             ),
             temporalCalendarSlot(receiver, realm),
           );

@@ -20,7 +20,7 @@ import { temporalDisambiguationOption } from "./temporal-options.ts";
 import { interpretZonedOffset } from "./temporal-zoned-conversion.ts";
 import { createTemporalZonedObject } from "./temporal-zoned-construction.ts";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   temporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
@@ -91,7 +91,7 @@ export function installDateTimeCopyMethods(
           }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            const calendar = requireGregorianCalendar(
+            const calendar = requireCalendarAlgorithms(
               temporalCalendarIdentifier(args[0], realm),
               realm,
             );

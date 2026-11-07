@@ -1,3 +1,4 @@
+import { calendarFieldsFromISO, calendarDateFromFields } from "./calendar.ts";
 import { temporalTimeZoneLike } from "./temporal-time-zone.ts";
 import { viewObjectValue } from "./values.ts";
 import { interpretZonedOffset } from "./temporal-zoned-conversion.ts";
@@ -18,7 +19,7 @@ import {
   plainDateWith,
 } from "./temporal-plain-date-conversion.ts";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   temporalCalendarIdentifier,
   temporalCalendarSlot,
 } from "./temporal-coercion.ts";
@@ -123,7 +124,7 @@ export function installPlainDateCopyMethods(
           }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            const nextCalendar = requireGregorianCalendar(
+            const nextCalendar = requireCalendarAlgorithms(
               temporalCalendarIdentifier(args[0], realm),
               realm,
             );
@@ -149,18 +150,20 @@ export function installPlainDateCopyMethods(
               : realm.temporalPlainMonthDayPrototype,
           );
           result.internalTemporalCalendar = calendar;
+          const fields = calendarFieldsFromISO(calendar, date);
+          if (fields === undefined)
+            throw "PLAIN_DATE_CALENDAR_FIELDS_INVARIANT";
+          const converted = calendarDateFromFields(
+            calendar,
+            fields,
+            yearMonth ? "year-month" : "month-day",
+            "constrain",
+          );
+          if (converted.value === undefined)
+            throw createRuntimeError(realm, "range");
           if (yearMonth)
-            result.internalTemporalPlainYearMonth = {
-              year: date.year,
-              month: date.month,
-              day: 1,
-            };
-          else
-            result.internalTemporalPlainMonthDay = {
-              year: 1972,
-              month: date.month,
-              day: date.day,
-            };
+            result.internalTemporalPlainYearMonth = converted.value;
+          else result.internalTemporalPlainMonthDay = converted.value;
           return result;
         },
         hooks,

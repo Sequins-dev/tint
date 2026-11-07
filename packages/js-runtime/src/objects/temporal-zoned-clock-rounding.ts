@@ -1,3 +1,4 @@
+import { calendarDateAdd } from "./calendar.ts";
 import { bubbleZonedCalendarDuration } from "./temporal-zoned-calendar-bubble.ts";
 import {
   add,
@@ -8,7 +9,6 @@ import {
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
 import { roundInteger } from "@tint/foundation/numeric/integer-rounding";
-import { addGregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
   createDuration,
   durationFields,
@@ -57,7 +57,8 @@ export function roundZonedClockDifference(
     if (result === undefined) throw "ZONED_CLOCK_ROUND_INVARIANT";
     return since ? negate(result) : result;
   }
-  const startDate = addGregorianDate(
+  const startDate = calendarDateAdd(
+    own.dateTime.calendar ?? "iso8601",
     own.dateTime.date,
     raw.years,
     raw.months,
@@ -66,7 +67,15 @@ export function roundZonedClockDifference(
     "constrain",
   );
   if (startDate === undefined) throw createRuntimeError(realm, "range");
-  const endDate = addGregorianDate(startDate, 0, 0, 0, sign, "constrain");
+  const endDate = calendarDateAdd(
+    own.dateTime.calendar ?? "iso8601",
+    startDate,
+    0,
+    0,
+    0,
+    sign,
+    "constrain",
+  );
   if (endDate === undefined) throw createRuntimeError(realm, "range");
   const start = interpretZonedOffset(
     combineTemporalDateTime(startDate, own.dateTime, realm),

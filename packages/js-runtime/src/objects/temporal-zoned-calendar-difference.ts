@@ -1,3 +1,4 @@
+import { calendarDateAdd, calendarDateUntil } from "./calendar.ts";
 import { bubbleZonedCalendarDuration } from "./temporal-zoned-calendar-bubble.ts";
 import {
   roundInteger,
@@ -15,11 +16,7 @@ import {
   toNumber,
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
-import {
-  addGregorianDate,
-  differenceGregorianDates,
-  type GregorianDate,
-} from "@tint/foundation/chrono/gregorian-calendar";
+import { type GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
   balanceTimeDuration,
   durationFields,
@@ -55,7 +52,8 @@ export function unroundedZonedCalendarDifference(
   if (zero === undefined) throw "ZONED_CALENDAR_ZERO_INVARIANT";
   const direction = compare(end.integer, own.epoch.integer);
   function result(date: GregorianDate, time: Integer): Duration {
-    const dates = differenceGregorianDates(
+    const dates = calendarDateUntil(
+        own.dateTime.calendar ?? "iso8601",
         own.dateTime.date,
         date,
         dateLargest,
@@ -95,7 +93,8 @@ export function unroundedZonedCalendarDifference(
   let correction = clockSign === correctionSign ? 1 : 0;
   const maximum = direction > 0 ? 2 : 1;
   while (correction <= maximum) {
-    const date = addGregorianDate(
+    const date = calendarDateAdd(
+      own.dateTime.calendar ?? "iso8601",
       last,
       0,
       0,

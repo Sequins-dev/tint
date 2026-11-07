@@ -1,13 +1,19 @@
 import {
   epochDayFromGregorian,
-  daysInGregorianMonth,
   isoWeekFromEpochDay,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
 import { builtinAccessor, builtinFunction } from "./intrinsics.ts";
 import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
 import { rejectUnsupportedExecution, type ErrorRealm } from "./errors.ts";
-import { calendarFieldsFromISO } from "./calendar.ts";
+import {
+  calendarFieldsFromISO,
+  calendarMonthsInYear,
+  calendarDaysInMonth,
+  calendarDaysInYear,
+  calendarDayOfYear,
+  calendarInLeapYear,
+} from "./calendar.ts";
 import { temporalCalendarSlot } from "./temporal-coercion.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 /** Calendar getters share ISO storage; each constructor supplies its own brand check. */
@@ -71,22 +77,35 @@ export function installTemporalCalendarAccessors(
           if (name === "month") return fields.month;
           if (name === "day") return fields.day;
           if (name === "monthCode")
-            return "M" + String(date.month).padStart(2, "0");
+            return "M" + String(fields.month).padStart(2, "0");
           if (name === "era") return fields.era;
           if (name === "eraYear") return fields.eraYear;
           if (name === "daysInWeek") return 7;
-          if (name === "monthsInYear") return 12;
-          const leap = daysInGregorianMonth(date.year, 2) === 29;
-          if (name === "daysInYear") return leap ? 366 : 365;
-          if (name === "inLeapYear") return leap;
+          if (name === "monthsInYear")
+            return (
+              calendarMonthsInYear(calendar, fields.year) ??
+              rejectUnsupportedExecution(realm)
+            );
+          if (name === "daysInYear")
+            return (
+              calendarDaysInYear(calendar, fields.year) ??
+              rejectUnsupportedExecution(realm)
+            );
+          if (name === "inLeapYear")
+            return (
+              calendarInLeapYear(calendar, fields.year) ??
+              rejectUnsupportedExecution(realm)
+            );
           if (name === "daysInMonth")
-            return daysInGregorianMonth(date.year, date.month);
-          if (name === "dayOfYear") {
-            let ordinal = date.day;
-            for (let month = 1; month < date.month; month++)
-              ordinal += daysInGregorianMonth(date.year, month);
-            return ordinal;
-          }
+            return (
+              calendarDaysInMonth(calendar, fields.year, fields.month) ??
+              rejectUnsupportedExecution(realm)
+            );
+          if (name === "dayOfYear")
+            return (
+              calendarDayOfYear(calendar, date) ??
+              rejectUnsupportedExecution(realm)
+            );
           if (
             calendar !== "iso8601" &&
             (name === "weekOfYear" || name === "yearOfWeek")

@@ -1,3 +1,4 @@
+import { calendarDateAdd } from "./calendar.ts";
 import { roundIntegerAsIfPositive } from "@tint/foundation/numeric/integer-rounding";
 import { temporalZonedDayBounds } from "./temporal-zone-local.ts";
 import {
@@ -7,7 +8,6 @@ import {
   compareNumber,
   compare,
 } from "@tint/foundation/numeric/big-integer";
-import { addGregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
   durationTimeNanoseconds,
   type Duration,
@@ -36,7 +36,8 @@ export function zonedDateTimeArithmetic(
     duration.days !== 0
   ) {
     const sign = subtract ? -1 : 1;
-    const date = addGregorianDate(
+    const date = calendarDateAdd(
+      data.dateTime.calendar ?? "iso8601",
       data.dateTime.date,
       sign * duration.years,
       sign * duration.months,

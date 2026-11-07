@@ -1,8 +1,6 @@
+import { calendarDateAdd } from "./calendar.ts";
 import { compare, type Integer } from "@tint/foundation/numeric/big-integer";
-import {
-  addGregorianDate,
-  epochDayFromGregorian,
-} from "@tint/foundation/chrono/gregorian-calendar";
+import { epochDayFromGregorian } from "@tint/foundation/chrono/gregorian-calendar";
 import type { TemporalRelativeTo } from "./temporal-relative-to.ts";
 import { zonedDateTimeArithmetic } from "./temporal-zoned-arithmetic.ts";
 import {
@@ -119,7 +117,8 @@ export function compareDurations(
     let days = data.days;
     if (calendar && relative.kind === "plain") {
       const start = relative.date,
-        end = addGregorianDate(
+        end = calendarDateAdd(
+          relative.calendar ?? "iso8601",
           start,
           data.years,
           data.months,

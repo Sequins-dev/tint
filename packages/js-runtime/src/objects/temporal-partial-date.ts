@@ -21,7 +21,7 @@ import {
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import {
   temporalInteger,
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
   temporalCalendarSlot,
 } from "./temporal-coercion.ts";
 import { calendarFieldsFromISO } from "./calendar.ts";
@@ -72,7 +72,7 @@ export function installTemporalPartialDates(
       (args, target): unknown => {
         const first = temporalInteger(args[0], realm, hooks);
         const second = temporalInteger(args[1], realm, hooks);
-        const calendar = requireGregorianCalendar(args[2], realm);
+        const calendar = requireCalendarAlgorithms(args[2], realm);
         const reference =
           args[3] === undefined
             ? yearMonth
@@ -177,6 +177,7 @@ export function installTemporalPartialDates(
                 method === "subtract",
                 policy,
                 realm,
+                temporalCalendarSlot(receiver, realm),
               );
               const object = createObject<ScriptPropertyKey, unknown>(
                 prototype,

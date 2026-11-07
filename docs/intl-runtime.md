@@ -84,6 +84,16 @@ and the [native primitive fixture](results/native-calendar-identifiers-green-h-v
 validates 19 identifier/alias pairs and seven rejection cases through direct LLDB
 launch. These are separate from Test262 selection results.
 
+The regular-calendar services separate field resolution, conversion queries and
+arithmetic from the Temporal adapters. Gregorian-derived calendars retain ISO
+month arithmetic and era offsets; Coptic, Ethiopic and Ethioaa use an exact
+four-year cycle with thirteen months. Their epagomenal month has five or six days.
+PlainDate, PlainDateTime, partial dates, ZonedDateTime and Duration relative
+context use the same service, including calendar-grid rounding and canonical
+reference dates. [Semantic validation](results/temporal-coptic-semantic-validation-h-v1.json)
+passes 131 focused tests. Native execution of these new arithmetic families is
+held for host Developer Tools authorization; this is not native conformance evidence.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,

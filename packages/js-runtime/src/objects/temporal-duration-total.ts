@@ -1,3 +1,4 @@
+import { calendarDateAdd } from "./calendar.ts";
 import { totalZonedCalendarDifference } from "./temporal-zoned-calendar-difference.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import {
@@ -13,7 +14,6 @@ import {
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
 import {
-  addGregorianDate,
   epochDayFromGregorian,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
@@ -55,7 +55,7 @@ function ratio(numerator: Integer, denominator: Integer): number {
   if (result === undefined) throw "DURATION_TOTAL_RATIO_INVARIANT";
   return result;
 }
-function dateTime(date: GregorianDate): ISODateTime {
+function dateTime(date: GregorianDate, calendar: string): ISODateTime {
   return {
     date,
     hasTime: true,
@@ -66,7 +66,7 @@ function dateTime(date: GregorianDate): ISODateTime {
     utc: false,
     offsetNanoseconds: undefined,
     timeZone: undefined,
-    calendar: "iso8601",
+    calendar,
   };
 }
 function calendarTotal(
@@ -98,7 +98,8 @@ function calendarTotal(
   );
   let count = unit === "year" ? difference.years : difference.months;
   function endpoint(value: number): GregorianDate {
-    const date = addGregorianDate(
+    const date = calendarDateAdd(
+      one.calendar ?? "iso8601",
       one.date,
       unit === "year" ? value : 0,
       unit === "month" ? value : 0,
@@ -227,8 +228,9 @@ export function durationTotal(
       );
     }
   } else {
-    one = dateTime(relative.date);
-    const added = addGregorianDate(
+    one = dateTime(relative.date, relative.calendar ?? "iso8601");
+    const added = calendarDateAdd(
+      relative.calendar ?? "iso8601",
       relative.date,
       data.years,
       data.months,
@@ -249,10 +251,18 @@ export function durationTotal(
       return ratio(total, integer(factor));
     const time = splitClockNanoseconds(durationTimeNanoseconds(data));
     const carry = toNumber(time.days);
-    const end = addGregorianDate(added, 0, 0, 0, carry, "constrain");
+    const end = calendarDateAdd(
+      relative.calendar ?? "iso8601",
+      added,
+      0,
+      0,
+      0,
+      carry,
+      "constrain",
+    );
     if (end === undefined) throw createRuntimeError(realm, "range");
     two = {
-      ...dateTime(end),
+      ...dateTime(end, relative.calendar ?? "iso8601"),
       hour: time.time.hour,
       minute: time.time.minute,
       second: time.time.second,

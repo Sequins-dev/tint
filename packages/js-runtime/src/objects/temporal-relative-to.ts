@@ -1,7 +1,8 @@
 import { parseISODateTime } from "@tint/foundation/chrono/iso-date-time";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
+  temporalCalendarSlot,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import {
@@ -20,7 +21,11 @@ import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
 export type TemporalRelativeTo =
   | { readonly kind: "none" }
-  | { readonly kind: "plain"; readonly date: GregorianDate }
+  | {
+      readonly kind: "plain";
+      readonly date: GregorianDate;
+      readonly calendar?: string;
+    }
   | { readonly kind: "zoned"; readonly value: TemporalZonedDateTime };
 /** Shared Duration relativeTo conversion. Property bags read and coerce the full
  * ordered field list even when the absence of timeZone ultimately selects a date. */
@@ -37,9 +42,19 @@ export function readTemporalRelativeTo(
       return { kind: "zoned", value: zoned };
     }
     const date = object.internalTemporalPlainDate;
-    if (date !== undefined) return { kind: "plain", date };
+    if (date !== undefined)
+      return {
+        kind: "plain",
+        date,
+        calendar: temporalCalendarSlot(value, realm),
+      };
     const dateTime = object.internalTemporalPlainDateTime;
-    if (dateTime !== undefined) return { kind: "plain", date: dateTime.date };
+    if (dateTime !== undefined)
+      return {
+        kind: "plain",
+        date: dateTime.date,
+        calendar: dateTime.calendar ?? "iso8601",
+      };
     const calendar = objectTemporalCalendarIdentifier(
       object,
       value,
@@ -55,7 +70,7 @@ export function readTemporalRelativeTo(
       undefined,
       calendar,
     );
-    requireGregorianCalendar(calendar, realm);
+    requireCalendarAlgorithms(calendar, realm);
     const civil = regulateCalendarDateFields(
         fields,
         calendar,
@@ -65,7 +80,7 @@ export function readTemporalRelativeTo(
       ),
       time = regulateTemporalTime(fields.time, "constrain", realm),
       zone = fields.timeZone;
-    if (zone === undefined) return { kind: "plain", date: civil };
+    if (zone === undefined) return { kind: "plain", date: civil, calendar };
     const data = combineTemporalDateTime(civil, time, realm, calendar);
     const input = interpretZonedOffset(
       data,
@@ -84,11 +99,12 @@ export function readTemporalRelativeTo(
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined)
     throw createRuntimeError(realm, "range");
-  const calendar = requireGregorianCalendar(data.calendar, realm);
+  const calendar = requireCalendarAlgorithms(data.calendar, realm);
   if (data.timeZone === undefined)
     return {
       kind: "plain",
       date: plainDateFrom(value, undefined, realm, hooks).date,
+      calendar,
     };
   const zone = temporalTimeZone(data.timeZone, realm);
   const input = interpretZonedOffset(

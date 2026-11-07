@@ -25,7 +25,7 @@ import {
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import {
   temporalInteger,
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
 } from "./temporal-coercion.ts";
 import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import {
@@ -67,7 +67,7 @@ export function installTemporalPlainDateTime(
         time.push(
           args[i] === undefined ? 0 : temporalInteger(args[i], realm, hooks),
         );
-      const calendar = requireGregorianCalendar(args[9], realm);
+      const calendar = requireCalendarAlgorithms(args[9], realm);
       const hour = time[0] ?? 0,
         minute = time[1] ?? 0,
         second = time[2] ?? 0,

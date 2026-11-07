@@ -15,7 +15,7 @@ import {
   calendarDateFromFields,
   calendarFieldsFromISO,
   calendarSupportsEra,
-  isGregorianCalendar,
+  calendarAlgorithmsAvailable,
 } from "./calendar.ts";
 import { primitiveValue, stringValue } from "./coercion.ts";
 import {
@@ -82,7 +82,8 @@ export function readTemporalDateFields(
   initialTime?: ISOTime,
   calendar: string = "iso8601",
 ): TemporalDateFields {
-  if (!isGregorianCalendar(calendar)) return rejectUnsupportedExecution(realm);
+  if (!calendarAlgorithmsAvailable(calendar))
+    return rejectUnsupportedExecution(realm);
   const eraFields = calendarSupportsEra(calendar);
   const names = [
     "day",

@@ -1,3 +1,4 @@
+import { calendarDateAdd, calendarDateUntil } from "./calendar.ts";
 import {
   add,
   subtract,
@@ -9,8 +10,6 @@ import {
   divide,
 } from "@tint/foundation/numeric/big-integer";
 import {
-  differenceGregorianDates,
-  addGregorianDate,
   epochDayFromGregorian,
   gregorianFromEpochDay,
   type GregorianDateDifference,
@@ -56,6 +55,7 @@ export function plainDateTimeDifference(
   realm: ErrorRealm,
   separateDayClock: boolean = false,
 ): Duration {
+  const calendar = one.calendar ?? "iso8601";
   const first = epochDayFromGregorian(
       one.date.year,
       one.date.month,
@@ -125,14 +125,21 @@ export function plainDateTimeDifference(
     clockDirection === 0 &&
     temporalTimeUnitNanoseconds(settings.smallestUnit) === undefined
   )
-    return plainDateDifference(one.date, two.date, settings, since, realm);
+    return plainDateDifference(
+      one.date,
+      two.date,
+      settings,
+      since,
+      realm,
+      calendar,
+    );
   const largest = settings.largestUnit;
   if (largest !== "year" && largest !== "month" && largest !== "week")
     throw createRuntimeError(realm, "range");
   const borrowed = clockDirection !== 0 && clockDirection !== direction;
   const adjusted = gregorianFromEpochDay(last - (borrowed ? direction : 0));
   if (adjusted === undefined) throw createRuntimeError(realm, "range");
-  const d = differenceGregorianDates(one.date, adjusted, largest);
+  const d = calendarDateUntil(calendar, one.date, adjusted, largest);
   if (d === undefined) throw createRuntimeError(realm, "range");
   const carry = fromNumber(borrowed ? direction * 86400000000000 : 0);
   if (carry === undefined) throw "DATE_TIME_DIFFERENCE_CARRY_INVARIANT";
@@ -147,6 +154,7 @@ export function plainDateTimeDifference(
       since,
       realm,
       timeDelta,
+      calendar,
     );
   const factor =
     settings.smallestUnit === "day"
@@ -184,7 +192,8 @@ export function plainDateTimeDifference(
     days: sign * toNumber(split.quotient),
   };
   if (Math.abs(dateFields.days) > Math.abs(d.days)) {
-    const anchor = addGregorianDate(
+    const anchor = calendarDateAdd(
+      calendar,
       one.date,
       d.years,
       d.months,
@@ -206,6 +215,7 @@ export function plainDateTimeDifference(
       anchorDay + dateFields.days,
       largest,
       realm,
+      calendar,
     );
   }
   const time = balanceTimeDuration(split.remainder, 0);

@@ -1,6 +1,6 @@
 import {
   canonicalCalendarIdentifier,
-  isGregorianCalendar,
+  calendarAlgorithmsAvailable,
 } from "./calendar.ts";
 import { viewObjectValue } from "./values.ts";
 import {
@@ -47,13 +47,14 @@ export function canonicalTemporalCalendar(
   if (calendar !== undefined) return calendar;
   throw createRuntimeError(realm, "range");
 }
-/** Calendar arithmetic currently covers the Gregorian reckoning and its eras. */
-export function requireGregorianCalendar(
+/** Validate identity before checking the available portable calendar algorithms. */
+export function requireCalendarAlgorithms(
   suppliedCalendar: unknown,
   realm: ErrorRealm,
 ): string {
   const calendar = canonicalTemporalCalendar(suppliedCalendar, realm);
-  if (!isGregorianCalendar(calendar)) return rejectUnsupportedExecution(realm);
+  if (!calendarAlgorithmsAvailable(calendar))
+    return rejectUnsupportedExecution(realm);
   return calendar;
 }
 

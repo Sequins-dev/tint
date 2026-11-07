@@ -4,7 +4,6 @@ import {
 } from "@tint/foundation/chrono/iso-date-time";
 import {
   daysInGregorianMonth,
-  epochDayFromGregorian,
   type GregorianDate,
 } from "@tint/foundation/chrono/gregorian-calendar";
 import {
@@ -18,14 +17,18 @@ import {
 import {
   canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
-  requireGregorianCalendar,
+  requireCalendarAlgorithms,
 } from "./temporal-coercion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import { viewObjectValue } from "./values.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
-import type { CalendarISODate } from "./calendar.ts";
+import {
+  calendarFieldsFromISO,
+  calendarDateFromFields,
+  type CalendarISODate,
+} from "./calendar.ts";
 function yearMonthWithinLimits(year: number, month: number): boolean {
   return (
     year >= -271821 &&
@@ -83,7 +86,7 @@ export function partialDateFrom(
       calendar,
     );
     const policy = overflow();
-    requireGregorianCalendar(calendar, realm);
+    requireCalendarAlgorithms(calendar, realm);
     return {
       date:
         calendar === "iso8601"
@@ -105,32 +108,28 @@ export function partialDateFrom(
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined || data.utc)
     throw createRuntimeError(realm, "range");
-  const calendar = requireGregorianCalendar(data.calendar, realm);
+  const calendar = requireCalendarAlgorithms(data.calendar, realm);
   overflow();
-  if (yearMonth) {
-    if (!yearMonthWithinLimits(data.date.year, data.date.month))
+  if (calendar === "iso8601") {
+    if (yearMonth && !yearMonthWithinLimits(data.date.year, data.date.month))
       throw createRuntimeError(realm, "range");
     return {
-      date: { year: data.date.year, month: data.date.month, day: 1 },
+      date: yearMonth
+        ? { year: data.date.year, month: data.date.month, day: 1 }
+        : { year: 1972, month: data.date.month, day: data.date.day },
       calendar,
     };
   }
-  if (calendar === "iso8601")
-    return {
-      date: { year: 1972, month: data.date.month, day: data.date.day },
-      calendar,
-    };
-  const epoch = epochDayFromGregorian(
-    data.date.year,
-    data.date.month,
-    data.date.day,
-  );
-  if (epoch === undefined || epoch < -100000001 || epoch > 100000000)
-    throw createRuntimeError(realm, "range");
-  return {
-    date: { year: 1972, month: data.date.month, day: data.date.day },
+  const fields = calendarFieldsFromISO(calendar, data.date);
+  if (fields === undefined) throw createRuntimeError(realm, "range");
+  const converted = calendarDateFromFields(
     calendar,
-  };
+    fields,
+    yearMonth ? "year-month" : "month-day",
+    "constrain",
+  );
+  if (converted.value === undefined) throw createRuntimeError(realm, "range");
+  return { date: converted.value, calendar };
 }
 
 /** Resolve ISO partial fields without imposing PlainDate bounds on reference dates. */
@@ -202,7 +201,7 @@ export function partialDateWith(
     );
   return regulateCalendarDateFields(
     mergeCalendarDateFields(
-      reference,
+      date,
       fields,
       calendar,
       realm,

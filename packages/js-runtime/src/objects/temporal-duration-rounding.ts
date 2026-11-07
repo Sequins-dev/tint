@@ -11,7 +11,7 @@ import {
   roundInteger,
   type RoundingMode,
 } from "@tint/foundation/numeric/integer-rounding";
-import { addGregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
+import { calendarDateAdd } from "./calendar.ts";
 import {
   durationTimeNanoseconds,
   durationLargestUnit,
@@ -85,7 +85,12 @@ export function roundDuration(
     ) {
       const raw = plainDateTimeDifference(
         relative.value.dateTime,
-        temporalZonedData(end, relative.value.zone, realm).dateTime,
+        temporalZonedData(
+          end,
+          relative.value.zone,
+          realm,
+          relative.value.dateTime.calendar ?? "iso8601",
+        ).dateTime,
         {
           largestUnit: settings.largestUnit,
           smallestUnit: "nanosecond",
@@ -126,7 +131,8 @@ export function roundDuration(
   if (relative.kind === "plain") {
     if (data.sign === 0) return data;
     const split = splitClockNanoseconds(total);
-    const target = addGregorianDate(
+    const target = calendarDateAdd(
+      relative.calendar ?? "iso8601",
       relative.date,
       data.years,
       data.months,
@@ -139,10 +145,16 @@ export function roundDuration(
       relative.date,
       { hour: 0, minute: 0, second: 0, nanosecond: 0 },
       realm,
+      relative.calendar ?? "iso8601",
     );
     return plainDateTimeDifference(
       origin,
-      combineTemporalDateTime(target, split.time, realm),
+      combineTemporalDateTime(
+        target,
+        split.time,
+        realm,
+        relative.calendar ?? "iso8601",
+      ),
       settings,
       false,
       realm,
