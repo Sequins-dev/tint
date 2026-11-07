@@ -43,6 +43,7 @@ type IntrinsicPrototype =
   | "intl-list-format"
   | "intl-collator"
   | "intl-date-time-format"
+  | "intl-duration-format"
   | "intl-relative-time-format"
   | "intl-plural-rules"
   | "intl-number-format"
@@ -90,6 +91,7 @@ function intrinsicPrototype(
   if (name === "intl-locale") return realm.localePrototype;
   if (name === "intl-collator") return realm.collatorPrototype;
   if (name === "intl-list-format") return realm.listFormatPrototype;
+  if (name === "intl-duration-format") return realm.durationFormatPrototype;
   if (name === "intl-relative-time-format")
     return realm.relativeTimeFormatPrototype;
   if (name === "intl-plural-rules") return realm.pluralRulesPrototype;

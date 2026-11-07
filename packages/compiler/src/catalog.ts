@@ -1271,6 +1271,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/duration-format.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/entry-iteration.ts",
       packageId: "js-runtime",
     },
@@ -1340,6 +1344,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/intl-date-time-value.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/intl-duration-format.ts",
       packageId: "js-runtime",
     },
     {

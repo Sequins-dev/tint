@@ -1,3 +1,4 @@
+import { installDurationFormatIntrinsic } from "./intl-duration-format.ts";
 import { installDateTimeFormatIntrinsic } from "./intl-date-time-format.ts";
 import { installRelativeTimeFormatIntrinsic } from "./intl-relative-time-format.ts";
 import { availableLocaleCalendars } from "./locale-info.ts";
@@ -40,6 +41,7 @@ export function installIntlIntrinsics(
   installNumberFormatIntrinsic(intl, realm, hooks);
   installRelativeTimeFormatIntrinsic(intl, realm, hooks);
   installDateTimeFormatIntrinsic(intl, realm, hooks);
+  installDurationFormatIntrinsic(intl, realm, hooks);
   builtinProperty(
     intl,
     wellKnownSymbol(realm.symbolRegistry, "toStringTag"),

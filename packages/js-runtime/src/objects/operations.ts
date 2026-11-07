@@ -1,3 +1,4 @@
+import type { DurationFormatter } from "./duration-format.ts";
 import type { WeakData } from "./weak-storage.ts";
 import type { DateTimeFormatter } from "./date-time-format.ts";
 import type { RelativeTimeFormatter } from "./relative-time.ts";
@@ -91,6 +92,7 @@ export interface OrdinaryObject<Key, Value> {
   internalCollatorData: CollatorData | undefined;
   internalPluralRulesData: PluralFormatter | undefined;
   internalDateTimeFormatData: DateTimeFormatter | undefined;
+  internalDurationFormatData: DurationFormatter | undefined;
   internalRelativeTimeData: RelativeTimeFormatter | undefined;
   internalNumberFormatData: DecimalNumberFormatter | undefined;
   /** [[DateValue]] is present even for an invalid (NaN) Date. */
@@ -386,6 +388,7 @@ function allocateObject<Key, Value>(
     internalCollatorData: undefined,
     internalPluralRulesData: undefined,
     internalDateTimeFormatData: undefined,
+    internalDurationFormatData: undefined,
     internalRelativeTimeData: undefined,
     internalNumberFormatData: undefined,
     internalDateValue: undefined,
