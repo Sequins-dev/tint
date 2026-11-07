@@ -75,9 +75,12 @@ function publishedYear(
   );
   if (value === undefined) throw "EAST_ASIAN_PUBLISHED_YEAR_INVARIANT";
   const parts = value.split(",");
-  const bits = parts[2];
-  if (bits === undefined) throw "EAST_ASIAN_PUBLISHED_ROW_INVARIANT";
-  return { start: Number(parts[0]), leap: Number(parts[1]), bits };
+  const startText = parts[0],
+    leapText = parts[1],
+    bits = parts[2];
+  if (startText === undefined || leapText === undefined || bits === undefined)
+    throw "EAST_ASIAN_PUBLISHED_ROW_INVARIANT";
+  return { start: Number(startText), leap: Number(leapText), bits };
 }
 function winterWindow(calendar: string, label: number): WinterWindow {
   for (const cached of windows)

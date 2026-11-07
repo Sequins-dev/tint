@@ -1,0 +1,11 @@
+{
+  "kind": "native-build-only-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v23.json",
+  "phase": "surface",
+  "exit": 1,
+  "message": "calendar-chinese.ts:2353:2361 Number(parts[0]) received a possibly undefined indexed string",
+  "fix": "Guard all three published row columns before numeric conversion.",
+  "log": "temporal-chinese-native-build-h-v23.log.gz",
+  "nativeExecution": "not attempted; host authorization held"
+}
