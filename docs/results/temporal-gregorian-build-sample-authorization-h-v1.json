@@ -1,0 +1,21 @@
+{
+  "kind": "compile-only-resource-diagnostic",
+  "conformance": false,
+  "at": "2026-11-07T01:12:07.693Z",
+  "nativeBuilder": 10935,
+  "samplePid": 21299,
+  "sampleTerminated": true,
+  "reason": "The one-second sample command itself blocked on the host authorization request. Terminated only the owned sampler; native fixture builder remains CPU-active and is not hung. No further task_for_pid diagnostics during the hold.",
+  "cpuObservations": [
+    {
+      "cpu": "3:28.90",
+      "elapsed": "03:59",
+      "percent": 81.1
+    },
+    {
+      "cpu": "4:29.52",
+      "elapsed": "05:21",
+      "percent": 261.1
+    }
+  ]
+}

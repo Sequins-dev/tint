@@ -1,0 +1,55 @@
+{
+  "kind": "native-host-authorization-interruption",
+  "conformance": false,
+  "at": "2026-11-07T01:03:25.635Z",
+  "selection": "built-ins/Temporal/PlainYearMonth",
+  "totalVariants": 1018,
+  "observedVariants": 0,
+  "counts": {},
+  "reason": "Shared 2026-11-07T00:45Z HOST AUTHORIZATION STALL: developer mode disabled, SecurityAgent active, debugserver task_for_pid blocked. Own LLDB and Node frozen; owned native inferior remains stopped with zero CPU and no initial-stop record. No executing variant terminated.",
+  "journal": "docs/results/test262-temporal-plain-year-month-family-h-v2.jsonl",
+  "prefix": "docs/results/test262-temporal-plain-year-month-host-authorization-prefix-h-v1.jsonl",
+  "prefixSha256": "2663e8dc58bbfed554b9328f0b23820818ef82733b7c74383a647cd96024114b",
+  "sourceSnapshot": {
+    "sha256": "67e0567194afbf7645db4a69ffec194eb434b62ee0af90553656a9cc5ce7114c",
+    "files": 568
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v12.json",
+  "debuggerLaunch": "debugserver-direct",
+  "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-S5mi3C",
+  "ownedProcesses": [
+    [
+      "84369",
+      "25645",
+      "T",
+      "3:19.98",
+      "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+    ],
+    [
+      "93997",
+      "84369",
+      "T",
+      "0:00.16",
+      "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb"
+    ],
+    [
+      "94001",
+      "93997",
+      "S",
+      "0:00.00",
+      "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver"
+    ],
+    [
+      "94002",
+      "94001",
+      "T",
+      "0:00.00",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-2zA6Nx/test"
+    ]
+  ],
+  "image": {
+    "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-2zA6Nx/test",
+    "sha256": "2c388ab66da3e2ac5594ccbfe6dd47998d9ebe2ca14fbaf8500d9c9e8f853a75"
+  },
+  "resumePolicy": "After HOST AUTHORIZATION RESTORED in ~/.t3/tint-briefs/load-events.md, resume this original journal on frozen v12 with TINT_TEST262_RESUME=1 and its original direct launch/resources. Preserve any observed infra result and recheck it separately."
+}
