@@ -1,0 +1,39 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T14:56:17.063Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-expressions-new-a2-native-v1.json",
+  "reportSha256": "0f36862e69ce209018514120e797762216b70a0347a6a6f81c1010e79059db2f",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/new",
+  "expectedVariants": 118,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "timeout": 4,
+    "pass": 114
+  },
+  "validationExitStatus": 0,
+  "selectionCompleteInParentPrefix": true,
+  "parentRunnerStillActiveAtExtraction": true,
+  "parentRootSelection": "language/expressions",
+  "parentRequestedVariants": 783,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "retainedTimeouts": 4,
+  "timeoutTriage": [
+    "docs/results/cluster-a2-new-timeout-triage-v1.json",
+    "docs/results/cluster-a2-new-contention-timeout-triage-v2.json"
+  ],
+  "recheckManifest": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v4.json",
+  "workspaceGate": {
+    "registryRecord": "2026-11-07T13:48Z efa5249f tint-check 4746/4746 PASS (P-run gate at fca30d8f incl. leaf pointer registers; later main docs-only; FF-merged)",
+    "commit": "efa5249fc3e2bec8fdb7c4aa3cb932965c58328e",
+    "passedTests": 4746,
+    "exitStatus": 0,
+    "base": "13b324f6d1317266b6772f0619aa8f8b12ff19fd",
+    "codeChangesBetweenGateAndBase": []
+  }
+}
