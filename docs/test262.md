@@ -385,7 +385,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Parameter destructuring      |    372 / 372 (100%) | None                                | [Report](results/test262-language-parameter-destructuring-core-v1.json)      |
 | Grouping expressions         |      15 / 16 (93.75%) | 1 native CPU-budget timeout; recheck pending | [Report](results/test262-expressions-grouping-a2-native-v1.json)      |
 | Member expressions           |         2 / 2 (100%) | None                                | [Report](results/test262-expressions-member-expression-a2-native-v1.json)   |
-| Conditional expressions      |      41 / 42 (97.62%) | 1 native CPU-budget timeout; recheck pending | [Report](results/test262-expressions-conditional-a2-native-v1.json)   |
+| Conditional expressions      |      41 / 42 (97.62%) | 1 original timeout; isolated recheck 1/1 | [Report](results/test262-expressions-conditional-a2-native-v1.json) / [Recheck](results/test262-conditional-strict-isolated-recheck-a2-native-v1.json)   |
 | Comma expressions            |       11 / 11 (100%) | None                                | [Report](results/test262-expressions-comma-a2-native-v1.json)               |
 | `new.target` expressions     |       28 / 28 (100%) | None | [Report](results/test262-expressions-new.target-a2-native-v1.json) |
 | `this` expressions           |       11 / 11 (100%) | None | [Report](results/test262-expressions-this-a2-native-v1.json) |
