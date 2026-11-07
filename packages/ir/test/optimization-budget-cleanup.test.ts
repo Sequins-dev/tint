@@ -183,3 +183,72 @@ test("local cleanup preserves guarded transfers and abrupt-completion storage", 
     assert.equal(term.alternate, 2);
   }
 });
+
+test("large graphs retain bounded call inlining before local cleanup", () => {
+  const input: ModuleIR = {
+    functions: [
+      {
+        ...copies(0),
+        slots: ["number"],
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        ...copies(1),
+        slots: ["number"],
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "large",
+        exported: true,
+        parameters: [],
+        slots: [],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: Array.from({ length: 500 }, (_, id) => ({
+              kind: "constant" as const,
+              id,
+              value: id,
+              ...span,
+            })),
+            terminator: { kind: "return", value: 499, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const snapshot = structuredClone(input),
+    output = optimizeModule(input, 1000);
+  assert.deepEqual(verify(output.module), { ok: true });
+  assert.ok(
+    output.passes.some(
+      (p) => p.pass === "inline-small-functions" && p.rewritten === 1,
+    ),
+  );
+  assert.ok(output.passes.reduce((n, p) => n + p.visited, 0) <= 1000);
+  assert.ok(
+    output.module.functions[0]!.blocks.every((b) =>
+      b.instructions.every((op) => op.kind !== "call"),
+    ),
+  );
+  assert.deepEqual(input, snapshot);
+});

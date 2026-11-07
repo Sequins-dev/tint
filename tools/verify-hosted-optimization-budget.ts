@@ -29,6 +29,14 @@ export function run():number {
  if(!verify(oversized).ok)return 4;
  const output=optimizeModule(oversized,60000);if(!output.budgetExhausted||!verify(output.module).ok)return 5;
  const later=output.module.functions[1];if(later===undefined||later.slots.length!==1)return 6;
+ const caller:FunctionIR={id:0,name:"caller",exported:true,parameters:[0],slots:["number"],returnType:"number",entry:0,blocks:[{id:0,instructions:[{kind:"load",id:0,slot:0,start:0,end:0},{kind:"call",id:1,target:1,arguments:[0],start:0,end:0}],terminator:{kind:"return",value:1,start:0,end:0}}]};
+ const inlineInput:ModuleIR={functions:[caller,copies(1),{...large,id:2}]};
+ if(!verify(inlineInput).ok)return 7;
+ const inlined=optimizeModule(inlineInput,60000);if(!verify(inlined.module).ok)return 8;
+ let totalWork=0,inlines=0;for(const pass of inlined.passes){if(pass===undefined)return 9;totalWork+=pass.visited;if(pass.pass==="inline-small-functions")inlines+=pass.rewritten;}
+ if(totalWork>60000||inlines!==1)return 10;
+ const inlinedCaller=inlined.module.functions[0];if(inlinedCaller===undefined)return 11;
+ for(const block of inlinedCaller.blocks){if(block===undefined)return 12;for(const op of block.instructions){if(op===undefined||op.kind==="call")return 13;}}
  return 42;
 }`,
   "optimization-budget",

@@ -121,14 +121,35 @@ export interface OptimizationOptions {
  * unfinished output is discarded. Prioritize independent scalar cleanup and
  * retain each completed function/pass checkpoint, without increasing the bound.
  * The per-function allowance leaves work for later functions after a large one. */
-function cleanupFunctions(module: ModuleIR, budget: number): Optimization {
+function cleanupFunctions(
+  module: ModuleIR,
+  budget: number,
+  directCalls: boolean,
+): Optimization {
+  // Keep the same total bound. A bounded prefix of small, nonallocating callers
+  // can retain completed inlining without funding the whole optimization graph.
+  const inlineBudget = directCalls ? Math.floor(budget / 4) : 0,
+    inlining =
+      inlineBudget === 0
+        ? undefined
+        : inlineSmallFunctions(module, inlineBudget, false, true),
+    inlineVisited = inlining?.visited ?? inlineBudget,
+    input = inlining?.module ?? module,
+    passes: PassStatistics[] = [];
+  if (inlineBudget > 0)
+    passes.push({
+      phase: "scalar",
+      pass: "inline-small-functions",
+      visited: inlineVisited,
+      rewritten: inlining?.inlined ?? 0,
+    });
   const functions: FunctionIR[] = [],
-    effects = summarizeEffects(module, budget);
-  let visited = 0,
+    effects = summarizeEffects(input, budget - inlineVisited);
+  let visited = inlineVisited,
     rewritten = 0,
     skipped = 0,
     changed = false;
-  for (const fn of module.functions) {
+  for (const fn of input.functions) {
     if (fn === undefined) throw "optimizer cleanup function invariant";
     if (fn.import === true) {
       functions.push(fn);
@@ -176,18 +197,17 @@ function cleanupFunctions(module: ModuleIR, budget: number): Optimization {
     if (current !== fn) changed = true;
     functions.push(current);
   }
+  passes.push({
+    phase: "scalar",
+    pass: "function-local-cleanup",
+    visited: visited - inlineVisited,
+    rewritten,
+    skipped,
+  });
   return {
-    module: changed ? { ...module, functions } : module,
-    passes: [
-      {
-        phase: "scalar",
-        pass: "function-local-cleanup",
-        visited,
-        rewritten,
-        skipped,
-      },
-    ],
-    budgetExhausted: skipped > 0,
+    module: changed ? { ...input, functions } : input,
+    passes,
+    budgetExhausted: skipped > 0 || inlining?.budgetExhausted === true,
   };
 }
 /** Consume verified scalar IR; the publisher must verify transformed IR before
@@ -202,7 +222,8 @@ export function optimizeModule(
     throw "INVALID_OPTIMIZATION_BUDGET";
   let instructions = 0,
     blocks = 0,
-    slots = 0;
+    slots = 0,
+    directCalls = false;
   for (const fn of module.functions) {
     if (fn === undefined) throw "optimizer function invariant";
     slots += fn.slots.length;
@@ -210,6 +231,14 @@ export function optimizeModule(
     for (const block of fn.blocks) {
       if (block === undefined) throw "optimizer block invariant";
       instructions += block.instructions.length;
+      if (!directCalls)
+        for (const op of block.instructions) {
+          if (op === undefined) throw "optimizer instruction invariant";
+          if (op.kind === "call") {
+            directCalls = true;
+            break;
+          }
+        }
     }
   }
   // Preserve the initial all-or-nothing contract when even one scan cannot fit.
@@ -220,7 +249,7 @@ export function optimizeModule(
     instructions <= maxInstructions &&
     instructions * 5 + slots * 2 + blocks > maxInstructions
   )
-    return cleanupFunctions(module, maxInstructions);
+    return cleanupFunctions(module, maxInstructions, directCalls);
   let visited = 0,
     rewritten = 0;
   const functions: FunctionIR[] = [];
