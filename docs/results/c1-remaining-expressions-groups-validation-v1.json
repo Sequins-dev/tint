@@ -1,0 +1,33 @@
+{
+  "kind": "c1-complete-directory-breadth-checkpoint-validation",
+  "conformance": true,
+  "checkpoint": "docs/results/c1-remaining-expressions-breadth-completed-groups-v1.json",
+  "sourceJournalSnapshot": "docs/results/c1-remaining-expressions-breadth-completed-groups-prefix-v1.jsonl",
+  "sourceJournalSha256": "36cfe4878f0b3cb0cd6460f75058e906b9e0789757a7ebeaa3d569177ba769bd",
+  "parentVariants": 658,
+  "parentComplete": false,
+  "completed": [
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-accessor-name-inst-v1.json",
+      "totals": {
+        "total": 42,
+        "passed": 42,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "extractor": "tools/test262-native-extract.ts",
+  "extractorExitStatus": 0,
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v18.json",
+  "referenceMainGate": "59176ab596c9443fe14f55fead77e287153026dc",
+  "gateTestsPassed": 4712,
+  "gateExitStatus": 0,
+  "executableChangesSinceGate": [],
+  "scope": "Only listed complete directories establish native conformance. Parent is still running; extracted observations overlap it and must be deduplicated."
+}
