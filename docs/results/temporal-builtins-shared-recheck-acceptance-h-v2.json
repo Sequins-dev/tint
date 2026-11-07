@@ -1,0 +1,51 @@
+{
+  "kind": "builtin-temporal-partial-locale-and-shared-recheck-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T22:25:31.486324+00:00",
+  "accepted": true,
+  "change": "Define own branded PlainYearMonth andPlainMonthDay core toLocaleString methods, using intrinsic partial-date text and ignoring locale/options. No Intl engine dependency.",
+  "report": "test262-temporal-builtins-shared-recheck-h-v1.json",
+  "totals": {
+    "total": 168,
+    "passed": 168,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "completeAffectedMethods": [
+    {
+      "selection": "built-ins/Temporal/PlainYearMonth/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "selection": "built-ins/Temporal/PlainMonthDay/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    }
+  ],
+  "oldNonPassStatusesNowPassing": {
+    "crash": 1,
+    "unsupported": 101,
+    "fail": 30,
+    "timeout": 2
+  },
+  "oldNonPassTotalNowPassing": 134,
+  "additionalCoverage": "14previouslyunmeasured PlainMonthDay localevariants plus10namespacevariants;10YearMonth methodvariantswerealreadypassing.",
+  "conformanceToolchain": "frozen-node-toolchain-temporal-builtins-h-v136.json",
+  "refreshedValidationToolchain": "frozen-node-toolchain-temporal-builtins-h-v137.json",
+  "ownedImplementationBytesIdenticalAcrossBoth": "packages/js-runtime/src/objects/temporal-partial-date.ts",
+  "currentPortableInputsByteAudited": 601,
+  "workspaceGate": "temporal-partial-locale-check-h-v137.json",
+  "workspaceTestsPassed": 4868,
+  "nativeRegression": "temporal-partial-locale-native-h-v137.json",
+  "nativeRegressionCases": 3,
+  "selfbuild": "temporal-partial-locale-selfbuild-h-v137.json",
+  "selfbuildByteIdentical": true,
+  "olderValidationRetained": "temporal-partial-locale-validation-h-v136.json",
+  "scope": "Built-insTemporal only; parkedIntl engines untouched.",
+  "remaining": "2906v18unmeasured variants in sixfamilies; PlainDateTime798measurementrunning separately."
+}
