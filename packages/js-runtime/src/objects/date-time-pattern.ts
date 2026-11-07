@@ -92,8 +92,9 @@ export function dateTimePatternFields(
     if (symbol === "G") fields.era = textWidth(width);
     else if (symbol === "y" || symbol === "u" || symbol === "r")
       fields.year = numericWidth(width);
-    else if (symbol === "U") fields.year = "numeric";
-    else if (symbol === "M" || symbol === "L")
+    else if (symbol === "U") {
+      if (fields.year === undefined) fields.year = "numeric";
+    } else if (symbol === "M" || symbol === "L")
       fields.month = width < 3 ? numericWidth(width) : textWidth(width);
     else if (symbol === "d") fields.day = numericWidth(width);
     else if (symbol === "E" || symbol === "e" || symbol === "c") {

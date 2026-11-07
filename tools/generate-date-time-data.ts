@@ -306,7 +306,31 @@ for (const locale of localeKeys) {
         "appendItems",
         request,
         `dateTimeFormats/appendItems/appendItem[@request='${request}']`,
+        true,
       );
+    for (const [request, field] of [
+      ["Year", "year"],
+      ["Month", "month"],
+      ["Day", "day"],
+      ["Era", "era"],
+      ["Day-Of-Week", "weekday"],
+      ["Hour", "hour"],
+      ["Minute", "minute"],
+      ["Second", "second"],
+      ["Timezone", "zone"],
+      ["Quarter", "quarter"],
+      ["Week", "week"],
+    ] as const) {
+      const label = resolver.value(
+        locale,
+        path(`dates/fields/field[@type='${field}']/displayName`),
+      );
+      if (label === undefined || label === "")
+        throw Error("Missing append label " + locale + "/" + request);
+      const items = groups.get("appendItems");
+      if (items === undefined) throw Error("Missing calendar append items");
+      items.set("label." + request, label);
+    }
     const groupNames = [
       "styles",
       "patterns",

@@ -127,3 +127,8 @@ test("interval splitting recognizes repeated fields without conflating related a
     undefined,
   );
 });
+test("cyclic year names do not overwrite an explicit related-year width", () => {
+  assert.equal(pattern("rr U").fields.year, "2-digit");
+  assert.equal(pattern("U rr").fields.year, "2-digit");
+  assert.equal(pattern("U").fields.year, "numeric");
+});

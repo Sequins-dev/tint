@@ -122,6 +122,22 @@ test("CLDR selectors distinguish leap names and ignore alternate labels", () => 
     "Adar II",
   );
 });
+test("append-item requests remain distinguishing attributes", () => {
+  const root = parseCldrElements(
+    `<ldml><appendItems><appendItem request="Year">year</appendItem><appendItem request="Second">second</appendItem></appendItems></ldml>`,
+  );
+  const resolver = createCldrLocaleResolver(
+    new Map([["root", root]]),
+    () => undefined,
+  );
+  assert.equal(
+    resolver.value(
+      "root",
+      cldrPath("appendItems/appendItem[@request='Second']"),
+    ),
+    "second",
+  );
+});
 test("CLDR resolver rejects alias and parent cycles and allows bounded cache reuse", () => {
   const root = parseCldrElements(
     `<ldml><a><alias source="locale" path="../b"/></a><b><alias source="locale" path="../a"/></b></ldml>`,

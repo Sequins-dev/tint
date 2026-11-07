@@ -36,6 +36,10 @@ test("calendar profiles resolve locale inheritance and LDML format aliases", () 
   assert.equal(createDateTimeCalendarProfile("en", "unknown"), undefined);
 });
 test("calendar names retain leap identities, eras and cyclic years", () => {
+  assert.equal(
+    dateTimeCalendarValue(profile("en"), "appendItems", "label.Second"),
+    "second",
+  );
   const he = profile("en", "hebrew");
   assert.equal(dateTimeCalendarValue(he, "months", "format.wide.6"), "Adar I");
   assert.equal(
