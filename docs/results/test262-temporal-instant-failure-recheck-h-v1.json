@@ -1,0 +1,2082 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Runtime-compiled tagged templates retain parsed-unit site identity and use the existing realm template cache. Runtime compilation uses the image-owned import helper and checked referrer views. This run leaves the module loader disabled; static and dynamic module loading remain unsupported.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/ready-calendar-h/.tint-bootstrap/node-toolchain-dtf-main-control-h-v134/source-snapshot.json",
+  "frozenToolchainSha256": "b8036322b89014eb0f01dcdd57e2dab3cf1d1942944c24e2696f6439bd60cf0d",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 142092.9145,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/Temporal/Instant [explicit variant subset]",
+  "rootSelection": "built-ins/Temporal/Instant",
+  "requestedVariants": 64,
+  "variantSubsetSha256": "663c43342b9378093d6e4e270448de0a441c313818d52d8d7f57f5b7bdb4c8b8",
+  "complete": true,
+  "totals": {
+    "total": 64,
+    "passed": 64,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/Temporal/Instant/from/argument-string.js",
+      "sha256": "ce5c4302335dea54c7102c01cfc0d7a89d1cb5507deb8a58eb9eb8afbb793343",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148383.989792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/from/argument-string.js",
+      "sha256": "ce5c4302335dea54c7102c01cfc0d7a89d1cb5507deb8a58eb9eb8afbb793343",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148679.186792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/add-large-subseconds.js",
+      "sha256": "731c82597f6898f1aea22a37abd1c602aa061411bb7194724d6fec761d05a10e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149003.500583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/add-large-subseconds.js",
+      "sha256": "731c82597f6898f1aea22a37abd1c602aa061411bb7194724d6fec761d05a10e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149330.433209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-duration-max.js",
+      "sha256": "477c4e65ee1d624ad07a94d83291b2b3afddbc5b246eb3d5b912dd312a3ca3f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149672.722542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-duration-max.js",
+      "sha256": "477c4e65ee1d624ad07a94d83291b2b3afddbc5b246eb3d5b912dd312a3ca3f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150026.52795800002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-duration-out-of-range.js",
+      "sha256": "8a24d5e1117eb9c30b18c404a0646d3410e5ea6d7cffd9728d899b90f6333640",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150398.02433299998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-duration-out-of-range.js",
+      "sha256": "8a24d5e1117eb9c30b18c404a0646d3410e5ea6d7cffd9728d899b90f6333640",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150758.821583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-mixed-sign.js",
+      "sha256": "d2cebdc49830ef4eaea9cbf30aa636db9072b1dc7a6d2f79100c7ead4b130f9d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151093.32191600002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-mixed-sign.js",
+      "sha256": "d2cebdc49830ef4eaea9cbf30aa636db9072b1dc7a6d2f79100c7ead4b130f9d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151452.131333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-not-object.js",
+      "sha256": "61981bf6bf3a2d1ee4a1d7490b88ce6e9e6728a4be5117f4b1f541a9d0727aeb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151819.092208,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/add/argument-not-object.js",
+      "sha256": "61981bf6bf3a2d1ee4a1d7490b88ce6e9e6728a4be5117f4b1f541a9d0727aeb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152189.869416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/accepts-plural-units.js",
+      "sha256": "d6e5233c93643ce6dafabff001fcf9c5819a08b5c3edc8f6f6bfa592b9b6de3e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152580.8835,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/accepts-plural-units.js",
+      "sha256": "d6e5233c93643ce6dafabff001fcf9c5819a08b5c3edc8f6f6bfa592b9b6de3e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152902.6265,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/accepts-string-parameter-for-smallestunit.js",
+      "sha256": "a2c8eabd20971df04f84a07717ca33d18b41909a8a4d5213dadd387bdcec9c99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153227.626291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/accepts-string-parameter-for-smallestunit.js",
+      "sha256": "a2c8eabd20971df04f84a07717ca33d18b41909a8a4d5213dadd387bdcec9c99",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153574.137041,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/allow-increments-that-divide-evenly-into-solar-days.js",
+      "sha256": "afa5e6938c3c9d111819f19eaa031d0bc83cbf6decc0214a66ca4c9340c8293d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153919.84975,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/allow-increments-that-divide-evenly-into-solar-days.js",
+      "sha256": "afa5e6938c3c9d111819f19eaa031d0bc83cbf6decc0214a66ca4c9340c8293d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154259.326208,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/branding.js",
+      "sha256": "0cdae9cc13c82f45ec82d5311108ccd17838f02414911f9425783c19cb81eb75",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154588.2055,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/branding.js",
+      "sha256": "0cdae9cc13c82f45ec82d5311108ccd17838f02414911f9425783c19cb81eb75",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154940.61025,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/builtin.js",
+      "sha256": "058d360b0697776b15887da283bcc87e77f376d3cdfe94d9c99108693b779414",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155310.86908399998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/round/builtin.js",
+      "sha256": "058d360b0697776b15887da283bcc87e77f376d3cdfe94d9c99108693b779414",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155696.747459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/add-subtract.js",
+      "sha256": "9e76c3b76ff724dc8ec1ef27f8c5dd1f0115194abacecd8d8cebb90a0dafd5e4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156104.078791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/add-subtract.js",
+      "sha256": "9e76c3b76ff724dc8ec1ef27f8c5dd1f0115194abacecd8d8cebb90a0dafd5e4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156535.84654199998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-object-tostring.js",
+      "sha256": "c9032447bc3f3d944a2634054d1060db249875c14961e76264368b4eada3c42e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156949.244791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-object-tostring.js",
+      "sha256": "c9032447bc3f3d944a2634054d1060db249875c14961e76264368b4eada3c42e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157417.571791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-calendar-annotation-invalid-key.js",
+      "sha256": "2c232641251c2586036814a28a4b3986dcf8a41394e80f3914d6565ad1477dee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157820.572958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-calendar-annotation-invalid-key.js",
+      "sha256": "2c232641251c2586036814a28a4b3986dcf8a41394e80f3914d6565ad1477dee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158254.108875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-calendar-annotation.js",
+      "sha256": "7c3455b217aab6a144b8db314bb4937d265840076628361dd376e56d73aabf34",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158678.154542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-calendar-annotation.js",
+      "sha256": "7c3455b217aab6a144b8db314bb4937d265840076628361dd376e56d73aabf34",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159045.14075,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-critical-unknown-annotation.js",
+      "sha256": "b449df0fd19e5206795838e0271d0884f5195ebf2d471ae4a97f44d6d82abce3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159428.713625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/since/argument-string-critical-unknown-annotation.js",
+      "sha256": "b449df0fd19e5206795838e0271d0884f5195ebf2d471ae4a97f44d6d82abce3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159818.0045,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-duration-max.js",
+      "sha256": "b5676a34384ed284d30ca0487d82bee23faca66740c490fc2a54fa0340d781de",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160220.648583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-duration-max.js",
+      "sha256": "b5676a34384ed284d30ca0487d82bee23faca66740c490fc2a54fa0340d781de",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160618.158625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-duration-out-of-range.js",
+      "sha256": "53d0ac73ce177e2d69ea1c53b20a2721127de63cd0d47ce1d2014f8788c107e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161018.20787500002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-duration-out-of-range.js",
+      "sha256": "53d0ac73ce177e2d69ea1c53b20a2721127de63cd0d47ce1d2014f8788c107e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161435.05675000002,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-mixed-sign.js",
+      "sha256": "974817e38de7c7ce2a004e6d6c4c27681bdabf1d03790e40cd8b5c10e834c118",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161878.724209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-mixed-sign.js",
+      "sha256": "974817e38de7c7ce2a004e6d6c4c27681bdabf1d03790e40cd8b5c10e834c118",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162295.514292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-not-object.js",
+      "sha256": "435ac3ebb71842e8bae7cdcaf2bc3ed42621f60a9bce950801d194c9753729e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162712.332625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-not-object.js",
+      "sha256": "435ac3ebb71842e8bae7cdcaf2bc3ed42621f60a9bce950801d194c9753729e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163115.714667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-propertybag-optional-properties.js",
+      "sha256": "155d26af4d5e6929d566ef8e256dba603d5b56679682f78c86765f9a3efabb2a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163517.64354199998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/subtract/argument-propertybag-optional-properties.js",
+      "sha256": "155d26af4d5e6929d566ef8e256dba603d5b56679682f78c86765f9a3efabb2a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 163944.42808399998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toString/roundingmode-halfExpand.js",
+      "sha256": "bfa7bcc5bbae52859964d285af2667ed29f24fb117e31deca1622dd6c6c05d10",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164331.262459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toString/roundingmode-halfExpand.js",
+      "sha256": "bfa7bcc5bbae52859964d285af2667ed29f24fb117e31deca1622dd6c6c05d10",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 164702.09179099998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/branding.js",
+      "sha256": "de1e5f2312af93084bb488fb1813d76b35921425f13e533d98071698633c4171",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165115.342167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/branding.js",
+      "sha256": "de1e5f2312af93084bb488fb1813d76b35921425f13e533d98071698633c4171",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Symbol",
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165507.083792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/builtin.js",
+      "sha256": "dc31401eb30053577f16cb4f13bb720e3816a0add61297c6a9d28c8561aa9307",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 165845.10837499998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/builtin.js",
+      "sha256": "dc31401eb30053577f16cb4f13bb720e3816a0add61297c6a9d28c8561aa9307",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166240.965125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/calendar-is-builtin.js",
+      "sha256": "bb6b6504e99cf3494fb881c7a9225aa96da8835b0e2b13d1ee563ed15e5a3a0f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166755.186291,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/calendar-is-builtin.js",
+      "sha256": "bb6b6504e99cf3494fb881c7a9225aa96da8835b0e2b13d1ee563ed15e5a3a0f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 167176.09737499998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/length.js",
+      "sha256": "d440f10c1f41d0d179f7053d0ec86a5c1ce2addfe93ea1bc1d3e965a14bae332",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 167674.928333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/length.js",
+      "sha256": "d440f10c1f41d0d179f7053d0ec86a5c1ce2addfe93ea1bc1d3e965a14bae332",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 168233.021375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/add-subtract.js",
+      "sha256": "072c7faecff9ba48bf6d940c0a19d53ecc466bccfb0d43a4d2e04e280e50c2cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 168749.15354200001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/add-subtract.js",
+      "sha256": "072c7faecff9ba48bf6d940c0a19d53ecc466bccfb0d43a4d2e04e280e50c2cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 169274.299,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-object-tostring.js",
+      "sha256": "8c4fedda8f1cae89ceb413d0f46fb1b77eea408beb49a582201e6d4663623e59",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 169776.79575,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-object-tostring.js",
+      "sha256": "8c4fedda8f1cae89ceb413d0f46fb1b77eea408beb49a582201e6d4663623e59",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 170312.02687499998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-string-calendar-annotation-invalid-key.js",
+      "sha256": "0e1b939b0316d2ac7b81d00c6fa70677d9d555ced038fa6b36538fc00379ad5c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 170953.890125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-string-calendar-annotation-invalid-key.js",
+      "sha256": "0e1b939b0316d2ac7b81d00c6fa70677d9d555ced038fa6b36538fc00379ad5c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 171570.65491699998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-string-calendar-annotation.js",
+      "sha256": "09368eaf315b86b98e9386113ed5111b891d4994eea3ed1279adf2ad06c62a40",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 172056.947625,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/argument-string-calendar-annotation.js",
+      "sha256": "09368eaf315b86b98e9386113ed5111b891d4994eea3ed1279adf2ad06c62a40",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 172555.30825,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/largestunit-plurals-accepted.js",
+      "sha256": "c18b7d6cc91a694bfaeec1a3eddf1603b6833ca8e647cfd0763f3cad792050e2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 173085.96575,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/largestunit-plurals-accepted.js",
+      "sha256": "c18b7d6cc91a694bfaeec1a3eddf1603b6833ca8e647cfd0763f3cad792050e2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": [
+          "temporalHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "temporalHelpers.js",
+          "sha256": "4585c97b969b4a29cec0387a4981de7d0d210375c2a8a9a8360d6c18d3a9f359"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 173533.71437499998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/roundingmode-invalid-string.js",
+      "sha256": "955a5f247e6e21bdf7b4726ea231802251d5f46c393c664462af9fda87268a26",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 173992.19825,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/until/roundingmode-invalid-string.js",
+      "sha256": "955a5f247e6e21bdf7b4726ea231802251d5f46c393c664462af9fda87268a26",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Temporal"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 174475.948084,
+      "batch": 0
+    }
+  ]
+}

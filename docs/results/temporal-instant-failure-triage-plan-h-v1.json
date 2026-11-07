@@ -1,0 +1,19 @@
+{
+  "kind": "focused-native-failure-triage-plan",
+  "conformance": false,
+  "time": "2026-11-07T21:22:59.864640+00:00",
+  "rootSelection": "built-ins/Temporal/Instant",
+  "manifest": "temporal-instant-failure-recheck-variants-h-v1.json",
+  "variants": 64,
+  "purpose": "32files/bothvariants spread across the495oldfails and all4ledgercrash observations. Old failures are from native-script-v4; recheck on currentmain before changing implementation.",
+  "oldFailureGroups": {
+    "from": 1,
+    "prototype/add": 26,
+    "prototype/round": 40,
+    "prototype/since": 70,
+    "prototype/subtract": 25,
+    "prototype/toZonedDateTimeISO": 18,
+    "prototype/until": 68
+  },
+  "oldCrashes": "All4arepre-entry LLDBattach failures; retained in original evidence, not classified as current native execution faults."
+}

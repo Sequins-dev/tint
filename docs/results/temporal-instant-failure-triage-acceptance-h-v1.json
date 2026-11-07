@@ -1,0 +1,34 @@
+{
+  "kind": "native-instant-failure-triage",
+  "conformance": false,
+  "time": "2026-11-07T21:33:37.238300+00:00",
+  "report": "test262-temporal-instant-failure-recheck-h-v1.json",
+  "manifest": "temporal-instant-failure-recheck-variants-h-v1.json",
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "frozenToolchainSha256": "b8036322b89014eb0f01dcdd57e2dab3cf1d1942944c24e2696f6439bd60cf0d",
+  "totals": {
+    "total": 64,
+    "passed": 64,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "previousStatusesInSelectedRows": {
+    "fail": 59,
+    "crash": 4,
+    "pass": 1
+  },
+  "finding": "All selected old Instant failures and four pre-entry LLDBattach crashes pass on a main-derived frozen toolchain with direct launch. No new Instant implementation change made.",
+  "limits": "Focused32files/bothvariants; not a complete Instant family or an extrapolation to all495oldfails. Complete934family measurement is running separately.",
+  "olderEvidenceRetained": [
+    "test262-temporal-instant-native-v1.json",
+    "test262-temporal-instant-string-precision-native-v3.json"
+  ],
+  "implementation": "All measured portable code already on main; parked Intl formatting code is absent."
+}
