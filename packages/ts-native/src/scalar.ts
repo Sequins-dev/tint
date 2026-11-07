@@ -1405,6 +1405,27 @@ export function lowerFunction(
     });
   }
   function chooseExpression(test: Expression, yes: Builder, no: Builder): void {
+    // A condition needs only truthiness, not the selected operand value. Keep
+    // short-circuit evaluation in the CFG without a result slot and merge.
+    if (test.kind === "group" || test.kind === "satisfies") {
+      chooseExpression(test.expression, yes, no);
+      return;
+    }
+    if (test.kind === "unary" && test.operator === "!") {
+      chooseExpression(test.operand, no, yes);
+      return;
+    }
+    if (
+      test.kind === "binary" &&
+      (test.operator === "&&" || test.operator === "||")
+    ) {
+      const right = block();
+      if (test.operator === "&&") chooseExpression(test.left, right, no);
+      else chooseExpression(test.left, yes, right);
+      current = right;
+      chooseExpression(test.right, yes, no);
+      return;
+    }
     // Keep literal loop conditions aligned with definite-completion checking.
     // A synthetic false edge on `while (true)` invents a reachable return path.
     if (test.kind === "boolean") jump(test.value ? yes.id : no.id, test);
@@ -3930,12 +3951,11 @@ export function lowerFunction(
         return result;
       }
       case "conditional": {
-        const test = truth(value(node.test), node.test),
-          yes = block(),
+        const yes = block(),
           no = block(),
           merge = block(),
           result = temporary(scalarType(node));
-        choose(test, yes, no, node);
+        chooseExpression(node.test, yes, no);
         current = yes;
         store(result, load(value(node.consequent), node.consequent), node);
         jump(merge.id, node);
@@ -6819,10 +6839,9 @@ export function lowerFunction(
         break;
       }
       case "if": {
-        const test = truth(value(node.test), node.test),
-          yes = block(),
+        const yes = block(),
           no = block();
-        choose(test, yes, no, node);
+        chooseExpression(node.test, yes, no);
         current = yes;
         statement(node.consequent, loop);
         const yesEnd = current;
