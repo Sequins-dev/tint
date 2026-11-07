@@ -1,0 +1,94 @@
+{
+  "kind": "c1-complete-scope-final-validation",
+  "conformance": true,
+  "scopeIndex": "docs/results/c1-complete-scope-native-index-v1.json",
+  "scopeIndexSha256": "6af635c43cb9b3a87bb1970547c4d624248ff0ee4e978138a08ed8f17b977e7a",
+  "completeSelections": 33,
+  "distinctFiles": 1625,
+  "distinctVariants": 3114,
+  "unobservedVariants": 0,
+  "rawDisjointStatusCounts": {
+    "pass": 3076,
+    "timeout": 4,
+    "unsupported": 34
+  },
+  "separateInfrastructureRechecks": [
+    {
+      "report": "docs/results/test262-c1-expression-authorization-recheck-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-c1-expression-saturation-recheck-1-v1.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-c1-expression-saturation-recheck-2-v1.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "allRemainingNonpassesAccountedFor": true,
+  "blocker": "docs/results/c1-class-decorator-blocker-v2.json",
+  "finalNativeReport": "docs/results/test262-c1-remaining-statements-breadth-v1.json",
+  "finalNativeTotals": {
+    "total": 1074,
+    "passed": 1053,
+    "failed": 0,
+    "unsupported": 21,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9804469273743017
+  },
+  "finalRunnerExitStatus": 0,
+  "controllerStoppedForTriage": true,
+  "journalComplete": true,
+  "journalSha256": "86d29e8e465d2aaf6863cf154a71d83e76e65792b5c28cefc95eb4fb54ec2e44",
+  "finalFrozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v19.json",
+  "finalCompleteDirectoryCheckpoint": "docs/results/c1-remaining-statements-breadth-completed-groups-v9.json",
+  "finalCompleteFileCheckpoint": "docs/results/c1-statements-completed-files-v12.json",
+  "allFileSelectionAndObservationIdentitiesVerified": true,
+  "referenceMainGate": "86d7da4064edabb4f162d44deb1efba071d88e02",
+  "referenceGateReport": "docs/results/cluster-j-workspace-acceptance-v19.json",
+  "gateTestsPassed": 4727,
+  "gateExitStatus": 0,
+  "gateSourceEquivalence": "docs/results/c1-final-gate-source-equivalence-v1.json",
+  "executableChangesSinceGate": [],
+  "rebasedBuild": {
+    "exitStatus": 0,
+    "signal": null,
+    "elapsedMs": 3270
+  },
+  "rebasedBuildLog": "docs/results/c1-rebuild-after-codegen-v9.log.gz",
+  "phase2PortableCodeChanges": false,
+  "classPatchHistoricalSelfBuild": "docs/results/c1-frozen-selfbuild-v2.json",
+  "selfBuildScope": "Original class semantic patch self-build retained; Phase2 adds native evidence/docs only. No claim of an exact current compiler-stage fingerprint.",
+  "ownedProcessesStillRunning": [],
+  "cleanup": "Inactive C1 construction and initialization worktrees/branches are already removed. Active worktree retains frozen toolchains and ignored diagnostic/extraction helpers; no resumable incomplete C1 journal remains."
+}

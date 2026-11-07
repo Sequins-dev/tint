@@ -1,0 +1,1144 @@
+{
+  "blocker": "docs/results/c1-class-decorator-blocker-v2.json",
+  "kind": "c1-complete-scope-native-index",
+  "conformance": true,
+  "completeC1Scope": true,
+  "wholeClassNamespace": false,
+  "wholeSuite": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "scope": "All C1 language/statements/class and language/expressions/class variants, excluding root elements/ and dstr/ owned by C2.",
+  "completeSelections": [
+    {
+      "selection": "language/statements/class/syntax",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-syntax-v2.json",
+      "reportSha256": "0bd2291a293786a59bdeaefd17a23097d935d135bd8e08a0e88ce6808b210162",
+      "totals": {
+        "total": 26,
+        "passed": 26,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f4191efd57bd305d35d2d328fcabf8a4c53c2cd688e1be4c7f52ef54e8c9098c",
+        "files": 568
+      },
+      "frozenToolchainSha256": "de519b87a21e5e3e1ecde7de2a21d9549ea195d697a8710eeaaf0ae0fcd0cf24"
+    },
+    {
+      "selection": "language/statements/class/definition",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-definition-v2.json",
+      "reportSha256": "ed200b5f1db51367d6793f01cff21d93cc2aeab3a1b40fdfda66d08bbe5db72a",
+      "totals": {
+        "total": 130,
+        "passed": 130,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f4191efd57bd305d35d2d328fcabf8a4c53c2cd688e1be4c7f52ef54e8c9098c",
+        "files": 568
+      },
+      "frozenToolchainSha256": "de519b87a21e5e3e1ecde7de2a21d9549ea195d697a8710eeaaf0ae0fcd0cf24"
+    },
+    {
+      "selection": "language/statements/class/name-binding",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-name-binding-v2.json",
+      "reportSha256": "ee71eecd60f6a4606dc1db75befbaa9ff4117de1916bed003cb4afee7c8645e5",
+      "totals": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f14e8e8f59fde10be9b40c10a34c94758c389e02b05fda89720c360cf019d16b",
+        "files": 568
+      },
+      "frozenToolchainSha256": "6456d72d73aac8e0b96e4b3efe3389d1855585a9f7405c79b3f13bba2b60743e"
+    },
+    {
+      "selection": "language/statements/class/arguments",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-arguments-v2.json",
+      "reportSha256": "2e521714ce39fba7b9453690931c09ffe14bbc1be441fb3457017bfed0342377",
+      "totals": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f14e8e8f59fde10be9b40c10a34c94758c389e02b05fda89720c360cf019d16b",
+        "files": 568
+      },
+      "frozenToolchainSha256": "6456d72d73aac8e0b96e4b3efe3389d1855585a9f7405c79b3f13bba2b60743e"
+    },
+    {
+      "selection": "language/statements/class/strict-mode",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-strict-mode-v2.json",
+      "reportSha256": "937b8774c992f94c03f961c738667d1f5f70c84b71ae459d423a19047b79e617",
+      "totals": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f14e8e8f59fde10be9b40c10a34c94758c389e02b05fda89720c360cf019d16b",
+        "files": 568
+      },
+      "frozenToolchainSha256": "6456d72d73aac8e0b96e4b3efe3389d1855585a9f7405c79b3f13bba2b60743e"
+    },
+    {
+      "selection": "language/statements/class/super",
+      "report": "docs/results/test262-c1-foundation-language-statements-class-super-v2.json",
+      "reportSha256": "d6cb0c95d9b549c3912c984eb916026b58b93281f80c5d9c916910a5526a5708",
+      "totals": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "f14e8e8f59fde10be9b40c10a34c94758c389e02b05fda89720c360cf019d16b",
+        "files": 568
+      },
+      "frozenToolchainSha256": "6456d72d73aac8e0b96e4b3efe3389d1855585a9f7405c79b3f13bba2b60743e"
+    },
+    {
+      "selection": "language/statements/class/method",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-method-v1.json",
+      "reportSha256": "ecff7a64734fb22fa430d3dce376f42889a526684a95bcfec7bf2748258611cd",
+      "totals": {
+        "total": 35,
+        "passed": 35,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/method-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-method-static-v1.json",
+      "reportSha256": "01a15769ae75d98ac13db218df3cd6fa4b64c0df23ae8ab107a8e4c4e01f5f45",
+      "totals": {
+        "total": 35,
+        "passed": 35,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/method",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-method-v1.json",
+      "reportSha256": "3b8c95103c469c6dccebc3cb63a92013b0f0651b8377038c7abf4c8d11619f10",
+      "totals": {
+        "total": 35,
+        "passed": 35,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/expressions/class/method-static",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-method-static-v1.json",
+      "reportSha256": "16a48cc1b8cae4657b881538e7d0cc7bc47fd3d9a16c4ca8a2c5c84570851cda",
+      "totals": {
+        "total": 35,
+        "passed": 35,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/accessor-name-inst",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-accessor-name-inst-v1.json",
+      "reportSha256": "3fa232e34990cf4ed59e607e31fc16d5b677d2a42b9bd8dfe5928e5916eb3a0a",
+      "totals": {
+        "total": 42,
+        "passed": 42,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/accessor-name-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-accessor-name-static-v1.json",
+      "reportSha256": "91714d73b4359752123d7fb3509cd82754547bd6dd6ce94f09b9a61580a45ae6",
+      "totals": {
+        "total": 42,
+        "passed": 42,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-inst",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-accessor-name-inst-v1.json",
+      "reportSha256": "8026c53973d22a1f556f3d703a66244a6a0ebf3ab7a4a0f049c3e84126fa2c9a",
+      "totals": {
+        "total": 42,
+        "passed": 42,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/expressions/class/accessor-name-static",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-accessor-name-static-v1.json",
+      "reportSha256": "cc005944aa373b1d2833f41f166399d4443a244525dfc7a2dcfe02508ca66167",
+      "totals": {
+        "total": 42,
+        "passed": 42,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/subclass",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-subclass-v1.json",
+      "reportSha256": "5707edef543df509b60b13342f341bf7af1bba1d5795ca3cb158a7c9c94e3155",
+      "totals": {
+        "total": 217,
+        "passed": 217,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/subclass-builtins",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-subclass-builtins-v1.json",
+      "reportSha256": "3672cf8e89d0a39a9b69b00861321a3d4aa126334457e6efcc160b3e5f541981",
+      "totals": {
+        "total": 72,
+        "passed": 72,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/subclass-builtins",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-subclass-builtins-v1.json",
+      "reportSha256": "e225fe8dd92ae248a7fd0cd25e30bf048f7e87a79819fa58429e9a7e8ddb709d",
+      "totals": {
+        "total": 72,
+        "passed": 72,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/gen-method",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-gen-method-v1.json",
+      "reportSha256": "86e8395685031596e460a01f3e74d9c48a1524c721181eefbfffa57ac0d8adbc",
+      "totals": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/gen-method-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-gen-method-static-v1.json",
+      "reportSha256": "d3695369865c000ebb2746fbf18cc4eb2170bdfb76a02bb8acda4e9530e417b9",
+      "totals": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/gen-method",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-gen-method-v1.json",
+      "reportSha256": "8b05cf7b8f3d0bbd1de0cd173914779190207d7b338c58c9f7fa0952252ea82c",
+      "totals": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/expressions/class/gen-method-static",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-gen-method-static-v1.json",
+      "reportSha256": "858853e2c86ade2076e5267b56c58da78fc3a93459e3cd2b26d996be0577760e",
+      "totals": {
+        "total": 55,
+        "passed": 55,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/async-method",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-async-method-v1.json",
+      "reportSha256": "c8a01361d28114b1cc04c830081ddb7529159f411f62ace38c68c3dc3a516d8f",
+      "totals": {
+        "total": 59,
+        "passed": 59,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/async-method-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-async-method-static-v1.json",
+      "reportSha256": "4680771aeed8aeeb151196155ebc8d0b572ee9815e4485bb8d3dfa6f8dfdee9d",
+      "totals": {
+        "total": 59,
+        "passed": 59,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/async-method",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-async-method-v1.json",
+      "reportSha256": "ad0902002a186bc02f60959d28cba1b48e096e9167e8448111882df8690bd587",
+      "totals": {
+        "total": 59,
+        "passed": 59,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/expressions/class/async-method-static",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-async-method-static-v1.json",
+      "reportSha256": "9d38be7afac6505a9f2fb14398ef4c980e622ff5d16b06a27683921551bf954d",
+      "totals": {
+        "total": 59,
+        "passed": 59,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/async-gen-method",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-async-gen-method-v1.json",
+      "reportSha256": "a3b385fa0d0250fdb1cb1f810847feba685443359267a6f359ba575b6c24fe10",
+      "totals": {
+        "total": 191,
+        "passed": 191,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/statements/class/async-gen-method-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-async-gen-method-static-v1.json",
+      "reportSha256": "7290e867b8c16aed00e9c01a9d73b09f2d2148845deee2828b099900ae886864",
+      "totals": {
+        "total": 191,
+        "passed": 191,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-async-gen-method-v1.json",
+      "reportSha256": "5e0598ca73c26e25fa8093f8e309c6ea36b1535298d3f6c48f0ea21f48639eb1",
+      "totals": {
+        "total": 191,
+        "passed": 191,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "965c43d462a9611675741c847978e6449a183d7e27db7467c6c8cd8bbbe80bcd",
+        "files": 587
+      },
+      "frozenToolchainSha256": "d60aa4f7669644506600ccc5f75e19b6045a788cb5acd5d926d5fbef7cedb09f"
+    },
+    {
+      "selection": "language/expressions/class/async-gen-method-static",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-async-gen-method-static-v1.json",
+      "reportSha256": "df0cca8ba6b412d56811276483524d94d722a0917e0001946202a10ee5bbc7e2",
+      "totals": {
+        "total": 191,
+        "passed": 191,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/*.js",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.json",
+      "reportSha256": "d89476340b8cc5f969b60d695ccd7f841a900072802ac40c23bf68a16e4c4979",
+      "totals": {
+        "total": 504,
+        "passed": 504,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "1c03f9da9d63e132caf79711decff19ebde2844b21e4057a1cc8eb36a2634e87",
+        "files": 568
+      },
+      "frozenToolchainSha256": "56a419e216ffcee3960ca0a4d863c45e53dd9ef28e70945bb88419d0b3b4a477"
+    },
+    {
+      "selection": "language/expressions/class/*.js",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json",
+      "reportSha256": "8be39da774766ad412db6dda23e24aa372481d043bfbfbd380038a887300c540",
+      "totals": {
+        "total": 495,
+        "passed": 491,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 4,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9919191919191919
+      },
+      "sourceSnapshot": {
+        "sha256": "277cb1d74a95ad45ae5461a1a7dcc063510fd6d01348c29fa03f3b559a841cdc",
+        "files": 568
+      },
+      "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json",
+      "reportSha256": "592f303907f7746ee7f6ed1334224e7f0ee18cd0158ad5a16fa8fd9d8581c8a0",
+      "totals": {
+        "total": 21,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 21,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    },
+    {
+      "selection": "language/expressions/class/decorator",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json",
+      "reportSha256": "ace090718dde29fdd96435c33863970651b5ec59569e8dfb37d83b00d0a8d866",
+      "totals": {
+        "total": 13,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 13,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "sourceSnapshot": {
+        "sha256": "b27361c48c2f410ee98ccfe39c67930ed912bafe7433d95f56b971fb6fe9f3d3",
+        "files": 587
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    }
+  ],
+  "completeSelectionCount": 33,
+  "distinctFiles": 1625,
+  "distinctVariants": 3114,
+  "unobservedVariants": 0,
+  "rawDisjointStatusCounts": {
+    "pass": 3076,
+    "timeout": 4,
+    "unsupported": 34
+  },
+  "allPinnedSourceHashesVerified": true,
+  "nonpasses": [
+    {
+      "path": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-eval-indirect.js",
+      "variant": "sloppy",
+      "sha256": "5c15a6c372559f03ceae5c18510f81c2fb5f7eaefd23b9deaa46de5c97b4dde2",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yogn9d/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yogn9d/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yogn9d/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yogn9d/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-yogn9d/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json"
+    },
+    {
+      "path": "language/expressions/class/private-method-brand-check-multiple-evaluations-of-class-eval.js",
+      "variant": "sloppy",
+      "sha256": "4752f29f0e6fe908e1e29d7abb5facd609a1f2b9c6de47fe54c2d871c4c85e36",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout before the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Sbb954/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Sbb954/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Sbb954/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-just6L/test\\\",\\\"2\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Sbb954/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Sbb954/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n\nDebugserver: \nConnection: \nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json"
+    },
+    {
+      "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-eval-indirect.js",
+      "variant": "sloppy",
+      "sha256": "cbf974dbc06462842f57318e5dbccc31dddbe3ee1e35c490967e659fbfe9a55e",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test\\\",\\\"38\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-nnulO0/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 77141 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010df609c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10df609c0 <+0>:  mov    x0, sp\n    0x10df609c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10df609c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10df609cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json"
+    },
+    {
+      "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-function-ctor.js",
+      "variant": "sloppy",
+      "sha256": "9e49cde6331bf54bab75f38189f32f1237f4099f55e018344e89b4258ff39402",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-EQHmsA/test\\\",\\\"41\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-qJQ1e3/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 87403 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c1ec9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c1ec9c0 <+0>:  mov    x0, sp\n    0x10c1ec9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c1ec9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c1ec9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "sloppy",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1430,\"end\":1555,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "strict",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1444,\"end\":1569,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1716,\"end\":2115,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1730,\"end\":2129,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1422,\"end\":1897,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1436,\"end\":1911,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1314,\"end\":1657,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1328,\"end\":1671,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1801,\"end\":2200,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1815,\"end\":2214,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "4f90e853d182bf3ac134a82be4ab73d742c49d7ca2ba7d3426be1ef6e8db6ec9",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1421,\"end\":1440,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1578,\"end\":1658,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1592,\"end\":1672,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1284,\"end\":1381,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1298,\"end\":1395,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "a22aec810baac0558de53e9906b8658e5332f138ffa293f34649f33ab2ae8db5",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1037,\"end\":1054,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1176,\"end\":1242,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1190,\"end\":1256,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "6ed3b486ea1d857758745097732316fa4d387f4df6fe23a4bcfa438e22a8b84f",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1624,\"end\":1643,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1663,\"end\":1743,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1677,\"end\":1757,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "sloppy",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1347,\"end\":1470,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "strict",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1361,\"end\":1484,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "2b6d11d988633a4c186510313ca7a66ea88d6a365ead3743926766e2025c5ffd",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1349,\"end\":1366,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1506,\"end\":1584,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1520,\"end\":1598,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1212,\"end\":1307,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1226,\"end\":1321,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "ed3d1d6d52bd9adf50a16a67f1e6522c15bff5f48f285180e42196506c19614f",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":965,\"end\":980,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1104,\"end\":1168,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1118,\"end\":1182,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "6faf9241d5f932b4bd3e3d1c8d8a60e3e7b97f4a142eff8c4e5ba00b8a5bbe8c",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1552,\"end\":1569,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1591,\"end\":1669,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "status": "unsupported",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1605,\"end\":1683,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    }
+  ],
+  "separateInfrastructureRechecks": [
+    {
+      "report": "docs/results/test262-c1-expression-authorization-recheck-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-c1-expression-saturation-recheck-1-v1.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-c1-expression-saturation-recheck-2-v1.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "countingPolicy": "Disjoint canonical selection totals retain original failures/unsupported/infra. Focused rechecks are separate and never added to or substituted in original totals. Parent explicit subsets and extracted selections overlap; deduplicate. Each population has its own immutable frozen toolchain, not a claim of one compiler revision."
+}
