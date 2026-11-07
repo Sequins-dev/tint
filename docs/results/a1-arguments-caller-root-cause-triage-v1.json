@@ -1,0 +1,23 @@
+{
+  "kind": "nonpass-root-cause-triage",
+  "selection": "language/arguments-object",
+  "historicalReport": "docs/results/test262-language-arguments-object-current-v1.json",
+  "variants": [
+    {
+      "path": "language/arguments-object/10.6-13-a-2.js",
+      "variant": "sloppy"
+    },
+    {
+      "path": "language/arguments-object/10.6-13-a-3.js",
+      "variant": "sloppy"
+    }
+  ],
+  "observed": "Both throw TypeError when accessing arguments.callee.caller in sloppy ordinary functions. Pinned tests accept undefined if the caller extension is absent.",
+  "sourceInspection": {
+    "functionPrototype": "packages/js-runtime/src/objects/errors.ts installs throwing caller/arguments accessors on Function.prototype",
+    "functionCreation": "packages/js-runtime/src/objects/functions.ts createSourceFunction has no strictness parameter and does not distinguish sloppy caller-property compatibility",
+    "conclusion": "Sloppy ordinary function inherits throwing caller accessor; needs explicit policy distinguishing sloppy ordinary functions from strict, methods, arrows, generators and built-ins. Do not remove the shared Function.prototype poison accessors."
+  },
+  "owner": "A3 Function runtime; A1 owns these arguments-object tests",
+  "next": "Focused fresh-main standard native recheck after breadth, then coordinate minimal creation-metadata fix with A3 if failures remain. This source diagnosis does not establish current native outcomes; historical failures stay in denominator."
+}
