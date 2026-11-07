@@ -29,7 +29,7 @@ export function run():number{
  const hashes=new Set<number>();let count=0;
  for(const statement of prepared.value.checked.module.statements){if(statement===undefined)throw "STATEMENT";if(statement.kind!=="function")continue;const name=statement.name,body=statement.body;if(!name.startsWith("__lateHash"))continue;if(body.kind!=="block")return 6;const returned=body.statements[0];if(returned===undefined||returned.kind!=="return")return 7;const value=returned.expression;if(value===undefined||value.kind!=="number"||value.start!==0||value.end!==0||typeof value.nodeHash!=="number")return 8;hashes.add(syntaxHash(value));count++;}
  if(count!==32||hashes.size!==32)return 9;
- for(const statement of added){if(statement===undefined||statement.kind!=="function"||statement.body.kind!=="block")return 10;const returned=statement.body.statements[0];if(returned===undefined||returned.kind!=="return"||returned.expression?.nodeHash!==undefined)return 11;}
+ for(const statement of added){if(statement===undefined||statement.kind!=="function")return 10;const body=statement.body;if(body.kind!=="block")return 10;const returned=body.statements[0];if(returned===undefined||returned.kind!=="return")return 11;const value=returned.expression;if(value===undefined||value.nodeHash!==undefined)return 11;}
  return 42;
 }`,
   "runtime-transform-hashes",
