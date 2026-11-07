@@ -1,0 +1,24 @@
+{
+  "kind": "c2-native-complete-file-harvest-validation",
+  "generatedAt": "2026-11-07T22:00:08.612Z",
+  "manifest": "docs/results/c2-statements-elements-f22-complete-file-harvest-v3.json",
+  "acceptedReports": 257,
+  "acceptedVariants": 512,
+  "counts": {
+    "pass": 512
+  },
+  "rejected": [],
+  "disjointFrom": [
+    "docs/results/c2-statements-elements-f22-complete-file-harvest-v1.json",
+    "docs/results/c2-statements-elements-f22-complete-file-harvest-v2.json"
+  ],
+  "combinedCompleteFiles": 878,
+  "combinedUniqueVariants": 1746,
+  "configuredBatchSize": 64,
+  "debuggerLaunch": "debugserver-direct",
+  "toolchain": "docs/results/c2-frozen-toolchain-v22-statements-elements-v1.json",
+  "implementationAlreadyOnMain": "876d1500bd3d8ce7aa87118bb1f194f9f34c70db",
+  "nonDocChangesAtFreeze": [],
+  "completenessPolicy": "Official per-file extracts omit the full-run complete marker; exact pinned per-file variant sets establish completeness. Explicit false markers are rejected.",
+  "policy": "Complete pinned files only; source, ordered harness, metadata, exact per-file variant sets and native judgments accepted by the canonical ledger. Includes all original non-passes. No new execution during extraction, and no parent-directory completeness claim."
+}
