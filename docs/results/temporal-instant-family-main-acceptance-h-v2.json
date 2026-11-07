@@ -1,0 +1,41 @@
+{
+  "kind": "complete-native-instant-family-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T22:11:59.818174+00:00",
+  "selection": "built-ins/Temporal/Instant",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "report": "test262-temporal-instant-family-main-h-v2.json",
+  "reportSha256": "9d272e7cbd32a566539bdf014b0bc87373cce7340a6279709dffc2e8d1e89a0b",
+  "journal": "test262-temporal-instant-family-main-h-v2.jsonl",
+  "journalSha256": "07ec1946d47f989ac4bf2490019ba6f43aa1734e256c8920f29a9299d8b7a123",
+  "totals": {
+    "total": 934,
+    "passed": 934,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v134.json",
+  "frozenToolchainSha256": "b8036322b89014eb0f01dcdd57e2dab3cf1d1942944c24e2696f6439bd60cf0d",
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "baseline": "test262-coverage-ledger-v18.json",
+  "previousLedgerTotals": {
+    "pass": 435,
+    "fail": 495,
+    "crash": 4,
+    "unmeasured": 0
+  },
+  "finding": "All934pinned Instantvariants now pass on main-derivedcode. Old495fails and4pre-entry LLDBcrashes are replaced by current nativepasses; no new Instant implementation fix was necessary.",
+  "priorEvidenceRetained": [
+    "test262-temporal-instant-native-v1.json",
+    "test262-temporal-instant-string-precision-native-v3.json",
+    "test262-temporal-instant-failure-recheck-h-v1.json"
+  ],
+  "implementationProvenance": "Frozen134containsmaincodeonly; parkedIntlformattingandpendingpartial-datelocalefallbackareabsent."
+}
