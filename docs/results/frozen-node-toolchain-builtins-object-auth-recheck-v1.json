@@ -1,0 +1,50 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T17:01:19.448Z",
+  "head": "438ee0e457c3389a0e2a634e4a864aab79e24c6f",
+  "mainAtFreeze": "438ee0e457c3389a0e2a634e4a864aab79e24c6f",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+    "files": 595
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-auth-recheck-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-auth-recheck-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-auth-recheck-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-object-auth-recheck-v1/source-snapshot.json",
+    "sha256": "7a3ed6a0335efe5dc9838198b64835b06052c27e87e96083e76014c9db124518"
+  },
+  "runIdentity": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+  "selection": "built-ins/Object",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/object-auth-recheck-build-v1.log",
+    "inputFile": ".tint-bootstrap/object-auth-recheck-build-v1.input.json",
+    "head": "438ee0e457c3389a0e2a634e4a864aab79e24c6f",
+    "sourceEquivalentToFreeze": true,
+    "inputRecord": {
+      "at": "2026-11-07T17:00:35.887803+00:00",
+      "head": "438ee0e457c3389a0e2a634e4a864aab79e24c6f",
+      "main": "438ee0e457c3389a0e2a634e4a864aab79e24c6f",
+      "ownerPid": 6690,
+      "command": "pnpm build",
+      "nodeVersion": "v24.12.0"
+    },
+    "artifact": "docs/results/g-object-authorization-recheck-build-v1.log.gz",
+    "artifactSha256": "f45a8bfc8bd59aeae4fe2500d79b0eae7f414832dec517fd9721c5d29933f53d"
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Separate two-variant direct-mode authorization-timeout recheck on rebased current main; original Object observations remain immutable. Explicit manifest docs/results/g-object-host-authorization-recheck-variants-v1.json."
+}
