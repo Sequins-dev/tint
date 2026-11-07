@@ -133,7 +133,10 @@ internal slots; calendar conversion reads those slots rather than public getters
   Partial replacement shares ISO field merging and canonicalizes reference
   components. YearMonth differences validate year/month units after ordered
   option reads, compare complete reference dates before the zero shortcut, and
-  share exact date-difference and calendar-rounding primitives.
+  share exact date-difference and calendar-rounding primitives. Both partial-date
+  prototypes own branded `toLocaleString` methods. The core non-Intl fallback
+  serializes internal slots and ignores locale/options arguments without reading
+  public `toString` or date fields.
 - **PlainTime:** constructor, clock fields, ISO time strings with ambiguity checks,
   property-bag/Temporal conversion, overflow options and comparison. Shared clock
   records contain no artificial calendar date. Time-only arithmetic, equality,
