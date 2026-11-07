@@ -176,8 +176,9 @@ managed abrupt completion or startup failure returns the hosted failure status.
 Each worker must construct its own ScriptAgent, realms, jobs and executable arena.
 Only raw shared-block capabilities and copied mailbox payloads cross that boundary.
 This lifecycle capability is a prerequisite for the agent API, not an implemented
-`$262.agent` host. Waiter enrollment, platform parking/wakeup and the external-event
-pump remain separate work. No Script completion is inferred from the existence of
+`$262.agent` host. Raw waiter enrollment and platform parking/wakeup now support synchronous
+Atomics.wait in native fixtures; the Test262 agent adapter and external-event pump
+remain to be connected. No Script completion is inferred from the existence of
 a thread. Whole-variant containment remains process-scoped: unsafe asynchronous
 thread cancellation cannot unwind a managed collector safely.
 
@@ -189,3 +190,12 @@ supplies deadline accounting. These capabilities do not expose a Script waiting
 API or settle promises. The subsequent waiter registry must compare-and-enroll
 under the same synchronization as notify, retain terminal-state ownership, and
 route completions onto the owner agent's queue.
+
+
+Copied native agent reports now have a raw FIFO mailbox. UTF-16 code units are
+copied into a separate mapping before publication, detached under a scalar mutex,
+then reconstructed and released by the receiver. Managed allocation never occurs
+inside the mailbox critical section. Four isolated native producers and one
+consumer pass the [400-message stress fixture](results/native-agent-mailbox-v1.json),
+including NUL and lone surrogates. This is an internal prerequisite; it does not yet
+install `$262.agent` or expose asynchronous waiting to Script.
