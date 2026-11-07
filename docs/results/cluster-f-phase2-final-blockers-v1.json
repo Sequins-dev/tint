@@ -1,0 +1,209 @@
+{
+  "kind": "native-cluster-concrete-blocker-index",
+  "conformance": false,
+  "recordedAt": "2026-11-07T18:42:22.539975+00:00",
+  "scopeAudit": "docs/results/cluster-f-final-scope-audit-v1.json",
+  "observedPinnedVariants": 9324,
+  "passingVariantKeys": 9312,
+  "unresolved": [
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-arrow-function.json",
+      "sha256": "c5c6a130be9b96181a8961d4304f8c349b9682f0472a11fc2bf69712ad66183e",
+      "sourceSnapshot": {
+        "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+        "files": 595
+      },
+      "frozenToolchainSha256": "0991bdfa99c553aa307f2f657bed6177946447b0984fcee6a7e6c569eacafa5b",
+      "triage": "docs/results/cluster-f-intrinsic-enumeration-native-timeouts-v1.json",
+      "lastCpuSeconds": 286.94,
+      "lastWallSeconds": 296.0,
+      "blocker": "The unchanged intrinsic-enumeration test does not finish within the 300-second native containment budget despite receiving over 250 CPU-seconds. It needs a symbolized native profile and a shared execution/compiler performance fix; the source-based Function-preparation hypothesis is not a proven internal hotspot."
+    },
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-arrow-function.json",
+      "sha256": "c5c6a130be9b96181a8961d4304f8c349b9682f0472a11fc2bf69712ad66183e",
+      "sourceSnapshot": {
+        "sha256": "9160dd60858bbde397a177b81db361d1681d5399b91a6d7832a84ad52856ab11",
+        "files": 595
+      },
+      "frozenToolchainSha256": "0991bdfa99c553aa307f2f657bed6177946447b0984fcee6a7e6c569eacafa5b",
+      "triage": "docs/results/cluster-f-intrinsic-enumeration-native-timeouts-v1.json",
+      "lastCpuSeconds": 269.11,
+      "lastWallSeconds": 280.0,
+      "blocker": "The unchanged intrinsic-enumeration test does not finish within the 300-second native containment budget despite receiving over 250 CPU-seconds. It needs a symbolized native profile and a shared execution/compiler performance fix; the source-based Function-preparation hypothesis is not a proven internal hotspot."
+    },
+    {
+      "path": "built-ins/Iterator/zip/result-is-iterator.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-1-v1.json",
+      "sha256": "563e4e496f89525704e260ee82fbeb56a061e75930b5bce48ab202cfd42a7609",
+      "sourceSnapshot": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "frozenToolchainSha256": "d1202b5cea479a07c22723df850292521514a7758d6c9d37eb9fd1922feb65e6",
+      "triage": "docs/results/cluster-f-iterator-timeout-recheck-1-v1-triage.json",
+      "lastCpuSeconds": 264.47,
+      "lastWallSeconds": 284.0,
+      "blocker": "The unchanged pinned Iterator test plus intrinsic-enumeration harness exceeds300seconds containment after entering native execution despite over250CPU seconds. A shared native execution/preparation profile and fix is needed; the exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/Iterator/zip/result-is-iterator.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-2-v1.json",
+      "sha256": "563e4e496f89525704e260ee82fbeb56a061e75930b5bce48ab202cfd42a7609",
+      "sourceSnapshot": {
+        "sha256": "9f9d7480c1fc8787ffcacf16e686c07d6195913b1ce39595872e586d1ec648c5",
+        "files": 595
+      },
+      "frozenToolchainSha256": "d1202b5cea479a07c22723df850292521514a7758d6c9d37eb9fd1922feb65e6",
+      "triage": "docs/results/cluster-f-iterator-timeout-recheck-2-v1-triage.json",
+      "lastCpuSeconds": 260.24,
+      "lastWallSeconds": 279.0,
+      "blocker": "The unchanged pinned Iterator test plus intrinsic-enumeration harness exceeds300seconds containment after entering native execution despite over250CPU seconds. A shared native execution/preparation profile and fix is needed; the exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-3-v1.json",
+      "sha256": "cffbfeb55c8592a277cde916f632c4a50740c186330b3680803fb1b807d3bb1a",
+      "sourceSnapshot": {
+        "sha256": "81dd092bb0517b075471e1e719068514072f4036b925466dd4ff9f153def8ef0",
+        "files": 595
+      },
+      "frozenToolchainSha256": "30310d8151c08b0e3930f668686cdc20ba6bbe75d3937493d9b881e877d512c1",
+      "triage": "docs/results/cluster-f-iterator-timeout-recheck-3-v1-triage.json",
+      "lastCpuSeconds": 294.1,
+      "lastWallSeconds": 297.0,
+      "blocker": "The unchanged pinned Iterator test plus intrinsic-enumeration harness exceeds300seconds containment after entering native execution despite over250CPU seconds. A shared native execution/preparation profile and fix is needed; the exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/Iterator/zipKeyed/result-is-iterator.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-iterator-timeout-recheck-4-v1.json",
+      "sha256": "cffbfeb55c8592a277cde916f632c4a50740c186330b3680803fb1b807d3bb1a",
+      "sourceSnapshot": {
+        "sha256": "81dd092bb0517b075471e1e719068514072f4036b925466dd4ff9f153def8ef0",
+        "files": 595
+      },
+      "frozenToolchainSha256": "30310d8151c08b0e3930f668686cdc20ba6bbe75d3937493d9b881e877d512c1",
+      "triage": "docs/results/cluster-f-iterator-timeout-recheck-4-v1-triage.json",
+      "lastCpuSeconds": 268.14,
+      "lastWallSeconds": 287.0,
+      "blocker": "The unchanged pinned Iterator test plus intrinsic-enumeration harness exceeds300seconds containment after entering native execution despite over250CPU seconds. A shared native execution/preparation profile and fix is needed; the exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/GeneratorFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-GeneratorFunction.json",
+      "sha256": "97dc21864112f2e61d38eff7e253b945786d460675ec5ed07b3ddc77fc8757a9",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 184.17,
+      "lastWallSeconds": 207.0,
+      "blocker": "The unchanged constructor test with eager intrinsic enumeration exceeds the 300-second native containment budget during measured CPU-intensive execution. Shared native execution/preparation profiling and a fix are needed; the exact internal hotspot is not symbolized. Sloppy has no sample after184.17CPU/207wall seconds; its final CPU total is unknown."
+    },
+    {
+      "path": "built-ins/GeneratorFunction/is-a-constructor.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-GeneratorFunction.json",
+      "sha256": "97dc21864112f2e61d38eff7e253b945786d460675ec5ed07b3ddc77fc8757a9",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 284.96,
+      "lastWallSeconds": 292.0,
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over250CPU seconds. Shared native execution/preparation profiling and a fix are needed; the exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorFunction.json",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 282.11,
+      "lastWallSeconds": 290.0,
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncGeneratorFunction/is-a-constructor.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncGeneratorFunction.json",
+      "sha256": "e323ea57dbe1a09d6fdf228269d34228daef0d12bad6f8a5530d9fa35a542977",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 277.63,
+      "lastWallSeconds": 282.0,
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFunction.json",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 276.59000000000003,
+      "lastWallSeconds": 292.0,
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    },
+    {
+      "path": "built-ins/AsyncFunction/is-a-constructor.js",
+      "variant": "strict",
+      "status": "timeout",
+      "report": "docs/results/test262-cluster-f-remaining-generator-async-builtins-v1-built-ins-AsyncFunction.json",
+      "sha256": "0dca73a0d12d3d30549b1f824eb5c3806909c15655a316da715994245aa5fd00",
+      "sourceSnapshot": {
+        "sha256": "45598d81ed02bd671c7646a34e2919360b3acb267395295cae54d068e2915cb3",
+        "files": 595
+      },
+      "frozenToolchainSha256": "f5e07f429ee494ee726b584974974aeb4827e93965863752410e6f9815bb29cc",
+      "triage": "docs/results/cluster-f-builtins-intrinsic-timeouts-v2.json",
+      "lastCpuSeconds": 282.48,
+      "lastWallSeconds": 295.0,
+      "blocker": "The unchanged constructor test including eager intrinsic enumeration exceeds the 300-second native containment budget despite over 250 CPU seconds. A shared native execution/preparation profile and fix is needed; exact internal hotspot is not symbolized."
+    }
+  ],
+  "unresolvedCount": 12,
+  "confirmedGroup": "11 of 12 unresolved after-initial-stop intrinsic-enumeration workloads have samples over250CPU seconds. GeneratorFunction sloppy has only184.17CPU/207wall sampled, with a later observation gap and unknown final CPU total.",
+  "hypothesis": "Shared wellKnownIntrinsicObjects.js eagerly constructs87 Function bodies; repeated dynamic Function preparation is a source-based hypothesis, not a proven symbolized hotspot.",
+  "ownerHint": "D eval/Function and P native preparation/performance",
+  "nextStep": "Profile retained exact images with matching frozen source symbols, fix shared native execution/preparation bottleneck, then rerun complete unchanged affected selections. No harness edits, excluded variants or silent replacement of observations.",
+  "originalReportsUnchanged": true,
+  "exactLatestObservationToTriageValidationExitStatus": 0
+}

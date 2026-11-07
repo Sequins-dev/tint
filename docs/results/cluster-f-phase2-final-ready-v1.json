@@ -1,0 +1,50 @@
+{
+  "kind": "docs-only-cluster-scope-ready",
+  "conformance": false,
+  "recordedAt": "2026-11-07T18:44:57.442391+00:00",
+  "publicationBase": "917f9e3b156335ab36929b31067e97b99d847a9e",
+  "branch": "test/native-iterator-generator-coverage",
+  "scope": "20 disjoint pinned F selections; all9324keys observed,9312keys have passing native evidence across independent frozen reports;12 concrete timeout blockers. Not a combined execution report.",
+  "gate": {
+    "sha": "d978ec3606d69757696a6ac6e170093ef04acb56",
+    "tests": 4826,
+    "record": "d978ec36: 4826/4826 (J Intl.Collator, code base 9569babf)",
+    "exitStatus": 0
+  },
+  "codeDiffExcludingDocsExitStatus": 0,
+  "scopeAuditExitStatus": 0,
+  "allUnresolvedToTriageSourceRunKeyValidationExitStatus": 0,
+  "noOwnedNativeJobs": true,
+  "selfBuildProofForPortableCleanup": {
+    "report": "docs/results/bootstrap-cluster-f-phase2-v1.json",
+    "artifactValidation": "docs/results/cluster-f-phase2-selfbuild-artifact-validation-v1.json",
+    "stageImagesIdentical": true,
+    "imageBytes": 71847842,
+    "imageSha256": "fef4a38aabb200a0951602e1286617a3ee297f7ad80f041494a4df849bce0c49",
+    "nativeExitStatus": 0,
+    "signatureExitStatus": 0,
+    "dwarfExitStatus": 0,
+    "smokeExecutionExpectedExitStatus": 42,
+    "smoke": "docs/results/cluster-f-phase2-smoke-execution-v1.json",
+    "sourceSnapshot": "5dd97f5fd5f46759faf13f9637efdb89cbb47a0df52d2e932f4dddcbb76ac26c",
+    "scope": "Frozen native proof covers the inherited iterator runtime cleanup. No exact current combined-main stage-identity claim is made."
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-f-final-scope-audit-v1.json",
+      "sha256": "c7e4d97d79c979ef75c27dcc8babb065deb929401bfe94ccea9cfc566cdb683d"
+    },
+    {
+      "path": "docs/results/cluster-f-phase2-final-blockers-v1.json",
+      "sha256": "24664f95cb768c064d0103d58bfadc0d45eadab972019334a567738d22c7b721"
+    },
+    {
+      "path": "docs/results/cluster-f-phase2-final-process-audit-v1.json",
+      "sha256": "2833d4803d3505bf2b77e1949670bc0dc82f891162f8e2264727e2ec52f603f2"
+    },
+    {
+      "path": "docs/results/cluster-f-phase2-final-report-v1.md",
+      "sha256": "47bf55ad41589da559763320a7fec5566950ed093876efedeb3595b10fe9b35d"
+    }
+  ]
+}
