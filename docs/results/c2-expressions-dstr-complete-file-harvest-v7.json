@@ -1,0 +1,3607 @@
+{
+  "kind": "c2-complete-file-native-harvest",
+  "scope": "Disjoint complete files from one frozen native journal prefix. Parent directory remains incomplete. Reports preserve all expected variants and all non-passes.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+    "files": 595
+  },
+  "toolchain": "docs/results/c2-frozen-toolchain-v21-expressions-dstr-v1.json",
+  "prefix": {
+    "path": ".tint-bootstrap/c2/expressions-dstr-harvest-prefix-v7.jsonl",
+    "sha256": "6548405a16dd37789d30c0cfde6f19f657ed5750675fbd223178209cfbd7ac9c",
+    "bytes": 2353743,
+    "observedVariants": 3552
+  },
+  "configuredBatchSize": 64,
+  "completeFiles": 256,
+  "counts": {
+    "pass": 512
+  },
+  "reports": [
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1ba74e80b7b79a80-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4a3b4ac1a08c614d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-ary-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-dc4d940bbccec271-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-ary-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2677414059fb4b35-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-ary.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-97f92492fb665466-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e8e8b7a20036c81e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-255bbd88fe92d875-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-da78d46948487a98-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f9bf439a4dffaf96-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-obj-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e801b83038f50b44-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-prop-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-92a6f974dfc7a6a9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-rest-getter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e5bdf55d97f80b21-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-rest-skip-non-enumerable.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-80218d350726dd92-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-dflt-obj-ptrn-rest-val-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1946f6eefded59e0-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-88e74249e5d39d3f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-308c4022fcab5f3f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-179b074ac56eed64-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7f14607cee1be264-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1340105a47b0720e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b0b829e7d4e89eb6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-07c80b725de72fb6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-539a6d7d35e98739-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-ary-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-aaf01fbbf33042d3-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-ary-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-054d2b57e1412fe5-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-ary.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c303c1136470cb1a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-914b584b280f9696-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-43d80b1a4177b22d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-20215b4b6e66f88d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4921f6c60155d354-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-obj-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-98dd61fa62fd23ad-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-prop-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-490cbdec7f1906e7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-rest-getter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-73ccfe10460c6885-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-rest-skip-non-enumerable.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-47513a11b7f6c1bb-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-obj-ptrn-rest-val-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-cb99805c68a340e6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-init-iter-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4a8ae9b247ef0f51-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-init-iter-no-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-386903145f691505-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-name-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-593a4098f84db4d7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-elem-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1bef9f08d6a82a5f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-elem-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2fee02afe54f23f6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-elision-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-79b5acca51a3aa7f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-elision-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-96bc8c0e0b293391-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-empty-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f638971d645e5148-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-empty-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-959537802d5c036f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-rest-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-39a2a3b6c08f374c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-ary-rest-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ab1fa4939c7a8e20-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0b8b6d86b7449003-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b6efaeb6d9bfc9ab-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7db3f8fa49afbc46-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7d62593d08ce820c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-31e48fdb70d9793b-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-220e30a44308bfe7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-hole.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c4ed37e3034038f2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-397e196dcf56a534-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-init-undef.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6eea79bd5abac9a1-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-iter-complete.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c15ad44e17b4b00f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-iter-done.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ab1c547885f288a8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-53a4f4b39f0eef72-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-id-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-99251427cea07b12-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-obj-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-25e4953b23e17aa1-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-02d656f3fa739588-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-obj-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-65b28df487decc7c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elem-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5c45f7c8d654a04e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elision-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-11f1d07d22129b62-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-72021f0b08588bf0-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-47666c1aced92c19-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-ary-elem.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1d1af544ea8f5756-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-ary-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-43f3ac5a4a025982-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-ary-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-87ebd8bc1ab78191-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-ary-rest.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3972bb17869ddda7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-id-direct.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-769598da077efd9c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-id-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7c78ef1e8c2a6450-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-id-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ad7eab0530d34a54-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2718059756a171bd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-33d5a4eec7fe05dc-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-ary-ptrn-rest-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-155b597c4971dd70-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-init-iter-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a7ac47535077a72a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-init-iter-no-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8f2c95ce1e532c8e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-name-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a040f42b21c33953-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-elem-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1acc8fdcc73f05c2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-elem-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9f59f9ed367b4208-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-elision-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-54f711619f4ced80-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-elision-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-cecb80a1797cdc21-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-empty-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7e26e7a3af558ad7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-empty-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-dd10f97b69f7a0e8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-rest-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-868d6389851360d8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-ary-rest-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0ef72d5069e937fb-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ed52f136af8159fc-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7e642dce2713abed-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d75c1417fdcd60cd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d1bea01fcfd47992-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-da5464a814bddb73-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6b26df949e80d924-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-hole.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8ac768846c598c6e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5177aa4c810254d2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-init-undef.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1f5069ff9adbc356-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-complete.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-052f18d1295ec690-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-done.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7eeb1ab15d2ba72a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e1c782b771be4145-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5ddc9582a3acf50a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-obj-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b37d157866f13118-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9ebbf4134cdb652c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-obj-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8e7c061e9a0c62dd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elem-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a1b8db971a3cca5a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elision-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-eec2c51278516c20-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-af326412c6fef390-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ace1c6665c1cabb9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-ary-elem.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-72124a2f23480049-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-ary-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c2a2a5d3af24b4d4-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-ary-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ea3074d8dad64f8c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-ary-rest.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2cdcb2140d017aa1-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-id-direct.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-226cd12c1e825fe1-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-id-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1d2bd1619667c065-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-id-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-fef24e0576dc0961-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8fc175ebabd4e450-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-bc7b9538d6c20320-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-ary-ptrn-rest-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3495b83e3cdfa1ab-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6b4dee540a525cb9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6b544b9c03903fbc-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2480ed1724a3e49e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-410bc599603e4766-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6963cb28db511299-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4caf2f49edaadd6f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c721a9ae3c1971f8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-fde6167a0824933e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-ary-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1cf1116d1054a943-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-ary-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-bb2839ca3d568b08-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-ary.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-fba555d1234148f8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-df41a346f5a4ca74-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-950428eb31c5bab8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-dc6301a0dd27e2f3-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-307b688e7d03b355-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-obj-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0503e069931d006a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-prop-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9af2a25dac8fe331-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-rest-getter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3b2bebedf1898664-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-rest-skip-non-enumerable.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c9fdafecb6f439cc-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-dflt-obj-ptrn-rest-val-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ccdad23e601f3eff-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a5c25f322653bcd9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6ac4981eef901c7c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-51dcc7de175c2e87-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-01afe76ab37d438e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-ecd9f893fd38fa3f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-20e6b9c106ec099f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-bdcdb00cfd0d3d8d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-59d52dc7a6937e55-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-ary-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-cc7c1d0d52b1d57d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-ary-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f9ffef5f3268f2a2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-ary.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-00c0e80b6397e3fd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f9da4dfdcd3e4869-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-dcce25f2c80e34ed-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-41f76247cb75ca93-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-694bb52526b71f63-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-obj-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a41541cb8e304baa-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-prop-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-fdd6dc90b357934f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-rest-getter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3ef20bf52f712f89-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-rest-skip-non-enumerable.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b296fd80939a35ec-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-gen-meth-static-obj-ptrn-rest-val-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7794a9883e07c9ac-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-init-iter-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-618f632e0f062405-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-init-iter-no-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b8f25a2480114ced-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-name-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-12b54eeb4c472476-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-elem-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4baeb262985990ab-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-elem-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-10696f7908dda020-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-elision-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-63578bbfcaf823ec-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-elision-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8c9dc0895304a3c0-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-empty-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5046b80661d2a807-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-empty-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-caf5c028779f4793-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-rest-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8d336042c96c174f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-ary-rest-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-bd2b9ffc57242ece-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f8041dc888f4274e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9c232bfe8b559c3c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e1b64cfa9a979cb2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-65c2a0ffdbc73cb5-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5b90f1f6aa793746-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1df9357c308a4ee1-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-hole.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-c8a8a440a1cb295c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a28a56814445642d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-init-undef.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f70d94171d649fb0-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-iter-complete.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-63244f1c1bd17dfe-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-iter-done.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2cfcd325713aecc9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8b3bae3dc03276aa-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-id-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b23a2f26ca522809-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-obj-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-332b0af0c02b701f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-80cf829c961b22e9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-obj-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e507041fe5070581-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elem-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8f60d1dd512af8ee-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elision-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3ce7887c07ffa8fe-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-81492ca1581a65c0-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0e6917e771b277de-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-ary-elem.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-acb45214e6445362-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-ary-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-80eb4d069da10f5a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-ary-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e2bed62f9563ac03-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-ary-rest.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-07d8f37b38c4dfbd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-id-direct.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-fcaf1c7858916c2f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-id-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-4b2aeaa555637966-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-id-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1a89b91bf9b14ebd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-33567806a9e59e96-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d12cce9b6831ce9c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-ary-ptrn-rest-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-56d7a89f07b10f68-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-init-iter-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2f9f03eed11cd1ae-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-init-iter-no-close.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-da555e3c41c0b3e4-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-name-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8b577b3e93a2b31c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-elem-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7a16385f097eaaa6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-elem-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b4b2fd33ddd702b5-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-elision-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f8bb82f3bdfb32be-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-elision-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-30ff198915f37ac7-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-empty-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-81b3a223a0c3ac57-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-empty-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b525b1ab39642d76-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-rest-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-37a1b1a030b94154-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-ary-rest-iter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-eca66019497fb85c-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8dddc4d4b138ecf8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0a04a4fdf750b2be-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5872d82e8bf9c8fd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a170873f76ca79ab-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f8c901d509489955-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e37e3fa731ae7516-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-hole.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3574576d9b4a97f5-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-285972fa8ffb44be-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-init-undef.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f9ca8ab68d723c13-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-iter-complete.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9d5ca951545508de-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-iter-done.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-46319ec6606912fd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-24fa03ae42a0f67b-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-id-iter-val.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6823bbe406b7d1bf-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-obj-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a75b99c6bb6e5cf3-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3fee7af1a5c26ccc-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-obj-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9ca98cb9ad5b147e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elem-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-998ab99441549208-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elision-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-72ba7c834165026a-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7462a6fade438049-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0d9b4f6770fe0ed4-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-ary-elem.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-89478bc2b2c30a14-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-ary-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9d9a3ea93233f121-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-ary-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-6dc31878a0b09b13-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-ary-rest.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-248d134593f6f49e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-id-direct.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d2f5fa585f2e1526-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-id-elision.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-7f0b6bddb9c0db6f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-id-exhausted.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9ba364eea7165f88-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-f0ae8acdf3d00e2d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-obj-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-de73871a4df782c8-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-ary-ptrn-rest-obj-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-a5ddd7ab4d0da29e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-empty.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-9eada64fa1a4c722-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-fn-name-arrow.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1b6b260f6924892d-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-fn-name-class.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-cffe25cde14f1993-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-fn-name-cover.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d9ee18ff4e2fbecd-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-fn-name-fn.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-e1fd7ff563401400-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-fn-name-gen.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-3889ca57d5fc18e9-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2c30978ea200060e-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-feb52d024484a719-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-ary-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-8dada7c638a52599-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-ary-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-15a8216d14ee22b2-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-ary.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-64730f1c16521cf6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-id-init-skipped.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-b16fe55d3c9958a6-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-id-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-d9d2cf5492e0e2d4-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-id-trailing-comma.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-5f5c4732db6ea492-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-id.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-1759dca744c97b78-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-obj-init.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-0e41816687d8f76f-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-prop-obj.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-2a85db146db28ba4-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/expressions/class/dstr/private-meth-dflt-obj-ptrn-rest-getter.js",
+      "report": "docs/results/test262-c2-expressions-dstr-file-06973be114475188-native-v1.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ]
+}
