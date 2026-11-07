@@ -1,0 +1,35 @@
+{
+  "kind": "cluster-j-complete-string-family-publication",
+  "at": "2026-11-07T17:19:34.210406+00:00",
+  "report": "docs/results/test262-cluster-j-string-family-native-v21.json",
+  "originalCanonical": {
+    "path": ".tint-bootstrap/test262-cluster-j-string-native-v21.json",
+    "bytes": 1983595,
+    "sha256": "2943dd20f07b830208b651e2cd9b162d4736096c7739dee51cf7ae16bfae6dca"
+  },
+  "journal": {
+    "path": ".tint-bootstrap/cluster-j-string-v21.jsonl",
+    "bytes": 1415459,
+    "sha256": "8473098820023e761e12f27ccefe99aed73df827f2126306af7ea76e94e2a820",
+    "terminalRecord": {
+      "kind": "complete",
+      "totals": {
+        "total": 2443,
+        "passed": 2267,
+        "failed": 176,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9279574293900942
+      }
+    }
+  },
+  "rootCauses": {
+    "signedZeroIndexOfAlreadyFixedAndMerged": 2,
+    "missingLocaleCompareCollatorInProgress": 24,
+    "primitiveProtocolGuardFixInNativeRecheck": 46,
+    "missingLocaleCasingMethodsFixInNativeRecheck": 104
+  },
+  "policy": "Complete unchanged2443-variant selection independently verified by frozen21 standard extractor, native direct launch. Old graph4337c648 and all176 failures retained. Derived report uses verified original13:24start so later file/fix rechecks retain precedence in the ledger; no undated complete raw journal is published. Per-file indices and method reports overlap this full family."
+}
