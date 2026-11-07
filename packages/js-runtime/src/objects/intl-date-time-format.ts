@@ -47,7 +47,10 @@ import {
 } from "./date-time-format.ts";
 import type { DateTimePart } from "./date-time-parts.ts";
 import type { DateTimeRangePart } from "./date-time-range.ts";
-import { temporalTimeZone } from "./temporal-time-zone.ts";
+import {
+  temporalTimeZone,
+  type TemporalTimeZone,
+} from "./temporal-time-zone.ts";
 import { chainIntlLegacy, unwrapIntlLegacy } from "./intl-legacy.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 function string(
@@ -229,6 +232,7 @@ export function configureDateTimeFormatter(
   hooks: ObjectHooks<unknown>,
   required: string = "any",
   defaults: string = "date",
+  toLocaleStringZone: TemporalTimeZone | undefined = undefined,
 ): DateTimeFormatter {
   const requested = canonicalLocaleList(locales, realm, hooks),
     options = optionsObject(input, realm, hooks);
@@ -250,13 +254,20 @@ export function configureDateTimeFormatter(
     ),
     locale = resolveDateTimeLocale(requested, calendar, system, cycle, hour12),
     zoneValue = optionValue(options, "timeZone", realm, hooks);
-  let zoneText: string;
-  if (zoneValue === undefined) {
-    const systemZone = realm.systemTimeZoneIdentifier;
-    if (systemZone === undefined) return rejectUnsupportedExecution(realm);
-    zoneText = systemZone();
-  } else zoneText = string(zoneValue, realm, hooks);
-  const timeZone = temporalTimeZone(zoneText, realm);
+  const suppliedZone = toLocaleStringZone;
+  let timeZone: TemporalTimeZone;
+  if (suppliedZone !== undefined) {
+    if (zoneValue !== undefined) throw createRuntimeError(realm, "type");
+    timeZone = suppliedZone;
+  } else {
+    let zoneText: string;
+    if (zoneValue === undefined) {
+      const systemZone = realm.systemTimeZoneIdentifier;
+      if (systemZone === undefined) return rejectUnsupportedExecution(realm);
+      zoneText = systemZone();
+    } else zoneText = string(zoneValue, realm, hooks);
+    timeZone = temporalTimeZone(zoneText, realm);
+  }
   const fields = components(options, realm, hooks),
     formatMatcher = option(
       options,
@@ -330,7 +341,7 @@ function requireFormatter(
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
-function partsText(parts: readonly DateTimePart[]): string {
+export function dateTimePartsText(parts: readonly DateTimePart[]): string {
   let result = "";
   for (let index = 0; index < parts.length; index++) {
     const part: DateTimePart | undefined = parts[index];
@@ -502,7 +513,7 @@ export function installDateTimeFormatIntrinsic(
                 realm,
               );
               if (parts === undefined) throw createRuntimeError(realm, "range");
-              return partsText(parts);
+              return dateTimePartsText(parts);
             },
             hooks,
           );
@@ -578,7 +589,7 @@ export function installDateTimeFormatIntrinsic(
             parts = dateTimeValueRangeParts(formatter, start, end, realm);
           if (parts === undefined) throw createRuntimeError(realm, "range");
           return name === "formatRange"
-            ? partsText(parts)
+            ? dateTimePartsText(parts)
             : partArray(parts, parts, realm, hooks);
         },
         hooks,

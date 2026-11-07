@@ -319,9 +319,11 @@ export function dateTimeZoneName(
   if (style === "shortOffset" || style === "longOffset")
     return localizedOffset(formatter, offset, long);
   const identifier = dateTimeZoneCanonicalName(
-    zone.kind === "named" && zone.primaryIdentifier === "UTC"
-      ? "UTC"
-      : zone.identifier,
+    zone.kind === "fixed" && offset === 0 && zone.identifier !== "UTC"
+      ? "Etc/GMT"
+      : zone.kind === "named" && zone.primaryIdentifier === "UTC"
+        ? "UTC"
+        : zone.identifier,
   );
   if (identifier === undefined || identifier === "Etc/Unknown")
     return localizedOffset(formatter, offset, long);
@@ -352,6 +354,9 @@ export function dateTimeZoneName(
       epochSecond,
     );
     if (name !== undefined) {
+      // GMT itself has no city/country qualifier. Numeric offset styles returned
+      // above preserve their explicit zero independently of this specific name.
+      if (identifier === "Etc/GMT") return name;
       const qualified = qualify(formatter, identifier, metazone, name);
       if (qualified !== undefined) return qualified;
     }

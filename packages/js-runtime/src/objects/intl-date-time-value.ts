@@ -1,3 +1,4 @@
+import type { Integer } from "@tint/foundation/numeric/big-integer";
 import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import { viewObjectValue } from "./values.ts";
@@ -86,15 +87,7 @@ function prepared(
   const instant = object.internalTemporalInstant;
   if (value.kind === 5) {
     if (instant === undefined) throw "DATE_TIME_INSTANT_INVARIANT";
-    const split = splitTemporalEpochSecond(instant.integer);
-    if (split === undefined) return rejectUnsupportedExecution(realm);
-    const input = dateTimeEpochInput(
-      formatter,
-      pattern,
-      split.seconds,
-      split.fractionNanoseconds,
-    );
-    if (input === undefined) return rejectUnsupportedExecution(realm);
+    const input = instantInput(formatter, pattern, instant.integer, realm);
     return { input, pattern };
   }
   const time = object.internalTemporalPlainTime,
@@ -145,6 +138,41 @@ function prepared(
       fields: { date, hour: 12, minute: 0, second: 0, millisecond: 0 },
     },
   };
+}
+function instantInput(
+  formatter: DateTimeFormatter,
+  pattern: ResolvedDateTimePattern,
+  epoch: Integer,
+  realm: ErrorRealm,
+): DateTimeInput {
+  const split = splitTemporalEpochSecond(epoch);
+  if (split === undefined) return rejectUnsupportedExecution(realm);
+  const input = dateTimeEpochInput(
+    formatter,
+    pattern,
+    split.seconds,
+    split.fractionNanoseconds,
+  );
+  return input === undefined ? rejectUnsupportedExecution(realm) : input;
+}
+/** Private ZonedDateTime locale formatting uses the Instant format with the
+ * instance's zone supplied at construction. Public ZonedDateTime inputs remain
+ * rejected by the DateTimeFormat methods. */
+export function dateTimeInstantParts(
+  formatter: DateTimeFormatter,
+  epoch: Integer,
+  realm: ErrorRealm,
+): DateTimePart[] {
+  const pattern = dateTimeTemporalPattern(formatter, 5);
+  if (pattern === undefined) throw createRuntimeError(realm, "type");
+  const input = instantInput(formatter, pattern, epoch, realm),
+    parts = dateTimePatternParts(
+      formatter.parts,
+      pattern.tokens,
+      input.fields,
+      input.zoneName,
+    );
+  return parts === undefined ? rejectUnsupportedExecution(realm) : parts;
 }
 export function dateTimeValueParts(
   formatter: DateTimeFormatter,

@@ -1859,6 +1859,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/temporal-locale-string.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/temporal-month-code.ts",
       packageId: "js-runtime",
     },

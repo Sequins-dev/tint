@@ -230,3 +230,18 @@ test("offset rendering covers every locale's hour-pattern shape", () => {
       assert.ok(dateTimeZoneName(f, zone, july, style), locale + "/" + style);
   }
 });
+test("specific zero-offset names use GMT while numeric offset styles retain explicit zero", () => {
+  const f = formatter(),
+    zone: TemporalTimeZone = {
+      kind: "fixed",
+      identifier: "+00:00",
+      offsetNanoseconds: 0,
+    };
+  assert.equal(dateTimeZoneName(f, zone, january, "short"), "GMT");
+  assert.equal(
+    dateTimeZoneName(f, zone, january, "long"),
+    "Greenwich Mean Time",
+  );
+  assert.equal(dateTimeZoneName(f, zone, january, "shortOffset"), "GMT+0");
+  assert.equal(dateTimeZoneName(f, zone, january, "longOffset"), "GMT+00:00");
+});
