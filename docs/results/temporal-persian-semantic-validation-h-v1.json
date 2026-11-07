@@ -1,0 +1,50 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T01:55:05.924053+00:00",
+  "family": "persian",
+  "initialRed": {
+    "tests": 5,
+    "failed": 5
+  },
+  "focusedGreen": {
+    "tests": 143,
+    "passed": 143
+  },
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "hostTypesExit": 0,
+  "implementation": "Exact 33-year Persian reckoning, complete ICU 77.1 leap-shift corrections, proleptic AP era years, date-boundary conversion and canonical partial reference dates. Calendar arithmetic, rounding and Duration context reuse the common regular-calendar services.",
+  "references": [
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/persncal.cpp",
+    "https://tc39.es/proposal-intl-era-monthcode/"
+  ],
+  "independentReferenceProbes": [
+    "calendar-persian-reference-probe-h-v1.json",
+    "calendar-persian-reference-probe-h-v2.json"
+  ],
+  "sourceDataVerification": "calendar-persian-data-verification-h-v1.json",
+  "nativeStatus": "Five-case compile-only fixture prepared; execution and native stage comparison held for HOST AUTHORIZATION RESTORED. No Test262 passes claimed.",
+  "logs": {
+    "calendar-persian-core-red-h-v1": {
+      "path": "docs/results/calendar-persian-core-red-h-v1.log.gz",
+      "sha256": "8b105593ab18b90e45160be4526e21a060bfc61b133a1abec32ada64db2d3526"
+    },
+    "calendar-persian-core-green-h-v1": {
+      "path": "docs/results/calendar-persian-core-green-h-v1.log.gz",
+      "sha256": "c83db24f47c1966bf532429e2f37847f87947caad8099eb3429264880a3f0d7d"
+    },
+    "temporal-persian-focused-h-v1": {
+      "path": "docs/results/temporal-persian-focused-h-v1.log.gz",
+      "sha256": "5297f07ffa5fdac4fc488f0847ef2db3f3edc1364209137e1ebd99bcf694257e"
+    },
+    "temporal-persian-test-types-h-v1": {
+      "path": "docs/results/temporal-persian-test-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "temporal-persian-host-types-h-v1": {
+      "path": "docs/results/temporal-persian-host-types-h-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

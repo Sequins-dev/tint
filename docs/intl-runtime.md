@@ -90,7 +90,10 @@ month arithmetic and era offsets; Coptic, Ethiopic and Ethioaa use an exact
 four-year cycle with thirteen months. Their epagomenal month has five or six days.
 The Indian calendar uses Shaka years, a March new year tied to Gregorian leap
 years and twelve months. Its field resolution and canonical reference selection
-share the regular-calendar resolver with the Coptic families.
+share the regular-calendar resolver with the Coptic families. The Persian
+backend uses an exact solar cycle with the complete pinned ICU 77.1 leap-shift
+correction table and proleptic AP era years. Its [semantic and reference checks](results/temporal-persian-semantic-validation-h-v1.json)
+cover both date-domain limits and the documented corrections.
 PlainDate, PlainDateTime, partial dates, ZonedDateTime and Duration relative
 context use the same service, including calendar-grid rounding and canonical
 reference dates. [Semantic validation](results/temporal-coptic-semantic-validation-h-v1.json)
