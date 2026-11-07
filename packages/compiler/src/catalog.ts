@@ -4059,6 +4059,186 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/bytes",
+      target: "packages/foundation/src/binary/bytes.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/sha256",
+      target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/word-buffer",
+      target: "packages/foundation/src/binary/word-buffer.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/word64",
+      target: "packages/foundation/src/binary/word64.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/chrono/gregorian-calendar",
+      target: "packages/foundation/src/chrono/gregorian-calendar/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/chrono/iso-date-time",
+      target: "packages/foundation/src/chrono/iso-date-time/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/chrono/temporal-duration",
+      target: "packages/foundation/src/chrono/temporal-duration/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/chrono/time-zone-identifiers",
+      target: "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/chrono/tzif",
+      target: "packages/foundation/src/chrono/tzif/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/bit-vector",
+      target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/indexed-sort",
+      target: "packages/foundation/src/collections/indexed-sort.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/key-index",
+      target: "packages/foundation/src/collections/key-index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/linked-map",
+      target: "packages/foundation/src/collections/linked-map.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/linked-set",
+      target: "packages/foundation/src/collections/linked-set.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/list-sort",
+      target: "packages/foundation/src/collections/list-sort.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/number-list",
+      target: "packages/foundation/src/collections/number-list.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/collections/sparse-list",
+      target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/graph/dataflow",
+      target: "packages/foundation/src/graph/dataflow.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/layout",
+      target: "packages/foundation/src/layout/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/modules",
+      target: "packages/foundation/src/modules.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/big-integer",
+      target: "packages/foundation/src/numeric/big-integer.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/binary64-trigonometry",
+      target: "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/exact-sum",
+      target: "packages/foundation/src/numeric/exact-sum.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/integer-rounding",
+      target: "packages/foundation/src/numeric/integer-rounding.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/numeric/number-text",
+      target: "packages/foundation/src/numeric/number-text/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/regexp/engine",
+      target: "packages/foundation/src/regexp/engine/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/regexp/syntax",
+      target: "packages/foundation/src/regexp/syntax/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/base-encoding",
+      target: "packages/foundation/src/text/base-encoding/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/json-syntax",
+      target: "packages/foundation/src/text/json-syntax.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/string-builder",
+      target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/text-encoding",
+      target: "packages/foundation/src/text/text-encoding/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/text/text-scanner",
+      target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/unicode/casing",
+      target: "packages/foundation/src/unicode/casing/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/unicode/identifiers",
+      target: "packages/foundation/src/unicode/identifiers/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/unicode/normalization",
+      target: "packages/foundation/src/unicode/normalization/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/unicode/properties",
+      target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/js-runtime/bytes",
       target: "packages/js-runtime/src/bytes/index.ts",
     },

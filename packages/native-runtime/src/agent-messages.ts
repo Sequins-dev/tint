@@ -1,4 +1,9 @@
 import type { SharedResult } from "@tint/js-runtime/bytes/shared";
+import {
+  createStringBuilder,
+  appendString,
+  finishString,
+} from "@tint/foundation/text/string-builder";
 import type { NativeWaiterParkingHost } from "./shared-waiters.ts";
 import {
   integer,
@@ -155,7 +160,7 @@ function mailbox(
     const length = messageBytes(units);
     // Detachment transfers unique payload ownership to this receiving context.
     try {
-      let result = "";
+      const result = createStringBuilder();
       for (let i = 0; i < units; i++) {
         const unit = host.readSharedUnsigned(
           base,
@@ -165,9 +170,9 @@ function mailbox(
           0,
         );
         if (unit < 0) throw "NATIVE_AGENT_MESSAGE_READ";
-        result += String.fromCharCode(unit);
+        appendString(result, String.fromCharCode(unit));
       }
-      return result;
+      return finishString(result);
     } finally {
       if (host.unmapMemory(base, length) !== 0)
         throw "NATIVE_AGENT_MESSAGE_RELEASE";
