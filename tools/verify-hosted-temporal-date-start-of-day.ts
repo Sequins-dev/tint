@@ -8,7 +8,7 @@ function invoke(fn:Obj,receiver:unknown,args:readonly unknown[]):unknown{const c
 function get(value:Obj,key:string,hooks:ObjectHooks<unknown>):unknown{return getProperty<ScriptPropertyKey,unknown>(value,key,value,hooks);}
 function set(value:Obj,key:string,item:unknown,hooks:ObjectHooks<unknown>):void{if(!createDataProperty<ScriptPropertyKey,unknown>(value,key,item,hooks))throw "PROPERTY";}
 export function run():number{
- const bytes=new Uint8Array(74),view=new DataView(bytes.buffer);bytes.set([84,90,105,102]);view.setUint32(32,2);view.setUint32(36,2);view.setUint32(40,8);view.setInt32(44,0);view.setInt32(48,100000);bytes[52]=1;bytes[53]=1;view.setInt32(54,-1800);view.setInt32(60,1800);bytes[64]=1;bytes[65]=4;bytes.set([66,69,70,0,65,70,84,0],66);
+ const bytes=new Uint8Array([84,90,105,102,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,0,0,8,0,0,0,0,0,1,134,160,1,1,255,255,248,248,0,0,0,0,7,8,1,4,66,69,70,0,65,70,84,0]);
  const metadata=readTimeZoneIdentifiers("Z Test/Midnight 0 - X");if(!metadata.ok)return 1;
  const root=createObject<ScriptPropertyKey,unknown>(undefined),hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a,b):boolean=>a===b,call:(target,receiver,args):unknown=>invoke(object(target,root),receiver,args)},realm=createErrorRealm(root,hooks);realm.namedTimeZones=createNamedTimeZoneProvider(metadata.value,(name):Uint8Array|undefined=>bytes);installTemporalIntrinsics(root,realm,hooks);
  const temporal=object(get(root,"Temporal",hooks),root),dateCtor=object(get(temporal,"PlainDate",hooks),root),construct=dateCtor.internalConstruct;if(construct===undefined)return 2;
