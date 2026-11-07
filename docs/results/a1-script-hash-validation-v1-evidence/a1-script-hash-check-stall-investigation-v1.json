@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-07T22:36:17.740913+00:00",
+  "kind": "STALL-investigation",
+  "phase": "workspace gate slot wait",
+  "evidence": [
+    "[slot] waiting for check slot (max 1) for 122s; holders: /Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e zsh -c ;  set -e;  echo \"[tint-check] typecheck\" >&2; pnpm typecheck;  echo \"[tint-check] tests (concurrency 4)\" >&2; node --test --test-concurrency=;  echo \"[tint-check] boundaries\" >&2; pnpm boundaries;  echo \"[tint-check] format:check\" >&2; pnpm format:check;  echo \"[tint-check] all gates passed\" >&2;",
+    "[slot] waiting for check slot (max 1) for 153s; holders: /Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58 zsh -c ;  set -e;  echo \"[tint-check] typecheck\" >&2; pnpm typecheck;  echo \"[tint-check] tests (concurrency 4)\" >&2; node --test --test-concurrency=;  echo \"[tint-check] boundaries\" >&2; pnpm boundaries;  echo \"[tint-check] format:check\" >&2; pnpm format:check;  echo \"[tint-check] all gates passed\" >&2;"
+  ],
+  "processes": "  PID  PPID ELAPSED      TIME  %CPU    RSS COMMAND\n28891 28881   03:01   0:00.30   0.5   2608 /bin/zsh /Users/stephenbelanger/.t3/tint-slots/slot check 2 -- zsh -c \\012  set -e\\012  echo \"[tint-check] typecheck\" >&2; pnpm typecheck\\012  echo \"[tint-check] tests (concurrency 4)\" >&2; node --test --test-concurrency=4 packages/*/test/*.test.ts tools/*.test.ts\\012  echo \"[tint-check] boundaries\" >&2; pnpm boundaries\\012  echo \"[tint-check] format:check\" >&2; pnpm format:check\\012  echo \"[tint-check] all gates passed\" >&2\n",
+  "conclusion": "Official slot wrapper prints progress every30s while check slot is held by another cluster; no own gate or native inferior yet. Continue queue; no retry or termination."
+}

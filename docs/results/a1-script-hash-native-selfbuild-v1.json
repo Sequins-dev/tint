@@ -1,0 +1,173 @@
+{
+  "kind": "frozen-native-selfbuild-validation",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-script-hash-after-v1-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "245ec37936b09a3f8304ca42c70e8587468f3448c0190ff8b4cf9c2bd67425dc",
+    "files": 601
+  },
+  "implementationCommit": "b3644277016ad3510dd20bda4e1aed1397b27675",
+  "checker": {
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-hashes-gnLbP2/script-hashes",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-lyW3Gp",
+    "initial": {
+      "state": "stopped",
+      "pid": 30719,
+      "monotonicNs": 5972458375
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 6191925000
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/checker-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/checker-native-final.json",
+    "buildManifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "245ec37936b09a3f8304ca42c70e8587468f3448c0190ff8b4cf9c2bd67425dc",
+        "files": 601
+      },
+      "imageSha256": "ac27f7c15a083481e2ea5fb6904333863e11c5ab2587ee9d8c9052e9fe802b24",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-hashes-gnLbP2/script-hashes.source.ts",
+      "fixtureSha256": "0de956fd46f4ec2b0a0565b8c1a92480c296265983771a8a4a055cb0f75245d5",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-script-hash-after-v1-heartbeat-v1/tools/verify-hosted-script-hashes.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "managedBytes": 33554432,
+        "allocationCapacity": 524288,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": false
+    }
+  },
+  "selfbuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage1",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/bootstrap-source",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-Z82pgt",
+    "initial": {
+      "state": "stopped",
+      "pid": 34644,
+      "monotonicNs": 1151070791
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 311622398916
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-selfbuild-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-selfbuild-final.json"
+  },
+  "stageImageComparison": {
+    "identical": true,
+    "bytes": 53580274,
+    "sha256": "3809b7c81ce66749490a1c499501ce347186a938782909b034ba8bd4850ffccf"
+  },
+  "smokeBuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/source/.tint-bootstrap/smoke-project",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-okvQ5O",
+    "initial": {
+      "state": "stopped",
+      "pid": 48592,
+      "monotonicNs": 1303684416
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 5628948958
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-smoke-build-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-smoke-build-final.json"
+  },
+  "smoke": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-stage2",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-dqx7nx",
+    "initial": {
+      "state": "stopped",
+      "pid": 48932,
+      "monotonicNs": 2165529708
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 2233476041
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-native-final.json"
+  },
+  "smokeImageComparison": {
+    "identical": true,
+    "bytes": 1555186,
+    "sha256": "a2dee795df47a44724d25322ccad2c8de9f7a2e67ca871a0e2492256bbc57026"
+  },
+  "records": [
+    {
+      "label": "checker-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/checker-build.log",
+      "at": "2026-11-07T22:33:38.652Z"
+    },
+    {
+      "label": "checker-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/checker-native.log",
+      "at": "2026-11-07T22:33:44.924Z"
+    },
+    {
+      "label": "stage1-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage1-build.log",
+      "at": "2026-11-07T22:34:42.996Z"
+    },
+    {
+      "label": "stage2-selfbuild",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-selfbuild.log",
+      "at": "2026-11-07T22:39:54.682Z"
+    },
+    {
+      "label": "stage1-codesign",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage1-codesign.log",
+      "at": "2026-11-07T22:39:54.764Z"
+    },
+    {
+      "label": "stage1-dwarf",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage1-dwarf.log",
+      "at": "2026-11-07T22:39:54.924Z"
+    },
+    {
+      "label": "smoke-prepare",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-prepare.log",
+      "at": "2026-11-07T22:39:56.919Z"
+    },
+    {
+      "label": "stage2-smoke-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2-smoke-build.log",
+      "at": "2026-11-07T22:40:02.596Z"
+    },
+    {
+      "label": "smoke-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/smoke-native.log",
+      "at": "2026-11-07T22:40:04.872Z"
+    }
+  ],
+  "scope": "Fresh per-occurrence syntax hashes for generated Script output; native regression asserts bounded reference-key comparisons and exact lookup results. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources. No native throughput claim."
+}

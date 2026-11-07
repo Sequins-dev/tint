@@ -1,0 +1,9 @@
+{
+  "kind": "STALL-investigation",
+  "at": "2026-11-07T22:37:38.212179+00:00",
+  "phase": "native stage2 selfbuild",
+  "pid": 34644,
+  "sample": ".tint-bootstrap/a1-script-hash-selfbuild-progress-sample-v1.txt",
+  "process": "  PID  PPID ELAPSED      TIME  %CPU    RSS COMMAND\n34644 34643   02:55   2:39.24  93.2 3924352 /Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage1 /Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/bootstrap-source /Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-script-hash-native-validation-v1/stage2 --debug-symbols\n",
+  "conclusion": "Inferior remains active in compiler buildMacOSProgram with advancing CPU (2:04 to2:28 in30s), not blocked on authorization or a hold. Existing direct-debugserver session remains intact; let native selfbuild complete."
+}
