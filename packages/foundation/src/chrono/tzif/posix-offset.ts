@@ -62,15 +62,15 @@ export function posixTransitionEpochSeconds(
  * local coordinates tests offsets before the caller clips the final instant.
  * At this bounded magnitude, second arithmetic and adjacent rule years are exact.
  * All-year DST ties prefer its start. */
-export function posixOffsetSecondsAt(
+export function posixDaylightSavingAt(
   zone: PosixTimeZone,
   epochSeconds: number,
-): number | undefined {
+): boolean | undefined {
   if (!Number.isSafeInteger(epochSeconds)) return undefined;
   if (zone.kind === "fixed")
     return Number.isInteger(zone.offsetSeconds) &&
       Math.abs(zone.offsetSeconds) <= 93599
-      ? zone.offsetSeconds
+      ? false
       : undefined;
   const day = Math.floor(epochSeconds / 86400);
   if (Math.abs(day) > maximumCalendarEpochDay + 2) return undefined;
@@ -85,7 +85,7 @@ export function posixOffsetSecondsAt(
   if (date === undefined) return undefined;
   let last = -Infinity,
     priority = -1,
-    result = zone.standardOffsetSeconds;
+    result = false;
   for (let year = date.year - 1; year <= date.year + 1; year++) {
     const start = posixTransitionEpochSeconds(
         zone.start,
@@ -101,7 +101,7 @@ export function posixOffsetSecondsAt(
     if (end <= epochSeconds && end > last) {
       last = end;
       priority = 0;
-      result = zone.standardOffsetSeconds;
+      result = false;
     }
     if (
       start <= epochSeconds &&
@@ -109,8 +109,22 @@ export function posixOffsetSecondsAt(
     ) {
       last = start;
       priority = 1;
-      result = zone.daylightOffsetSeconds;
+      result = true;
     }
   }
   return result;
+}
+/** Offset equality cannot identify the seasonal state: POSIX permits equal
+ * standard/daylight offsets and negative daylight adjustments. */
+export function posixOffsetSecondsAt(
+  zone: PosixTimeZone,
+  epochSeconds: number,
+): number | undefined {
+  const daylight = posixDaylightSavingAt(zone, epochSeconds);
+  if (daylight === undefined) return undefined;
+  return zone.kind === "fixed"
+    ? zone.offsetSeconds
+    : daylight
+      ? zone.daylightOffsetSeconds
+      : zone.standardOffsetSeconds;
 }

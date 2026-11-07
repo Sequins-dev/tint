@@ -24,10 +24,9 @@ export function xmlText(text: string): string {
 }
 export function attributes(text: string): Map<string, string> {
   return new Map(
-    [...text.matchAll(/([A-Za-z]+)="([^"]*)"/g)].map((match) => [
-      match[1]!,
-      xmlText(match[2]!),
-    ]),
+    [...text.matchAll(/([A-Za-z_:][\w:.-]*)=(?:"([^"]*)"|'([^']*)')/g)].map(
+      (match) => [match[1]!, xmlText(match[2] ?? match[3]!)],
+    ),
   );
 }
 

@@ -15,12 +15,14 @@ export {
 } from "./posix.ts";
 export {
   posixOffsetSecondsAt,
+  posixDaylightSavingAt,
   posixTransitionEpochSeconds,
 } from "./posix-offset.ts";
 
 export {
   createTzifZone,
   tzifOffsetSecondsAt,
+  tzifDaylightSavingAt,
   type TzifZone,
   type TzifUnspecifiedOffsetPolicy,
   type TzifZoneResult,

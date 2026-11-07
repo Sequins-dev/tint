@@ -1,6 +1,6 @@
 import { readTzif, type TzifData, type TzifLocalType } from "./reader.ts";
 import { readPosixTimeZone, type PosixTimeZone } from "./posix.ts";
-import { posixOffsetSecondsAt } from "./posix-offset.ts";
+import { posixOffsetSecondsAt, posixDaylightSavingAt } from "./posix-offset.ts";
 export type TzifUnspecifiedOffsetPolicy = "unavailable" | "stored";
 export interface TzifZone {
   readonly unspecifiedOffsetPolicy: TzifUnspecifiedOffsetPolicy;
@@ -131,6 +131,16 @@ export function tzifOffsetSecondsAt(
   if (last === undefined) throw "TZIF_TRANSITION_INVARIANT";
   if (second >= last)
     return futureOffset(future, second, zone.unspecifiedOffsetPolicy);
+  return knownOffset(
+    historicalType(zone, second),
+    zone.unspecifiedOffsetPolicy,
+  );
+}
+function historicalType(
+  zone: TzifZone,
+  second: number,
+): TzifLocalType | undefined {
+  const times = zone.transitionSeconds;
   let low = 0,
     high = times.length;
   while (low < high) {
@@ -141,8 +151,25 @@ export function tzifOffsetSecondsAt(
     else high = middle;
   }
   const entry = zone.data.transitions[low - 1];
-  return knownOffset(
-    zone.data.types[entry === undefined ? 0 : entry.type],
-    zone.unspecifiedOffsetPolicy,
-  );
+  return zone.data.types[entry === undefined ? 0 : entry.type];
+}
+/** Preserve the database's seasonal identity for localized zone names. Never
+ * infer daylight saving by comparing January/July or by offset magnitude. */
+export function tzifDaylightSavingAt(
+  zone: TzifZone,
+  second: number,
+): boolean | undefined {
+  if (tzifOffsetSecondsAt(zone, second) === undefined) return undefined;
+  const last = zone.transitionSeconds[zone.transitionSeconds.length - 1];
+  if (
+    (last === undefined && zone.futureStatus !== "absent") ||
+    (last !== undefined && second >= last)
+  ) {
+    const future = zone.future;
+    return future === undefined
+      ? undefined
+      : posixDaylightSavingAt(future, second);
+  }
+  const type = historicalType(zone, second);
+  return type === undefined ? undefined : type.daylightSaving;
 }

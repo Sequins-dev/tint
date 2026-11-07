@@ -36,6 +36,12 @@ beyond their horizon. Unavailable future rules stay unknown. Unspecified -00
 designations default to unavailable; callers can explicitly choose the stored
 offset policy when preparing a model. Raw designation bytes remain unchanged.
 
+`posixDaylightSavingAt` and `tzifDaylightSavingAt` expose the seasonal state
+separately from its numeric offset. They preserve equal-offset seasons and
+negative daylight adjustments, retain historical type flags and share the offset
+lookup's unavailable-data policy. Locale services interpret these database flags
+when selecting localized names; the flags are not inferred from offset magnitude.
+
 `analyzeTzifLocalSeconds` exposes all verified overlap candidates or the actual
 gap transition and its earlier/later projections. Callers can distinguish the
 first instant of a skipped midnight from ordinary compatible clock resolution.

@@ -1,11 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  attributes,
   parseCldrElements,
   cldrPath,
   resolveCldrAliasPath,
   createCldrLocaleResolver,
 } from "./cldr-xml.ts";
+
+test("CLDR attributes retain digits, namespace names and either XML quote style", () => {
+  assert.deepEqual(
+    [...attributes(` iso3166="DE" xml:space='preserve' type="A &amp; B"`)],
+    [
+      ["iso3166", "DE"],
+      ["xml:space", "preserve"],
+      ["type", "A & B"],
+    ],
+  );
+});
 
 test("CLDR tree extraction preserves text, entities and quoted tag delimiters", () => {
   const root = parseCldrElements(
