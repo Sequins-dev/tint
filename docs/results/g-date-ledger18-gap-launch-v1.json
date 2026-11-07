@@ -1,0 +1,40 @@
+{
+  "kind": "native-explicit-gap-subset-launch",
+  "conformance": false,
+  "at": "2026-11-07T22:46:06.376639+00:00",
+  "selection": "built-ins/Date",
+  "expectedVariants": 543,
+  "batchSize": 64,
+  "ownerPid": 67560,
+  "observerPid": 67561,
+  "command": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "8",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-date-gap-v1/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins/Date",
+    "64"
+  ],
+  "subset": {
+    "rootSelection": "built-ins/Date",
+    "requestedVariants": 543,
+    "variantSubsetSha256": "20c5c8325c5175143d0e8ca838cd347c118a8f53b62d5ed5eb0cde92981bcaa4"
+  },
+  "variantManifest": "docs/results/g-date-ledger18-nonpass-variants-v1.json",
+  "journal": "docs/results/test262-date-ledger18-gaps-native-v1.jsonl",
+  "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/date-ledger18-gap-native-v1.stdout.json",
+  "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/date-ledger18-gap-native-v1.stderr.log",
+  "timeZone": {
+    "requested": "UTC",
+    "path": "/usr/share/zoneinfo/UTC",
+    "scope": "Uniform UTC for this fresh gap recheck; original Manila failures and historical-zone semantics remain unchanged."
+  },
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "debuggerLaunch": "debugserver-direct",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-date-gap-v1.json",
+  "purpose": "Recheck exact543ledger18Date nonpasses on current main plus committed Error stack feature; no previously passing645Datevariants repeated; originalManilareportsunchanged."
+}

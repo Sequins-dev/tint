@@ -1,0 +1,40 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T22:44:58.029Z",
+  "head": "971ef3ba1e19ffa67c2397b0407866b41d5a654d",
+  "mainAtFreeze": "3226d231f22a0a6bf49e46cb32cbb66d665936c2",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "32b28d34f7e3015fd325b2e1201513f49b8e985f2455b2766ec24e99f9a3a355",
+    "files": 601
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-date-gap-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-date-gap-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-date-gap-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-date-gap-v1/source-snapshot.json",
+    "sha256": "da5a12e896333212e2c49fec34970814465d24dbcea1526b350ebc8c5695bf66"
+  },
+  "runIdentity": "33c9bfb1f3122290b2621202793c7692e625a1bf7773d8825e3b5d65e4a31914",
+  "selection": "built-ins/Date",
+  "expectedVariants": 543,
+  "variantSubset": {
+    "rootSelection": "built-ins/Date",
+    "requestedVariants": 543,
+    "variantSubsetSha256": "20c5c8325c5175143d0e8ca838cd347c118a8f53b62d5ed5eb0cde92981bcaa4"
+  },
+  "variantManifest": "docs/results/g-date-ledger18-nonpass-variants-v1.json",
+  "batchSize": 64,
+  "timeZone": {
+    "requested": "UTC",
+    "path": "/usr/share/zoneinfo/UTC",
+    "scope": "Uniform UTC for this fresh gap recheck; original Manila failures and historical-zone semantics remain unchanged."
+  },
+  "ownUnmergedFeature": "Error stack accessor; this evidence must merge with the feature unless already merged.",
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/date-gap-build-v1.log"
+  }
+}
