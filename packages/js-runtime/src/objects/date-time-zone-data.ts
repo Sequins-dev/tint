@@ -26,10 +26,12 @@ export function createDateTimeZoneProfile(
   const matched = lookupNumberFormatLocale(locale);
   if (matched === undefined) return undefined;
   const key = numberFormatLocaleKey(matched),
-    id = localeTableValue(dateTimeZoneLocales, key);
+    id = localeTableValue(dateTimeZoneLocales(), key);
   const profile =
-      id === undefined ? undefined : localeTableValue(dateTimeZoneProfiles, id),
-    dayPeriods = localeTableValue(dateTimeDayPeriodRules, key);
+      id === undefined
+        ? undefined
+        : localeTableValue(dateTimeZoneProfiles(), id),
+    dayPeriods = localeTableValue(dateTimeDayPeriodRules(), key);
   if (profile === undefined || dayPeriods === undefined)
     throw "DATE_TIME_ZONE_PROFILE_INVARIANT";
   return { locale: matched, groups: profile.split(","), dayPeriods };
@@ -49,13 +51,16 @@ export function dateTimeZoneValue(
   if (index < 0) throw "DATE_TIME_ZONE_GROUP_INVARIANT";
   const id = profile.groups[index];
   if (id === undefined) throw "DATE_TIME_ZONE_GROUP_ID_INVARIANT";
-  const field = localeTableValue(dateTimeZoneFields, id);
+  const field = localeTableValue(dateTimeZoneFields(), id);
   if (field === undefined) throw "DATE_TIME_ZONE_FIELD_INVARIANT";
   for (const entry of field.split(",")) {
     if (entry === undefined) throw "DATE_TIME_ZONE_ENTRY_INVARIANT";
     const split = entry.indexOf(":");
     if (entry.slice(0, split) !== key) continue;
-    const text = localeTableValue(dateTimeZoneStrings, entry.slice(split + 1));
+    const text = localeTableValue(
+      dateTimeZoneStrings(),
+      entry.slice(split + 1),
+    );
     if (text === undefined) throw "DATE_TIME_ZONE_TEXT_INVARIANT";
     return text;
   }
@@ -63,7 +68,7 @@ export function dateTimeZoneValue(
 }
 /** CLDR naming identity is separate from the provider's public IANA identity. */
 export function dateTimeZoneCanonicalName(zone: string): string | undefined {
-  return localeTableValue(dateTimeZoneAliases, numberFormatLocaleKey(zone));
+  return localeTableValue(dateTimeZoneAliases(), numberFormatLocaleKey(zone));
 }
 export function dateTimeZoneMetazone(
   zone: string,
@@ -72,7 +77,7 @@ export function dateTimeZoneMetazone(
   if (!Number.isFinite(epochSecond)) return undefined;
   const canonical = dateTimeZoneCanonicalName(zone);
   if (canonical === undefined) return undefined;
-  const history = localeTableValue(dateTimeZoneHistories, canonical);
+  const history = localeTableValue(dateTimeZoneHistories(), canonical);
   if (history === undefined) return undefined;
   for (const period of history.split(";")) {
     if (period === undefined) throw "DATE_TIME_ZONE_HISTORY_INVARIANT";
@@ -95,18 +100,18 @@ export function dateTimeZoneReference(
   region: string,
 ): string | undefined {
   return (
-    localeTableValue(dateTimeZoneReferences, metazone + "." + region) ??
-    localeTableValue(dateTimeZoneReferences, metazone + ".001")
+    localeTableValue(dateTimeZoneReferences(), metazone + "." + region) ??
+    localeTableValue(dateTimeZoneReferences(), metazone + ".001")
   );
 }
 export function dateTimeZoneTerritory(zone: string): string | undefined {
   const canonical = dateTimeZoneCanonicalName(zone);
   return canonical === undefined
     ? undefined
-    : localeTableValue(dateTimeZoneTerritories, canonical);
+    : localeTableValue(dateTimeZoneTerritories(), canonical);
 }
 export function dateTimeZonePrimary(region: string): string | undefined {
-  return localeTableValue(dateTimeZonePrimaryZones, region);
+  return localeTableValue(dateTimeZonePrimaryZones(), region);
 }
 /** Exact midnight/noon points precede inclusive-start, exclusive-end ranges. */
 export function dateTimeDayPeriod(

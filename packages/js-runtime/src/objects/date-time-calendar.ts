@@ -27,11 +27,11 @@ export function createDateTimeCalendarProfile(
   const matched = lookupNumberFormatLocale(locale);
   if (matched === undefined) return undefined;
   const id = localeTableValue(
-    dateTimeCalendarLocales,
+    dateTimeCalendarLocales(),
     numberFormatLocaleKey(matched) + "#" + calendar,
   );
   if (id === undefined) return undefined;
-  const profile = localeTableValue(dateTimeCalendarProfiles, id);
+  const profile = localeTableValue(dateTimeCalendarProfiles(), id);
   if (profile === undefined) throw "DATE_TIME_CALENDAR_PROFILE_INVARIANT";
   return { locale: matched, calendar, groups: profile.split(",") };
 }
@@ -52,12 +52,12 @@ function groupData(profile: DateTimeCalendarProfile, group: string): string {
   if (index < 0) throw "DATE_TIME_CALENDAR_GROUP_INVARIANT";
   const id = profile.groups[index];
   if (id === undefined) throw "DATE_TIME_CALENDAR_GROUP_ID_INVARIANT";
-  const data = localeTableValue(dateTimeCalendarFields, id);
+  const data = localeTableValue(dateTimeCalendarFields(), id);
   if (data === undefined) throw "DATE_TIME_CALENDAR_FIELD_INVARIANT";
   return data;
 }
 function entryText(id: string): string {
-  const value = localeTableValue(dateTimeCalendarStrings, id);
+  const value = localeTableValue(dateTimeCalendarStrings(), id);
   if (value === undefined) throw "DATE_TIME_CALENDAR_TEXT_INVARIANT";
   return value;
 }

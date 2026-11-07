@@ -1,6 +1,13 @@
 {
   "kind": "cldr-date-time-calendar-data",
   "archiveSha256": "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89",
+  "packing": {
+    "format": "CLD1-LZ15",
+    "packedBytes": 961888,
+    "decodedBytes": 3579165,
+    "utf16CodeUnits": 513007,
+    "decodedSha256": "d3b8beb1be77aaea522a20151e30dbfd2d7e24036c6e3096a141202e0fe27a07"
+  },
   "cldrVersion": "49",
   "inputs": [
     {
@@ -3923,7 +3930,7 @@
   "greatestDifferences": ["B", "G", "H", "M", "a", "d", "h", "m", "y"],
   "output": {
     "path": "packages/js-runtime/src/objects/date-time-format-data.ts",
-    "sha256": "c26e25daf91374021ac20f4a77f2a230c1b523d92df18e5570ff8e882994c16a"
+    "sha256": "9eb164a32bcd7951a4c3721d58ff825ec6a27ed34792fa714c74ad1c5895d3f8"
   },
   "policy": "General parent inheritance and source-locale aliases including LDML default format types; complete numeric locale registry; all pinned draft grades; Gregorian data shared by ISO; modern Japanese eras; no host Intl."
 }

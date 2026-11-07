@@ -1,6 +1,13 @@
 {
   "kind": "cldr-date-time-zone-data",
   "archiveSha256": "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89",
+  "packing": {
+    "format": "CLD1-LZ15",
+    "packedBytes": 2469451,
+    "decodedBytes": 7279365,
+    "utf16CodeUnits": 1317041,
+    "decodedSha256": "c16afc067ae5de70d34ac8c825744b2a23dcfe04ccf3bcf6830963e3e50f3613"
+  },
   "cldrVersion": "49",
   "inputs": [
     {
@@ -3749,7 +3756,7 @@
   "strings": 102131,
   "output": {
     "path": "packages/js-runtime/src/objects/date-time-zone-format-data.ts",
-    "sha256": "116e04d4bdacc297e598e00688e532ebe83a7a3c851b6e15a8e4dfc7dd1f93c0"
+    "sha256": "5122384619b261076b84e4d7c0722e370e1664d5175e13cb23aa5e070df3b823"
   },
   "policy": "General locale inheritance; zone aliases retain CLDR naming identities separately from public IANA primary identifiers; half-open UTC metazone histories; formatting day-period rules; optional zero-offset forms and territory display names retain specified fallback behavior; no host Intl."
 }

@@ -25,4 +25,13 @@ export function run():number {
     ["parts", "packages/js-runtime/src/objects/date-time-parts.ts"],
     ["pattern", "packages/js-runtime/src/objects/date-time-pattern.ts"],
   ],
+  [],
+  [],
+  [],
+  {
+    managedBytes: 268435456,
+    allocationCapacity: 8388608,
+    stackBytes: 16777216,
+    rootCapacity: 16384,
+  },
 );

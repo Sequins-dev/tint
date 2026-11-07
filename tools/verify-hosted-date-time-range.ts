@@ -27,4 +27,13 @@ export function run():number {
     ["skeleton", "packages/js-runtime/src/objects/date-time-skeleton.ts"],
     ["range", "packages/js-runtime/src/objects/date-time-range.ts"],
   ],
+  [],
+  [],
+  [],
+  {
+    managedBytes: 268435456,
+    allocationCapacity: 8388608,
+    stackBytes: 16777216,
+    rootCapacity: 16384,
+  },
 );

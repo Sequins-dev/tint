@@ -20,4 +20,13 @@ export function run():number {
     ["zoneData", "packages/js-runtime/src/objects/date-time-zone-data.ts"],
     ["tzif", "packages/foundation/src/chrono/tzif/index.ts"],
   ],
+  [],
+  [],
+  [],
+  {
+    managedBytes: 268435456,
+    allocationCapacity: 8388608,
+    stackBytes: 16777216,
+    rootCapacity: 16384,
+  },
 );
