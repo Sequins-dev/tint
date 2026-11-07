@@ -91,6 +91,7 @@ Each row below is a complete iteration, generator or async language selection on
 | `language/expressions/yield` | 123/123 | [Report](results/test262-cluster-f-yield-expressions-v1.json) |
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
 | `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
+| `language/statements/async-function` | 133/133 | [Report](results/test262-cluster-f-remaining-small-language-v1-language-statements-async-function.json) |
 | `language/expressions/async-function` | 161/161 | [Report](results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-function.json) |
 | `language/expressions/await` | 44/44 | [Report](results/test262-cluster-f-remaining-small-language-v1-language-expressions-await.json) |
 | `language/expressions/async-arrow-function` | 108/110 | [Report](results/test262-cluster-f-remaining-small-language-v1-language-expressions-async-arrow-function.json) |
