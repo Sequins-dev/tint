@@ -1,0 +1,154 @@
+{
+  "kind": "native-script-fixture-observation",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v14.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "e856717e338d3335144e93a59e7dacc53c9c30d0996bc82ec767a7b98eb07df8",
+      "files": 572
+    },
+    "imageSha256": "db8f24f165be6e0849705446fe2300ea91b5996152b77f77bac7e4414d226757",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const [calendar,year,era,eraYear]of[[\"gregory\",2024,\"ce\",2024],[\"japanese\",2024,\"reiwa\",6],[\"buddhist\",2567,\"be\",2567],[\"roc\",113,\"roc\",113]]){const x=Temporal.PlainDate.from({calendar,year,era,eraYear,month:2,day:29});if(x.calendarId!==calendar||x.year!==year||x.era!==era||x.eraYear!==eraYear||x.daysInYear!==366||x.weekOfYear!==undefined||x.toString()!==\"2024-02-29[u-ca=\"+calendar+\"]\")throw 1;const clone=Temporal.PlainDate.from(x);if(clone===x||!clone.equals(x)||clone.calendarId!==calendar)throw 2;}",
+        "sha256": "ae546017811c298a6d7e1219645208a8fb1162a10f65d90e8b63df8d66b2ef69"
+      },
+      {
+        "index": 1,
+        "source": "for(const [year,month,day,era,eraYear]of[[1872,12,31,\"ce\",1872],[1873,1,1,\"meiji\",6],[1912,7,29,\"meiji\",45],[1912,7,30,\"taisho\",1],[1926,12,24,\"taisho\",15],[1926,12,25,\"showa\",1],[1989,1,7,\"showa\",64],[1989,1,8,\"heisei\",1],[2019,4,30,\"heisei\",31],[2019,5,1,\"reiwa\",1],[-99,1,1,\"bce\",100]]){const x=new Temporal.PlainDate(year,month,day,\"japanese\");if(x.era!==era||x.eraYear!==eraYear)throw 1;}const a=Temporal.PlainDate.from({calendar:\"japanese\",era:\"heisei\",eraYear:100,month:12,day:31});if(a.year!==2088||a.era!==\"reiwa\"||a.eraYear!==70)throw 2;const b=new Temporal.PlainDate(2019,4,30,\"japanese\").with({month:5});if(b.year!==2019||b.era!==\"reiwa\"||b.eraYear!==1)throw 3;",
+        "sha256": "f3be67b6b0c24fafc417940c2dc64d3967fe84808b127a066668f507c1e73d0d"
+      },
+      {
+        "index": 2,
+        "source": "for(const [calendar,year]of[[\"gregory\",2024],[\"japanese\",2024],[\"buddhist\",2567],[\"roc\",113]]){const ym=Temporal.PlainYearMonth.from({calendar,year,month:2});if(ym.year!==year||ym.calendarId!==calendar||ym.toString()!==\"2024-02-01[u-ca=\"+calendar+\"]\")throw 1;const next=ym.add({years:1});if(next.year!==year+1||next.calendarId!==calendar||ym.until(next).years!==1)throw 2;const d=ym.toPlainDate({day:29});if(d.year!==year||d.day!==29||d.calendarId!==calendar)throw 3;const md=Temporal.PlainMonthDay.from({calendar,monthCode:\"M02\",day:29});if(md.toString()!==\"1972-02-29[u-ca=\"+calendar+\"]\"||md.toPlainDate({year}).day!==29||md.with({day:28}).calendarId!==calendar)throw 4;}",
+        "sha256": "8ac67298544d0df5b30c0a8efb15ae87a244dfefb11a088cadcd200d85f960f6"
+      },
+      {
+        "index": 3,
+        "source": "for(const [calendar,year]of[[\"gregory\",2024],[\"japanese\",2024],[\"buddhist\",2567],[\"roc\",113]]){const x=Temporal.PlainDateTime.from({calendar,year,month:2,day:29,hour:23,minute:59});if(x.calendarId!==calendar||x.year!==year||x.toString()!==\"2024-02-29T23:59:00[u-ca=\"+calendar+\"]\")throw 1;const a=x.add({minutes:2}),b=x.round({smallestUnit:\"day\",roundingMode:\"ceil\"});if(a.month!==3||a.minute!==1||a.calendarId!==calendar||b.month!==3||b.calendarId!==calendar||x.withPlainTime().calendarId!==calendar||a.toPlainDate().calendarId!==calendar)throw 2;const y=Temporal.PlainDateTime.from(x.toPlainDate());if(y.calendarId!==calendar||y.year!==year||y.hour!==0)throw 3;}",
+        "sha256": "09408f79fe1fa753a03cc3537337a613df6cbfa64f45ff8ca6d00148943a03ab"
+      },
+      {
+        "index": 4,
+        "source": "for(const [calendar,year]of[[\"gregory\",1970],[\"japanese\",1970],[\"buddhist\",2513],[\"roc\",59]]){const x=Temporal.ZonedDateTime.from(\"1970-01-01T00:00[UTC][u-ca=\"+calendar+\"]\"),y=new Temporal.ZonedDateTime(0n,\"UTC\",calendar);if(x.calendarId!==calendar||x.year!==year||!x.equals(y)||x.toString()!==\"1970-01-01T00:00:00+00:00[UTC][u-ca=\"+calendar+\"]\")throw 1;for(const a of[x.add({days:1}),x.round({smallestUnit:\"day\"}),x.withPlainTime(),x.toPlainDate(),x.toPlainDateTime(),x.withTimeZone(\"+01:00\"),x.startOfDay()])if(a.calendarId!==calendar)throw 2;}",
+        "sha256": "7ec1c056ccbae0a7b4e4115dc3bb11797094db91b639e2eed50c7b40cc03af79"
+      },
+      {
+        "index": 5,
+        "source": "for(const [calendar,year]of[[\"gregory\",2024],[\"japanese\",2024],[\"buddhist\",2567],[\"roc\",113]]){const relativeTo={calendar,year,month:1,day:1},d=new Temporal.Duration(0,1);if(d.total({unit:\"day\",relativeTo})!==31||d.round({largestUnit:\"day\",smallestUnit:\"day\",relativeTo}).days!==31||Temporal.Duration.compare(\"P1M\",\"P30D\",{relativeTo})!==1)throw 1;const zoned={calendar,year,month:1,day:1,timeZone:\"UTC\"};if(d.total({unit:\"day\",relativeTo:zoned})!==31)throw 2;}",
+        "sha256": "0f17a2fa7b0d61d431196145dab10cbca26ac55c3b91c2f9868f62ac19391f7a"
+      },
+      {
+        "index": 6,
+        "source": "for(const calendar of[\"gregory\",\"japanese\",\"buddhist\",\"roc\"]){for(const fields of[{month:6,monthCode:\"M05\",day:1},{year:2020,day:32},{year:2020,month:6,monthCode:\"M05\"},{year:2020,era:\"invalid\",month:1,day:1},{year:2020,eraYear:1,month:1,day:1}]){let ok=false;try{fields.calendar=calendar;Temporal.PlainDate.from(fields);}catch(e){ok=e instanceof TypeError;}if(!ok)throw 1;}try{Temporal.PlainDate.from({calendar,year:2024,month:5,monthCode:\"M06\",day:1},{get overflow(){throw 42;}});throw 2;}catch(e){if(e!==42)throw 3;}}",
+        "sha256": "d9866a68d1e0a88d78b4e5f8fe9628543ae1b9eb52dd2f9deae694982ea6b9db"
+      },
+      {
+        "index": 7,
+        "source": "for(const [calendar,era,eraYear]of[[\"gregory\",\"ad\",2024],[\"japanese\",\"reiwa\",6],[\"buddhist\",\"be\",2567],[\"roc\",\"roc\",113]]){const md=Temporal.PlainMonthDay.from({calendar,monthCode:\"M02\",day:29});let ok=false;try{md.with({month:12});}catch(e){ok=e instanceof TypeError;}if(!ok)throw 1;const log=[],d=md.toPlainDate({get era(){log.push(\"era\");return era;},get eraYear(){log.push(\"eraYear\");return eraYear;},get year(){log.push(\"year\");return undefined;},get month(){throw 2;},get calendar(){throw 3;}});if(log.join()!==\"era,eraYear,year\"||d.calendarId!==calendar||d.toString({calendarName:\"never\"})!==\"2024-02-29\")throw 4;}",
+        "sha256": "b21ab110730d62f28fe71391e5e6033b6e2307f95c4c271d926e0ce87b4aa5cd"
+      },
+      {
+        "index": 8,
+        "source": "const a=new Temporal.PlainDate(2024,2,29,\"gregory\"),b=a.withCalendar(\"buddhist\");if(a.equals(b)||Temporal.PlainDate.compare(a,b)!==0)throw 1;for(const pair of[[a,b],[a.toPlainDateTime(),b.toPlainDateTime()],[new Temporal.PlainYearMonth(2024,2,\"gregory\"),new Temporal.PlainYearMonth(2024,2,\"buddhist\")],[new Temporal.ZonedDateTime(0n,\"UTC\",\"gregory\"),new Temporal.ZonedDateTime(0n,\"UTC\",\"buddhist\")]]){let ok=false;try{pair[0].until(pair[1],{get largestUnit(){throw 42;}});}catch(e){ok=e instanceof RangeError;}if(!ok||pair[0].equals(pair[1]))throw 2;}Object.defineProperty(a,\"year\",{get(){throw 3;}});Object.defineProperty(a,\"calendarId\",{get(){throw 4;}});if(a.add({days:1}).month!==3)throw 5;",
+        "sha256": "ca2a8eaa0fa6f1ce1acf5ebb3e813f997f33afc7622423910be31c372762524c"
+      }
+    ]
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndFinalExitValidatedBy": "executeNativeFile",
+  "elapsedMs": 5126,
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: \nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test\\\",\\\"1\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-kjQ2Fc/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 84194 resuming\nProcess 84194 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x107b1b3bc)\n       frame #0: 0x0000000107b1b3bc test`\n->  0x107b1b3bc: brk    #0x3\n    0x107b1b3c0: ldr    x1, [x12, #0x18]\n    0x107b1b3c4: ldr    x16, [x12, #0x10]\n    0x107b1b3c8: blr    x16\nTarget 0: (test) stopped.\n\nDebugserver: \nConnection: Process 84194 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c1a09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c1a09c0 <+0>:  mov    x0, sp\n    0x10c1a09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c1a09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c1a09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "crash",
+        "detail": "LLDB did not produce a result: \nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-x1N8lq/test\\\",\\\"8\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-Rgkus0/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 84416 resuming\nProcess 84416 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x107355254)\n       frame #0: 0x0000000107355254 test`\n->  0x107355254: brk    #0x3\n    0x107355258: ldr    x1, [x12, #0x18]\n    0x10735525c: ldr    x16, [x12, #0x10]\n    0x107355260: blr    x16\nTarget 0: (test) stopped.\n\nDebugserver: \nConnection: Process 84416 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010bb1c9c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10bb1c9c0 <+0>:  mov    x0, sp\n    0x10bb1c9c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10bb1c9c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10bb1c9cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      }
+    }
+  ]
+}

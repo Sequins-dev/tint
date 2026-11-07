@@ -1,0 +1,86 @@
+{
+  "kind": "native-script-fixture-observation",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v27.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "17e591878bca84335b352dbc0715c05550c74cebc757d3c303072bf0cd65b855",
+      "files": 587
+    },
+    "imageSha256": "f85f661bc6c84e35b9cc8a8aa767849e3c071ccc8488cca4353f7704000deaf9",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "const a=Temporal.PlainDate.from(\"2046-10-30[u-ca=hebrew]\"),b=Temporal.PlainDateTime.from(\"2046-10-30T12:34[u-ca=hebrew]\");for(const d of[a,b])if(d.year!==5807||d.monthCode!==\"M01\"||d.day!==30)throw 1;if(Temporal.PlainDate.from({calendar:\"hebrew\",year:5807,month:1,day:1}).toString({calendarName:\"never\"})!==\"2046-10-01\")throw 2;",
+        "sha256": "91d50d17fdd55ecc39ca333064c453f740b0a4b9857c85674fa0b5091f59c6e4"
+      },
+      {
+        "index": 1,
+        "source": "const valid=[\"2D3\",\"2C5\",\"2D5\",\"2C7\",\"3R5\",\"3R7\",\"5R7\",\"5C1\",\"5D1\",\"5C3\",\"7D1\",\"7C3\",\"7D3\",\"7C5\"];for(let year=3700;year<=5800;year++){const first=Temporal.PlainDate.from({calendar:\"hebrew\",year,monthCode:\"M01\",day:1}),pesach=Temporal.PlainDate.from({calendar:\"hebrew\",year,monthCode:\"M07\",day:15});const length=first.daysInYear,kind=length%10===3?\"D\":length%10===4?\"R\":\"C\",pattern=String(first.dayOfWeek%7+1)+kind+String(pesach.dayOfWeek%7+1);if(!valid.includes(pattern))throw 1;}",
+        "sha256": "532cb0b51ebcba4ca5e8745c7c0358ac88f65e6f64a9c766f9628b25eab24a94"
+      },
+      {
+        "index": 2,
+        "source": "for(const year of[3705,5806,5807,5808,-114911,-102335,-3839,88370,186866,193151]){const a=Temporal.PlainDate.from({calendar:\"hebrew\",year,month:1,day:1}),b=a.add({years:1});if(![353,354,355,383,384,385].includes(a.daysInYear)||!a.add(a.until(b,{largestUnit:\"year\"})).equals(b)||!b.add(b.until(a,{largestUnit:\"year\"})).equals(a))throw 1;}",
+        "sha256": "545ae3fe5497e65e723b44049c52065947503d8b552a794e5c75d3d2b2928446"
+      }
+    ]
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndFinalExitValidatedBy": "executeNativeFile",
+  "elapsedMs": 2621,
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}
