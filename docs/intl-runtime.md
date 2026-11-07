@@ -202,6 +202,13 @@ resolved for the exact input by the zone-name service. [Parts validation](result
 passes 39 focused and 4742 workspace tests. Its native fixture and compiler are
 compiled only while authorization is pending; no public constructor is installed.
 
+`date-time-zone-name.ts` renders specific/generic names, reference-zone qualifiers,
+location fallback and exact localized GMT offsets using the same zone models as
+Temporal. Type fallback checks the full 184-day stability interval, including
+recorded and future flag changes with identical offsets. Short country labels use
+explicit CLDR alternate selectors. [Zone-name validation](results/intl-date-time-zone-name-native-resume-h-v42.md)
+passes 48 focused and 4751 workspace tests; native images remain compiled only.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
