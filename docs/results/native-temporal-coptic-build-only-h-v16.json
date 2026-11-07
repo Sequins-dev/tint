@@ -1,0 +1,113 @@
+{
+  "kind": "native-script-fixture-build-only",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v16.json",
+  "manifestPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-eGJOkj/fixture.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "15996837646c55ae97e9307bf1664285749d7e3aa72d21eeb5e53cd31bb65157",
+      "files": 578
+    },
+    "imageSha256": "8f7ef19d4392315bafeca898e9df49293b0d6d126cc53609043669d714372287",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const[calendar,year,era]of[[\"coptic\",1739,\"am\"],[\"ethiopic\",2015,\"am\"],[\"ethioaa\",7515,\"aa\"]]){const d=Temporal.PlainDate.from({calendar,year,monthCode:\"M13\",day:6});if(d.toString()!==\"2023-09-11[u-ca=\"+calendar+\"]\"||d.year!==year||d.month!==13||d.monthCode!==\"M13\"||d.era!==era||d.eraYear!==year||d.daysInMonth!==6||d.daysInYear!==366||d.monthsInYear!==13||!d.inLeapYear||d.dayOfYear!==366||d.dayOfWeek!==1||d.weekOfYear!==undefined)throw 1;}",
+        "sha256": "3edf4b251a4612f6130ba2fe92320825924d284b0375e6d59fdd3381864023e1"
+      },
+      {
+        "index": 1,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const d=Temporal.PlainDate.from({calendar,year,month:13,day:6});const a=d.add({months:1}),b=d.add({years:1}),c=d.add({years:1,months:1},{overflow:\"reject\"});if(a.year!==year+1||a.month!==1||a.day!==6||b.month!==13||b.day!==5||c.toString({calendarName:\"never\"})!==\"2024-09-16\")throw 1;let ok=false;try{d.add({years:1},{overflow:\"reject\"});}catch(e){ok=e instanceof RangeError;}if(!ok||a.subtract({months:1}).day!==6)throw 2;}",
+        "sha256": "082c9026c3eb26cf01d7377bd21cf62bb5f757ff61f5abce736ac0c9ebad70ac"
+      },
+      {
+        "index": 2,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const ym=Temporal.PlainYearMonth.from({calendar,year,month:13}),md=Temporal.PlainMonthDay.from({calendar,monthCode:\"M13\",day:6});if(ym.toString()!==\"2023-09-06[u-ca=\"+calendar+\"]\"||ym.add({months:1}).toString()!==\"2023-09-12[u-ca=\"+calendar+\"]\"||ym.toPlainDate({day:6}).day!==6||md.toString()!==\"1971-09-11[u-ca=\"+calendar+\"]\"||md.with({day:5}).toString()!==\"1972-09-10[u-ca=\"+calendar+\"]\"||md.toPlainDate({year}).year!==year)throw 1;}",
+        "sha256": "4203595038854e0dc22f05eb24baebc2484f87ecbe7c3818387bb53ab7cd1dd1"
+      },
+      {
+        "index": 3,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const a=Temporal.PlainDate.from({calendar,year,month:1,day:1}),b=a.add({years:1});if(a.until(b,{largestUnit:\"month\"}).months!==13||a.until(b,{largestUnit:\"year\"}).years!==1||a.until(b).days!==366)throw 1;const x=a.toPlainYearMonth(),y=b.toPlainYearMonth();if(x.until(y,{largestUnit:\"month\"}).months!==13||x.until(y).years!==1)throw 2;}",
+        "sha256": "308ad8bb79d689c0653761ceee74d1635d1310090477d6d243ca483d35b8b4b3"
+      },
+      {
+        "index": 4,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const a=Temporal.PlainDate.from({calendar,year,month:13,day:6}),b=Temporal.PlainDate.from({calendar,year:year+1,month:13,day:5}),c=Temporal.PlainDate.from({calendar,year:year-1,month:13,day:5});const x=a.until(b,{largestUnit:\"year\"}),y=b.until(a,{largestUnit:\"year\"}),z=a.until(c,{largestUnit:\"year\"});if(x.years!==0||x.months!==12||x.days!==29||y.months!==-12||y.days!==-5||z.years!==-1||z.days!==0)throw 1;}",
+        "sha256": "461146dc90d01ba2d25d8bd16e5a93dc8673f018b38b1a5d04b9014ce8725362"
+      },
+      {
+        "index": 5,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]]){const a=Temporal.PlainDateTime.from({calendar,year,month:13,day:6,hour:23,minute:59}),b=a.add({minutes:2});if(b.year!==year+1||b.month!==1||b.day!==1||b.minute!==1||b.calendarId!==calendar||a.round({smallestUnit:\"day\",roundingMode:\"ceil\"}).month!==1)throw 1;const c=a.add({months:1});if(a.until(c,{largestUnit:\"month\"}).months!==1||c.calendarId!==calendar)throw 2;}",
+        "sha256": "96b9b18c1d4a3a45d3eaeb566b5ff4a7f3c2926759f80b1b2df06dffe340b926"
+      },
+      {
+        "index": 6,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]])for(const timeZone of[\"UTC\",\"+00:00\"]){const a=Temporal.ZonedDateTime.from({calendar,year,month:13,day:1,timeZone}),b=a.add({months:1});if(b.year!==year+1||b.month!==1||b.calendarId!==calendar||a.until(b,{largestUnit:\"month\"}).months!==1||a.until(b,{largestUnit:\"day\"}).days!==6||b.toPlainDate().calendarId!==calendar)throw 1;}",
+        "sha256": "7da1f1ad3fcaffaa2f8b9e6c4eada5d169e3c3055390265853ef60e035185c5e"
+      },
+      {
+        "index": 7,
+        "source": "for(const[calendar,year]of[[\"coptic\",1739],[\"ethiopic\",2015],[\"ethioaa\",7515]])for(const timeZone of[undefined,\"UTC\",\"+00:00\"]){const relativeTo={calendar,year,month:13,day:1,timeZone},d=new Temporal.Duration(0,1),half=new Temporal.Duration(0,0,0,3);if(d.total({unit:\"day\",relativeTo})!==6||d.round({largestUnit:\"day\",smallestUnit:\"day\",relativeTo}).days!==6||half.total({unit:\"month\",relativeTo})!==0.5||half.round({smallestUnit:\"month\",roundingMode:\"halfExpand\",relativeTo}).months!==1||half.round({smallestUnit:\"month\",roundingMode:\"halfEven\",relativeTo}).months!==0||new Temporal.Duration(1).total({unit:\"month\",relativeTo})!==13||Temporal.Duration.compare(\"P1M\",\"P6D\",{relativeTo})!==0)throw 1;}",
+        "sha256": "ed734ac8d28e41e6568752fbe562ba3058223b23194f01ce2d1ccd597970d886"
+      },
+      {
+        "index": 8,
+        "source": "for(const[era,eraYear,year,resultEra,resultYear]of[[\"am\",0,0,\"aa\",5500],[\"am\",-1,-1,\"aa\",5499],[\"aa\",0,-5500,\"aa\",0],[\"aa\",-1,-5501,\"aa\",-1]]){const d=Temporal.PlainDate.from({calendar:\"ethiopic\",era,eraYear,month:1,day:1});if(d.year!==year||d.era!==resultEra||d.eraYear!==resultYear)throw 1;}",
+        "sha256": "e3d5d5f2616f2e05c858aac7ab54c77093d012f2affbfd11e5d181302b1dab04"
+      },
+      {
+        "index": 9,
+        "source": "for(const calendar of[\"coptic\",\"ethiopic\",\"ethioaa\"]){const d=Temporal.PlainDate.from(\"2023-09-11[u-ca=\"+calendar+\"]\"),ym=d.toPlainYearMonth(),md=d.toPlainMonthDay();if(!ym.equals(Temporal.PlainYearMonth.from(d.toString()))||!md.equals(Temporal.PlainMonthDay.from(d.toString()))||ym.month!==13||md.monthCode!==\"M13\")throw 1;Object.defineProperty(d,\"year\",{get(){throw 2;}});Object.defineProperty(d,\"calendarId\",{get(){throw 3;}});if(d.add({months:1}).month!==1||new Temporal.Duration(0,1).total({unit:\"day\",relativeTo:d})!==6)throw 4;}",
+        "sha256": "39356e551658507ed8f6e5cafd80509a114b9d42a2e119cb84296e3841d45500"
+      },
+      {
+        "index": 10,
+        "source": "for(const calendar of[\"coptic\",\"ethiopic\",\"ethioaa\"]){for(const fields of[{month:13,day:1},{year:1739,monthCode:\"M14\",day:1},{year:1739,monthCode:\"M13L\",day:1},{year:1739,month:12,monthCode:\"M13\",day:1}]){let caught=false;try{Temporal.PlainDate.from({...fields,calendar});}catch(e){caught=true;}if(!caught)throw 1;}let ok=false;try{Temporal.PlainMonthDay.from({calendar,month:13,day:1});}catch(e){ok=e instanceof TypeError;}if(!ok)throw 2;}",
+        "sha256": "dfa41935c6b47b06e98ac98dbecac330c4c0b026840904d968717b377ef66bd7"
+      },
+      {
+        "index": 11,
+        "source": "for(const[calendar,year]of[[\"gregory\",2024],[\"japanese\",2024],[\"buddhist\",2567],[\"roc\",113]]){const d=Temporal.PlainDate.from({calendar,year,month:2,day:29});if(d.add({years:1}).day!==28||d.toPlainYearMonth().month!==2||d.toPlainMonthDay().day!==29||d.until(d.add({years:1}),{largestUnit:\"year\"}).years!==0)throw 1;}",
+        "sha256": "16495d3a0bcefb34a1e625cd6891929536caf01851b03a6393a3601f00204d4d"
+      }
+    ]
+  },
+  "buildExit": 0,
+  "codesignExit": 0,
+  "nativeExecution": "none; host authorization hold",
+  "nativePasses": 0
+}
