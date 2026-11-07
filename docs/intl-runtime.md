@@ -172,8 +172,7 @@ input hashes and the output hash.
 The [pattern core](results/intl-date-time-pattern-native-resume-h-v31.md) and
 [calendar presentation data](results/intl-date-time-calendar-native-resume-h-v32.md)
 have semantic tests and compiled native fixtures. Native execution and compiler
-stage comparison remain held for host Developer Tools authorization. These
-internal services do not yet install the public DateTimeFormat constructor.
+stage comparison remain held for host Developer Tools authorization. The public DateTimeFormat adapter now composes these services.
 
 `date-time-zone-data.ts` resolves localized zone/metazone names, reference regions,
 exact metazone history bounds and flexible day-period rules for the same 860
@@ -200,7 +199,7 @@ Hebrew Adar identities. Names and short weekdays come from calendar profiles;
 flexible periods use the shared day-period rules. Time-zone tokens require a label
 resolved for the exact input by the zone-name service. [Parts validation](results/intl-date-time-parts-native-resume-h-v41.md)
 passes 39 focused and 4742 workspace tests. Its native fixture and compiler are
-compiled only while authorization is pending; no public constructor is installed.
+compiled only while authorization is pending.
 
 `date-time-zone-name.ts` renders specific/generic names, reference-zone qualifiers,
 location fallback and exact localized GMT offsets using the same zone models as
@@ -216,6 +215,18 @@ Related and cyclic years retain their separate part identities. Structural
 date/time connector metadata avoids inferring composition from rendered text.
 [Range validation](results/intl-date-time-range-native-resume-h-v43.md) passes 57
 focused and 4760 workspace tests; native images remain compiled only.
+
+`intl-date-time-format.ts` installs the constructor, supportedLocalesOf, bound
+format getter, parts, ranges and resolvedOptions. Configuration preserves
+observable option order, legacy chaining and realm-local result records. Locale
+negotiation handles calendar/numbering/hour-cycle extensions independently;
+available time-zone alias identities are preserved. The shared assembly clips
+legacy inputs before local conversion and keeps local coordinates outside Date's
+bounds available to the parts engine. Two-digit clocks select inherited CLDR
+ASCII alternates when available; explicit padding remains a minimum.
+[Public API validation](results/intl-date-time-format-api-native-resume-h-v52.md)
+passes 53 focused and 4786 workspace tests. Its fixture and compiler are compiled
+only. Temporal-object formatting and locale forwarding are the next slice.
 
 ## List formatting
 
