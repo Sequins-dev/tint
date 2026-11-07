@@ -1,0 +1,120 @@
+{
+  "kind": "native-class-auto-accessor-regression",
+  "conformance": false,
+  "startedAt": "2026-11-07T22:39:48.969Z",
+  "toolchain": "docs/results/c2-frozen-toolchain-v24-auto-accessors-v1.json",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "5d7b78bb8ddcc8865c5422cf7ce36941f48ef93f2552f62a6a6f3fee0589c1c2",
+      "files": 601
+    },
+    "imageSha256": "9f4c82e499eb08115da5357b03e77f523262c745f170b830e0487840f6249584",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "function check(value) { if (!value) throw new Error(\"check\"); }\n\n    class C { accessor x = 1; accessor y; }\n    var a = new C(), b = new C();\n    check(a.x === 1 && a.y === undefined && !Object.hasOwn(a, \"x\"));\n    a.x = 42;\n    check(a.x === 42 && b.x === 1);\n    var d = Object.getOwnPropertyDescriptor(C.prototype, \"x\");\n    check(d.enumerable === false && d.configurable === true);\n    check(d.get.name === \"get x\" && d.get.length === 0);\n    check(d.set.name === \"set x\" && d.set.length === 1);\n    check(!Object.hasOwn(d.get, \"prototype\") && !Object.hasOwn(d.set, \"prototype\"));\n    for (var receiver of [{}, C.prototype, 1, null]) {\n      var rejected = false;\n      try { d.get.call(receiver); } catch(e) { rejected = e instanceof TypeError; }\n      check(rejected);\n      rejected = false;\n      try { d.set.call(receiver, 7); } catch(e) { rejected = e instanceof TypeError; }\n      check(rejected);\n    }\n  ",
+        "sha256": "55409b9fb0d6b65747a4ee36d079c6440d7bec54c2994cd508022796216bcec7"
+      },
+      {
+        "index": 1,
+        "source": "function check(value) { if (!value) throw new Error(\"check\"); }\n\n    class C {\n      static accessor x = 10;\n      accessor #x = 1;\n      static accessor #y = 2;\n      read() { return this.#x; }\n      write(value) { this.#x = value; }\n      static read() { return this.#y; }\n      static write(value) { this.#y = value; }\n      has(value) { return #x in value; }\n    }\n    var a = new C(), b = new C();\n    a.write(42); C.write(43);\n    check(a.read() === 42 && b.read() === 1 && C.read() === 43 && C.x === 10);\n    check(a.has(a) && !a.has(C.prototype) && !a.has({}));\n    class D extends C {}\n    var errors = 0;\n    try { D.x; } catch(e) { if (e instanceof TypeError) errors++; }\n    try { D.read(); } catch(e) { if (e instanceof TypeError) errors++; }\n    try { C.prototype.read.call({}); } catch(e) { if (e instanceof TypeError) errors++; }\n    check(errors === 3);\n    Object.preventExtensions(a); a.write(44); check(a.read() === 44);\n  ",
+        "sha256": "01b96ffa6df6c8fce7e468a0e32a1b8410782faa93f7c5068a6427e7f62c7eea"
+      },
+      {
+        "index": 2,
+        "source": "function check(value) { if (!value) throw new Error(\"check\"); }\n\n    var events = [];\n    function key(name) { events.push(name); return name; }\n    function init(name, value) { events.push(name); return value; }\n    class C {\n      accessor [key(\"x\")] = init(\"ix\", 1);\n      static accessor [key(\"s\")] = init(\"is\", 2);\n      accessor y = init(\"iy\", this.x + C.s);\n      static { events.push(\"block\"); check(this.s === 2); }\n    }\n    check(events.join() === \"x,s,is,block\");\n    var a = new C(), b = new C();\n    check(a.y === 3 && b.y === 3);\n    check(events.join() === \"x,s,is,block,ix,iy,ix,iy\");\n    var symbol = Symbol(\"slot\");\n    class S { accessor [symbol] = 7; }\n    check(new S()[symbol] === 7);\n    var d = Object.getOwnPropertyDescriptor(S.prototype, symbol);\n    check(d.get.name === \"get [slot]\" && d.set.name === \"set [slot]\");\n  ",
+        "sha256": "b3469e4dc915930877c4200fd30ce608dd76beecf6caaed1a52093bdfccc86f9"
+      },
+      {
+        "index": 3,
+        "source": "function check(value) { if (!value) throw new Error(\"check\"); }\n\n    var events = [], sentinel = {}, saved;\n    class C {\n      before = (saved = this, events.push(\"before\"));\n      accessor #x = (events.push(\"x\"), (() => { throw sentinel; })());\n      after = events.push(\"after\");\n      has(value) { return #x in value; }\n      read() { return this.#x; }\n    }\n    var caught;\n    try { new C(); } catch(e) { caught = e; }\n    check(caught === sentinel && events.join() === \"before,x\");\n    check(saved.has(saved));\n    var rejected = false;\n    try { saved.read(); } catch(e) { rejected = e instanceof TypeError; }\n    check(rejected);\n    class D { accessor x = this.x; }\n    rejected = false;\n    try { new D(); } catch(e) { rejected = e instanceof TypeError; }\n    check(rejected);\n  ",
+        "sha256": "493707d0d617f3a0359f9c884fb4807b4092f7639cb30cb8c1f0432a2779a8c8"
+      },
+      {
+        "index": 4,
+        "source": "function check(value) { if (!value) throw new Error(\"check\"); }\n\n    var events = [];\n    class C {\n      accessor x = (events.push(1), 1);\n      accessor x = (events.push(2), 2);\n    }\n    var a = new C();\n    check(a.x === 2 && events.join() === \"1,2\");\n    a.x = 42; check(a.x === 42);\n    class D extends C { accessor y = super.x; }\n    check(new D().y === 2);\n    var escaped;\n    try {\n      class E {\n        static accessor x = (escaped = this, 3);\n        static accessor y = (() => { throw 7; })();\n        static after = events.push(\"after\");\n      }\n    } catch(e) { check(e === 7); }\n    check(escaped.x === 3 && events.join() === \"1,2,1,2\");\n  ",
+        "sha256": "1ab0ea2974de333121953183774022fd3d3e2ddba66a575f1a365d4be7c5ff7b"
+      }
+    ]
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "assertions": "NativeImageRunner requires an initial stopped LLDB process and the expected exit42 for each case; no retries.",
+  "cases": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 2348.603375
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 908.6254589999999
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 627.9938750000001
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 520.124417
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 500.88091600000007
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-11-07T22:39:53.880Z",
+  "driverSha256": "188079b5fc5b207e8aab8b8f189c9013728c504789ca457754812a5a5a4c2f2e"
+}

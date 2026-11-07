@@ -1,0 +1,48 @@
+{
+  "kind": "native-class-auto-accessor-compiler-regression",
+  "conformance": false,
+  "generatedAt": "2026-11-07T22:38:14.833Z",
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "5d7b78bb8ddcc8865c5422cf7ce36941f48ef93f2552f62a6a6f3fee0589c1c2",
+      "files": 601
+    },
+    "imageSha256": "9961e9ca2741b9c0f965c012a340f329d1cb0f8c3d451c819424b1fd037020e1",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-class-auto-accessor-compiler-jeZI0v/class-auto-accessor-compiler.source.ts",
+    "fixtureSha256": "51a5860f4cb3231d2554b9e1a19b4acde1ba954c3d5ba6e350b233299ead57bc",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/build-auto-accessor-compiler-fixture-v3.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": false
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "assertions": "executeNativeFile requires initial stopped LLDB process and exit42; no retry. Fixture executes parseScript, binding, auto-accessor lowering and the typed AOT unsupported guard in native code.",
+  "elapsedMs": 1070.755917,
+  "outcome": {
+    "kind": "completed"
+  },
+  "preparationAttempts": [
+    {
+      "exitStatus": 1,
+      "log": ".tint-bootstrap/c2/auto-accessor-compiler-native-build-v1.log",
+      "reason": "Fixture rewrite callback omitted required original-node parameter."
+    },
+    {
+      "exitStatus": 1,
+      "log": ".tint-bootstrap/c2/auto-accessor-compiler-native-build-v2.log",
+      "reason": "Fixture needed a local alias for nested callee narrowing."
+    },
+    {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/c2/auto-accessor-compiler-native-build-v4.log"
+    }
+  ],
+  "driverSha256": "9a3e7c662de8b4c898c9ec50ae968ccdb8d58328460b94fb4020a50595a71d7b"
+}
