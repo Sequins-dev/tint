@@ -1,0 +1,23 @@
+{
+  "kind": "cluster-k-agent-script-resource-acceptance",
+  "createdAt": "2026-11-07T23:44:18.580158+00:00",
+  "validatedHead": "0f4d30b6",
+  "mainBase": "a0b8cfe5",
+  "change": "Node-only uniform Script entry2MiB and per-agent executable arena16MiB; portable compiler/runtime and ABI unchanged.",
+  "gate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4898,
+    "passed": 4898,
+    "failed": 0,
+    "typecheck": "passed",
+    "boundaries": "passed",
+    "format": "passed",
+    "log": ".tint-bootstrap/cluster-k/check-agent-resources-v1.log"
+  },
+  "native": "cluster-k-agent-script-resource-validation-v1.json",
+  "rebasedNative": "native-agent-script-resources-rebased-v2.json",
+  "selfBuild": "No new portable changes. Existing isolated-agent native selfbuild remains cluster-k-agent-selfbuild-v1.json.",
+  "conformance": "Old wait154 survey retained94pass/60contained exit70. Fresh fullAtomics778/waitAsync202 reruns required, not credited by bespoke controls.",
+  "gateLogSha256": "a88fdabf63d4fbe809efe282df306d1bd1fdf9104cba4472c1e4e6e4a32a91c9"
+}
