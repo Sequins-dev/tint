@@ -1,0 +1,11 @@
+{
+  "kind": "builtins-temporal-shared-recheck-plan",
+  "conformance": false,
+  "time": "2026-11-07T21:52:27.089040+00:00",
+  "manifest": "temporal-builtins-shared-recheck-variants-h-v1.json",
+  "variants": 168,
+  "rootSelection": "built-ins/Temporal",
+  "scope": "Allv18ZonedDateTime125nonpasses, PlainMonthDay4parsingnonpasses, Duration1launchcrash; completePlainYearMonth/PlainMonthDaytoLocaleString14variants each; Temporalroot6andtoStringTag4.",
+  "purpose": "Confirm oldnonpasses on currentruntime andvalidatepartial-datefallbackwithunchangedpinnedtests. Unmeasurednamespace/locale rows stayexplicit in denominator.",
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v136.json"
+}
