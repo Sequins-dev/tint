@@ -349,6 +349,7 @@ Counts below retain every failure, unsupported case and infrastructure error. Pa
 | [`built-ins/TypedArray/prototype/map`](results/test262-typedarray-map-cluster-k-v1.json) | 170 / 170 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/prototype/reduce`](results/test262-typedarray-reduce-cluster-k-v1.json) | 100 / 100 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/prototype/reduceRight`](results/test262-typedarray-reduceright-cluster-k-v1.json) | 100 / 100 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
+| [`built-ins/TypedArray/prototype/reverse`](results/test262-typedarray-reverse-cluster-k-v1.json) | 44 / 44 (100%) | Complete verified direct-mode extraction; overlaps the running TypedArray survey |
 | [`built-ins/TypedArray/out-of-bounds-behaves-like-detached.js`](results/test262-typedarray-out-of-bounds-behaves-like-detached-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeouts retained |
 | [`built-ins/TypedArray/out-of-bounds-get-and-set.js`](results/test262-typedarray-out-of-bounds-get-and-set-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeout retained |
 | [`built-ins/TypedArray/out-of-bounds-has.js`](results/test262-typedarray-out-of-bounds-has-cluster-k-v2.json) | 2 / 2 (100%) | Complete verified direct-mode file extraction; earlier timeouts retained |
