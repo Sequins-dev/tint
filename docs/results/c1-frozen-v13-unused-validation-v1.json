@@ -1,0 +1,7 @@
+{
+  "kind": "c1-unused-frozen-toolchain-validation-rejection",
+  "conformance": false,
+  "toolchain": "docs/results/c1-phase2-frozen-toolchain-v13.json",
+  "nativeRunLaunched": false,
+  "reason": "Main added calendar source/catalog files after the last dist rebuild. Reject native use of the prematurely frozen snapshot and rebuild before a replacement freeze. Frozen bytes and metadata remain unchanged."
+}
